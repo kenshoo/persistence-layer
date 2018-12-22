@@ -1,0 +1,16 @@
+plugins {
+    id "com.avast.gradle.docker-compose" version "0.6.9"
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'project-report'
+    apply plugin: "idea"
+}
+
+apply from:"${rootProject.projectDir}/dependencies.gradle"
+
+dependencies {
+    compile project(':main')
+}
