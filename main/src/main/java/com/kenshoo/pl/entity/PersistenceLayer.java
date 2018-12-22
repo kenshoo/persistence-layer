@@ -3,7 +3,6 @@ package com.kenshoo.pl.entity;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.kenshoo.jdbc.common.DatabaseDeadlockRetryer;
 import com.kenshoo.pl.entity.internal.ChangesFilter;
 import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
 import com.kenshoo.pl.entity.internal.EntityDbUtil;
@@ -40,21 +39,18 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private DatabaseDeadlockRetryer databaseDeadlockRetryer;
-
-    @Resource
     private EntitiesToContextFetcher entitiesToContextFetcher;
 
     public void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {
         prepareRecursive(commands, context, flowConfig);
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> isValidRecursive(cmd, context, flowConfig)).toList();
         if (!validCmds.isEmpty()) {
-            databaseDeadlockRetryer.updateWithRetry(() -> transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     generateOutputRecursive(flowConfig, validCmds, context);
                 }
-            }));
+            });
         }
     }
 
