@@ -1,0 +1,187 @@
+package com.kenshoo.pl.entity;
+
+import com.kenshoo.pl.entity.internal.EntityFieldImpl;
+import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
+import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
+import com.kenshoo.pl.entity.spi.*;
+
+import java.util.*;
+import java.util.stream.Stream;
+
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+
+abstract public class ChangeEntityCommand<E extends EntityType<E>> implements EntityChange<E> {
+
+    private final E entityType;
+    private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
+    private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
+    private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
+    private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
+
+
+    private Identifier<E> keysToParent;
+
+    public ChangeEntityCommand(E entityType) {
+        this.entityType = entityType;
+    }
+
+    public E getEntityType() {
+        return entityType;
+    }
+
+    public <T> void set(EntityField<E, T> field, T newValue) {
+        values.put(field, newValue);
+    }
+
+    public <T> void set(EntityFieldPrototype<T> fieldPrototype, T newValue) {
+        EntityField<E, T> entityField = findFieldByPrototype(fieldPrototype);
+        set(entityField, newValue);
+    }
+
+    public <T> void set(EntityField<E, T> field, FieldValueSupplier<T> valueSupplier) {
+        suppliers.put(field, valueSupplier);
+        currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
+    }
+
+    public <T> void set(EntityFieldPrototype<T> fieldPrototype, FieldValueSupplier<T> valueSupplier) {
+        EntityField<E, T> entityField = findFieldByPrototype(fieldPrototype);
+        set(entityField, valueSupplier);
+    }
+
+    public void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier) {
+        LazyDelegatingMultiSupplier<E> delegatingMultiSupplier = new LazyDelegatingMultiSupplier<>(valueSupplier);
+        currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
+
+        for (EntityField<E, ?> field : fields) {
+            addAsSingleValueSupplier(field, delegatingMultiSupplier);
+        }
+    }
+
+    private <T> void addAsSingleValueSupplier(final EntityField<E, T> entityField, final MultiFieldValueSupplier<E> delegatingSupplier) {
+        suppliers.put(entityField, new FieldValueSupplier<T>() {
+            @Override
+            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+                return delegatingSupplier.fetchFields(changeOperation);
+            }
+
+            @Override
+            public T supply(Entity entity) throws ValidationException {
+                FieldsValueMap<E> result = delegatingSupplier.supply(entity);
+                if(result.containsField(entityField)) {
+                   return result.get(entityField);
+                } else {
+                    throw new NotSuppliedException();
+                }
+            }
+        });
+    }
+
+    @Override
+    public Stream<EntityField<E, ?>> getChangedFields() {
+        // HashMap creates keySet/entrySet on demand so if the map is empty, calling these method implicitly increases its
+        // memory consumption. Since in many cases the suppliers HashMap is empty, we can short-circuit this.
+        if (suppliers.isEmpty()) {
+            return values.keySet().stream();
+        } else {
+            return Stream.concat(this.values.keySet().stream(), suppliers.keySet().stream()).distinct();
+        }
+    }
+
+    @Override
+    public Stream<FieldChange<E, ?>> getChanges() {
+        //noinspection unchecked
+        return values.entrySet().stream().map(entry -> new FieldChange(entry.getKey(), entry.getValue()));
+    }
+
+    @Override
+    public <T> boolean containsField(EntityField<E, T> field) {
+        return isFieldChanged(field);
+    }
+
+    @Override
+    public boolean isFieldChanged(EntityField<E, ?> field) {
+        return values.containsKey(field);
+    }
+
+    @Override
+    public <T> T get(EntityField<E, T> field) {
+        //noinspection unchecked,SuspiciousMethodCalls
+        T value = (T) values.get(field);
+        if (value == null && !values.containsKey(field)) {
+            throw new IllegalArgumentException("No value supplied for field " + field);
+        }
+        return value;
+    }
+
+    public <CHILD extends EntityType<CHILD>> void addChild(ChangeEntityCommand<CHILD> childCmd) {
+        children.add(childCmd);
+    }
+
+
+    @Override
+    public <CHILD extends EntityType<CHILD>> Stream<ChangeEntityCommand<CHILD>> getChildren(CHILD type) {
+        //noinspection unchecked
+        return children.stream().filter(cmd -> cmd.getEntityType() == type).map(cmd -> (ChangeEntityCommand<CHILD>)cmd);
+    }
+
+    @Override
+    public Stream<ChangeEntityCommand<? extends EntityType>> getChildren() {
+        return children.stream();
+    }
+
+    void unset(EntityField<E, ?> field) {
+        values.remove(field);
+    }
+
+    void resolveSuppliers(Entity entity) throws ValidationException {
+        // HashMap creates keySet/entrySet on demand so if the map is empty, calling these method implicitly increases its
+        // memory consumption. Since in many cases the suppliers HashMap is empty, we can short-circuit this.
+        if (suppliers.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<EntityField<E, ?>, FieldValueSupplier<?>> entry : suppliers.entrySet()) {
+            try {
+                values.put(entry.getKey(), entry.getValue().supply(entity));
+            } catch (NotSuppliedException ignore) {
+            }
+        }
+    }
+
+    Stream<? extends CurrentStateConsumer<E>>  getCurrentStateConsumers() {
+        return currentStateConsumers.stream();
+    }
+
+    private <T> EntityField<E, T> findFieldByPrototype(EntityFieldPrototype<T> fieldPrototype) {
+        Set<EntityField<E, T>> entityFields = EntityTypeReflectionUtil.getFieldsByPrototype(entityType, fieldPrototype);
+        if (entityFields.isEmpty()) {
+            throw new IllegalArgumentException("Entity " + entityType + " doesn't have a field with prototype " + fieldPrototype);
+        }
+        if (entityFields.size() > 1) {
+            // We should fix custom params and declare that only one field can have a given prototype
+            throw new IllegalStateException("Entity " + entityType + " has more than one field with prototype " + fieldPrototype);
+        }
+        return entityFields.iterator().next();
+    }
+
+    static <E extends EntityType<E>> void copy(ChangeEntityCommand<E> toCommand, Identifier<E> identifier) {
+        copyFields(toCommand, identifier.getUniqueKey().getFields(), identifier);
+    }
+
+    static private <E extends EntityType<E>> void copyFields(ChangeEntityCommand<E> toCommand, EntityField<E, ?>[] fields, FieldsValueMap<E> fieldsValueMap) {
+        //noinspection unchecked
+        Stream.of(fields).map(field -> (EntityFieldImpl<E,?>)field).forEach(field -> toCommand.set(field, fieldsValueMap.get(field)));
+    }
+
+
+    public Identifier<E> getKeysToParent() {
+        return keysToParent;
+    }
+
+    void setKeysToParent(Identifier<E> keysToParent) {
+        this.keysToParent = keysToParent;
+    }
+
+    void updateOperator(ChangeOperation changeOperation) {
+
+    }
+}
