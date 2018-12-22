@@ -1,0 +1,3 @@
+rootProject.name = 'persistence-layer'
+include 'main',
+        'integration-tests'

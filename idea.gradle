@@ -1,0 +1,15 @@
+apply plugin: 'idea'
+
+idea {
+    project {
+        jdkName = '1.8'
+    }
+}
+
+idea.project.ipr {
+    withXml { provider ->
+        provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
+        provider.node.component.find { it.@name == 'ProjectRootManager' }.attributes().put('languageLevel', 'JDK_1_8')
+    }       
+}
+
