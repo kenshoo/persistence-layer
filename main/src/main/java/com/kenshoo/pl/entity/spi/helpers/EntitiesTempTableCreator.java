@@ -22,13 +22,16 @@ public class EntitiesTempTableCreator<E extends EntityType<E>> {
     @Resource
     private DSLContext dslContext;
 
+    @Resource
+    private TempTableHelper tempTableHelper;
+
     public TempTableResource<ImpersonatorTable> createTempTable(final Collection<? extends EntityField<E, ?>> fields, final Collection<? extends FieldsValueMap<E>> fieldsValueMaps) {
         Preconditions.checkArgument(!fields.isEmpty(), "fields is empty");
         //noinspection ConstantConditions
         DataTable primaryTable = Iterables.getFirst(fields, null).getDbAdapter().getTable();
         ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
         fields.stream().flatMap(field -> field.getDbAdapter().getTableFields()).forEach(impersonatorTable::createField);
-        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
+        return tempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
             fieldsValueMaps.forEach(entityChange -> batchBindStep.bind(fields.stream().flatMap(field -> getDbValues(entityChange, field)).toArray()));
         });
     }

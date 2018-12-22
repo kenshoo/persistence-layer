@@ -23,6 +23,12 @@ import static java.util.stream.Collectors.*;
 public class EntitiesFetcher {
 
     @Resource
+    private QueryExtender queryExtender;
+
+    @Resource
+    private TempTableHelper tempTableHelper;
+
+    @Resource
     private DSLContext dslContext;
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(E entityType, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> keys, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
@@ -48,7 +54,7 @@ public class EntitiesFetcher {
             //noinspection unchecked
             conditions.add(new FieldAndValues<>((Field<Object>) fieldAndValue.getField(), Arrays.asList(values)));
         });
-        return QueryExtender.of(query, conditions);
+        return queryExtender.of(query, conditions);
     }
 
     private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
@@ -258,7 +264,7 @@ public class EntitiesFetcher {
         ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
         foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
 
-        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
+        return tempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
                     for (Identifier<E> key : keys) {
                         EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
                         List<Object> values = new ArrayList<>();
