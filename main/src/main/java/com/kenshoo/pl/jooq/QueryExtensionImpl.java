@@ -15,13 +15,13 @@ class QueryExtensionImpl<Q extends SelectFinalStep> implements QueryExtension<Q>
 
     private final Q query;
 
-    QueryExtensionImpl(Q query, final List<FieldAndValues<?>> fieldsWithValues) {
+    QueryExtensionImpl(TempTableHelper tempTableHelper, Q query, final List<FieldAndValues<?>> fieldsWithValues) {
         if (shouldUseTempTable(fieldsWithValues)) {
             Preconditions.checkArgument(query instanceof SelectJoinStep, "Expected " + SelectJoinStep.class.getName() + " but got " + query.getClass().getName());
             TuplesTempTable tempTable = createTempTableDefinition(fieldsWithValues);
             // A rather hacky way to extract DSLContext out of existing query. Better than require the client to pass it though
             DSLContext dslContext = DSL.using(((AttachableInternal) query.getQuery()).configuration());
-            tempTableResource = TempTableHelper.tempInMemoryTable(dslContext, tempTable, new TempTablePopulator(fieldsWithValues));
+            tempTableResource = tempTableHelper.tempInMemoryTable(dslContext, tempTable, new TempTablePopulator(fieldsWithValues));
             //noinspection unchecked
             this.query = addJoinToQuery((SelectJoinStep) query, tempTable, fieldsWithValues);
         } else {

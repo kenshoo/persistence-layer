@@ -7,7 +7,9 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple3;
 import org.jooq.lambda.tuple.Tuple4;
 import org.jooq.lambda.tuple.Tuple5;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,22 +34,26 @@ import static java.util.stream.Collectors.toList;
  * </pre>
  * <b>The returned object is a resource and it is crucial to place it inside try/finally block so it could be closed</b>
  */
+@Component
 public class QueryExtender {
 
-    public static <Q extends SelectFinalStep> QueryExtension<Q> of(Q query, List<FieldAndValues<?>> conditions) {
-        return new QueryExtensionImpl<>(query, conditions);
+    @Resource
+    private TempTableHelper tempTableHelper;
+
+    public <Q extends SelectFinalStep> QueryExtension<Q> of(Q query, List<FieldAndValues<?>> conditions) {
+        return new QueryExtensionImpl<>(tempTableHelper, query, conditions);
     }
 
-    public static <Q extends SelectFinalStep> BuilderWith<Q> of(final Q query) {
+    public <Q extends SelectFinalStep> BuilderWith<Q> of(final Q query) {
         return new BuilderWith<Q>() {
             @Override
             public <T> BuilderIn1<Q, T> withCondition(final Field<T> field) {
-                return values -> new QueryExtensionImpl<>(query, ImmutableList.of(new FieldAndValues<>(field, values)));
+                return values -> new QueryExtensionImpl<>(tempTableHelper, query, ImmutableList.of(new FieldAndValues<>(field, values)));
             }
 
             @Override
             public <T1, T2> BuilderIn2<Q, T1, T2> withCondition(final Field<T1> field1, final Field<T2> field2) {
-                return values -> new QueryExtensionImpl<>(query, ImmutableList.of(
+                return values -> new QueryExtensionImpl<>(tempTableHelper, query, ImmutableList.of(
                         new FieldAndValues<>(field1, values.stream().map(Tuple2::v1).collect(toList())),
                         new FieldAndValues<>(field2, values.stream().map(Tuple2::v2).collect(toList()))
                 ));
@@ -55,7 +61,7 @@ public class QueryExtender {
 
             @Override
             public <T1, T2, T3> BuilderIn3<Q, T1, T2, T3> withCondition(final Field<T1> field1, final Field<T2> field2, final Field<T3> field3) {
-                return values -> new QueryExtensionImpl<>(query, ImmutableList.of(
+                return values -> new QueryExtensionImpl<>(tempTableHelper, query, ImmutableList.of(
                         new FieldAndValues<>(field1, values.stream().map(Tuple3::v1).collect(toList())),
                         new FieldAndValues<>(field2, values.stream().map(Tuple3::v2).collect(toList())),
                         new FieldAndValues<>(field3, values.stream().map(Tuple3::v3).collect(toList()))
@@ -64,7 +70,7 @@ public class QueryExtender {
 
             @Override
             public <T1, T2, T3, T4> BuilderIn4<Q, T1, T2, T3, T4> withCondition(final Field<T1> field1, final Field<T2> field2, final Field<T3> field3, final Field<T4> field4) {
-                return values -> new QueryExtensionImpl<>(query, ImmutableList.of(
+                return values -> new QueryExtensionImpl<>(tempTableHelper, query, ImmutableList.of(
                         new FieldAndValues<>(field1, values.stream().map(Tuple4::v1).collect(toList())),
                         new FieldAndValues<>(field2, values.stream().map(Tuple4::v2).collect(toList())),
                         new FieldAndValues<>(field3, values.stream().map(Tuple4::v3).collect(toList())),
@@ -74,7 +80,7 @@ public class QueryExtender {
 
             @Override
             public <T1, T2, T3, T4, T5> BuilderIn5<Q, T1, T2, T3, T4, T5> withCondition(final Field<T1> field1, final Field<T2> field2, final Field<T3> field3, final Field<T4> field4, final Field<T5> field5) {
-                return values -> new QueryExtensionImpl<>(query, ImmutableList.of(
+                return values -> new QueryExtensionImpl<>(tempTableHelper, query, ImmutableList.of(
                         new FieldAndValues<>(field1, values.stream().map(Tuple5::v1).collect(toList())),
                         new FieldAndValues<>(field2, values.stream().map(Tuple5::v2).collect(toList())),
                         new FieldAndValues<>(field3, values.stream().map(Tuple5::v3).collect(toList())),
