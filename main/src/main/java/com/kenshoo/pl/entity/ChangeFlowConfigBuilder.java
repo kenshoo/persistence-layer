@@ -1,0 +1,72 @@
+package com.kenshoo.pl.entity;
+
+import com.kenshoo.pl.data.CommandsExecutor;
+import com.kenshoo.pl.entity.annotation.DefaultValue;
+import com.kenshoo.pl.entity.annotation.Immutable;
+import com.kenshoo.pl.entity.annotation.Required;
+import com.kenshoo.pl.entity.annotation.RequiredFieldType;
+import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import org.jooq.lambda.tuple.Tuple2;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.time.Instant;
+import java.util.Optional;
+
+import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
+import static org.jooq.lambda.tuple.Tuple.tuple;
+
+@Component
+public class ChangeFlowConfigBuilder {
+
+    @Resource
+    private CommandsExecutor commandsExecutor;
+
+
+    public <E extends EntityType<E>> ChangeFlowConfig.Builder<E> newInstance(E entityType) {
+        //noinspection unchecked
+        ChangeFlowConfig.Builder<E> builder = ChangeFlowConfig.builder(entityType).withOutputGenerator(new DbCommandsOutputGenerator<>(entityType, commandsExecutor));
+
+        builder.withFalseUpdatesPurger(new FalseUpdatesPurger<>(
+                ChangeEntityCommand::unset,
+                entityType.getFields()
+                        .filter(entityField -> getFieldAnnotation(entityType, entityField, IgnoredIfSetAlone.class) != null)
+        ));
+        builder.withRequiredRelationFields(entityType.getFields()
+                .filter(entityField -> {
+                    Required requiredAnnotation = getFieldAnnotation(entityType, entityField, Required.class);
+                    return requiredAnnotation != null && requiredAnnotation.value() == RequiredFieldType.RELATION;
+                }));
+        builder.withRequiredFields(entityType.getFields()
+                .filter(entityField -> getFieldAnnotation(entityType, entityField, Required.class) != null));
+        builder.withImmutableFields(entityType.getFields()
+                .filter(entityField -> getFieldAnnotation(entityType, entityField, Immutable.class) != null));
+
+        Optional<EntityField<E, ?>> creationDateField = entityType.getFields()
+                .filter(entityField -> EntityTypeReflectionUtil.getFieldAnnotation(entityType, entityField, CreationDate.class) != null)
+                .findFirst();
+        if (creationDateField.isPresent()) {
+            if (creationDateField.get().getStringValueConverter().getValueClass() != Instant.class) {
+                throw new IllegalArgumentException("Field annotated with @" + CreationDate.class.getSimpleName() +
+                        " should be of type " + Instant.class.getName() + ". Field " + entityType.toFieldName(creationDateField.get()) +
+                        " has type " + creationDateField.get().getStringValueConverter().getValueClass().getName());
+            }
+            //noinspection unchecked
+            EntityField<E, Instant> entityField = (EntityField<E, Instant>) creationDateField.get();
+            builder.withPostFetchCommandEnricher(new CreationDateEnricher<>(entityField));
+        }
+
+        entityType.getFields()
+                .<Tuple2<EntityField<E, ?>, DefaultValue>>map(entityField -> tuple(entityField, EntityTypeReflectionUtil.getFieldAnnotation(entityType, entityField, DefaultValue.class)))
+                .filter(tuple -> tuple.v2 != null)
+                .map(tuple -> defaultFieldValueEnricher(tuple.v1, tuple.v2.value()))
+                .forEach(builder::withPostFetchCommandEnricher);
+
+        return builder;
+    }
+
+    private <E extends EntityType<E>, T> PostFetchCommandEnricher<E> defaultFieldValueEnricher(EntityField<E, T> field, String value) {
+        return new DefaultFieldValueEnricher<>(field, field.getStringValueConverter().convertFrom(value));
+    }
+}
