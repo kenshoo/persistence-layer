@@ -6,10 +6,14 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.kenshoo.pl.jooq.DataTable;
-import com.kenshoo.pl.jooq.FieldAndValue;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.jooq.FieldAndValue;
 import org.apache.commons.lang3.ArrayUtils;
-import org.jooq.*;
+import org.jooq.Field;
+import org.jooq.ForeignKey;
+import org.jooq.Record;
+import org.jooq.TableField;
+import org.jooq.UniqueKey;
 import org.jooq.impl.AbstractKeys;
 import org.jooq.impl.TableImpl;
 

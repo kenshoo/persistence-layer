@@ -1,10 +1,14 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.jooq.DataTable;
-import com.kenshoo.pl.data.*;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.data.AbstractRecordCommand;
+import com.kenshoo.pl.data.AffectedRows;
+import com.kenshoo.pl.data.CommandsExecutor;
+import com.kenshoo.pl.data.CreateRecordCommand;
+import com.kenshoo.pl.data.DeleteRecordCommand;
+import com.kenshoo.pl.data.UpdateRecordCommand;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.PersistentLayerStats;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

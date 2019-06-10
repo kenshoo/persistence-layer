@@ -1,9 +1,20 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements PostFetchCommandEnricher<E> {

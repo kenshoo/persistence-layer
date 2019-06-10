@@ -1,9 +1,22 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
-import com.kenshoo.pl.jooq.DataTable;
-import com.kenshoo.pl.data.*;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.data.AbstractRecordCommand;
+import com.kenshoo.pl.data.CommandsExecutor;
+import com.kenshoo.pl.data.CreateRecordCommand;
+import com.kenshoo.pl.data.DatabaseId;
+import com.kenshoo.pl.data.DeleteRecordCommand;
+import com.kenshoo.pl.data.UpdateRecordCommand;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityChange;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldChange;
+import com.kenshoo.pl.entity.Identifier;
+import com.kenshoo.pl.entity.PLContext;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import org.jooq.ForeignKey;
 import org.jooq.Record;
@@ -16,13 +29,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 
+
 public class DbCommandsOutputGenerator<E extends EntityType<E>> implements OutputGenerator<E> {
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
 
-    public DbCommandsOutputGenerator(E entityType, CommandsExecutor commandsExecutor) {
-        this.commandsExecutor = commandsExecutor;
+    public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
+        this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
         this.entityType = entityType;
     }
 

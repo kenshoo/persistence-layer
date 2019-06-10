@@ -2,34 +2,63 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
-import com.kenshoo.pl.jooq.*;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.jooq.FieldAndValue;
+import com.kenshoo.jooq.FieldAndValues;
+import com.kenshoo.jooq.QueryExtension;
+import com.kenshoo.jooq.SelectQueryExtender;
+import com.kenshoo.jooq.TempTableHelper;
+import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.pl.data.ImpersonatorTable;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldDbAdapter;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMapImpl;
+import com.kenshoo.pl.entity.Identifier;
+import com.kenshoo.pl.entity.PartialEntity;
 import com.kenshoo.pl.entity.UniqueKey;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.ForeignKey;
+import org.jooq.Record;
+import org.jooq.ResultQuery;
+import org.jooq.SelectField;
+import org.jooq.SelectFinalStep;
+import org.jooq.SelectJoinStep;
+import org.jooq.Table;
+import org.jooq.TableField;
 import org.jooq.impl.DSL;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
-@Service
 public class EntitiesFetcher {
 
-    @Resource
-    private QueryExtender queryExtender;
+    private final DSLContext dslContext;
 
-    @Resource
-    private TempTableHelper tempTableHelper;
-
-    @Resource
-    private DSLContext dslContext;
+    public EntitiesFetcher(DSLContext dslContext) {
+        this.dslContext = dslContext;
+    }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(E entityType, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> keys, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         if (keys.isEmpty()) {
@@ -54,7 +83,7 @@ public class EntitiesFetcher {
             //noinspection unchecked
             conditions.add(new FieldAndValues<>((Field<Object>) fieldAndValue.getField(), Arrays.asList(values)));
         });
-        return queryExtender.of(query, conditions);
+        return SelectQueryExtender.of(dslContext, query, conditions);
     }
 
     private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
@@ -264,7 +293,7 @@ public class EntitiesFetcher {
         ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
         foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
 
-        return tempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
+        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
                     for (Identifier<E> key : keys) {
                         EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
                         List<Object> values = new ArrayList<>();

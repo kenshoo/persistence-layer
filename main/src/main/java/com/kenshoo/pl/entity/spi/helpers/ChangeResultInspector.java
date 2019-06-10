@@ -1,11 +1,25 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
 import com.google.common.collect.Sets;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeResult;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityChangeResult;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
+import com.kenshoo.pl.entity.Identifier;
+import com.kenshoo.pl.entity.ValidationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ChangeResultInspector<E extends EntityType<E>> {

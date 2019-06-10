@@ -2,7 +2,6 @@ package com.kenshoo.pl.data;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jooq.TableField;
-
 import java.util.Arrays;
 
 

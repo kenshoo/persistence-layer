@@ -3,7 +3,12 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.base.Throwables;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.AbstractEntityType;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldPrototype;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.PartialEntity;
+import com.kenshoo.pl.entity.PrototypedEntityField;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

@@ -1,6 +1,6 @@
 package com.kenshoo.pl.data;
 
-import com.kenshoo.pl.jooq.DataTable;
+import com.kenshoo.jooq.DataTable;
 
 public class CreateRecordCommand extends AbstractRecordCommand {
 

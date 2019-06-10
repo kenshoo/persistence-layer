@@ -2,18 +2,30 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.internal.ChangesFilter;
+import com.kenshoo.pl.entity.internal.Errors;
+import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import com.kenshoo.pl.entity.internal.MissingEntitiesFilter;
+import com.kenshoo.pl.entity.internal.MissingParentEntitiesFilter;
+import com.kenshoo.pl.entity.internal.RequiredFieldsChangesFilter;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
+import com.kenshoo.pl.entity.spi.PersistenceLayerRetryer;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
 import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
@@ -27,6 +39,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangeFlowConfig<? extends EntityType<?>>> childFlows;
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
+    private final PersistenceLayerRetryer retryer;
 
     private ChangeFlowConfig(E entityType,
                              List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers,
@@ -34,7 +47,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              List<OutputGenerator<E>> outputGenerators,
                              Set<EntityField<E, ?>> requiredRelationFields,
                              Set<EntityField<E, ?>> requiredFields,
-                             List<ChangeFlowConfig<? extends EntityType<?>>> childFlows) {
+                             List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
+                             PersistenceLayerRetryer retryer) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
         this.outputGenerators = outputGenerators;
@@ -44,10 +58,15 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.childFlows = childFlows;
         this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>(), new FieldsRequiredByChildrenFilter<>());
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
+        this.retryer = retryer;
     }
 
     public E getEntityType() {
         return entityType;
+    }
+
+    public PersistenceLayerRetryer retryer() {
+        return retryer;
     }
 
     public List<PostFetchCommandEnricher<E>> getPostFetchCommandEnrichers() {
@@ -98,7 +117,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private final Set<EntityField<E, ?>> requiredRelationFields = new HashSet<>();
         private final Set<EntityField<E, ?>> requiredFields = new HashSet<>();
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
-        private final List<Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
+        private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
+        private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
 
 
         public Builder(E entityType) {
@@ -176,6 +196,10 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             this.validators.add(compositeValidator);
         }
 
+        public Builder<E> withRetryer(PersistenceLayerRetryer retryer) {
+            this.retryer = retryer;
+            return this;
+        }
 
         public ChangeFlowConfig<E> build() {
             ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.<PostFetchCommandEnricher<E>>builder().addAll(postFetchCommandEnrichers);
@@ -186,7 +210,9 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                     ImmutableList.copyOf(outputGenerators),
                     ImmutableSet.copyOf(requiredRelationFields),
                     ImmutableSet.copyOf(requiredFields),
-                    flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()));
+                    flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
+                    retryer
+            );
         }
     }
 

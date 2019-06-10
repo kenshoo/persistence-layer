@@ -11,12 +11,12 @@ public class StringSetValueConverter implements ValueConverter<Set<String>, Stri
 
     @Override
     public String convertTo(Set<String> value) {
-        return String.join(",", value);
+        return value == null ? null : String.join(",", value);
     }
 
     @Override
     public Set<String> convertFrom(String value) {
-        return ImmutableSet.copyOf(value.split(","));
+        return value == null ? null : ImmutableSet.copyOf(value.split(","));
     }
 
     @Override

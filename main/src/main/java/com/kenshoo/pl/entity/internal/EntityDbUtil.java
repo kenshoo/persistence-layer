@@ -1,7 +1,12 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.data.DatabaseId;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldDbAdapter;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
+import com.kenshoo.pl.entity.Identifier;
 import org.jooq.Record;
 import org.jooq.TableField;
 

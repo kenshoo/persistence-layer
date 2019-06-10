@@ -1,11 +1,20 @@
-package com.kenshoo.pl.jooq;
+package com.kenshoo.jooq;
 
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.*;
-import org.jooq.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import org.jooq.DataType;
+import org.jooq.ForeignKey;
+import org.jooq.Record;
+import org.jooq.Schema;
 import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.UniqueKey;
 import org.jooq.impl.AbstractKeys;
 import org.jooq.impl.TableImpl;
 

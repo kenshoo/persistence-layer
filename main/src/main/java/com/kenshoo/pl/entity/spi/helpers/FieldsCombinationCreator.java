@@ -1,16 +1,19 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityChange;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
 import com.kenshoo.pl.entity.internal.ResultingFieldsCombination;
-import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Component
-public class FieldsCombinationCreator<E extends EntityType<E>> {
+public class FieldsCombinationCreator {
 
-    public Collection<? extends FieldsValueMap<E>> create(final Collection<? extends EntityChange<E>> entityChanges, final Collection<EntityField<E, ?>> fields, ChangeOperation changeOperation, ChangeContext changeContext) {
+    public static <E extends EntityType<E>> Collection<? extends FieldsValueMap<E>> create(final Collection<? extends EntityChange<E>> entityChanges, final Collection<EntityField<E, ?>> fields, ChangeOperation changeOperation, ChangeContext changeContext) {
         return entityChanges.stream()
                 .map(e -> new ResultingFieldsCombination<>(e, changeContext.getEntity(e), fields.stream(), changeOperation))
                 .collect(Collectors.toList());

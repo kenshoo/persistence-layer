@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.jooq.DataTable;
+import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.EntityFieldDbAdapter;
 import org.jooq.Record;
 import org.jooq.TableField;

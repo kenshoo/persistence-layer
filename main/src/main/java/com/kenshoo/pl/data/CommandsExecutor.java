@@ -1,26 +1,47 @@
 package com.kenshoo.pl.data;
 
-import com.kenshoo.pl.jooq.DataTable;
-import com.kenshoo.pl.jooq.FieldAndValue;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.jooq.FieldAndValue;
 import com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey;
-import org.jooq.*;
+import org.jooq.BatchBindStep;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.DeleteWhereStep;
+import org.jooq.Field;
+import org.jooq.Insert;
+import org.jooq.InsertOnDuplicateSetStep;
+import org.jooq.InsertValuesStepN;
+import org.jooq.Record;
+import org.jooq.TableField;
+import org.jooq.UpdateSetFirstStep;
+import org.jooq.UpdateSetMoreStep;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-@Service
 public class CommandsExecutor {
 
-    @Resource
-    private DSLContext dslContext;
+    final private DSLContext dslContext;
+
+    public CommandsExecutor(DSLContext dslContext) {
+        this.dslContext = dslContext;
+    }
+
+    public static CommandsExecutor of(DSLContext dslContext) {
+        return new CommandsExecutor(dslContext);
+    }
 
     public AffectedRows executeInserts(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
         return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.FAIL));

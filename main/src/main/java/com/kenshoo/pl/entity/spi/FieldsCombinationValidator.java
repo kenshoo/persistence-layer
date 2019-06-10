@@ -1,6 +1,10 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
+import com.kenshoo.pl.entity.ValidationError;
 
 import java.util.function.Function;
 import java.util.function.Predicate;

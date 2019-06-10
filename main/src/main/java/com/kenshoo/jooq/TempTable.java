@@ -1,6 +1,15 @@
-package com.kenshoo.pl.jooq;
+package com.kenshoo.jooq;
 
-import org.jooq.*;
+import org.jooq.BatchBindStep;
+import org.jooq.CreateTableColumnStep;
+import org.jooq.CreateTableFinalStep;
+import org.jooq.DSLContext;
+import org.jooq.DropTableFinalStep;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 
 class TempTable<T extends Table<Record>> {

@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.jooq.DataTable;
+import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.data.CreateRecordCommand;
 import org.jooq.Key;
 import org.jooq.Record;

@@ -2,7 +2,13 @@ package com.kenshoo.pl.entity.internal.validators;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityChange;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.internal.ChangesFilter;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 

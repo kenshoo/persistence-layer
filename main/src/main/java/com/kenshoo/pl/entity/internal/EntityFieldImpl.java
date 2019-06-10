@@ -39,6 +39,11 @@ public class EntityFieldImpl<E extends EntityType<E>, T> implements EntityField<
     }
 
     @Override
+    public EntityType<E> getEntityType() {
+        return entityType;
+    }
+
+    @Override
     public String toString() {
         return entityType.toFieldName(this);
     }
