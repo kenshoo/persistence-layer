@@ -1,33 +1,30 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.data.CommandsExecutor;
 import com.kenshoo.pl.entity.annotation.DefaultValue;
 import com.kenshoo.pl.entity.annotation.Immutable;
 import com.kenshoo.pl.entity.annotation.Required;
 import com.kenshoo.pl.entity.annotation.RequiredFieldType;
-import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.internal.CreationDateEnricher;
+import com.kenshoo.pl.entity.internal.DbCommandsOutputGenerator;
+import com.kenshoo.pl.entity.internal.DefaultFieldValueEnricher;
+import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
+import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.tuple.Tuple2;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.time.Instant;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
 import static org.jooq.lambda.tuple.Tuple.tuple;
 
-@Component
-public class ChangeFlowConfigBuilder {
+public class ChangeFlowConfigBuilderFactory {
 
-    @Resource
-    private CommandsExecutor commandsExecutor;
-
-
-    public <E extends EntityType<E>> ChangeFlowConfig.Builder<E> newInstance(E entityType) {
+     public static <E extends EntityType<E>> ChangeFlowConfig.Builder<E> newInstance(PLContext plContext, E entityType) {
         //noinspection unchecked
-        ChangeFlowConfig.Builder<E> builder = ChangeFlowConfig.builder(entityType).withOutputGenerator(new DbCommandsOutputGenerator<>(entityType, commandsExecutor));
+        ChangeFlowConfig.Builder<E> builder = ChangeFlowConfig.builder(entityType).withOutputGenerator(new DbCommandsOutputGenerator<>(entityType, plContext));
 
+        builder.withRetryer(plContext.persistenceLayerRetryer());
         builder.withFalseUpdatesPurger(new FalseUpdatesPurger<>(
                 ChangeEntityCommand::unset,
                 entityType.getFields()
@@ -66,7 +63,8 @@ public class ChangeFlowConfigBuilder {
         return builder;
     }
 
-    private <E extends EntityType<E>, T> PostFetchCommandEnricher<E> defaultFieldValueEnricher(EntityField<E, T> field, String value) {
+    private static <E extends EntityType<E>, T> PostFetchCommandEnricher<E> defaultFieldValueEnricher(EntityField<E, T> field, String value) {
         return new DefaultFieldValueEnricher<>(field, field.getStringValueConverter().convertFrom(value));
     }
+
 }

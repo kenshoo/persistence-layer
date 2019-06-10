@@ -8,49 +8,106 @@ import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
 import com.kenshoo.pl.entity.internal.EntityDbUtil;
 import com.kenshoo.pl.entity.internal.RequiredFieldsCommandsFilter;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
-import com.kenshoo.pl.entity.spi.ChangeOperationSpecificConsumer;
-import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import com.kenshoo.pl.entity.spi.ValidationException;
+import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.ChangeOperation.*;
+import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
+import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
 
-@Component
-public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
-    @Resource
-    private TransactionTemplate transactionTemplate;
+public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifier<ROOT>> {
 
-    @Resource
-    private EntitiesToContextFetcher entitiesToContextFetcher;
+    private final DSLContext dslContext;
+    private final EntitiesToContextFetcher entitiesToContextFetcher;
+    private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
 
-    public void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {
+    public PersistenceLayer(DSLContext dslContext) {
+        this.dslContext = dslContext;
+        this.entitiesToContextFetcher = new EntitiesToContextFetcher(dslContext);
+        this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
+    }
+
+    public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
+        ChangeContext changeContext = new ChangeContext();
+        makeChanges(commands, changeContext, flowConfig);
+        Collection<EntityCreateResult<ROOT, PK>> results = new ArrayList<>(commands.size());
+        for (CreateEntityCommand<ROOT> command : commands) {
+            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
+            if (commandErrors.isEmpty()) {
+                //noinspection unchecked
+                PK identifier = (PK) primaryKey.createValue(command);
+                command.setIdentifier(identifier);
+                results.add(new EntityCreateResult<>(command));
+            } else {
+                results.add(new EntityCreateResult<>(command, commandErrors));
+            }
+        }
+        return new CreateResult<>(results, changeContext.getStats());
+    }
+
+    public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
+        ChangeContext changeContext = new ChangeContext();
+        makeChanges(commands, changeContext, flowConfig);
+        Collection<EntityUpdateResult<ROOT, ID>> results = new ArrayList<>(commands.size());
+        for (UpdateEntityCommand<ROOT, ID> command : commands) {
+            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
+            if (commandErrors.isEmpty()) {
+                results.add(new EntityUpdateResult<>(command));
+            } else {
+                results.add(new EntityUpdateResult<>(command, commandErrors));
+            }
+        }
+        return new UpdateResult<>(results, changeContext.getStats());
+    }
+
+    public <ID extends Identifier<ROOT>> DeleteResult<ROOT, ID> delete(Collection<? extends DeleteEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
+        ChangeContext changeContext = new ChangeContext();
+        makeChanges(commands, changeContext, flowConfig);
+        Collection<EntityDeleteResult<ROOT, ID>> results = new ArrayList<>(commands.size());
+        for (DeleteEntityCommand<ROOT, ID> command : commands) {
+            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
+            if (commandErrors.isEmpty()) {
+                results.add(new EntityDeleteResult<>(command));
+            } else {
+                results.add(new EntityDeleteResult<>(command, commandErrors));
+            }
+        }
+        return new DeleteResult<>(results, changeContext.getStats());
+    }
+
+    public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
+        ChangeContext changeContext = new ChangeContext();
+        makeChanges(commands, changeContext, flowConfig);
+        return new InsertOnDuplicateUpdateResult<>(seq(commands).map(cmd -> toResult(changeContext, cmd)).toList(), changeContext.getStats());
+    }
+
+    private <ID extends Identifier<ROOT>> EntityInsertOnDuplicateUpdateResult<ROOT, ID> toResult(ChangeContext changeContext, InsertOnDuplicateUpdateCommand<ROOT, ID> command) {
+        Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
+        if (commandErrors.isEmpty()) {
+            return new EntityInsertOnDuplicateUpdateResult<>(command);
+        } else {
+            return new EntityInsertOnDuplicateUpdateResult<>(command, commandErrors);
+        }
+    }
+
+    private void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {
+        context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> isValidRecursive(cmd, context, flowConfig)).toList();
         if (!validCmds.isEmpty()) {
-            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
-                @Override
-                protected void doInTransactionWithoutResult(TransactionStatus status) {
-                    generateOutputRecursive(flowConfig, validCmds, context);
-                }
-            });
+            flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, context))));
         }
     }
 
@@ -110,7 +167,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
         final EntityType.ForeignKey<CHILD, PARENT> childToParent = childType.getKeyTo(first(parents).getEntityType());
 
-        parents.forEach(parent -> {
+        seq(parents).filter(p -> hasAnyChild(childFlow, p)).forEach(parent -> {
             final Object[] values = parent.getChangeOperation() == CREATE ? EntityDbUtil.getFieldValues(childToParent.to, parent) : EntityDbUtil.getFieldValues(childToParent.to, context.getEntity(parent));
             if (childToParent.to.size() != values.length) {
                 throw new IllegalStateException("Found " + values.length + " values of " + childToParent.to.size() + " fields for foreign key from table " + childType.getPrimaryTable().getName());
@@ -118,6 +175,10 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
             final UniqueKeyValue<CHILD> keysToParent = new UniqueKeyValue<>(new UniqueKey<>(array(childToParent.from)), values);
             parent.getChildren(childType).forEach(child -> child.setKeysToParent(keysToParent));
         });
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> boolean hasAnyChild(ChangeFlowConfig<CHILD> childFlow, ChangeEntityCommand<PARENT> p) {
+        return p.getChildren(childFlow.getEntityType()).findAny().isPresent();
     }
 
     private <T> T first(Iterable<T> items) {
@@ -148,12 +209,8 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
             return emptyList();
         }
 
-        Stream<CurrentStateConsumer<E>> currentStateConsumers =
-                 Stream.concat(flowConfig.currentStateConsumers(), consumerOf(commands))
-                .filter(onlyConsumersWith(changeOperation));
-
         Stopwatch stopwatch = Stopwatch.createStarted();
-        fetchEntities(commands, currentStateConsumers, changeOperation, changeContext, flowConfig);
+        entitiesToContextFetcher.fetchEntities(commands, changeOperation, changeContext, flowConfig);
         changeContext.getStats().addFetchTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         commands = filterCommands(commands, getSupportedFilters(flowConfig.getPostFetchFilters(), changeOperation), changeOperation, changeContext);
@@ -162,11 +219,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         enrichCommandsPostFetch(commands, flowConfig, changeOperation, changeContext);
 
         return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
-    }
-
-    private <E extends EntityType<E>> Stream<CurrentStateConsumer<E>> consumerOf(Collection<? extends ChangeEntityCommand<E>> commands) {
-        return commands.stream()
-                    .flatMap(ChangeEntityCommand::getCurrentStateConsumers);
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> resolveSuppliersAndFilterErrors(Collection<C> commands, ChangeContext changeContext) {
@@ -183,13 +235,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         }
 
         return validCommands;
-    }
-
-    private <E extends EntityType<E>> Predicate<CurrentStateConsumer<E>> onlyConsumersWith(ChangeOperation changeOperation) {
-        return input -> {
-            boolean isOperationSpecificConsumer = input instanceof ChangeOperationSpecificConsumer;
-            return !isOperationSpecificConsumer || ((ChangeOperationSpecificConsumer<E>) input).getSupportedChangeOperation().supports(changeOperation);
-        };
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> filterCommands(Collection<C> commands, ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, ChangeContext changeContext) {
@@ -209,36 +254,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
     private <E extends EntityType<E>> List<ChangesFilter<E>> getSupportedFilters(List<ChangesFilter<E>> filters, ChangeOperation changeOperation) {
         return filters.stream().filter(f -> f.getSupportedChangeOperation().supports(changeOperation)).collect(toList());
-    }
-
-    private <E extends EntityType<E>> void fetchEntities(Collection<? extends ChangeEntityCommand<E>> commands, Stream<CurrentStateConsumer<E>> currentStateConsumers, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
-        // Make sure each command is mapped to entity, even if SQL doesn't fetch anything
-        commands.forEach(c -> changeContext.addEntity(c, Entity.EMPTY));
-        Set<EntityField<?, ?>> fieldsToFetch = currentStateConsumers
-                .flatMap(consumer -> validateFieldsToFetch(flowConfig, changeOperation, consumer.getRequiredFields(commands, changeOperation), consumer))
-                .collect(toSet());
-        fetchEntities(commands, fieldsToFetch, changeOperation, changeContext, flowConfig);
-    }
-
-    private <E extends EntityType<E>> void fetchEntities(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
-        if(changeOperation == CREATE) {
-            entitiesToContextFetcher.fetchEntitiesByForeignKeys(commands, fieldsToFetch, changeContext, flowConfig);
-        } else {
-            entitiesToContextFetcher.fetchEntitiesByKeys(commands, fieldsToFetch, changeContext, flowConfig);
-        }
-    }
-
-    private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> validateFieldsToFetch(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {
-        if(changeOperation == CREATE) {
-            return fieldsToFetch.filter(entityField -> {
-                if (entityField.getDbAdapter().getTable().equals(flowConfig.getEntityType().getPrimaryTable())) {
-                    throw new IllegalStateException("Field " + fieldsToFetch + " of the primary table is requested in CREATE flow by " + consumer);
-                }
-                return true;
-            });
-        } else {
-            return fieldsToFetch;
-        }
     }
 
     private <E extends EntityType<E>, T extends EntityChange<E>> Collection<T> filterCommands(Collection<T> changes, List<ChangesFilter<E>> changesFilters, ChangeOperation changeOperation, ChangeContext changeContext) {

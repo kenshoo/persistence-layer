@@ -13,18 +13,12 @@ dependencies {
     compile libraries.jool
     compile libraries.apacheCommons3
     compile libraries.mysqlConnector
-    compile libraries.springCore
-    compile libraries.springJDBC
-    compile libraries.springTransaction
-    compile libraries.springContext
-    compile libraries.springContextSupport
-    compile libraries.springBeans
+    compile libraries.guavaRetrying
 
     testCompile libraries.junit
     testCompile libraries.mockito
     testCompile libraries.shazamcrest
     testCompile libraries.hamcrest
-    testCompile libraries.springTest
 }
 
 jar {

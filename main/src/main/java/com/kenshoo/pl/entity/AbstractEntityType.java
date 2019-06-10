@@ -3,11 +3,19 @@ package com.kenshoo.pl.entity;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
+import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
 import com.kenshoo.pl.entity.converters.IdentityValueConverter;
 import com.kenshoo.pl.entity.equalityfunctions.EntityValueEqualityFunction;
-import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.internal.EmptyVirtualEntityFieldDbAdapter;
+import com.kenshoo.pl.entity.internal.EntityFieldImpl;
+import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
+import com.kenshoo.pl.entity.internal.PrototypedEntityFieldImpl;
+import com.kenshoo.pl.entity.internal.SimpleEntityFieldDbAdapter;
+import com.kenshoo.pl.entity.internal.VirtualEntityFieldDbAdapter;
+import com.kenshoo.pl.entity.internal.VirtualEntityFieldDbAdapter2;
+import com.kenshoo.pl.entity.internal.VirtualEntityFieldImpl;
 import org.jooq.Record;
 import org.jooq.TableField;
 
@@ -63,6 +71,12 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     protected <T, T1> EntityField<E, T> virtualField(EntityField<E, T1> field1, Function<T1, T> translator,
                                                      ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
         return virtualField(new VirtualEntityFieldDbAdapter<>(field1.getDbAdapter(), translator), stringValueConverter, valueEqualityFunction);
+    }
+
+    protected <T> EntityField<E, T> virtualField(DataTable table,
+                                                 ValueConverter<T, String> stringValueConverter,
+                                                 EntityValueEqualityFunction<T> valueEqualityFunction) {
+        return virtualField(new EmptyVirtualEntityFieldDbAdapter<>(table), stringValueConverter, valueEqualityFunction);
     }
 
     protected <T, T1, T2> EntityField<E, T> virtualField(EntityField<E, T1> field1, EntityField<E, T2> field2, BiFunction<T1, T2, T> combiner,

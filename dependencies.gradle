@@ -1,7 +1,6 @@
 project.ext.set("libraries", "")
 
 ext.jackson_version = "2.7.8"
-ext.springVersion = "4.2.9.RELEASE"
 
 project.ext.libraries = [
         slf4j                : 'org.slf4j:slf4j-api:1.7.21',
@@ -23,14 +22,7 @@ project.ext.libraries = [
         jackson_annotations  : "com.fasterxml.jackson.core:jackson-annotations:$jackson_version",
         jackson_databind     : "com.fasterxml.jackson.core:jackson-databind:$jackson_version",
         jackson_json_provider: "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:$jackson_version",
-
-        springCore: "org.springframework:spring-core:$springVersion",
-        springJDBC: "org.springframework:spring-jdbc:$springVersion",
-        springTransaction: "org.springframework:spring-tx:$springVersion",
-        springTest: "org.springframework:spring-test:$springVersion",
-        springContext: "org.springframework:spring-context:$springVersion",
-        springContextSupport: "org.springframework:spring-context-support:$springVersion",
-        springBeans: "org.springframework:spring-beans:$springVersion",
+        guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
 
         dockerTest           : 'com.kenshoo:docker-test:4.5.+'
 

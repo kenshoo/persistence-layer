@@ -3,9 +3,17 @@ package com.kenshoo.pl.entity;
 import com.kenshoo.pl.entity.internal.EntityFieldImpl;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
-import com.kenshoo.pl.entity.spi.*;
+import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
+import com.kenshoo.pl.entity.spi.FieldValueSupplier;
+import com.kenshoo.pl.entity.spi.MultiFieldValueSupplier;
+import com.kenshoo.pl.entity.spi.NotSuppliedException;
+import com.kenshoo.pl.entity.spi.ValidationException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
@@ -18,7 +26,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements En
     private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
 
-
+    private ChangeEntityCommand parent;
     private Identifier<E> keysToParent;
 
     public ChangeEntityCommand(E entityType) {
@@ -115,8 +123,8 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements En
 
     public <CHILD extends EntityType<CHILD>> void addChild(ChangeEntityCommand<CHILD> childCmd) {
         children.add(childCmd);
+        childCmd.parent = this;
     }
-
 
     @Override
     public <CHILD extends EntityType<CHILD>> Stream<ChangeEntityCommand<CHILD>> getChildren(CHILD type) {
@@ -181,7 +189,11 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements En
         this.keysToParent = keysToParent;
     }
 
-    void updateOperator(ChangeOperation changeOperation) {
-
+    public void updateOperator(ChangeOperation changeOperation) {
     }
+
+    public ChangeEntityCommand getParent() {
+        return parent;
+    }
+
 }

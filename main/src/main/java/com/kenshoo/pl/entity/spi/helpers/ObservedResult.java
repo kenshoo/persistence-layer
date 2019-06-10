@@ -1,7 +1,11 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
 
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
+import com.kenshoo.pl.entity.Identifier;
 
 import java.util.Optional;
 

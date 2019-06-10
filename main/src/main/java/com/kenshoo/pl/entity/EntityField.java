@@ -15,4 +15,6 @@ public interface EntityField<E extends EntityType<E>, T> {
     default boolean isVirtual() {
         return false;
     }
+
+    EntityType<E> getEntityType();
 }

@@ -1,4 +1,4 @@
-package com.kenshoo.pl.jooq;
+package com.kenshoo.jooq;
 
 import org.jooq.DataType;
 import org.jooq.Record;

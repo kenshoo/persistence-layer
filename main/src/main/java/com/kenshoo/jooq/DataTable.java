@@ -1,4 +1,4 @@
-package com.kenshoo.pl.jooq;
+package com.kenshoo.jooq;
 
 import org.jooq.ForeignKey;
 import org.jooq.Record;

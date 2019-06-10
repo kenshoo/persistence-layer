@@ -1,28 +1,116 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Sets;
-import com.kenshoo.pl.entity.*;
-import org.springframework.stereotype.Component;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeFlowConfig;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldFetchRequest;
+import com.kenshoo.pl.entity.Identifier;
+import com.kenshoo.pl.entity.UniqueKey;
+import org.jooq.DSLContext;
 
-import javax.annotation.Resource;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
+import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.UniqueKeyValue.concat;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.jooq.lambda.Seq.seq;
 
 
-@Component
 public class EntitiesToContextFetcher {
 
-    @Resource
-    private EntitiesFetcher entitiesFetcher;
+    private final EntitiesFetcher entitiesFetcher;
+
+    public EntitiesToContextFetcher(DSLContext dslContext) {
+        this.entitiesFetcher = new EntitiesFetcher(dslContext);
+    }
+
+    public EntitiesToContextFetcher(EntitiesFetcher entitiesFetcher) {
+        this.entitiesFetcher = entitiesFetcher;
+    }
+
+    public <E extends EntityType<E>> void fetchEntities(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext context, ChangeFlowConfig<E> flow) {
+
+        commands.forEach(c -> context.addEntity(c, Entity.EMPTY));
+
+        final Set<EntityField<?, ?>> fieldsToFetch = context.getFetchRequests().stream().
+                filter( r -> r.getWhereToQuery().equals(flow.getEntityType()) && r.supports(changeOperation)).
+                map(FieldFetchRequest::getEntityField).
+                collect(toSet());
+
+        if (changeOperation == CREATE) {
+            fetchEntitiesByForeignKeys(commands, fieldsToFetch, context, flow);
+        } else {
+            fetchEntitiesByKeys(commands, fieldsToFetch, context, flow);
+        }
+
+        populateFieldsFromAllParents(seq(commands).filter(notMissing(context)).toList(), context, flow.getEntityType());
+    }
+
+    private <E extends EntityType<E>> void populateFieldsFromAllParents(List<? extends ChangeEntityCommand<E>> commands, ChangeContext context, EntityType<E> currentLevel) {
+
+        if (commands.isEmpty()) {
+            return;
+        }
+
+        seq(context.getFetchRequests())
+                .filter(askedBy(currentLevel).and(not(queriedOn(currentLevel))))
+                .groupBy(r -> r.getWhereToQuery())
+                .forEach((level, requestedFields) -> {
+                    final List<EntityField> parentFields = seq(requestedFields).map(f -> (EntityField)f.getEntityField()).toList();
+                    commands.forEach(cmd -> populateFieldsFromOneLevel(context, level, parentFields, cmd));
+                });
+    }
+
+    private <E extends EntityType<E>> void populateFieldsFromOneLevel(
+            ChangeContext context,
+            EntityType parentLevel,
+            List<EntityField> parentFields,
+            ChangeEntityCommand<E> cmd) {
+
+        final ChangeEntityCommand ancestor = getAncestor(cmd, parentLevel);
+        final EntityImpl entity = (EntityImpl)context.getEntity(cmd);
+        seq(parentFields).forEach(field -> entity.set(field, getValue(context, ancestor, field)));
+    }
 
 
-    public <E extends EntityType<E>> void fetchEntitiesByKeys(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
+    ChangeEntityCommand getAncestor(ChangeEntityCommand cmd, EntityType level) {
+        for (ChangeEntityCommand parent = cmd.getParent(); parent != null; parent = parent.getParent()) {
+            if (parent.getEntityType().equals(level)) {
+                return parent;
+            }
+        }
+        throw new RuntimeException("didn't find ancestor of level " + level.getName() + " for command with entity " + cmd.getEntityType().getName());
+    }
+
+    private Object getValue(ChangeContext context, ChangeEntityCommand cmd, EntityField field) {
+        return cmd.containsField(field) ? cmd.get(field) : context.getEntity(cmd).get(field);
+    }
+
+    private Predicate<FieldFetchRequest> askedBy(EntityType e) {
+        return r -> r.getWhoAskedForThis().equals(e);
+    }
+
+    private <T> Predicate<T> not(Predicate<T> p) {
+        return p.negate();
+    }
+
+    private Predicate<FieldFetchRequest> queriedOn(EntityType e) {
+        return r -> r.getWhereToQuery().equals(e);
+    }
+
+    private <E extends EntityType<E>> void fetchEntitiesByKeys(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
         Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(
                 Function.identity(),
                 cmd -> concat(cmd.getIdentifier(), cmd.getKeysToParent())));
@@ -32,10 +120,11 @@ public class EntitiesToContextFetcher {
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
 
-    public <E extends EntityType<E>> void fetchEntitiesByForeignKeys(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
+    private <E extends EntityType<E>> void fetchEntitiesByForeignKeys(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
         E entityType = flowConfig.getEntityType();
         Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields());
         if (foreignKeys.isEmpty()) {
+            commands.forEach(cmd -> changeContext.addEntity(cmd, new EntityImpl()));
             return;
         }
         final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
@@ -56,4 +145,7 @@ public class EntitiesToContextFetcher {
         }
     }
 
+    private <E extends EntityType<E>> Predicate<ChangeEntityCommand<E>> notMissing(ChangeContext context) {
+        return cmd -> context.getEntity(cmd) != Entity.EMPTY;
+    }
 }

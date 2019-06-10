@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 
+
 public class FieldsRequiredByChildrenFilter <PARENT extends EntityType<PARENT>> implements ChangesFilter<PARENT> {
     
     @Override

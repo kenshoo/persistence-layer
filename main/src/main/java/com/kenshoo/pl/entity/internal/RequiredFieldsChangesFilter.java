@@ -3,7 +3,14 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.ChangeEntityCommand;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityChange;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.SupportedChangeOperation;
+import com.kenshoo.pl.entity.ValidationError;
 
 import java.util.Collection;
 import java.util.Set;
