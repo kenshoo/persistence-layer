@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static java.lang.Integer.parseInt;
+
 public class TestJooqConfig {
 
     public static DSLContext create() {
@@ -24,7 +26,7 @@ public class TestJooqConfig {
     }
 
     private static ConnectionImpl connection(Properties props) throws SQLException {
-        return new ConnectionImpl(props.getProperty("server"), 3306, props, props.getProperty("database"), null);
+        return new ConnectionImpl(props.getProperty("server"), parseInt(props.getProperty("port")), props, props.getProperty("database"), null);
     }
 
     private static Properties readProperties(String resourceName) throws IOException {

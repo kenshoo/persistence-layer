@@ -9,3 +9,4 @@ services:
       - ./docker/app.cnf:/etc/mysql/conf.d/app.cnf
     environment:
       - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=test
