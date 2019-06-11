@@ -1,2 +1,2 @@
-# persistence_layer
+# persistence-layer
 Persistence Layer - Better than Hibernate
