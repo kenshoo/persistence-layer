@@ -11,10 +11,10 @@ public abstract class EntityChangeResult<E extends EntityType<E>, ID extends Ide
     private final Collection<ValidationError> errors;
 
     public EntityChangeResult(C command) {
-        this(command, Collections.<ValidationError>emptyList());
+        this(command, Collections.emptyList());
     }
 
-    public EntityChangeResult(C command, Collection<ValidationError> errors) {
+    public EntityChangeResult(C command, Iterable<ValidationError> errors) {
         this.command = command;
         this.errors = ImmutableList.copyOf(errors);
     }

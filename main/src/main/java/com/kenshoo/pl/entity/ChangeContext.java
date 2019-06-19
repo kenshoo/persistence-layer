@@ -3,11 +3,15 @@ package com.kenshoo.pl.entity;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.jooq.lambda.Seq.seq;
 
 public class ChangeContext {
 
@@ -32,8 +36,14 @@ public class ChangeContext {
         return !validationErrors.isEmpty();
     }
 
-    public Collection<ValidationError> getValidationErrors(EntityChange entityChange) {
-        return validationErrors.get(entityChange);
+    Seq<ValidationError> getValidationErrorsRecursive(ChangeEntityCommand cmd) {
+        final Seq<ValidationError> parentErrors = seq(validationErrors.get(cmd));
+        if (cmd.getChildren().findAny().isPresent()) {
+            Stream<ChangeEntityCommand> children = cmd.getChildren();
+            return parentErrors.concat(children.flatMap(this::getValidationErrorsRecursive));
+        } else {
+            return parentErrors;
+        }
     }
 
     public boolean containsError(EntityChange entityChange) {

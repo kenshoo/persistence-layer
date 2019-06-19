@@ -1,26 +1,10 @@
 package com.kenshoo.pl.one2many;
 
+import com.google.common.collect.Iterators;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.FluidPersistenceCmdBuilder;
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeFlowConfig;
-import com.kenshoo.pl.entity.ChangeFlowConfigBuilderFactory;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.CreateEntityCommand;
-import com.kenshoo.pl.entity.CreateResult;
-import com.kenshoo.pl.entity.DeleteEntityCommand;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.InsertOnDuplicateUpdateCommand;
-import com.kenshoo.pl.entity.PLContext;
-import com.kenshoo.pl.entity.PersistenceLayer;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.UpdateEntityCommand;
-import com.kenshoo.pl.entity.UpdateResult;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangeValidator;
 import com.kenshoo.pl.entity.spi.FieldComplexValidator;
 import com.kenshoo.pl.entity.spi.FieldValidator;
@@ -57,7 +41,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class PersistenceLayerOneToManyTest {
 
@@ -328,7 +314,7 @@ public class PersistenceLayerOneToManyTest {
                 newParent().with(ParentEntity.NAME, "parent2").with(insertChild().with(ORDINAL, 0).with(FIELD_1, "two"))
         );
 
-        update(parentFlow(childFlow(field1ShouldNotBe("INVALID"))),
+        UpdateResult<ParentEntity, ParentEntity.Key> results = update(parentFlow(childFlow(field1ShouldNotBe("INVALID"))),
                 existingParentWithId(generatedId(0)).with(ParentEntity.NAME, "parent1_new").with(updateChild(0).with(FIELD_1, "INVALID")),
                 existingParentWithId(generatedId(1)).with(ParentEntity.NAME, "parent2_new").with(updateChild(0).with(FIELD_1, "valid child"))
         );
@@ -338,6 +324,18 @@ public class PersistenceLayerOneToManyTest {
 
         List<String> parentNames = jooq.select().from(PARENT).orderBy(PARENT.id).fetch(r -> r.get(PARENT.name));
         assertThat(parentNames, contains("parent1", "parent2_new"));
+
+        assertFalse(first(results).isSuccess());
+        assertThat(first(results).getErrors(), hasSize(1));
+        assertTrue(second(results).isSuccess());
+    }
+
+    private EntityChangeResult<ParentEntity, ParentEntity.Key, ?> first(ChangeResult<ParentEntity, ParentEntity.Key, ?> results) {
+        return results.iterator().next();
+    }
+
+    private EntityChangeResult<ParentEntity, ParentEntity.Key, ?> second(ChangeResult<ParentEntity, ParentEntity.Key, ?> results) {
+        return Iterators.get(results.iterator(), 1);
     }
 
     @Test

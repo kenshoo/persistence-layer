@@ -13,7 +13,6 @@ import com.kenshoo.pl.entity.spi.ValidationException;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -42,64 +41,33 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        Collection<EntityCreateResult<ROOT, PK>> results = new ArrayList<>(commands.size());
-        for (CreateEntityCommand<ROOT> command : commands) {
-            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
-            if (commandErrors.isEmpty()) {
-                //noinspection unchecked
-                PK identifier = (PK) primaryKey.createValue(command);
-                command.setIdentifier(identifier);
-                results.add(new EntityCreateResult<>(command));
-            } else {
-                results.add(new EntityCreateResult<>(command, commandErrors));
-            }
-        }
-        return new CreateResult<>(results, changeContext.getStats());
+        return new CreateResult<>(
+                seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                changeContext.getStats());
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        Collection<EntityUpdateResult<ROOT, ID>> results = new ArrayList<>(commands.size());
-        for (UpdateEntityCommand<ROOT, ID> command : commands) {
-            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
-            if (commandErrors.isEmpty()) {
-                results.add(new EntityUpdateResult<>(command));
-            } else {
-                results.add(new EntityUpdateResult<>(command, commandErrors));
-            }
-        }
-        return new UpdateResult<>(results, changeContext.getStats());
+        return new UpdateResult<>(
+                seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                changeContext.getStats());
     }
 
     public <ID extends Identifier<ROOT>> DeleteResult<ROOT, ID> delete(Collection<? extends DeleteEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        Collection<EntityDeleteResult<ROOT, ID>> results = new ArrayList<>(commands.size());
-        for (DeleteEntityCommand<ROOT, ID> command : commands) {
-            Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
-            if (commandErrors.isEmpty()) {
-                results.add(new EntityDeleteResult<>(command));
-            } else {
-                results.add(new EntityDeleteResult<>(command, commandErrors));
-            }
-        }
-        return new DeleteResult<>(results, changeContext.getStats());
+        return new DeleteResult<>(
+                seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                changeContext.getStats());
     }
 
     public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        return new InsertOnDuplicateUpdateResult<>(seq(commands).map(cmd -> toResult(changeContext, cmd)).toList(), changeContext.getStats());
-    }
-
-    private <ID extends Identifier<ROOT>> EntityInsertOnDuplicateUpdateResult<ROOT, ID> toResult(ChangeContext changeContext, InsertOnDuplicateUpdateCommand<ROOT, ID> command) {
-        Collection<ValidationError> commandErrors = changeContext.getValidationErrors(command);
-        if (commandErrors.isEmpty()) {
-            return new EntityInsertOnDuplicateUpdateResult<>(command);
-        } else {
-            return new EntityInsertOnDuplicateUpdateResult<>(command, commandErrors);
-        }
+        return new InsertOnDuplicateUpdateResult<>(
+                seq(commands).map(cmd -> new EntityInsertOnDuplicateUpdateResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                changeContext.getStats());
     }
 
     private void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {

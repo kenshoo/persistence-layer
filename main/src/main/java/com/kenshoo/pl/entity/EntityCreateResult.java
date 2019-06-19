@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import java.util.Collection;
 import java.util.Collections;
 
 public class EntityCreateResult<E extends EntityType<E>, ID extends Identifier<E>> extends EntityChangeResult<E, ID, CreateEntityCommand<E>> {
@@ -9,7 +8,7 @@ public class EntityCreateResult<E extends EntityType<E>, ID extends Identifier<E
         this(command, Collections.emptyList());
     }
 
-    public EntityCreateResult(CreateEntityCommand<E> command, Collection<ValidationError> errors) {
+    public EntityCreateResult(CreateEntityCommand<E> command, Iterable<ValidationError> errors) {
         super(command, errors);
     }
 
