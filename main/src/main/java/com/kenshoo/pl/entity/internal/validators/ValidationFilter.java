@@ -28,12 +28,7 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
         for (ChangesValidator<E> validator : validators) {
             validator.validate(commands, changeOperation, changeContext);
         }
-        return Collections2.filter(commands, new Predicate<EntityChange<E>>() {
-            @Override
-            public boolean apply(EntityChange<E> entityChange) {
-                return !changeContext.containsError(entityChange);
-            }
-        });
+        return Collections2.filter(commands, (Predicate<EntityChange<E>>) entityChange -> !changeContext.containsErrorNonRecursive(entityChange));
     }
 
     @Override

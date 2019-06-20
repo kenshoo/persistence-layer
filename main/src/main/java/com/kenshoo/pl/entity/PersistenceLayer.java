@@ -42,7 +42,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
         CreateResult<ROOT, PK> results = new CreateResult<>(
-                seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
         seq(results.iterator()).filter(r -> r.isSuccess()).forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
         return results;
@@ -52,7 +52,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
         return new UpdateResult<>(
-                seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
     }
 
@@ -60,7 +60,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
         return new DeleteResult<>(
-                seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
     }
 
@@ -68,33 +68,17 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
         return new InsertOnDuplicateUpdateResult<>(
-                seq(commands).map(cmd -> new EntityInsertOnDuplicateUpdateResult<>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
+                seq(commands).map(cmd -> new EntityInsertOnDuplicateUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
     }
 
     private void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
-        Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> isValidRecursive(cmd, context, flowConfig)).toList();
+        Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
         if (!validCmds.isEmpty()) {
             flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, context))));
         }
-    }
-
-    private <E extends EntityType<E>> boolean isValidRecursive(ChangeEntityCommand<E> cmd, ChangeContext context, ChangeFlowConfig<E> flow) {
-        if (context.containsError(cmd)) {
-            return false;
-        }
-        for (ChangeFlowConfig<? extends EntityType<?>> childFlow : flow.childFlows()) {
-            if (!isValidChildren(cmd, context, childFlow)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> boolean isValidChildren(ChangeEntityCommand<PARENT> cmd, ChangeContext context, ChangeFlowConfig<CHILD> childFlow) {
-        return cmd.getChildren(childFlow.getEntityType()).allMatch(childCmd -> isValidRecursive(childCmd, context, childFlow));
     }
 
     private <E extends EntityType<E>> void prepareRecursive(
@@ -111,7 +95,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
         prepareOneLayer(only(commands, withOperator(CREATE)), CREATE, context, flow);
 
-        List<? extends ChangeEntityCommand<E>> validChanges = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
+        List<? extends ChangeEntityCommand<E>> validChanges = seq(commands).filter(cmd -> !context.containsErrorNonRecursive(cmd)).toList();
 
         flow.childFlows().forEach(childFlow -> populateKeyToParent(validChanges, childFlow, context));
 
