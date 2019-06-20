@@ -199,9 +199,11 @@ public class PersistenceLayerTest {
                         .from(mainTable)
                         .fetchMap(mainTable.id);
 
+        assertThat(command1.getIdentifier().getValues().findFirst().get(), is(newId));
         assertThat(result.get(newId).value2(), is(TestEnum.Charlie.name()));
         assertThat(result.get(newId).value3(), is(PARENT_ID_1));
 
+        assertThat(command2.getIdentifier().getValues().findFirst().get(), is(newId + 1));
         assertThat(result.get(newId + 1).value2(), is(TestEnum.Delta.name()));
         assertThat(result.get(newId + 1).value3(), is(PARENT_ID_2));
     }

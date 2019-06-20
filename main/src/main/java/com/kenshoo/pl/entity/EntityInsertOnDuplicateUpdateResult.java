@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import java.util.Collection;
 
 public class EntityInsertOnDuplicateUpdateResult<E extends EntityType<E>, ID extends Identifier<E>> extends EntityChangeResult<E, ID, InsertOnDuplicateUpdateCommand<E, ID>> {
 
@@ -8,7 +7,7 @@ public class EntityInsertOnDuplicateUpdateResult<E extends EntityType<E>, ID ext
         super(command);
     }
 
-    public EntityInsertOnDuplicateUpdateResult(InsertOnDuplicateUpdateCommand<E, ID> command, Collection<ValidationError> errors) {
+    public EntityInsertOnDuplicateUpdateResult(InsertOnDuplicateUpdateCommand<E, ID> command, Iterable<ValidationError> errors) {
         super(command, errors);
     }
 

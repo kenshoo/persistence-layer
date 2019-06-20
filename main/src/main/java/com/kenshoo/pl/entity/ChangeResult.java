@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
+import static org.jooq.lambda.Seq.seq;
 
 public class ChangeResult<E extends EntityType<E>, ID extends Identifier<E>, C extends ChangeEntityCommand<E>> implements Iterable<EntityChangeResult<E, ID, C>> {
 
@@ -15,9 +16,9 @@ public class ChangeResult<E extends EntityType<E>, ID extends Identifier<E>, C e
     private final Map<ChangeEntityCommand<E>, EntityChangeResult<E, ID, C>> resultsAsMap;
     private final PersistentLayerStats stats;
 
-    public ChangeResult(Collection<? extends EntityChangeResult<E, ID, C>> changeResults, PersistentLayerStats stats) {
+    public ChangeResult(Iterable<? extends EntityChangeResult<E, ID, C>> changeResults, PersistentLayerStats stats) {
         this.changeResults = ImmutableList.copyOf(changeResults);
-        resultsAsMap = changeResults.stream().collect(toMap(EntityChangeResult::getCommand, Function.identity()));
+        resultsAsMap = seq(this.changeResults).collect(toMap(EntityChangeResult::getCommand, Function.identity()));
         this.stats = stats;
     }
 
