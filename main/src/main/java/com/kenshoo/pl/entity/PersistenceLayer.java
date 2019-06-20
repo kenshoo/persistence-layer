@@ -41,9 +41,11 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        return new CreateResult<>(
+        CreateResult<ROOT, PK> results = new CreateResult<>(
                 seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrorsRecursive(cmd))),
                 changeContext.getStats());
+        seq(results.iterator()).filter(r -> r.isSuccess()).forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
+        return results;
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
