@@ -36,17 +36,21 @@ public class ChangeContext {
         return !validationErrors.isEmpty();
     }
 
-    Seq<ValidationError> getValidationErrorsRecursive(ChangeEntityCommand cmd) {
+    public Seq<ValidationError> getValidationErrors(EntityChange cmd) {
         final Seq<ValidationError> parentErrors = seq(validationErrors.get(cmd));
         if (cmd.getChildren().findAny().isPresent()) {
             Stream<ChangeEntityCommand> children = cmd.getChildren();
-            return parentErrors.concat(children.flatMap(this::getValidationErrorsRecursive));
+            return parentErrors.concat(children.flatMap(this::getValidationErrors));
         } else {
             return parentErrors;
         }
     }
 
     public boolean containsError(EntityChange entityChange) {
+        return getValidationErrors(entityChange).isNotEmpty();
+    }
+
+    public boolean containsErrorNonRecursive(EntityChange entityChange) {
         return validationErrors.containsKey(entityChange);
     }
 
