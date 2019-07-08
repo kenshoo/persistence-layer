@@ -1,12 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.FieldsCombinationValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,21 +16,20 @@ import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FieldsCombinationValidationAdapterTest {
 
-    final static String STRING_VALUE1 = "value1";
-    final static String STRING_VALUE2 = "value2";
+    final private static String STRING_VALUE1 = "value1";
+    final private static String STRING_VALUE2 = "value2";
 
     @Mock
     private FieldsCombinationValidator<TestEntity> validator;
-
-    @Mock
-    private ChangeEntityCommand<TestEntity> command;
 
     @Mock
     private EntityField<TestEntity,String> field1;
@@ -64,6 +57,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Before
     public void setUp(){
+        when(validator.validateWhen()).thenReturn(p -> true);
         when(validator.validatedFields()).thenReturn(Stream.of(field1, field2));
         when(entityChange.isFieldChanged(field1)).thenReturn(true);
         when(entityChange.isFieldChanged(field2)).thenReturn(false);
@@ -119,7 +113,6 @@ public class FieldsCombinationValidationAdapterTest {
         }));
     }
 
-
     @Test
     public void testValidateOverrideForUpdate() {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
@@ -153,12 +146,25 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void testFetchFieldsOverrideForUpdate() {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
-        when(fieldSubstitution.fetchFields()).thenReturn(Stream.of(field3));
+        when(validator.fetchFields()).thenReturn(Stream.of(field3));
 
         Collection<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.UPDATE).collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
         assertTrue("Fetch field3", fields.contains(field3));
+    }
 
+    @Test
+    public void skipValidationForUpdate() {
+        when(validator.validateWhen()).thenReturn(p -> false);
+        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        verify(validator, never()).validate(any());
+    }
+
+    @Test
+    public void skipValidationForCreate() {
+        when(validator.validateWhen()).thenReturn(p -> false);
+        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        verify(validator, never()).validate(any());
     }
 }

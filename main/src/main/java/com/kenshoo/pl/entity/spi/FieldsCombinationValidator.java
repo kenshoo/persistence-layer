@@ -33,6 +33,20 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
     ValidationError validate(FieldsValueMap<E> fieldsValueMap);
 
     /**
+     * @return a list of fields to fetch.
+     */
+    default Stream<EntityField<?, ?>> fetchFields() {
+        return Stream.of();
+    }
+
+    /**
+     * @return Predicate when should validate fields.
+     */
+    default Predicate<Entity> validateWhen() {
+        return e -> true;
+    }
+
+    /**
      * @return a field's substitutions.
      */
     default Stream<Substitution<E, ?>> substitutions() {
@@ -45,11 +59,7 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
          * @return the field to substitute
          */
         EntityField<E, T> overrideField();
-        /**
-         * @return the list of fields to fetch for substitution logic
-         */
 
-        Stream<EntityField<?, ?>> fetchFields();
         /**
          * @return the condition when field should be substituted
          */
