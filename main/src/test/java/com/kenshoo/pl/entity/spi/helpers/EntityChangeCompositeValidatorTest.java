@@ -143,6 +143,7 @@ public class EntityChangeCompositeValidatorTest {
 
     @Test
     public void registerFieldsCombinationValidatorTest() {
+        when(fieldsCombinationValidator.validateWhen()).thenReturn(p->true);
         when(fieldsCombinationValidator.validatedFields()).thenReturn(Stream.of(TestEntity.FIELD_1)).thenReturn(Stream.of(TestEntity.FIELD_1));
         validator.register(fieldsCombinationValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);

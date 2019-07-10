@@ -36,7 +36,7 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
 
     @Override
     public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
-        Stream<EntityField<?, ?>> substitutionsFields = validator.substitutions().flatMap(FieldsCombinationValidator.Substitution::fetchFields);
+        Stream<EntityField<?, ?>> substitutionsFields = validator.fetchFields();
         if (changeOperation == ChangeOperation.UPDATE) {
             return Stream.concat(validator.validatedFields(), substitutionsFields);
         } else {
@@ -46,14 +46,24 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
-        ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, entity, validator.validatedFields(), changeOperation);
-        if (validator.substitutions().findAny() != null) {
-            Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFunctions =
-                            validator.substitutions().
-                            collect(Collectors.toMap(FieldsCombinationValidator.Substitution::overrideField, Function.identity()));
-            return validator.validate(new OverrideFieldsCombination<>(entity, resultingFieldsCombination, overrideFunctions));
+        if(validator.validateWhen().test(entity)) {
+            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, entity, validator.validatedFields(), changeOperation);
+            if (hasSubstitutions()) {
+                return validator.validate(new OverrideFieldsCombination<>(entity, resultingFieldsCombination, mapFieldToOverrideFunction()));
+            } else {
+                return validator.validate(resultingFieldsCombination);
+            }
         } else {
-            return validator.validate(resultingFieldsCombination);
+            return null;
         }
+    }
+
+    private boolean hasSubstitutions() {
+        return validator.substitutions().findAny() != null;
+    }
+
+    private Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> mapFieldToOverrideFunction() {
+        return validator.substitutions().
+                collect(Collectors.toMap(FieldsCombinationValidator.Substitution::overrideField, Function.identity()));
     }
 }
