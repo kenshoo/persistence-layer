@@ -30,12 +30,15 @@ import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
 
+    private final static Label NonExcludebale = new Label() {};
+
     private final E entityType;
     private final List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers;
     private final List<OutputGenerator<E>> outputGenerators;
     private final List<ChangesValidator<E>> validators;
     private final Set<EntityField<E, ?>> requiredRelationFields;
     private final Set<EntityField<E, ?>> requiredFields;
+
     private final List<ChangeFlowConfig<? extends EntityType<?>>> childFlows;
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
@@ -111,7 +114,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
     public static class Builder<E extends EntityType<E>> {
         private final E entityType;
-        private final List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers = new ArrayList<>();
+        private final List<Labeled<? extends PostFetchCommandEnricher<E>>> postFetchCommandEnrichers = new ArrayList<>();
         private final List<ChangesValidator<E>> validators = new ArrayList<>();
         private final List<OutputGenerator<E>> outputGenerators = new ArrayList<>();
         private final Set<EntityField<E, ?>> requiredRelationFields = new HashSet<>();
@@ -125,13 +128,23 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             this.entityType = entityType;
         }
 
+        public Builder<E> withLabeledPostFetchCommandEnricher(PostFetchCommandEnricher<E> enricher, Label label) {
+            postFetchCommandEnrichers.add(new Labeled<>(enricher, label));
+            return this;
+        }
+
         public Builder<E> withPostFetchCommandEnricher(PostFetchCommandEnricher<E> enricher) {
-            postFetchCommandEnrichers.add(enricher);
+            postFetchCommandEnrichers.add(new Labeled<>(enricher, NonExcludebale));
+            return this;
+        }
+
+        public Builder<E> withLabeledPostFetchCommandEnrichers(Collection<? extends PostFetchCommandEnricher<E>> enrichers, Label label) {
+            enrichers.forEach(e -> postFetchCommandEnrichers.add(new Labeled<>(e, label)));
             return this;
         }
 
         public Builder<E> withPostFetchCommandEnrichers(Collection<? extends PostFetchCommandEnricher<E>> enrichers) {
-            postFetchCommandEnrichers.addAll(enrichers);
+            enrichers.forEach(e -> postFetchCommandEnrichers.add(new Labeled<>(e, NonExcludebale)));
             return this;
         }
 
@@ -158,6 +171,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         public Builder<E> withoutValidators() {
             this.validators.clear();
             this.flowConfigBuilders.forEach(Builder::withoutValidators);
+            return this;
+        }
+
+        public Builder<E> withoutPostFetchCommandEnrichers(Label label){
+            this.postFetchCommandEnrichers.removeIf(enricher -> enricher.lablel().equals(label));
             return this;
         }
 
@@ -202,7 +220,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         public ChangeFlowConfig<E> build() {
-            ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.<PostFetchCommandEnricher<E>>builder().addAll(postFetchCommandEnrichers);
+            ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.builder();
+            postFetchCommandEnrichers.forEach(excludableElement -> enrichers.add(excludableElement.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
             return new ChangeFlowConfig<>(entityType,
                     enrichers.build(),
@@ -213,6 +232,25 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                     flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
                     retryer
             );
+        }
+
+        static private class Labeled<Element> {
+
+            private final Element element;
+            private final Label label;
+
+            Labeled(Element element, Label label) {
+                this.element = element;
+                this.label = label;
+            }
+
+            Element element() {
+                return element;
+            }
+
+            Label lablel() {
+                return label;
+            }
         }
     }
 
