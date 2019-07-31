@@ -176,6 +176,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         public Builder<E> withoutPostFetchCommandEnrichers(Label label){
             this.postFetchCommandEnrichers.removeIf(enricher -> enricher.lablel().equals(label));
+            this.flowConfigBuilders.forEach(builder -> builder.withoutPostFetchCommandEnrichers(label));
             return this;
         }
 
