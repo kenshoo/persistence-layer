@@ -230,7 +230,7 @@ public class CommandsExecutorTest {
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {
-        
+
         private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         protected final TableField<Record, Integer> field2 = createField("field2", SQLDataType.INTEGER);
