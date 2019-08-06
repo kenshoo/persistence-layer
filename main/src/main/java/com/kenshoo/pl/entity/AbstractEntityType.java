@@ -1,21 +1,14 @@
 package com.kenshoo.pl.entity;
 
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.BiMap;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.annotation.Id;
+import com.kenshoo.pl.entity.annotation.IdGeneration;
 import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
 import com.kenshoo.pl.entity.converters.IdentityValueConverter;
 import com.kenshoo.pl.entity.equalityfunctions.EntityValueEqualityFunction;
-import com.kenshoo.pl.entity.internal.EmptyVirtualEntityFieldDbAdapter;
-import com.kenshoo.pl.entity.internal.EntityFieldImpl;
-import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
-import com.kenshoo.pl.entity.internal.PrototypedEntityFieldImpl;
-import com.kenshoo.pl.entity.internal.SimpleEntityFieldDbAdapter;
-import com.kenshoo.pl.entity.internal.VirtualEntityFieldDbAdapter;
-import com.kenshoo.pl.entity.internal.VirtualEntityFieldDbAdapter2;
-import com.kenshoo.pl.entity.internal.VirtualEntityFieldImpl;
+import com.kenshoo.pl.entity.internal.*;
 import org.jooq.Record;
 import org.jooq.TableField;
 
@@ -27,13 +20,17 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Suppliers.memoize;
+import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
+
 public abstract class AbstractEntityType<E extends EntityType<E>> implements EntityType<E> {
 
+    private final Supplier<Optional<IdField<E>>> idField = memoize(this::scanForIdField);
     private final String name;
     private Collection<EntityField<E, ?>> fields = new ArrayList<>();
     private Collection<PrototypedEntityField<E, ?>> prototypedFields = new ArrayList<>();
 
-    private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = Suppliers.memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this.getClass()));
+    private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this.getClass()));
 
     protected AbstractEntityType(String name) {
         this.name = name;
@@ -130,15 +127,28 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
         return name;
     }
 
+    private Optional<IdField<E>> scanForIdField() {
+        Optional<IdField<E>> idField = getFields()
+                .map(field -> Optional.ofNullable(getFieldAnnotation(this, field, Id.class)).map(a -> new IdField<>((EntityField<E, ? extends Number>)field, a.value())))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+
+        if (idField.isPresent() && !Number.class.isAssignableFrom(idField.get().getField().getValueClass())) {
+            throw new RuntimeException("Field marked with " + Id.class.getName() + " should be either Integer or Long " +
+                    ", field " + this.toFieldName(idField.get().getField()) + " is of type " + idField.get().getField().getStringValueConverter().getValueClass().getName());
+        }
+        return idField;
+    }
+
     @Override
     public Optional<EntityField<E, ? extends Number>> getIdField() {
-        Optional<EntityField<E, ?>> idField = getFields().filter(field -> EntityTypeReflectionUtil.getFieldAnnotation(this, field, Id.class) != null).findFirst();
-        if (idField.isPresent() && !Number.class.isAssignableFrom(idField.get().getValueClass())) {
-            throw new RuntimeException("Field marked with " + Id.class.getName() + " should be either Integer or Long " +
-                    ", field " + this.toFieldName(idField.get()) + " is of type " + idField.get().getStringValueConverter().getValueClass().getName());
-        }
-        //noinspection unchecked
-        return (Optional<EntityField<E, ? extends Number>>) (Optional) idField;
+        return idField.get().map(IdField::getField);
+    }
+
+    @Override
+    public Optional<IdGeneration> getIdGeneration() {
+        return idField.get().map(IdField::getIdGeneration);
     }
 
     @Override

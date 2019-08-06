@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.data.CreateRecordCommand;
+import com.kenshoo.pl.entity.annotation.IdGeneration;
 import org.jooq.Key;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -26,6 +27,11 @@ public interface EntityType<E extends EntityType<E>> {
     default Optional<EntityField<E, ? extends Number>> getIdField() {
         return Optional.empty();
     }
+
+    default Optional<IdGeneration> getIdGeneration() {
+        return Optional.empty();
+    }
+
 
     Stream<EntityField<E, ?>> getFields();
 
