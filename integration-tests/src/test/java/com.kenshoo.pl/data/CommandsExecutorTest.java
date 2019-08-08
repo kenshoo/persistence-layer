@@ -8,21 +8,21 @@ import com.kenshoo.jooq.TestJooqConfig;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.junit.Assert.assertThat;
 
 public class CommandsExecutorTest {
@@ -45,6 +45,10 @@ public class CommandsExecutorTest {
         String tableName = RandomStringUtils.randomAlphanumeric(15);
         table = new TestTable(tableName);
         DataTableUtils.createTable(dslContext, table);
+        dslContext.execute(String.format("ALTER TABLE %s MODIFY COLUMN %s %s auto_increment",
+                table.getName(),
+                table.id.getName(),
+                table.id.getDataType().getTypeName()));
         DataTableUtils.populateTable(dslContext, table, DATA);
         commandsExecutor = CommandsExecutor.of(dslContext);
     }
@@ -114,6 +118,53 @@ public class CommandsExecutorTest {
 
         Map<String, Object> actualValues1 = dslContext.select(table.field1, table.field2).from(table).where(table.id.eq(5)).fetchOneMap();
         assertThat(actualValues1, Matchers.<Map<String, Object>>is(ImmutableMap.<String, Object>of(table.field1.getName(), "Echo", table.field2.getName(), 50)));
+    }
+
+    @Test
+    public void retrieveGeneratedId() {
+        List<TestCreateRecordCommand> commands = Arrays.asList(
+                new TestCreateRecordCommand().with(table.field1, "five"),
+                new TestCreateRecordCommand().with(table.field1, "six"),
+                new TestCreateRecordCommand().with(table.field1, "seven"),
+                new TestCreateRecordCommand().with(table.field1, "eight")
+        );
+
+        AffectedRows affectedRows = commandsExecutor.insertAndGetGeneratedIds(table, commands);
+
+        assertThat(affectedRows.getGeneratedIds(), contains(5L, 6L, 7L, 8L));
+
+        List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
+                .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
+
+        assertThat(rowsInDB, contains(
+                "id: 5, field1: five",
+                "id: 6, field1: six",
+                "id: 7, field1: seven",
+                "id: 8, field1: eight"
+        ));
+    }
+
+    @Ignore // our next task
+    @Test
+    public void retrieveGeneratedIdsInOrder() {
+        List<TestCreateRecordCommand> commands = Arrays.asList(
+                new TestCreateRecordCommand().with(table.field1, "five"),
+                new TestCreateRecordCommand().with(table.field1, "six").with(table.field2, 99),
+                new TestCreateRecordCommand().with(table.field1, "seven")
+        );
+
+        AffectedRows affectedRows = commandsExecutor.insertAndGetGeneratedIds(table, commands);
+
+        assertThat(affectedRows.getGeneratedIds(), contains(5L, 6L, 7L));
+
+        List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
+                .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
+
+        assertThat(rowsInDB, contains(
+                "id: 5, field1: five",
+                "id: 6, field1: six",
+                "id: 7, field1: seven"
+        ));
     }
 
     @Test
@@ -264,6 +315,11 @@ public class CommandsExecutorTest {
     private class TestCreateRecordCommand extends CreateRecordCommand {
         public TestCreateRecordCommand() {
             super(table);
+        }
+
+        public <T> TestCreateRecordCommand with(Field<T> field, T value) {
+            super.set(field, value);
+            return this;
         }
     }
 }

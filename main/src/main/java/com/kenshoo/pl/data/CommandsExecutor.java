@@ -3,28 +3,11 @@ package com.kenshoo.pl.data;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey;
-import org.jooq.BatchBindStep;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.DeleteWhereStep;
-import org.jooq.Field;
-import org.jooq.Insert;
-import org.jooq.InsertOnDuplicateSetStep;
-import org.jooq.InsertValuesStepN;
-import org.jooq.Record;
-import org.jooq.TableField;
-import org.jooq.UpdateSetFirstStep;
-import org.jooq.UpdateSetMoreStep;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -41,6 +24,12 @@ public class CommandsExecutor {
 
     public static CommandsExecutor of(DSLContext dslContext) {
         return new CommandsExecutor(dslContext);
+    }
+
+    public AffectedRows insertAndGetGeneratedIds(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
+        final GeneratedKeyRecorder generatedKeyRecorder = new GeneratedKeyRecorder(commands.size());
+        AffectedRows results = executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.FAIL, generatedKeyRecorder.newRecordingJooq(dslContext)));
+        return results.withGeneratedIds(generatedKeyRecorder.getGeneratedKeys());
     }
 
     public AffectedRows executeInserts(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
@@ -151,6 +140,10 @@ public class CommandsExecutor {
     }
 
     private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey mode) {
+        return executeInsertCommands(table, commandsToExecute, mode, this.dslContext);
+    }
+
+    private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey mode, DSLContext dslContext) {
         CreateRecordCommand firstCommand = commandsToExecute.get(0);
         Collection<Field<?>> fields = Stream.concat(firstCommand.getFields(), table.getVirtualPartition().stream().map(FieldAndValue::getField)).collect(toList());
         InsertValuesStepN<Record> insertValuesStepN = dslContext.insertInto(table, fields).values(new Object[fields.size()]);
