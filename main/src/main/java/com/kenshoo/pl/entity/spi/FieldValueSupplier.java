@@ -1,7 +1,13 @@
 package com.kenshoo.pl.entity.spi;
 
+import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * A "delayed" supplier of the new value for a field that decides on the value given the current state. For example,
@@ -23,4 +29,31 @@ public interface FieldValueSupplier<T> extends FetchEntityFields {
      */
     T supply(Entity entity) throws ValidationException, NotSuppliedException;
 
- }
+    static <OLD_VAL, NEW_VAL> FieldValueSupplier<NEW_VAL> fromOldValue(EntityField<?, OLD_VAL> field, Function<OLD_VAL, NEW_VAL> func) {
+        return new FieldValueSupplier<NEW_VAL>() {
+            @Override
+            public NEW_VAL supply(Entity oldState) throws ValidationException, NotSuppliedException {
+                return func.apply(oldState.get(field));
+            }
+            @Override
+            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+                return Stream.of(field);
+            }
+        };
+    }
+
+    static <T1, T2, RES> FieldValueSupplier<RES> fromValues(EntityField<?, T1> field1, EntityField<?, T2> field2, BiFunction<T1, T2, RES> func) {
+        return new FieldValueSupplier<RES>() {
+            @Override
+            public RES supply(Entity oldState) throws ValidationException, NotSuppliedException {
+                return func.apply(oldState.get(field1), oldState.get(field2));
+            }
+            @Override
+            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+                return Stream.of(field1, field2);
+            }
+        };
+    }
+
+
+}
