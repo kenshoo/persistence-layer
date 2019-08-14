@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
+import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -339,27 +340,14 @@ public class PersistenceLayerTest {
     }
 
     @Test
-    public void relativeValueChange() {
+    public void lambdaSupplierWithParentField() {
         UpdateTestCommand command = new UpdateTestCommand(ID_2);
 
-        command.set(EntityForTest.FIELD2, new FieldValueSupplier<Integer>() {
-            @Override
-            public Integer supply(Entity entity) {
-                return entity.get(EntityForTest.FIELD2) + 2 * entity.get(EntityForTest.PARENT_ID);
-            }
-
-            @Override
-            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
-                return Stream.of(EntityForTest.FIELD2, EntityForTest.PARENT_ID);
-            }
-        });
+        command.set(EntityForTest.FIELD2, fromValues(EntityForTest.FIELD2, EntityForTest.PARENT_ID, (field2, parentId) -> field2 + 2 * parentId));
 
         persistenceLayer.update(Collections.singletonList(command), changeFlowConfig().build());
-        List<Integer> result = dslContext.select(mainTable.field2)
-                .from(mainTable)
-                .where(mainTable.id.eq(ID_2))
-                .fetch(mainTable.field2);
-        assertThat(result.get(0), is(20 + 2 * 22));
+
+        assertThat(fetchField(ID_2, mainTable.field2), is(20 + 2 * 22));
     }
 
 

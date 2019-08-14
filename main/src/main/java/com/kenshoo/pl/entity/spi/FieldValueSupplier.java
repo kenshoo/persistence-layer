@@ -5,6 +5,7 @@ import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -28,15 +29,28 @@ public interface FieldValueSupplier<T> extends FetchEntityFields {
      */
     T supply(Entity entity) throws ValidationException, NotSuppliedException;
 
-    static <E extends EntityType<E>, T> FieldValueSupplier<T> fromOldValue(EntityField<E, T> field, Function<T, T> func) {
-        return new FieldValueSupplier<T>() {
+    static <OLD_VAL, NEW_VAL> FieldValueSupplier<NEW_VAL> fromOldValue(EntityField<?, OLD_VAL> field, Function<OLD_VAL, NEW_VAL> func) {
+        return new FieldValueSupplier<NEW_VAL>() {
             @Override
-            public T supply(Entity oldState) throws ValidationException, NotSuppliedException {
+            public NEW_VAL supply(Entity oldState) throws ValidationException, NotSuppliedException {
                 return func.apply(oldState.get(field));
             }
             @Override
             public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
                 return Stream.of(field);
+            }
+        };
+    }
+
+    static <T1, T2, RES> FieldValueSupplier<RES> fromValues(EntityField<?, T1> field1, EntityField<?, T2> field2, BiFunction<T1, T2, RES> func) {
+        return new FieldValueSupplier<RES>() {
+            @Override
+            public RES supply(Entity oldState) throws ValidationException, NotSuppliedException {
+                return func.apply(oldState.get(field1), oldState.get(field2));
+            }
+            @Override
+            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+                return Stream.of(field1, field2);
             }
         };
     }
