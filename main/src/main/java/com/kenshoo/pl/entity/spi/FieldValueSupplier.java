@@ -1,7 +1,12 @@
 package com.kenshoo.pl.entity.spi;
 
+import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * A "delayed" supplier of the new value for a field that decides on the value given the current state. For example,
@@ -23,4 +28,18 @@ public interface FieldValueSupplier<T> extends FetchEntityFields {
      */
     T supply(Entity entity) throws ValidationException, NotSuppliedException;
 
- }
+    static <E extends EntityType<E>, T> FieldValueSupplier<T> fromOldValue(EntityField<E, T> field, Function<T, T> func) {
+        return new FieldValueSupplier<T>() {
+            @Override
+            public T supply(Entity oldState) throws ValidationException, NotSuppliedException {
+                return func.apply(oldState.get(field));
+            }
+            @Override
+            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+                return Stream.of(field);
+            }
+        };
+    }
+
+
+}

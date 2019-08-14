@@ -27,6 +27,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.*;
@@ -326,8 +328,20 @@ public class PersistenceLayerTest {
     }
 
     @Test
+    public void lambdaSupplier() {
+        UpdateTestCommand command = new UpdateTestCommand(ID_2);
+
+        command.set(EntityForTest.FIELD2, fromOldValue(EntityForTest.FIELD2, x -> x + 10));
+
+        persistenceLayer.update(asList(command), changeFlowConfig().build());
+
+        assertThat(fetchField(ID_2, mainTable.field2), is(FIELD2_2_ORIGINAL_VALUE + 10));
+    }
+
+    @Test
     public void relativeValueChange() {
         UpdateTestCommand command = new UpdateTestCommand(ID_2);
+
         command.set(EntityForTest.FIELD2, new FieldValueSupplier<Integer>() {
             @Override
             public Integer supply(Entity entity) {
@@ -1300,5 +1314,12 @@ public class PersistenceLayerTest {
         public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
             return Stream.empty();
         }
+    }
+
+    private Integer fetchField(int id, TableField<Record, Integer> field) {
+        return dslContext.select(field)
+                .from(mainTable)
+                .where(mainTable.id.eq(id))
+                .fetchOne(mainTable.field2);
     }
 }
