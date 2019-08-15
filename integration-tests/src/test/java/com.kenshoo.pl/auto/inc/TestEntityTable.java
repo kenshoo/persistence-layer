@@ -9,7 +9,7 @@ public class TestEntityTable extends AbstractDataTable<TestEntityTable> {
 
     public static final TestEntityTable INSTANCE = new TestEntityTable("TestEntity");
 
-    final TableField<Record, Integer> id = createPKFieldWithAutoIncrement("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR.length(50));
 
     private TestEntityTable(final String name) {

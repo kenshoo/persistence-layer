@@ -5,7 +5,6 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
-import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -14,8 +13,9 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import static com.kenshoo.pl.auto.inc.TestEntity.NAME;
+import static com.kenshoo.pl.auto.inc.TestEntity.SECOND_NAME;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.equalTo;
@@ -53,7 +53,7 @@ public class PersistenceLayerOneToOneTest {
     public void auto_generated_ids_are_returned_in_order() {
         final List<TestEntityCreateCommand> createCommands = Stream.of("name1", "name2", "name3")
                                                                    .sorted()
-                                                                   .map(name -> TestEntityCreateCommand.builder().withName(name).build())
+                                                                   .map(name -> new TestEntityCreateCommand().with(NAME, name))
                                                                    .collect(toList());
 
         final CreateResult<TestEntity, TestEntity.Key> creationResult = persistenceLayer.create(createCommands,
@@ -82,10 +82,9 @@ public class PersistenceLayerOneToOneTest {
         final String name = "name";
         final String secondName = "secondName";
 
-        final TestEntityCreateCommand createCommand = TestEntityCreateCommand.builder()
-                                                                             .withName(name)
-                                                                             .withSecondName(secondName)
-                                                                             .build();
+        final TestEntityCreateCommand createCommand = new TestEntityCreateCommand()
+                                                                             .with(NAME, name)
+                                                                             .with(SECOND_NAME, secondName);
 
         persistenceLayer.create(ImmutableList.of(createCommand),
                                 changeFlowConfig,

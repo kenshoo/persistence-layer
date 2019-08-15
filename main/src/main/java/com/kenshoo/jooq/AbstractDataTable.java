@@ -8,21 +8,12 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import org.jooq.DataType;
-import org.jooq.ForeignKey;
-import org.jooq.Record;
-import org.jooq.Schema;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.UniqueKey;
+import org.jooq.*;
 import org.jooq.impl.AbstractKeys;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends TableImpl<Record> implements DataTable {
 
@@ -30,6 +21,8 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
     private final Supplier<UniqueKey<Record>> primaryKeySupplier = Suppliers.memoize(new PrimaryKeySupplier());
     private final Multimap<Table<Record>, FieldsPair> foreignKeyFields = ArrayListMultimap.create();
     private final Supplier<List<ForeignKey<Record, ?>>> foreignKeysSupplier = Suppliers.memoize(new ForeignKeysSupplier());
+    private final Supplier<Identity<Record, ?>> identitySupplier = Suppliers.memoize(new IdentitySupplier());
+    private TableField<Record, ?> identityField;
 
     protected AbstractDataTable(String tableName) {
         super(tableName);
@@ -45,13 +38,12 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
 
     public abstract T as(String alias);
 
-    protected final <FT> TableField<Record, FT> createPKFieldWithAutoIncrement(final String name, final DataType<FT> type) {
-        return createPKField(name, type.identity(true));
-    }
-
     protected final <FT> TableField<Record, FT> createPKField(String name, DataType<FT> type) {
         TableField<Record, FT> field = createField(name, type);
         primaryKeyFields.add(field);
+        if(type.identity()) {
+            this.identityField = field;
+        }
         return field;
     }
 
@@ -76,6 +68,11 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
         return foreignKeysSupplier.get();
     }
 
+    @Override
+    public Identity<Record, ?> getIdentity() {
+        return identitySupplier.get();
+    }
+
     private class Keys extends AbstractKeys {
         UniqueKey<Record> createPK() {
             if(primaryKeyFields.isEmpty()) {
@@ -93,6 +90,10 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
         ForeignKey<Record, ?> createFK(UniqueKey<Record> targetKey, Table<Record> table, TableField<Record, ?>[] fields) {
             return createForeignKey(targetKey, table, fields);
         }
+
+        Identity<Record, ?> createPKIdentity() {
+            return identityField != null ? createIdentity(AbstractDataTable.this, identityField) : null;
+        }
     }
 
     private static class FieldsPair {
@@ -101,6 +102,13 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
         FieldsPair(TableField<Record, ?> source, TableField<Record, ?> target) {
             this.source = source;
             this.target = target;
+        }
+    }
+
+    private class IdentitySupplier implements Supplier<Identity<Record, ?>> {
+        @Override
+        public Identity<Record, ?> get() {
+            return new Keys().createPKIdentity();
         }
     }
 

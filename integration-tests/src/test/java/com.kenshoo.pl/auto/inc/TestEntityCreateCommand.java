@@ -1,37 +1,17 @@
 package com.kenshoo.pl.auto.inc;
 
 import com.kenshoo.pl.entity.CreateEntityCommand;
+import com.kenshoo.pl.entity.EntityField;
 
 class TestEntityCreateCommand extends CreateEntityCommand<TestEntity> {
 
-    private TestEntityCreateCommand() {
+    public TestEntityCreateCommand() {
         super(TestEntity.INSTANCE);
     }
 
-    static Builder builder() {
-        return new Builder();
+    public <T> TestEntityCreateCommand with(EntityField<TestEntity, T> field, T newValue) {
+        set(field, newValue);
+        return this;
     }
 
-    static final class Builder {
-
-        private String name;
-        private String secondName;
-
-        Builder withName(final String name) {
-            this.name = name;
-            return this;
-        }
-
-        Builder withSecondName(final String secondName) {
-            this.secondName = secondName;
-            return this;
-        }
-
-        TestEntityCreateCommand build() {
-            final TestEntityCreateCommand cmd = new TestEntityCreateCommand();
-            cmd.set(TestEntity.NAME, name);
-            cmd.set(TestEntity.SECOND_NAME, secondName);
-            return cmd;
-        }
-    }
 }
