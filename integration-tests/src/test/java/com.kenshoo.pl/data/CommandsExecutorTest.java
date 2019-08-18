@@ -19,6 +19,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -129,9 +130,10 @@ public class CommandsExecutorTest {
                 new TestCreateRecordCommand().with(table.field1, "eight")
         );
 
-        AffectedRows affectedRows = commandsExecutor.insertAndGetGeneratedIds(table, commands);
+        commandsExecutor.insertAndGetGeneratedIds(table, table.id, commands);
 
-        assertThat(affectedRows.getGeneratedIds(), contains(5L, 6L, 7L, 8L));
+        List<Integer> getGeneratedIds = commands.stream().map(cmd -> cmd.get(table.id)).collect(Collectors.toList());
+        assertThat(getGeneratedIds, contains(5, 6, 7, 8));
 
         List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
                 .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
@@ -144,18 +146,19 @@ public class CommandsExecutorTest {
         ));
     }
 
-    @Ignore // our next task
     @Test
     public void retrieveGeneratedIdsInOrder() {
         List<TestCreateRecordCommand> commands = Arrays.asList(
                 new TestCreateRecordCommand().with(table.field1, "five"),
-                new TestCreateRecordCommand().with(table.field1, "six").with(table.field2, 99),
-                new TestCreateRecordCommand().with(table.field1, "seven")
+                new TestCreateRecordCommand().with(table.field1, "seven").with(table.field2, 99),
+                new TestCreateRecordCommand().with(table.field1, "six")
         );
 
-        AffectedRows affectedRows = commandsExecutor.insertAndGetGeneratedIds(table, commands);
+        commandsExecutor.insertAndGetGeneratedIds(table, table.id, commands);
 
-        assertThat(affectedRows.getGeneratedIds(), contains(5L, 6L, 7L));
+        List<Integer> getGeneratedIds = commands.stream().map(cmd -> cmd.get(table.id)).collect(Collectors.toList());
+
+        assertThat(getGeneratedIds, contains(5, 7, 6));
 
         List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
                 .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
@@ -164,6 +167,56 @@ public class CommandsExecutorTest {
                 "id: 5, field1: five",
                 "id: 6, field1: six",
                 "id: 7, field1: seven"
+        ));
+    }
+
+    @Test
+    public void retrieveGeneratedIdSuppliedByCommands() {
+        List<TestCreateRecordCommand> commands = Arrays.asList(
+                new TestCreateRecordCommand().with(table.field1, "seven").with(table.id, 7),
+                new TestCreateRecordCommand().with(table.field1, "eight").with(table.id, 8),
+                new TestCreateRecordCommand().with(table.field1, "nine").with(table.id, 9),
+                new TestCreateRecordCommand().with(table.field1, "ten").with(table.id, 10)
+        );
+
+        commandsExecutor.insertAndGetGeneratedIds(table, table.id, commands);
+
+        List<Integer> getGeneratedIds = commands.stream().map(cmd -> cmd.get(table.id)).collect(Collectors.toList());
+        assertThat(getGeneratedIds, contains(7, 8, 9, 10));
+
+        List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
+                .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
+
+        assertThat(rowsInDB, contains(
+                "id: 7, field1: seven",
+                "id: 8, field1: eight",
+                "id: 9, field1: nine",
+                "id: 10, field1: ten"
+        ));
+    }
+
+    @Test
+    public void retrieveGeneratedIdSuppliedPartiallyByCommands() {
+        List<TestCreateRecordCommand> commands = Arrays.asList(
+                new TestCreateRecordCommand().with(table.field1, "seven").with(table.id, 7),
+                new TestCreateRecordCommand().with(table.field1, "eleven"),
+                new TestCreateRecordCommand().with(table.field1, "twelve"),
+                new TestCreateRecordCommand().with(table.field1, "ten").with(table.id, 10)
+        );
+
+        commandsExecutor.insertAndGetGeneratedIds(table, table.id, commands);
+
+        List<Integer> getGeneratedIds = commands.stream().map(cmd -> cmd.get(table.id)).collect(Collectors.toList());
+        assertThat(getGeneratedIds, contains(7, 11, 12, 10));
+
+        List<String> rowsInDB = dslContext.selectFrom(table).where(table.id.ge(5))
+                .fetch(rec -> "id: " + rec.get(table.id) + ", field1: " + rec.get(table.field1));
+
+        assertThat(rowsInDB, contains(
+                "id: 7, field1: seven",
+                "id: 10, field1: ten",
+                "id: 11, field1: eleven",
+                "id: 12, field1: twelve"
         ));
     }
 

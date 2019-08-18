@@ -11,7 +11,7 @@ public class EntityForTestTable extends AbstractDataTable<EntityForTestTable> {
 
     public static final EntityForTestTable INSTANCE = new EntityForTestTable("EntityForTest");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
     final TableField<Record, Integer> field2 = createField("field2", SQLDataType.INTEGER);
     final TableField<Record, Timestamp> creationDate = createField("creationDate", SQLDataType.TIMESTAMP);

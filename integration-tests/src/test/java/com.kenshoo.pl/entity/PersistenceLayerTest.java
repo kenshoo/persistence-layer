@@ -901,6 +901,11 @@ public class PersistenceLayerTest {
         command.set(EntityForTest.PARENT_ID, PARENT_ID_1);
         command.set(EntityForTest.FIELD2, FIELD2_VALID_VALUE);
 
+        dslContext.execute(String.format("ALTER TABLE %s MODIFY COLUMN %s %s auto_increment",
+                EntityForTestTable.INSTANCE.getName(),
+                EntityForTestTable.INSTANCE.id.getName(),
+                EntityForTestTable.INSTANCE.id.getDataType().getTypeName()));
+
         ImmutableList<EntityField<EntityForTest, Integer>> entityFields = ImmutableList.of(EntityForTest.ID, EntityForTest.PARENT_ID, EntityForTest.FIELD2);
         try (TempTableResource<ImpersonatorTable> tempTableResource = entitiesTempTableCreator.createTempTable(entityFields, Collections.<EntityChange<EntityForTest>>singletonList(command))) {
             ImpersonatorTable tempTable = tempTableResource.getTable();
