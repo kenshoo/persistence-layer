@@ -9,7 +9,7 @@ public class TestSecondaryEntityTable extends AbstractDataTable<TestSecondaryEnt
 
     public static final TestSecondaryEntityTable INSTANCE = new TestSecondaryEntityTable("TestSecondaryEntity");
 
-    final TableField<Record, Integer> id = createPKFieldWithAutoIncrement("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, Integer> parentId = createFKField("parent_id", TestEntityTable.INSTANCE.id);
     final TableField<Record, String> secondName = createField("second_name", SQLDataType.VARCHAR.length(100));
 
