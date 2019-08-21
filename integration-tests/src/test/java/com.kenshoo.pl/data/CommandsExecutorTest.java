@@ -46,10 +46,6 @@ public class CommandsExecutorTest {
         String tableName = RandomStringUtils.randomAlphanumeric(15);
         table = new TestTable(tableName);
         DataTableUtils.createTable(dslContext, table);
-        dslContext.execute(String.format("ALTER TABLE %s MODIFY COLUMN %s %s auto_increment",
-                table.getName(),
-                table.id.getName(),
-                table.id.getDataType().getTypeName()));
         DataTableUtils.populateTable(dslContext, table, DATA);
         commandsExecutor = CommandsExecutor.of(dslContext);
     }
@@ -335,7 +331,7 @@ public class CommandsExecutorTest {
 
     private static class TestTable extends AbstractDataTable<TestTable> {
 
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         protected final TableField<Record, Integer> field2 = createField("field2", SQLDataType.INTEGER);
 

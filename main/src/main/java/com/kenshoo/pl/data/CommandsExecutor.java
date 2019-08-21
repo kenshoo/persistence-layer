@@ -27,19 +27,19 @@ public class CommandsExecutor {
     }
 
     public AffectedRows insertAndGetGeneratedIds(final DataTable table, final Field<Integer> generatedIdField, Collection<? extends CreateRecordCommand> commands) {
-        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands,new InsertExecutionContext(OnDuplicateKey.FAIL, generatedIdField)));
+        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.FAIL));
     }
 
     public AffectedRows executeInserts(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
-        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, new InsertExecutionContext(OnDuplicateKey.FAIL)));
+        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.FAIL));
     }
 
     public AffectedRows executeInsertsOnDuplicateKeyIgnore(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
-        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, new InsertExecutionContext(OnDuplicateKey.IGNORE)));
+        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.IGNORE));
     }
 
     public AffectedRows executeInsertsOnDuplicateKeyUpdate(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
-        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, new InsertExecutionContext(OnDuplicateKey.UPDATE)));
+        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.UPDATE));
     }
 
     public AffectedRows executeUpdates(final DataTable table, Collection<? extends UpdateRecordCommand> commands) {
@@ -137,10 +137,11 @@ public class CommandsExecutor {
         return AffectedRows.updated(IntStream.of(execute).sum());
     }
 
-    private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, InsertExecutionContext insertExecutionContext) {
+    private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey onDuplicateKey) {
         DSLContext dslContext = this.dslContext;
-        if(insertExecutionContext.getGeneratedIdField().isPresent()) {
-            final GeneratedKeyRecorder generatedKeyRecorder = new GeneratedKeyRecorder(insertExecutionContext.getGeneratedIdField().get(), commandsToExecute);
+
+        if (table.getIdentity() != null) {
+            final GeneratedKeyRecorder generatedKeyRecorder = new GeneratedKeyRecorder(table.getIdentity().getField(), commandsToExecute);
             dslContext = generatedKeyRecorder.newRecordingJooq(dslContext);
 
         }
@@ -149,7 +150,7 @@ public class CommandsExecutor {
         Collection<Field<?>> fields = Stream.concat(firstCommand.getFields(), table.getVirtualPartition().stream().map(FieldAndValue::getField)).collect(toList());
         InsertValuesStepN<Record> insertValuesStepN = dslContext.insertInto(table, fields).values(new Object[fields.size()]);
         Insert insert = insertValuesStepN;
-        switch (insertExecutionContext.getMode()) {
+        switch (onDuplicateKey) {
             case IGNORE:
                 insert = insertValuesStepN.onDuplicateKeyIgnore();
                 break;
@@ -167,7 +168,7 @@ public class CommandsExecutor {
 
         for (AbstractRecordCommand command : commandsToExecute) {
             List<Object> values = Stream.concat(command.getValues(firstCommand.getFields()), table.getVirtualPartition().stream().map(FieldAndValue::getValue)).collect(toList());
-            if (insertExecutionContext.getMode() == OnDuplicateKey.UPDATE) {
+            if (onDuplicateKey == OnDuplicateKey.UPDATE) {
                 values = Stream.concat(values.stream(), values.stream()).collect(toList());
             }
             batch.bind(values.toArray());
@@ -189,27 +190,5 @@ public class CommandsExecutor {
         AffectedRows execute(List<C> commands);
     }
 
-
-    private class InsertExecutionContext {
-        private final OnDuplicateKey mode;
-        private final Field<Integer> generatedIdField;
-
-        private InsertExecutionContext(OnDuplicateKey mode) {
-            this.mode = mode;
-            this.generatedIdField = null;
-        }
-
-        private InsertExecutionContext(OnDuplicateKey mode, Field<Integer> generatedIdField) {
-            this.mode = mode;
-            this.generatedIdField = generatedIdField;
-        }
-
-        public Optional<Field<Integer>> getGeneratedIdField() {
-            return Optional.ofNullable(generatedIdField);
-        }
-
-        public OnDuplicateKey getMode() {
-            return mode;
-        }
-    }
 }
+

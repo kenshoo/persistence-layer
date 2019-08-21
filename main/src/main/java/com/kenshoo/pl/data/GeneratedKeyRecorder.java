@@ -18,7 +18,7 @@ import java.util.*;
 
 class GeneratedKeyRecorder extends DefaultExecuteListener {
 
-    private final Field<Integer> generatedIdField;
+    private final Field generatedIdField;
     private final Collection<? extends CreateRecordCommand> commands;
 
     public DSLContext newRecordingJooq(DSLContext oldJooq) {
@@ -29,7 +29,7 @@ class GeneratedKeyRecorder extends DefaultExecuteListener {
         return newJooq;
     }
 
-    public GeneratedKeyRecorder( Field<Integer> generatedIdField, Collection<? extends CreateRecordCommand> commands) {
+    public GeneratedKeyRecorder(Field<?> generatedIdField, Collection<? extends CreateRecordCommand> commands) {
         this.generatedIdField = generatedIdField;
         this.commands = commands;
     }
@@ -50,7 +50,7 @@ class GeneratedKeyRecorder extends DefaultExecuteListener {
             final ResultSet generatedKeys = ctx.statement().getGeneratedKeys();
             Iterator<? extends CreateRecordCommand> commandsIt = commands.iterator();
             while (generatedKeys.next() && commandsIt.hasNext()) {
-                commandsIt.next().set(generatedIdField, generatedKeys.getInt("GENERATED_KEY"));
+                commandsIt.next().set(generatedIdField, generatedKeys.getObject("GENERATED_KEY", generatedIdField.getType()));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
