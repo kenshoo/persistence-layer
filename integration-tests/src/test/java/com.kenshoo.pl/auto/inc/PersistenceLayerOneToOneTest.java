@@ -66,10 +66,11 @@ public class PersistenceLayerOneToOneTest {
                                                             .fetch(PRIMARY_TABLE.id);
 
         final List<Integer> actualReturnedIds = seq(creationResult)
-                                                     .filter(entityResult -> nonNull(entityResult.getIdentifier()))
-                                                     .map(entityResult -> entityResult.getIdentifier().getId())
-                                                     .filter(Objects::nonNull)
-                                                     .toList();
+                .map(EntityChangeResult::getIdentifier)
+                .map(TestEntity.Key::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
 
         assertThat("Incorrect returned ids: ",
                    actualReturnedIds, equalTo(expectedReturnedIds));
