@@ -16,6 +16,7 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.AbstractKeys;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 import java.util.Collection;
@@ -44,6 +45,10 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
 
     public abstract T as(String alias);
 
+    protected final <FT> TableField<Record, FT> createPKFieldWithAutoIncrement(final String name, final DataType<FT> type) {
+        return createPKField(name, type.identity(true));
+    }
+
     protected final <FT> TableField<Record, FT> createPKField(String name, DataType<FT> type) {
         TableField<Record, FT> field = createField(name, type);
         primaryKeyFields.add(field);
@@ -51,7 +56,7 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
     }
 
     protected final <FT> TableField<Record, FT> createFKField(String name, TableField<Record, FT> referenceField) {
-        TableField<Record, FT> field = createField(name, referenceField.getDataType());
+        TableField<Record, FT> field = createField(name, referenceField.getDataType().identity(false));
         foreignKeyFields.put(referenceField.getTable(), new FieldsPair(field, referenceField));
         return field;
     }
