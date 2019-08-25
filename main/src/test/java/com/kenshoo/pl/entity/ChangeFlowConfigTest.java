@@ -87,7 +87,7 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_false_update_purger_to_flow_config() {
-        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty());
+        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty(), Stream.empty());
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE);
         flowBuilder.withFalseUpdatesPurger(purger);
@@ -97,7 +97,7 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_false_update_purger__last_to_flow_config() {
-        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty());
+        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty(), Stream.empty());
         TestEnricher enricher = new TestEnricher();
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE);

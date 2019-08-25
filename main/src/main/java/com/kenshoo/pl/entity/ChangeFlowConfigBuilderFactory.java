@@ -1,9 +1,6 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.annotation.DefaultValue;
-import com.kenshoo.pl.entity.annotation.Immutable;
-import com.kenshoo.pl.entity.annotation.Required;
-import com.kenshoo.pl.entity.annotation.RequiredFieldType;
+import com.kenshoo.pl.entity.annotation.*;
 import com.kenshoo.pl.entity.internal.CreationDateEnricher;
 import com.kenshoo.pl.entity.internal.DbCommandsOutputGenerator;
 import com.kenshoo.pl.entity.internal.DefaultFieldValueEnricher;
@@ -12,8 +9,10 @@ import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.tuple.Tuple2;
 
+import java.lang.annotation.Annotation;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
 import static org.jooq.lambda.tuple.Tuple.tuple;
@@ -27,8 +26,8 @@ public class ChangeFlowConfigBuilderFactory {
         builder.withRetryer(plContext.persistenceLayerRetryer());
         builder.withFalseUpdatesPurger(new FalseUpdatesPurger<>(
                 ChangeEntityCommand::unset,
-                entityType.getFields()
-                        .filter(entityField -> getFieldAnnotation(entityType, entityField, IgnoredIfSetAlone.class) != null)
+                entityType.getFields().filter(annotatedWith(entityType, IgnoredIfSetAlone.class)),
+                entityType.getFields().filter(annotatedWith(entityType, DontPurge.class))
         ));
         builder.withRequiredRelationFields(entityType.getFields()
                 .filter(entityField -> {
@@ -61,6 +60,10 @@ public class ChangeFlowConfigBuilderFactory {
                 .forEach(builder::withPostFetchCommandEnricher);
 
         return builder;
+    }
+
+    private static <E extends EntityType<E>, A extends Annotation> Predicate<EntityField<E, ?>> annotatedWith(E entityType, Class<A> annotationType) {
+        return field -> getFieldAnnotation(entityType, field, annotationType) != null;
     }
 
     private static <E extends EntityType<E>, T> PostFetchCommandEnricher<E> defaultFieldValueEnricher(EntityField<E, T> field, String value) {
