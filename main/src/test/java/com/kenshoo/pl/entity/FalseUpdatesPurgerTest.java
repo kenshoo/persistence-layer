@@ -8,10 +8,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Arrays.asList;
@@ -53,7 +51,7 @@ public class FalseUpdatesPurgerTest {
                 field2, "value"
         )));
 
-        purger().enrich(asList(command1), UPDATE, changeContext);
+        purger().build().enrich(asList(command1), UPDATE, changeContext);
 
         assertThat(command1.getChanges().count(), is(0L));
     }
@@ -70,7 +68,7 @@ public class FalseUpdatesPurgerTest {
                 field2, "old value"
         )));
 
-        purger().enrich(asList(command1), UPDATE, changeContext);
+        purger().build().enrich(asList(command1), UPDATE, changeContext);
 
         assertThat(command1.getChanges().map(FieldChange::getValue).collect(toList()), contains("new value"));
     }
@@ -87,7 +85,7 @@ public class FalseUpdatesPurgerTest {
                 field2, "old value"
         )));
 
-        purgerRemovingLonely(field2).enrich(asList(command1), UPDATE, changeContext);
+        purger().setDeleteIfSetAloneFields(field2).build().enrich(asList(command1), UPDATE, changeContext);
 
         assertThat(command1.getChanges().count(), is(0L));
     }
@@ -104,23 +102,14 @@ public class FalseUpdatesPurgerTest {
                 field2, "value"
         )));
 
-        createPurgerRetaining(field1).enrich(asList(command1), UPDATE, changeContext);
+        purger().setFieldsToRetain(field1).build().enrich(asList(command1), UPDATE, changeContext);
 
-        assertThat(command1.getChanges().map(c -> c.getValue()).collect(toList()), contains(5));
+        assertThat(command1.getChanges().map(c -> c.getField()).collect(toList()), contains(field1));
     }
 
-    private FalseUpdatesPurger<TestEntity> purgerRemovingLonely(EntityField<TestEntity, ?>... fields) {
-        return new FalseUpdatesPurger<>(ChangeEntityCommand::unset, Stream.of(fields), Stream.empty());
+    private FalseUpdatesPurger.Builder<TestEntity> purger() {
+        return new FalseUpdatesPurger.Builder<>().setFieldUnsetter(ChangeEntityCommand::unset);
     }
-
-    private FalseUpdatesPurger<TestEntity> createPurgerRetaining(EntityField<TestEntity, ?>... fields) {
-        return new FalseUpdatesPurger<>(ChangeEntityCommand::unset, Stream.empty(), Stream.of(fields));
-    }
-
-    private FalseUpdatesPurger<TestEntity> purger() {
-        return new FalseUpdatesPurger<>(ChangeEntityCommand::unset, Stream.empty(), Stream.empty());
-    }
-
 
     private static class TestEntity extends AbstractEntityType<TestEntity> {
 

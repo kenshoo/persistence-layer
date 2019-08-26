@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -28,14 +29,14 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
 
     private final Set<EntityField<E, ?>> fieldsToRetain;
 
-    public FalseUpdatesPurger(
+    private FalseUpdatesPurger(
             BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter,
-            Stream<EntityField<E, ?>> deleteIfSetAloneFields,
-            Stream<EntityField<E, ?>> fieldsToRetain) {
+            Set<EntityField<E, ?>> deleteIfSetAloneFields,
+            Set<EntityField<E, ?>> fieldsToRetain) {
 
         this.fieldUnsetter = fieldUnsetter;
-        this.deleteIfSetAloneFields = deleteIfSetAloneFields.collect(toSet());
-        this.fieldsToRetain = fieldsToRetain.collect(toSet());
+        this.deleteIfSetAloneFields = deleteIfSetAloneFields;
+        this.fieldsToRetain = fieldsToRetain;
     }
 
     @Override
@@ -77,6 +78,39 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     @VisibleForTesting
     public Set<EntityField<E, ?>> getFieldsToRetain() {
         return fieldsToRetain;
+    }
+
+    public static class Builder<E extends EntityType<E>> {
+        private BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter;
+        private Set<EntityField<E, ?>> deleteIfSetAloneFields = emptySet();
+        private Set<EntityField<E, ?>> fieldsToRetain = emptySet();
+
+        public Builder setFieldUnsetter(BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter) {
+            this.fieldUnsetter = fieldUnsetter;
+            return this;
+        }
+
+        public Builder setDeleteIfSetAloneFields(Stream<EntityField<E, ?>> deleteIfSetAloneFields) {
+            this.deleteIfSetAloneFields = deleteIfSetAloneFields.collect(toSet());
+            return this;
+        }
+
+        public Builder setDeleteIfSetAloneFields(EntityField<E, ?>... deleteIfSetAloneFields) {
+            return setDeleteIfSetAloneFields(Stream.of(deleteIfSetAloneFields));
+        }
+
+        public Builder setFieldsToRetain(Stream<EntityField<E, ?>> fieldsToRetain) {
+            this.fieldsToRetain = fieldsToRetain.collect(toSet());
+            return this;
+        }
+
+        public Builder setFieldsToRetain(EntityField<E, ?>... fieldsToRetain) {
+            return setFieldsToRetain(Stream.of(fieldsToRetain));
+        }
+
+        public FalseUpdatesPurger<E> build() {
+            return new FalseUpdatesPurger<>(fieldUnsetter, deleteIfSetAloneFields, fieldsToRetain);
+        }
     }
 
 }
