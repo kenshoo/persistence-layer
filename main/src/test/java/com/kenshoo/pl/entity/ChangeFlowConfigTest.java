@@ -8,9 +8,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-
 import java.util.Collection;
 import java.util.stream.Stream;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeFlowConfigTest {
@@ -87,7 +87,7 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_false_update_purger_to_flow_config() {
-        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty());
+        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger.Builder<TestEntity>().build();
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE);
         flowBuilder.withFalseUpdatesPurger(purger);
@@ -97,7 +97,7 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_false_update_purger__last_to_flow_config() {
-        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger<>(null, Stream.empty());
+        FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger.Builder<TestEntity>().build();
         TestEnricher enricher = new TestEnricher();
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE);
