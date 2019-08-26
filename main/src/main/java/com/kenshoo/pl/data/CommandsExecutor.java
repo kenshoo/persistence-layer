@@ -5,14 +5,13 @@ import com.kenshoo.jooq.FieldAndValue;
 import com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey;
 import org.jooq.*;
 import org.jooq.impl.DSL;
-import org.jooq.lambda.Seq;
-
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.jooq.lambda.Seq.seq;
 
 public class CommandsExecutor {
 
@@ -24,10 +23,6 @@ public class CommandsExecutor {
 
     public static CommandsExecutor of(DSLContext dslContext) {
         return new CommandsExecutor(dslContext);
-    }
-
-    public AffectedRows insertAndGetGeneratedIds(final DataTable table, final Field<Integer> generatedIdField, Collection<? extends CreateRecordCommand> commands) {
-        return executeCommands(commands, homogeneousCommands -> executeInsertCommands(table, homogeneousCommands, OnDuplicateKey.FAIL));
     }
 
     public AffectedRows executeInserts(final DataTable table, Collection<? extends CreateRecordCommand> commands) {
@@ -106,7 +101,7 @@ public class CommandsExecutor {
         if (!command1.getFields().findFirst().isPresent()) {
             return AffectedRows.empty();
         }
-        for (Field<?> field : Seq.seq(command1.getFields())) {
+        for (Field<?> field : seq(command1.getFields())) {
             if (update != null) {
                 update = update.set(field, (Object) null);
             } else {
@@ -138,13 +133,11 @@ public class CommandsExecutor {
     }
 
     private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey onDuplicateKey) {
-        DSLContext dslContext = this.dslContext;
 
-        if (table.getIdentity() != null) {
-            final GeneratedKeyRecorder generatedKeyRecorder = new GeneratedKeyRecorder(table.getIdentity().getField(), commandsToExecute);
-            dslContext = generatedKeyRecorder.newRecordingJooq(dslContext);
+        final Optional<GeneratedKeyRecorder> generatedKeyRecorder = Optional.ofNullable(table.getIdentity())
+                .map(identity -> new GeneratedKeyRecorder(identity.getField(), commandsToExecute.size()));
 
-        }
+        DSLContext dslContext = generatedKeyRecorder.map(g -> g.newRecordingJooq(this.dslContext)).orElse(this.dslContext);
 
         CreateRecordCommand firstCommand = commandsToExecute.get(0);
         Collection<Field<?>> fields = Stream.concat(firstCommand.getFields(), table.getVirtualPartition().stream().map(FieldAndValue::getField)).collect(toList());
@@ -156,7 +149,7 @@ public class CommandsExecutor {
                 break;
             case UPDATE:
                 InsertOnDuplicateSetStep<Record> insertOnDuplicateSetStep = insertValuesStepN.onDuplicateKeyUpdate();
-                for (Field<?> field : Seq.seq(firstCommand.getFields())) {
+                for (Field<?> field : seq(firstCommand.getFields())) {
                     //noinspection unchecked
                     insertOnDuplicateSetStep = insertOnDuplicateSetStep.set((Field) field, (Object) null);
                 }
@@ -178,7 +171,16 @@ public class CommandsExecutor {
         // In case of regular INSERT (without IGNORE or ON DUPLICATE KEY UPDATE) the result is -2 for every inserted row
         int inserted = (int) IntStream.of(result).filter(i -> i == 1 || i == -2).count();
         int updated = (int) IntStream.of(result).filter(i -> i == 2).count();
+
+        generatedKeyRecorder
+                .map(GeneratedKeyRecorder::getGeneratedKeys)
+                .ifPresent(generatedKeys -> setIdsToCommands(table.getIdentity().getField(), commandsToExecute, generatedKeys));
+
         return AffectedRows.insertedAndUpdated(inserted, updated);
+    }
+
+    private void setIdsToCommands(Field idField, List<? extends CreateRecordCommand> commandsToExecute, List<Object> generatedKeys) {
+        seq(commandsToExecute).zip(generatedKeys).forEach(pair -> pair.v1.set(idField, pair.v2));
     }
 
     private Set<String> getFieldsNames(AbstractRecordCommand command) {
