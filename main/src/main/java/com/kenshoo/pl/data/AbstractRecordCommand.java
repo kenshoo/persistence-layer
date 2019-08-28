@@ -24,6 +24,10 @@ public abstract class AbstractRecordCommand {
         values.put(field, value);
     }
 
+    public <T> T get(Field<T> field) {
+        return (T) values.get(field);
+    }
+
     public Stream<Field<?>> getFields() {
         return values.keySet().stream();
     }

@@ -8,6 +8,7 @@ import com.kenshoo.jooq.TestJooqConfig;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
@@ -16,11 +17,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -114,6 +113,56 @@ public class CommandsExecutorTest {
 
         Map<String, Object> actualValues1 = dslContext.select(table.field1, table.field2).from(table).where(table.id.eq(5)).fetchOneMap();
         assertThat(actualValues1, Matchers.<Map<String, Object>>is(ImmutableMap.<String, Object>of(table.field1.getName(), "Echo", table.field2.getName(), 50)));
+    }
+
+    @Test
+    public void retrieveGeneratedId() {
+        List<TestCreateRecordCommand> commands = ImmutableList.of(
+                new TestCreateRecordCommand().with(table.field1, "name_1"),
+                new TestCreateRecordCommand().with(table.field1, "name_2"),
+                new TestCreateRecordCommand().with(table.field1, "name_3")
+        );
+
+        commandsExecutor.executeInserts(table, commands);
+
+        List<Integer> idsFromDbOrderedByName = dslContext.selectFrom(table).where(table.field1.in("name_1", "name_2", "name_3")).orderBy(table.field1).fetch(table.id);
+
+        assertThat(valuesOf(commands, table.id), is(idsFromDbOrderedByName));
+    }
+
+    @Test
+    public void retrieveGeneratedIdWhenCommandsAreOfDifferentFields() {
+        List<TestCreateRecordCommand> commands = ImmutableList.of(
+                new TestCreateRecordCommand().with(table.field1, "name_1"),
+                new TestCreateRecordCommand().with(table.field1, "name_2").with(table.field2, 99),
+                new TestCreateRecordCommand().with(table.field1, "name_3")
+        );
+
+        commandsExecutor.executeInserts(table, commands);
+
+        List<Integer> idsFromDbOrderedByName = dslContext.selectFrom(table).where(table.field1.in("name_1", "name_2", "name_3")).orderBy(table.field1).fetch(table.id);
+
+        assertThat(valuesOf(commands, table.id), is(idsFromDbOrderedByName));
+    }
+
+    @Test
+    public void retrieveGeneratedIdWhenSomeCommandsHavingIdsAndSomeCommandsNeedAutoInc() {
+        List<TestCreateRecordCommand> commands = ImmutableList.of(
+                new TestCreateRecordCommand().with(table.field1, "name_101").with(table.id, 101),
+                new TestCreateRecordCommand().with(table.field1, "name_102"),
+                new TestCreateRecordCommand().with(table.field1, "name_103").with(table.id, 103)
+        );
+
+        commandsExecutor.executeInserts(table, commands);
+
+        Map<String, Integer> idsFromDb = dslContext.selectFrom(table).where(table.field1.in("name_101", "name_102", "name_103")).fetchMap(table.field1, table.id);
+
+        assertThat(idsFromDb.get("name_101"), is(101));
+        assertThat(idsFromDb.get("name_103"), is(103));
+
+        assertThat(commands.get(0).get(table.id), is (101));
+        assertThat(commands.get(1).get(table.id), is (idsFromDb.get("name_102")));
+        assertThat(commands.get(2).get(table.id), is (103));
     }
 
     @Test
@@ -231,7 +280,7 @@ public class CommandsExecutorTest {
 
     private static class TestTable extends AbstractDataTable<TestTable> {
 
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         protected final TableField<Record, Integer> field2 = createField("field2", SQLDataType.INTEGER);
 
@@ -265,5 +314,15 @@ public class CommandsExecutorTest {
         public TestCreateRecordCommand() {
             super(table);
         }
+
+        public <T> TestCreateRecordCommand with(Field<T> field, T value) {
+            super.set(field, value);
+            return this;
+        }
     }
+
+    private List<Integer> valuesOf(List<TestCreateRecordCommand> commands, TableField<Record, Integer> field) {
+        return commands.stream().map(cmd -> cmd.get(field)).collect(toList());
+    }
+
 }

@@ -3,33 +3,15 @@ package com.kenshoo.pl.data;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey;
-import org.jooq.BatchBindStep;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.DeleteWhereStep;
-import org.jooq.Field;
-import org.jooq.Insert;
-import org.jooq.InsertOnDuplicateSetStep;
-import org.jooq.InsertValuesStepN;
-import org.jooq.Record;
-import org.jooq.TableField;
-import org.jooq.UpdateSetFirstStep;
-import org.jooq.UpdateSetMoreStep;
+import org.jooq.*;
 import org.jooq.impl.DSL;
-import org.jooq.lambda.Seq;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.jooq.lambda.Seq.seq;
 
 public class CommandsExecutor {
 
@@ -119,7 +101,7 @@ public class CommandsExecutor {
         if (!command1.getFields().findFirst().isPresent()) {
             return AffectedRows.empty();
         }
-        for (Field<?> field : Seq.seq(command1.getFields())) {
+        for (Field<?> field : seq(command1.getFields())) {
             if (update != null) {
                 update = update.set(field, (Object) null);
             } else {
@@ -150,18 +132,24 @@ public class CommandsExecutor {
         return AffectedRows.updated(IntStream.of(execute).sum());
     }
 
-    private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey mode) {
+    private AffectedRows executeInsertCommands(DataTable table, List<? extends CreateRecordCommand> commandsToExecute, OnDuplicateKey onDuplicateKey) {
+
+        final Optional<GeneratedKeyRecorder> generatedKeyRecorder = Optional.ofNullable(table.getIdentity())
+                .map(identity -> new GeneratedKeyRecorder(identity.getField(), commandsToExecute.size()));
+
+        DSLContext dslContext = generatedKeyRecorder.map(g -> g.newRecordingJooq(this.dslContext)).orElse(this.dslContext);
+
         CreateRecordCommand firstCommand = commandsToExecute.get(0);
         Collection<Field<?>> fields = Stream.concat(firstCommand.getFields(), table.getVirtualPartition().stream().map(FieldAndValue::getField)).collect(toList());
         InsertValuesStepN<Record> insertValuesStepN = dslContext.insertInto(table, fields).values(new Object[fields.size()]);
         Insert insert = insertValuesStepN;
-        switch (mode) {
+        switch (onDuplicateKey) {
             case IGNORE:
                 insert = insertValuesStepN.onDuplicateKeyIgnore();
                 break;
             case UPDATE:
                 InsertOnDuplicateSetStep<Record> insertOnDuplicateSetStep = insertValuesStepN.onDuplicateKeyUpdate();
-                for (Field<?> field : Seq.seq(firstCommand.getFields())) {
+                for (Field<?> field : seq(firstCommand.getFields())) {
                     //noinspection unchecked
                     insertOnDuplicateSetStep = insertOnDuplicateSetStep.set((Field) field, (Object) null);
                 }
@@ -173,7 +161,7 @@ public class CommandsExecutor {
 
         for (AbstractRecordCommand command : commandsToExecute) {
             List<Object> values = Stream.concat(command.getValues(firstCommand.getFields()), table.getVirtualPartition().stream().map(FieldAndValue::getValue)).collect(toList());
-            if (mode == OnDuplicateKey.UPDATE) {
+            if (onDuplicateKey == OnDuplicateKey.UPDATE) {
                 values = Stream.concat(values.stream(), values.stream()).collect(toList());
             }
             batch.bind(values.toArray());
@@ -183,7 +171,16 @@ public class CommandsExecutor {
         // In case of regular INSERT (without IGNORE or ON DUPLICATE KEY UPDATE) the result is -2 for every inserted row
         int inserted = (int) IntStream.of(result).filter(i -> i == 1 || i == -2).count();
         int updated = (int) IntStream.of(result).filter(i -> i == 2).count();
+
+        generatedKeyRecorder
+                .map(GeneratedKeyRecorder::getGeneratedKeys)
+                .ifPresent(generatedKeys -> setIdsToCommands(table.getIdentity().getField(), commandsToExecute, generatedKeys));
+
         return AffectedRows.insertedAndUpdated(inserted, updated);
+    }
+
+    private void setIdsToCommands(Field idField, List<? extends CreateRecordCommand> commandsToExecute, List<Object> generatedKeys) {
+        seq(commandsToExecute).zip(generatedKeys).forEach(pair -> pair.v1.set(idField, pair.v2));
     }
 
     private Set<String> getFieldsNames(AbstractRecordCommand command) {
@@ -196,3 +193,4 @@ public class CommandsExecutor {
     }
 
 }
+

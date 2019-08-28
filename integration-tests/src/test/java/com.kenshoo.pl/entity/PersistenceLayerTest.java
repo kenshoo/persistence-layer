@@ -1096,6 +1096,7 @@ public class PersistenceLayerTest {
                 AbstractRecordCommand update = changesContainer.getInsertOnDuplicateUpdate(EntityForTestSecondaryTable.INSTANCE, entityChange,
                         () -> new CreateRecordCommand(EntityForTestSecondaryTable.INSTANCE));
                 update.set(EntityForTestSecondaryTable.INSTANCE.id, changeContext.getEntity(entityChange).get(EntityForTest.ID));
+                update.set(EntityForTestSecondaryTable.INSTANCE.entityId, changeContext.getEntity(entityChange).get(EntityForTest.ID));
                 update.set(EntityForTestSecondaryTable.INSTANCE.url, url.replace("http", "https"));
             }
             changesContainer.commit(commandsExecutor, changeContext.getStats());
