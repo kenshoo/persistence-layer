@@ -94,6 +94,25 @@ public class PersistenceLayerTest {
     private static final String FIELD2_ERROR = "Invalid.FIELD2.Value";
     private static final String CANNOT_CREATE_IN_PARENT = "Cannot";
 
+    @Test
+    public void gal() {
+
+        CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
+        cmd.set(ChildForTest.ID, 1);
+        cmd.set(ChildForTest.PARENT_ID, ID_1);
+        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> "from parent: " + v1.toString()));
+
+        ChangeFlowConfig<ChildForTest> flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE).build();
+        PersistenceLayer<ChildForTest, ChildForTest.Key> pl = new PersistenceLayer<>(dslContext);
+        pl.create(asList(cmd), flow, ChildForTest.Key.DEFINITION);
+
+        dslContext.selectFrom(ChildForTestTable.INSTANCE).forEach(rec -> {
+            System.out.println("Child id: " + rec.get(ChildForTestTable.INSTANCE.id) + ", field: " + rec.get(ChildForTestTable.INSTANCE.field));
+        });
+
+
+    }
+
     @Before
     public void populateTables() {
 
@@ -108,6 +127,7 @@ public class PersistenceLayerTest {
         mainTable = EntityForTestTable.INSTANCE;
         if (!tablesCreated) {
             DataTableUtils.createTable(dslContext, mainTable);
+            DataTableUtils.createTable(dslContext, ChildForTestTable.INSTANCE);
         }
         DataTableUtils.populateTable(dslContext, mainTable, DATA);
 
