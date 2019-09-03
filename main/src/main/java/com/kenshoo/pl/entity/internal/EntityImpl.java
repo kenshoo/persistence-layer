@@ -18,7 +18,7 @@ public class EntityImpl implements Entity {
     public <T> T get(EntityField<?, T> field) {
         //noinspection unchecked
         T value = (T) fields.get(field);
-        if (!fields.containsKey(field)) {
+        if (value == null && !fields.containsKey(field)) {
             throw new IllegalArgumentException("Field " + field + " is not fetched");
         }
         return value;
