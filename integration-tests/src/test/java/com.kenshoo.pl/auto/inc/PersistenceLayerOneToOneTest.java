@@ -48,7 +48,6 @@ public class PersistenceLayerOneToOneTest {
               .forEach(table -> dslContext.deleteFrom(table).execute());
     }
 
-    @Ignore
     @Test
     public void auto_generated_ids_are_returned_in_order() {
         final List<TestEntityCreateCommand> createCommands = Stream.of("name1", "name2", "name3")
@@ -76,7 +75,6 @@ public class PersistenceLayerOneToOneTest {
                    actualReturnedIds, equalTo(expectedReturnedIds));
     }
 
-    @Ignore
     @Test
     public void auto_generated_id_of_primary_table_is_populated_in_secondary_table() {
         final String name = "name";

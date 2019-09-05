@@ -9,9 +9,8 @@ import com.kenshoo.pl.data.DeleteRecordCommand;
 import com.kenshoo.pl.data.UpdateRecordCommand;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.PersistentLayerStats;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.Supplier;
 
 
@@ -40,6 +39,11 @@ public class ChangesContainer {
     public AbstractRecordCommand getInsert(DataTable table, EntityChange entityChange, Supplier<CreateRecordCommand> commandCreator) {
         //noinspection RedundantTypeArguments IntelliJ fails to compile without specification
         return getOrCreate(inserts, IdToCommandMap<CreateRecordCommand>::new, commandCreator, table, entityChange);
+    }
+
+    public Optional<CreateRecordCommand> getInsert(final DataTable table, final EntityChange entityChange) {
+        return Optional.ofNullable(inserts.get(table))
+                       .map(idToCmdMap -> idToCmdMap.map.get(entityChange));
     }
 
     public AbstractRecordCommand getInsertOnDuplicateUpdate(DataTable table, EntityChange entityChange, Supplier<CreateRecordCommand> commandCreator) {

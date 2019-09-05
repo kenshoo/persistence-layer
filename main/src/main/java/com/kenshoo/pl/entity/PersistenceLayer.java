@@ -15,6 +15,7 @@ import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -44,7 +45,21 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         CreateResult<ROOT, PK> results = new CreateResult<>(
                 seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
-        seq(results.iterator()).filter(r -> r.isSuccess()).forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
+
+
+        Optional.ofNullable(flowConfig.getEntityType().getPrimaryTable().getIdentity()).ifPresent(identity -> {
+
+            EntityField<ROOT, Object> idField = (EntityField<ROOT, Object>) flowConfig.getEntityType().findField(identity.getField()).get();
+
+            seq(results.iterator())
+                    .filter(r -> r.isSuccess())
+                    .forEach(res -> res.getCommand().set(idField, changeContext.getEntity(res.getCommand()).get(idField)));
+        });
+
+        seq(results.iterator())
+                .filter(r -> r.isSuccess())
+                .forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
+
         return results;
     }
 
