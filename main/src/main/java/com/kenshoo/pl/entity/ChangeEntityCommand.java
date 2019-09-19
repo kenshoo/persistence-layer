@@ -3,11 +3,7 @@ package com.kenshoo.pl.entity;
 import com.kenshoo.pl.entity.internal.EntityFieldImpl;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
-import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
-import com.kenshoo.pl.entity.spi.FieldValueSupplier;
-import com.kenshoo.pl.entity.spi.MultiFieldValueSupplier;
-import com.kenshoo.pl.entity.spi.NotSuppliedException;
-import com.kenshoo.pl.entity.spi.ValidationException;
+import com.kenshoo.pl.entity.spi.*;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,7 +14,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
-abstract public class ChangeEntityCommand<E extends EntityType<E>> implements EntityChange<E> {
+abstract public class ChangeEntityCommand<E extends EntityType<E>> implements MutableCommand<E> {
 
     private final E entityType;
     private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
@@ -37,25 +33,30 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements En
         return entityType;
     }
 
+    @Override
     public <T> void set(EntityField<E, T> field, T newValue) {
         values.put(field, newValue);
     }
 
+    @Override
     public <T> void set(EntityFieldPrototype<T> fieldPrototype, T newValue) {
         EntityField<E, T> entityField = findFieldByPrototype(fieldPrototype);
         set(entityField, newValue);
     }
 
+    @Override
     public <T> void set(EntityField<E, T> field, FieldValueSupplier<T> valueSupplier) {
         suppliers.put(field, valueSupplier);
         currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
     }
 
+    @Override
     public <T> void set(EntityFieldPrototype<T> fieldPrototype, FieldValueSupplier<T> valueSupplier) {
         EntityField<E, T> entityField = findFieldByPrototype(fieldPrototype);
         set(entityField, valueSupplier);
     }
 
+    @Override
     public void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier) {
         LazyDelegatingMultiSupplier<E> delegatingMultiSupplier = new LazyDelegatingMultiSupplier<>(valueSupplier);
         currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
