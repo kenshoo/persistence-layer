@@ -104,7 +104,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         if(changeOperation == CREATE) {
             return fieldsToFetch.filter(entityField -> {
                 if (entityField.getDbAdapter().getTable().equals(flowConfig.getEntityType().getPrimaryTable())) {
-                    throw new IllegalStateException("Field " + entityField + " of the primary table is requested in CREATE flow by " + consumer);
+                    throw new IllegalStateException("Field " + entityField + " of the entity type: " + entityField.getEntityType() + " and primary table is requested in CREATE flow by " + consumer);
                 }
                 return true;
             });
