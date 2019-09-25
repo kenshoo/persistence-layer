@@ -18,18 +18,9 @@ import com.kenshoo.pl.entity.FieldsValueMapImpl;
 import com.kenshoo.pl.entity.Identifier;
 import com.kenshoo.pl.entity.PartialEntity;
 import com.kenshoo.pl.entity.UniqueKey;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Record;
-import org.jooq.ResultQuery;
-import org.jooq.SelectField;
-import org.jooq.SelectFinalStep;
-import org.jooq.SelectJoinStep;
-import org.jooq.Table;
-import org.jooq.TableField;
+import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jooq.lambda.Seq;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -45,12 +36,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static org.jooq.lambda.Seq.seq;
 
 public class EntitiesFetcher {
 
@@ -148,6 +141,17 @@ public class EntitiesFetcher {
                 .collect(toList());
     }
 
+    public static void main(String[] args) {
+
+        List<Integer> ints = Arrays.asList(1);
+
+        for (Integer i : ints) {
+            ints.remove(i);
+        }
+
+
+    }
+
     /*
      This method generates a query that joins the starting table with one or more foreign keys, with the tables
      necessary to get to all fieldsToFetch. This is done by traversing the tree that starts at the starting table and
@@ -159,6 +163,7 @@ public class EntitiesFetcher {
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> tablesToFetch = fieldsToFetch.stream()
                 .map(field -> field.getDbAdapter().getTable())
+                .filter(tb -> !tb.equals(startingTable))
                 .collect(toSet());
         Collection<SelectField<?>> selectFields = fieldsToFetch.stream()
                 .flatMap(field -> field.getDbAdapter().getTableFields())
@@ -171,21 +176,10 @@ public class EntitiesFetcher {
         SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
 
         // First, add left-joins for secondary tables of entity for the update flow. In create flow this loop won't find anything to join
-        Iterator<DataTable> tablesToFetchIterator = tablesToFetch.iterator();
-        while (tablesToFetchIterator.hasNext()) {
-            DataTable table = tablesToFetchIterator.next();
-            if (table.equals(startingTable)) {
-                tablesToFetchIterator.remove();
-                continue;
-            }
-            Condition joinCondition = getJoinCondition(table, startingTable);
-            if (joinCondition == null) {
-                continue;
-            }
-            //noinspection unchecked
-            query = query.leftOuterJoin(table).on(joinCondition);
-            tablesToFetchIterator.remove();
-        }
+
+        List<DataTable> secondaryTables = findJoinableSecondaryTables(tablesToFetch, startingTable);
+        query = addToJoin(query, startingTable, secondaryTables);
+        tablesToFetch.removeAll(secondaryTables);
 
         // The set of tables reached by BFS
         Set<DataTable> tablesReached = Sets.newHashSet();
@@ -197,7 +191,9 @@ public class EntitiesFetcher {
         startingTable.getReferences().stream().map(new ToEdgesOf(root)).collect(toCollection(() -> edgesQueue));
 
         while (!tablesToFetch.isEmpty()) {
+
             TreeEdge treeEdge = edgesQueue.poll();
+
             if (treeEdge == null) {
                 // The BFS queue is empty but there are still tables we didn't reach
                 throw new IllegalStateException("Table " + tablesToFetch.iterator().next() + " could not be reached via joins");
@@ -207,6 +203,12 @@ public class EntitiesFetcher {
                 // If we have already reached this table by a different path, ignore it
                 continue;
             }
+            ////////////////
+            List<DataTable> targetTables = findJoinableSecondaryTables(tablesToFetch, treeEdge.source.table);
+            query = addToJoin(query, treeEdge.source.table, targetTables);
+            tablesToFetch.removeAll(targetTables);
+            /////////////////
+
             tablesReached.add(joinTarget);
 
             // Feed the BFS queue for the next time
@@ -234,6 +236,19 @@ public class EntitiesFetcher {
                 query.join(rhs).on(getJoinCondition(join.source.table, join.target.table));
                 joinedTables.add(rhs);
             }
+        }
+        return query;
+    }
+
+    private List<DataTable> findJoinableSecondaryTables(Set<DataTable> tablesToFetch, DataTable startingTable) {
+        return tablesToFetch.stream()
+                .filter(tb -> getJoinCondition(tb, startingTable) != null)
+                .collect(toList());
+    }
+
+    private SelectJoinStep<Record> addToJoin(SelectJoinStep<Record> query, DataTable startingTable, Iterable<DataTable> secondaryTables) {
+        for (DataTable secondaryTable : secondaryTables) {
+            query = query.leftOuterJoin(secondaryTable).on(getJoinCondition(secondaryTable, startingTable));
         }
         return query;
     }

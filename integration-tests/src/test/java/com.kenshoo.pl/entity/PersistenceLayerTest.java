@@ -100,7 +100,7 @@ public class PersistenceLayerTest {
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);
-        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> "from parent: " + v1.toString()));
+        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> "from parent: " + v1.toString() + " + " + v2.toString()));
 
         ChangeFlowConfig<ChildForTest> flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE).build();
         PersistenceLayer<ChildForTest, ChildForTest.Key> pl = new PersistenceLayer<>(dslContext);
