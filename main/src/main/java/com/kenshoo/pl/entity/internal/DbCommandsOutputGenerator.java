@@ -14,7 +14,6 @@ import org.jooq.TableField;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -209,11 +208,13 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
         seq(entityChanges).forEach(cmd ->
             cmd.getChanges()
+               .filter(filter)
                .forEach(fieldChange -> translateChange(cmd,
                                                        fieldChange,
                                                        tableCommands,
                                                        operator,
                                                        changeContext)));
+
         tableCommands.commit(commandsExecutor, changeContext.getStats());
         return tableCommands;
     }
