@@ -26,6 +26,8 @@ import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAn
 public abstract class AbstractEntityType<E extends EntityType<E>> implements EntityType<E> {
 
     private final Supplier<Optional<IdField<E>>> idField = memoize(this::scanForIdField);
+    private EntityField<E, Object> primaryIdentityField;
+
     private final String name;
     private Collection<EntityField<E, ?>> fields = new ArrayList<>();
     private Collection<PrototypedEntityField<E, ?>> prototypedFields = new ArrayList<>();
@@ -117,9 +119,19 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
         return addField(field);
     }
 
+    // Casting here because the identity field can be of arbitrary type, and we must be able to mutate its value in a command
+    @SuppressWarnings("unchecked")
     private <T, F extends EntityField<E, T>> F addField(F field) {
         fields.add(field);
+        if (primaryIdentityField == null && isPrimaryIdentityField(field)) {
+            this.primaryIdentityField = (EntityField<E, Object>)field;
+        }
         return field;
+    }
+
+    private boolean isPrimaryIdentityField(final EntityField<E, ?> field) {
+        final EntityFieldDbAdapter<?> dbAdapter = field.getDbAdapter();
+        return dbAdapter.getTable() == getPrimaryTable() && dbAdapter.isIdentityField();
     }
 
     @Override
@@ -144,6 +156,11 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     @Override
     public Optional<EntityField<E, ? extends Number>> getIdField() {
         return idField.get().map(IdField::getField);
+    }
+
+    @Override
+    public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
+        return Optional.ofNullable(primaryIdentityField);
     }
 
     @Override

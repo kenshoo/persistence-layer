@@ -2,21 +2,8 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.data.AbstractRecordCommand;
-import com.kenshoo.pl.data.CommandsExecutor;
-import com.kenshoo.pl.data.CreateRecordCommand;
-import com.kenshoo.pl.data.DatabaseId;
-import com.kenshoo.pl.data.DeleteRecordCommand;
-import com.kenshoo.pl.data.UpdateRecordCommand;
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.FieldChange;
-import com.kenshoo.pl.entity.Identifier;
-import com.kenshoo.pl.entity.PLContext;
+import com.kenshoo.pl.data.*;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jooq.ForeignKey;
@@ -29,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
@@ -50,24 +38,23 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
         Stopwatch stopwatch = Stopwatch.createStarted();
 
-        for (EntityChange<E> entityChange : entityChanges) {
-            if (operator == ChangeOperation.DELETE) {
-                ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
-                changesContainer.getDelete(entityType.getPrimaryTable(), entityChange, () -> new DeleteRecordCommand(entityType.getPrimaryTable(), getDatabaseId(entityChange)));
-                changesContainer.commit(commandsExecutor, changeContext.getStats());
-            } else {
-                ChangesContainer primaryTableCommands = new ChangesContainer(entityType.onDuplicateKey());
-                entityChange.getChanges().filter(this::isOfPrimaryTable).forEach(fieldChange -> translateChange(entityChange, fieldChange, primaryTableCommands, operator, changeContext));
-                primaryTableCommands.commit(commandsExecutor, changeContext.getStats());
+        if (operator == ChangeOperation.DELETE) {
+            generateForDelete(changeContext, entityChanges);
+        } else {
+            final ChangesContainer primaryTableCommands =
+                generateForCreateOrUpdate(entityChanges,
+                                          this::isOfPrimaryTable,
+                                          operator,
+                                          changeContext);
 
-                if (autoGeneratingId().isPresent() && operator == CREATE) {
-                    populateGeneratedIdsToContext(entityChanges, changeContext, primaryTableCommands);
-                }
-
-                ChangesContainer secondaryTableCommands = new ChangesContainer(entityType.onDuplicateKey());
-                entityChange.getChanges().filter(not(this::isOfPrimaryTable)).forEach(fieldChange -> translateChange(entityChange, fieldChange, secondaryTableCommands, operator, changeContext));
-                secondaryTableCommands.commit(commandsExecutor, changeContext.getStats());
+            if (entityType.getPrimaryIdentityField().isPresent() && operator == CREATE) {
+                populateGeneratedIdsToContext(entityChanges, changeContext, primaryTableCommands);
             }
+
+            generateForCreateOrUpdate(entityChanges,
+                                      not(this::isOfPrimaryTable),
+                                      operator,
+                                      changeContext);
         }
 
         changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
@@ -173,17 +160,13 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private DatabaseId foreignKeyValues(EntityChange<E> cmd, ChangeOperation changeOperation, ChangeContext context, DataTable childTable) {
         ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(((ChangeEntityCommand) cmd).getEntityType().getPrimaryTable());
         Collection<EntityField<E, ?>> parentFields = entityType(cmd).findFields(foreignKey.getKey().getFields());
-        Object[] values = changeOperation == CREATE && !autoGeneratingId().isPresent() ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
+        Object[] values = changeOperation == CREATE && !entityType.getPrimaryIdentityField().isPresent() ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
         if (foreignKey.getFields().size() != values.length) {
             throw new IllegalStateException("Foreign key from " + childTable.getName() + " doesn't have the same number of fields as " + foreignKey);
         }
         return new DatabaseId(
                 foreignKey.getFields().toArray(new TableField<?, ?>[foreignKey.getFields().size()]),
                 values);
-    }
-
-    private Optional<Identity<Record, ?>> autoGeneratingId() {
-        return Optional.ofNullable(entityType.getPrimaryTable().getIdentity());
     }
 
     private EntityType<E> entityType(EntityChange<E> cmd) {
@@ -206,4 +189,32 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         return databaseId;
     }
 
+    private void generateForDelete(final ChangeContext changeContext,
+                                   final Iterable<? extends EntityChange<E>> entityChanges) {
+        ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
+        entityChanges.forEach( entityChange ->
+           changesContainer.getDelete(entityType.getPrimaryTable(),
+                                      entityChange,
+                                      () -> new DeleteRecordCommand(entityType.getPrimaryTable(),
+                                                                    getDatabaseId(entityChange))));
+        changesContainer.commit(commandsExecutor, changeContext.getStats());
+    }
+
+    private ChangesContainer generateForCreateOrUpdate(final Iterable<? extends EntityChange<E>> entityChanges,
+                                           final Predicate<FieldChange<E, ?>> filter,
+                                           final ChangeOperation operator,
+                                           final ChangeContext changeContext) {
+
+        final ChangesContainer tableCommands = new ChangesContainer(entityType.onDuplicateKey());
+
+        seq(entityChanges).forEach(cmd ->
+            cmd.getChanges()
+               .forEach(fieldChange -> translateChange(cmd,
+                                                       fieldChange,
+                                                       tableCommands,
+                                                       operator,
+                                                       changeContext)));
+        tableCommands.commit(commandsExecutor, changeContext.getStats());
+        return tableCommands;
+    }
 }

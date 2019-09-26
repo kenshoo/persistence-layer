@@ -43,22 +43,18 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
         CreateResult<ROOT, PK> results = new CreateResult<>(
-                seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrors(cmd))),
+                seq(commands).map(cmd -> new EntityCreateResult<>(cmd, changeContext.getValidationErrors(cmd))),
                 changeContext.getStats());
 
-
-        Optional.ofNullable(flowConfig.getEntityType().getPrimaryTable().getIdentity()).ifPresent(identity -> {
-
-            EntityField<ROOT, Object> idField = (EntityField<ROOT, Object>) flowConfig.getEntityType().findField(identity.getField()).get();
-
-            seq(results.iterator())
-                    .filter(r -> r.isSuccess())
-                    .forEach(res -> res.getCommand().set(idField, changeContext.getEntity(res.getCommand()).get(idField)));
-        });
+        final Optional<EntityField<ROOT, Object>> optionalIdentityField = flowConfig.getPrimaryIdentityField();
 
         seq(results.iterator())
-                .filter(r -> r.isSuccess())
-                .forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
+            .filter(EntityChangeResult::isSuccess)
+            .map(EntityChangeResult::getCommand)
+            .forEach(cmd -> {
+                optionalIdentityField.ifPresent(idField -> populateIdentityField(cmd, changeContext, idField));
+                cmd.setIdentifier(primaryKey.createValue(cmd));
+            });
 
         return results;
     }
@@ -261,4 +257,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         return cmd -> op == cmd.getChangeOperation();
     }
 
+    private void populateIdentityField(final CreateEntityCommand<ROOT> cmd, final ChangeContext changeContext, final EntityField<ROOT, Object> idField) {
+        final Entity entity = Optional.ofNullable(changeContext.getEntity(cmd))
+                                      .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
+        cmd.set(idField, entity.get(idField));
+    }
 }
