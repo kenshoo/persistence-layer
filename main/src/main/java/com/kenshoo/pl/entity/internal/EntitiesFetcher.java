@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeTraverser;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import com.kenshoo.jooq.FieldAndValues;
@@ -24,26 +25,19 @@ import org.jooq.lambda.Seq;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.function.Functions.not;
 
 public class EntitiesFetcher {
 
@@ -141,16 +135,58 @@ public class EntitiesFetcher {
                 .collect(toList());
     }
 
-    public static void main(String[] args) {
 
-        List<Integer> ints = Arrays.asList(1);
-
-        for (Integer i : ints) {
-            ints.remove(i);
+    static class Tree {
+        public Tree(int num, List<Tree> neighbors) {
+            this.num = num;
+            this.neighbors = neighbors;
         }
 
+        int num;
 
+        public Tree(int num) {
+            this.num = num;
+        }
+
+        List<Tree> neighbors = new ArrayList<>();
     }
+
+//    public static void main(String[] args) {
+//
+//
+//        Tree root = new Tree(1, Arrays.asList(
+//
+//                new Tree(2, Arrays.asList(
+//
+//                        new Tree(3, Arrays.asList(
+//
+//                        ))
+//             )),
+//
+//                new Tree(4, Arrays.asList(
+//
+//                ))
+//
+//        ));
+//    }
+
+    static <Tree> Seq<Tree> BFS(Tree root, Function<Tree, Iterable<Tree>> neighbours) {
+
+        TreeTraverser<Tree> visitor = new TreeTraverser<Tree>() {
+
+            Set<Tree> alreadyVisited = new HashSet<>(singletonList(root));
+
+            @Override
+            public Iterable<Tree> children(Tree node) {
+                List<Tree> unvisitedChildren = seq(neighbours.apply(node)).filter(not(alreadyVisited::contains)).toList();
+                alreadyVisited.addAll(unvisitedChildren);
+                return unvisitedChildren;
+            }
+        };
+
+        return seq(visitor.breadthFirstTraversal(root));
+    }
+
 
     /*
      This method generates a query that joins the starting table with one or more foreign keys, with the tables
@@ -177,73 +213,66 @@ public class EntitiesFetcher {
 
         // First, add left-joins for secondary tables of entity for the update flow. In create flow this loop won't find anything to join
 
-        List<DataTable> secondaryTables = findJoinableSecondaryTables(tablesToFetch, startingTable);
-        query = addToJoin(query, startingTable, secondaryTables);
-        tablesToFetch.removeAll(secondaryTables);
 
-        // The set of tables reached by BFS
-        Set<DataTable> tablesReached = Sets.newHashSet();
-        // The set of tables added to the resulting query
         Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
-        // The queue of BFS
-        LinkedList<TreeEdge> edgesQueue = new LinkedList<>();
-        TreeNode root = new TreeNode(null, startingTable);
-        startingTable.getReferences().stream().map(new ToEdgesOf(root)).collect(toCollection(() -> edgesQueue));
+        TreeEdge startingEdge = new TreeEdge(null, startingTable);
 
-        while (!tablesToFetch.isEmpty()) {
+        BFS(startingEdge, edge -> seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target)))
+                .limitUntil(__ -> tablesToFetch.isEmpty())
+                .forEach(edge -> {
 
-            TreeEdge treeEdge = edgesQueue.poll();
+                    DataTable table = edge.target.table;
 
-            if (treeEdge == null) {
-                // The BFS queue is empty but there are still tables we didn't reach
-                throw new IllegalStateException("Table " + tablesToFetch.iterator().next() + " could not be reached via joins");
-            }
-            DataTable joinTarget = treeEdge.target.table;
-            if (tablesReached.contains(joinTarget)) {
-                // If we have already reached this table by a different path, ignore it
-                continue;
-            }
-            ////////////////
-            List<DataTable> targetTables = findJoinableSecondaryTables(tablesToFetch, treeEdge.source.table);
-            query = addToJoin(query, treeEdge.source.table, targetTables);
-            tablesToFetch.removeAll(targetTables);
-            /////////////////
+                    List<DataTable> targetsReferencingToCurrent = seq(tablesToFetch).filter(hasReferenceTo(table)).toList();
 
-            tablesReached.add(joinTarget);
+                    if (edge != startingEdge && (tablesToFetch.contains(table) || !targetsReferencingToCurrent.isEmpty())) {
+                        //
+                        // found table to join
+                        //
+                        tablesToFetch.remove(table);
 
-            // Feed the BFS queue for the next time
-            joinTarget.getReferences().stream().map(new ToEdgesOf(treeEdge.target)).collect(toCollection(() -> edgesQueue));
+                        // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
+                        // Using a stack for that
+                        LinkedList<TreeEdge> joins = new LinkedList<>();
+                        joins.push(edge);
+                        // Push onto the stack until we reach a table already joined (or the starting table)
+                        while (!joinedTables.contains(edge.source.table)) {
+                            edge = edge.source.parent;
+                            joins.push(edge);
+                        }
+                        // Perform the joins
+                        for (TreeEdge join : joins) {
+                            DataTable rhs = join.target.table;
+                            //noinspection unchecked
+                            query.join(rhs).on(getJoinCondition(join.source.table, join.target.table));
+                            joinedTables.add(rhs);
+                        }
+                    }
 
-            // If we reached a table we don't need for the fieldsToFetch, just continue
-            if (!tablesToFetch.contains(joinTarget)) {
-                continue;
-            }
-            tablesToFetch.remove(joinTarget);
+                    //
+                    // secondary table fix
+                    //
+                    // This will fail when 'table' is not in tablesToFetch. TODO: add another unit test
+                    //
+                    addToJoin(query, table, targetsReferencingToCurrent);
+                    tablesToFetch.removeAll(targetsReferencingToCurrent);
 
-            // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
-            // Using a stack for that
-            LinkedList<TreeEdge> joins = new LinkedList<>();
-            joins.push(treeEdge);
-            // Push onto the stack until we reach a table already joined (or the starting table)
-            while (!joinedTables.contains(treeEdge.source.table)) {
-                treeEdge = treeEdge.source.parent;
-                joins.push(treeEdge);
-            }
-            // Perform the joins
-            for (TreeEdge join : joins) {
-                DataTable rhs = join.target.table;
-                //noinspection unchecked
-                query.join(rhs).on(getJoinCondition(join.source.table, join.target.table));
-                joinedTables.add(rhs);
-            }
+                });
+
+        if (!tablesToFetch.isEmpty()) {
+            throw new IllegalStateException("Tables " + tablesToFetch + " could not be reached via joins");
+
         }
+
         return query;
     }
 
-    private List<DataTable> findJoinableSecondaryTables(Set<DataTable> tablesToFetch, DataTable startingTable) {
-        return tablesToFetch.stream()
-                .filter(tb -> getJoinCondition(tb, startingTable) != null)
-                .collect(toList());
+    private Seq<DataTable> getNeighbors(DataTable table) {
+        return seq(table.getReferences()).map(ref -> ((DataTable) ref.getTable()));
+    }
+
+    private Predicate<DataTable> hasReferenceTo(DataTable startingTable) {
+        return tb -> getJoinCondition(tb, startingTable) != null;
     }
 
     private SelectJoinStep<Record> addToJoin(SelectJoinStep<Record> query, DataTable startingTable, Iterable<DataTable> secondaryTables) {
