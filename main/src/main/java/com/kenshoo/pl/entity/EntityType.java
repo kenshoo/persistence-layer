@@ -67,6 +67,10 @@ public interface EntityType<E extends EntityType<E>> {
                 .findFirst();
     }
 
+    default Optional<TableField<Record, ?>> findFirstTableField(EntityField<E, ?> entityField) {
+        return entityField.getDbAdapter().getTableFields().findFirst();
+    }
+
     default Collection<EntityField<E, ?>> determineForeignKeys(Set<EntityField<E, ?>> requiredFields) {
         Set<TableField<Record, ?>> foreignKeyFields = getPrimaryTable().getReferences().stream()
                 .map(Key::getFields)
