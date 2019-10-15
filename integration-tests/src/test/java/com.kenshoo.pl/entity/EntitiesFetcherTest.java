@@ -13,7 +13,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

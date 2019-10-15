@@ -14,7 +14,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.Collections;
 
