@@ -1,5 +1,8 @@
 package com.kenshoo.pl.entity;
 
+import org.jooq.Record;
+import org.jooq.TableField;
+
 public interface EntityField<E extends EntityType<E>, T> {
 
     EntityFieldDbAdapter<T> getDbAdapter();
@@ -17,4 +20,10 @@ public interface EntityField<E extends EntityType<E>, T> {
     }
 
     EntityType<E> getEntityType();
+
+    default TableField<Record, ?> findFirstTableField() {
+        return getDbAdapter().getTableFields()
+                             .findFirst()
+                             .orElseThrow(() -> new IllegalStateException("No table fields found for an entity field"));
+    }
 }

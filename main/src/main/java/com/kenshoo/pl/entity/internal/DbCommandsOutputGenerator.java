@@ -68,8 +68,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                                Collection<? extends EntityChange<E>> entityChanges,
                                                ChangeContext changeContext,
                                                ChangesContainer changesContainer) {
-        final TableField<Record, ?> identityTableField = entityType.findFirstTableField(identityField)
-                                                                   .orElseThrow(() -> new IllegalStateException("Could not find the identity table field matching the identity field " + identityField));
+        final TableField<Record, ?> identityTableField = identityField.findFirstTableField();
 
         seq(entityChanges)
                 .map(change -> ImmutablePair.of(change, changesContainer.getInsert(entityType.getPrimaryTable(), change)))

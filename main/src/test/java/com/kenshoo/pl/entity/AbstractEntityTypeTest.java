@@ -50,12 +50,6 @@ public class AbstractEntityTypeTest {
                    equalTo(Optional.of(EntityWithAutoInc.id)));
     }
 
-    @Test
-    public void test_findFirstTableField_returns_correct_field() {
-        assertThat(EntityWithManualId.INSTANCE.findFirstTableField(EntityWithManualId.id),
-                   equalTo(Optional.of(ManualIdTable.TABLE.id)));
-    }
-
     public static class AutoIncTable extends AbstractDataTable<AutoIncTable> {
 
         public static final AutoIncTable TABLE = new AutoIncTable();
