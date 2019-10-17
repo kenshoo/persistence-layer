@@ -12,7 +12,8 @@ public class BetaTesting {
 
     public enum Feature {
         // Add toggles in here
-        FindSecondaryTablesOfParents
+        FindSecondaryTablesOfParents,
+        AutoIncrementSupport
     }
 
     private static final Set<Feature> enabled = newConcurrentHashSet();

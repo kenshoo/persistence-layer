@@ -3,6 +3,7 @@ package com.kenshoo.pl.auto.inc;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.auto.inc.TestEntity.NAME;
 import static com.kenshoo.pl.auto.inc.TestEntity.SECOND_NAME;
 import static java.util.Collections.singletonList;
@@ -34,6 +36,8 @@ public class PersistenceLayerOneToOneTest {
 
     @Before
     public void setUp() {
+        BetaTesting.enable(AutoIncrementSupport);
+
         dslContext = TestJooqConfig.create();
         persistenceLayer = new PersistenceLayer<>(dslContext);
         final PLContext plContext = new PLContext.Builder(dslContext).build();
@@ -45,6 +49,7 @@ public class PersistenceLayerOneToOneTest {
 
     @After
     public void tearDown() {
+        BetaTesting.disable(AutoIncrementSupport);
         Stream.of(SECONDARY_TABLE, PRIMARY_TABLE)
               .forEach(table -> dslContext.deleteFrom(table).execute());
     }

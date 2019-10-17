@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
 import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
@@ -34,6 +36,14 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     @Override
     public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
+        if (BetaTesting.isEnabled(AutoIncrementSupport)) {
+            generateWithAutoIncSupport(entityChanges, operator, changeContext);
+        } else {
+            generateWithoutAutoIncSupport(entityChanges, operator, changeContext);
+        }
+    }
+
+    private void generateWithAutoIncSupport(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
         Stopwatch stopwatch = Stopwatch.createStarted();
 
         if (operator == ChangeOperation.DELETE) {
@@ -64,11 +74,26 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
+    @Deprecated
+    private void generateWithoutAutoIncSupport(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
+        ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
+        for (EntityChange<E> entityChange : entityChanges) {
+            if (changeOperation == ChangeOperation.DELETE) {
+                changesContainer.getDelete(entityType.getPrimaryTable(), entityChange, () -> new DeleteRecordCommand(entityType.getPrimaryTable(), getDatabaseId(entityChange)));
+            } else {
+                entityChange.getChanges().forEach(fieldChange -> translateChange(entityChange, fieldChange, changesContainer, changeOperation, changeContext));
+            }
+        }
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        changesContainer.commit(commandsExecutor, changeContext.getStats());
+        changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
+    }
+
     private void populateGeneratedIdsToContext(final EntityField<E, Object> identityField,
                                                Collection<? extends EntityChange<E>> entityChanges,
                                                ChangeContext changeContext,
                                                ChangesContainer changesContainer) {
-        final TableField<Record, ?> identityTableField = identityField.findFirstTableField();
+        final TableField<Record, ?> identityTableField = getFirstTableField(identityField);
 
         seq(entityChanges)
                 .map(change -> ImmutablePair.of(change, changesContainer.getInsert(entityType.getPrimaryTable(), change)))
@@ -78,6 +103,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                             Object generatedValue = cmd.get(identityTableField);
                             changeContext.getEntity(pair.getLeft()).set(identityField, generatedValue);
                 });
+    }
+
+    private TableField<Record, ?> getFirstTableField(final EntityField<E, Object> entityField) {
+        return entityField.getDbAdapter().getTableFields()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No table fields found for an entity field"));
     }
 
     private boolean isOfPrimaryTable(FieldChange<E, ?> f) {
