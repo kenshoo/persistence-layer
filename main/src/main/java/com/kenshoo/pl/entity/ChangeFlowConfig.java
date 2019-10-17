@@ -112,6 +112,10 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         return postSupplyFilters;
     }
 
+    public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
+        return getEntityType().getPrimaryIdentityField();
+    }
+
     public static class Builder<E extends EntityType<E>> {
         private final E entityType;
         private final List<Labeled<? extends PostFetchCommandEnricher<E>>> postFetchCommandEnrichers = new ArrayList<>();

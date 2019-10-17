@@ -4,6 +4,7 @@ import com.google.common.collect.*;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.internal.ChangesContainer;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
@@ -27,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.BetaTesting.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
@@ -145,6 +147,7 @@ public class PersistenceLayerTest {
 
     @After
     public void clearTables() {
+        BetaTesting.disable(FindSecondaryTablesOfParents);
         dslContext.deleteFrom(mainTable).execute();
         dslContext.deleteFrom(secondaryTable).execute();
         dslContext.deleteFrom(parentTable).execute();
@@ -163,6 +166,7 @@ public class PersistenceLayerTest {
 
     @Test
     public void fetchFieldFromSecondaryTableOfParentTableWhereParentItselfIsNotRequired() {
+        BetaTesting.enable(FindSecondaryTablesOfParents);
 
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
@@ -178,7 +182,7 @@ public class PersistenceLayerTest {
 
     @Test
     public void fetchFieldFromSecondaryTableOfParentTableWhereParentIsAlsoRequired() {
-
+        BetaTesting.enable(FindSecondaryTablesOfParents);
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);

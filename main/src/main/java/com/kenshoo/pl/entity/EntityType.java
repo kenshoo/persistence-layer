@@ -24,6 +24,10 @@ public interface EntityType<E extends EntityType<E>> {
 
     DataTable getPrimaryTable();
 
+    default Optional<EntityField<E, Object>> getPrimaryIdentityField() {
+        return Optional.empty();
+    }
+
     default Optional<EntityField<E, ? extends Number>> getIdField() {
         return Optional.empty();
     }

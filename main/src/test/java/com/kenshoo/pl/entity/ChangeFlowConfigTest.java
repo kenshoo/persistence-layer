@@ -2,20 +2,34 @@ package com.kenshoo.pl.entity;
 
 
 import com.google.common.collect.ImmutableList;
+import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Stream;
+
+import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeFlowConfigTest {
 
     private final static Label EXCLUDABLE_ENRICHERS = new Label() {};
+
+    @After
+    public void disableBetaFeatures() {
+        BetaTesting.disable(AutoIncrementSupport);
+    }
 
     @Test
     public void add_single_enricher_to_flow_config() {
@@ -105,6 +119,29 @@ public class ChangeFlowConfigTest {
         flowBuilder.withPostFetchCommandEnricher(enricher);
         ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher, purger));
+    }
+
+    @Test
+    public void get_primary_identity_field_returns_it_when_exists() {
+
+        BetaTesting.enable(AutoIncrementSupport);
+
+        final ChangeFlowConfig.Builder<TestEntityAutoInc> flowBuilder =
+            ChangeFlowConfig.builder(TestEntityAutoInc.INSTANCE);
+
+        final ChangeFlowConfig<TestEntityAutoInc> flow = flowBuilder.build();
+
+        assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.of(TestEntityAutoInc.ID)));
+    }
+
+    @Test
+    public void get_primary_identity_field_returns_empty_when_doesnt_exist() {
+        final ChangeFlowConfig.Builder<TestEntity> flowBuilder =
+            ChangeFlowConfig.builder(TestEntity.INSTANCE);
+
+        final ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
+
+        assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.empty()));
     }
 
     private class TestEnricher implements PostFetchCommandEnricher<TestEntity> {

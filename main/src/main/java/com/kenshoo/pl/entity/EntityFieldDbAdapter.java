@@ -1,10 +1,12 @@
 package com.kenshoo.pl.entity;
 
 import com.kenshoo.jooq.DataTable;
+import org.jooq.Identity;
 import org.jooq.Record;
 import org.jooq.TableField;
 
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -40,4 +42,11 @@ public interface EntityFieldDbAdapter<T> {
      * @return the value of entity field composed out of DB values taken from the supplied iterator
      */
     T getFromRecord(Iterator<Object> valuesIterator);
+
+    default boolean isIdentityField() {
+        return Optional.ofNullable(getTable().getIdentity())
+                       .map(Identity::getField)
+                       .map(identityField -> getTableFields().anyMatch(field -> field == identityField))
+                       .orElse(false);
+    }
 }

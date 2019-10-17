@@ -15,6 +15,7 @@ import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -41,11 +42,27 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
-        CreateResult<ROOT, PK> results = new CreateResult<>(
-                seq(commands).map(cmd -> new EntityCreateResult<ROOT, PK>(cmd, changeContext.getValidationErrors(cmd))),
-                changeContext.getStats());
-        seq(results.iterator()).filter(r -> r.isSuccess()).forEach(res -> res.getCommand().setIdentifier(primaryKey.createValue(res.getCommand())));
+        CreateResult<ROOT, PK> results = toCreateResults(commands, changeContext);
+        setIdentifiersToSuccessfulCommands(flowConfig, primaryKey, changeContext, results);
         return results;
+    }
+
+    private void setIdentifiersToSuccessfulCommands(ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey, ChangeContext changeContext, CreateResult<ROOT, PK> results) {
+        final Optional<EntityField<ROOT, Object>> optionalIdentityField = flowConfig.getPrimaryIdentityField();
+
+        seq(results.iterator())
+            .filter(EntityChangeResult::isSuccess)
+            .map(EntityChangeResult::getCommand)
+            .forEach(cmd -> {
+                optionalIdentityField.ifPresent(idField -> populateIdentityField(cmd, changeContext, idField));
+                cmd.setIdentifier(primaryKey.createValue(cmd));
+            });
+    }
+
+    private CreateResult<ROOT, PK> toCreateResults(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeContext changeContext) {
+        return new CreateResult<>(
+                    seq(commands).map(cmd -> new EntityCreateResult<>(cmd, changeContext.getValidationErrors(cmd))),
+                    changeContext.getStats());
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
@@ -67,9 +84,23 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
         ChangeContext changeContext = new ChangeContext();
         makeChanges(commands, changeContext, flowConfig);
+        InsertOnDuplicateUpdateResult<ROOT, ID> results = toUpsertResults(commands, changeContext);
+        populateIdentityFieldToSuccessfulUpserts(flowConfig, changeContext, results);
+        return results;
+    }
+
+    private <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> toUpsertResults(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeContext changeContext) {
         return new InsertOnDuplicateUpdateResult<>(
-                seq(commands).map(cmd -> new EntityInsertOnDuplicateUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
-                changeContext.getStats());
+                    seq(commands).map(cmd -> new EntityInsertOnDuplicateUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
+                    changeContext.getStats());
+    }
+
+    private <ID extends Identifier<ROOT>> void populateIdentityFieldToSuccessfulUpserts(ChangeFlowConfig<ROOT> flowConfig, ChangeContext changeContext, InsertOnDuplicateUpdateResult<ROOT, ID> results) {
+        flowConfig.getPrimaryIdentityField().ifPresent(identityField -> seq(results.iterator())
+                .filter(EntityChangeResult::isSuccess)
+                .map(EntityChangeResult::getCommand)
+                .filter(cmd -> cmd.getChangeOperation() == CREATE)
+                .forEach(cmd -> populateIdentityField(cmd, changeContext, identityField)));
     }
 
     private void makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeContext context, ChangeFlowConfig<ROOT> flowConfig) {
@@ -246,4 +277,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         return cmd -> op == cmd.getChangeOperation();
     }
 
+    private void populateIdentityField(final ChangeEntityCommand<ROOT> cmd, final ChangeContext changeContext, final EntityField<ROOT, Object> idField) {
+        final Entity entity = Optional.ofNullable(changeContext.getEntity(cmd))
+                                      .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
+        cmd.set(idField, entity.get(idField));
+    }
 }

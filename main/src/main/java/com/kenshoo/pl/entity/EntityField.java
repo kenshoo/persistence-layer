@@ -17,4 +17,5 @@ public interface EntityField<E extends EntityType<E>, T> {
     }
 
     EntityType<E> getEntityType();
+
 }
