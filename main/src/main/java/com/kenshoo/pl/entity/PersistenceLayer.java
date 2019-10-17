@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.ChangesFilter;
 import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
 import com.kenshoo.pl.entity.internal.RequiredFieldsCommandsFilter;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -22,6 +21,7 @@ import java.util.function.Predicate;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.CommandToValuesStrategies.dontEvenTryToGetValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
@@ -32,6 +32,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     private final DSLContext dslContext;
     private final EntitiesToContextFetcher entitiesToContextFetcher;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
+    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.whenGettingIdentityFields(dontEvenTryToGetValues());
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
@@ -40,7 +41,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
-        ChangeContext changeContext = new ChangeContext();
+        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         CreateResult<ROOT, PK> results = toCreateResults(commands, changeContext);
         setIdentifiersToSuccessfulCommands(flowConfig, primaryKey, changeContext, results);
@@ -66,7 +67,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext();
+        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         return new UpdateResult<>(
                 seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -74,7 +75,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> DeleteResult<ROOT, ID> delete(Collection<? extends DeleteEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext();
+        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         return new DeleteResult<>(
                 seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -82,7 +83,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext();
+        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         InsertOnDuplicateUpdateResult<ROOT, ID> results = toUpsertResults(commands, changeContext);
         populateIdentityFieldToSuccessfulUpserts(flowConfig, changeContext, results);
@@ -128,7 +129,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
         List<? extends ChangeEntityCommand<E>> validChanges = seq(commands).filter(cmd -> !context.containsErrorNonRecursive(cmd)).toList();
 
-        flow.childFlows().forEach(childFlow -> populateKeyToParent(validChanges, childFlow, context));
+        flow.childFlows().forEach(childFlow -> hierarchyKeyPopulator.populateKeysToChildren(validChanges, context));
 
         // invoke recursive
         flow.childFlows().forEach(childFlow -> prepareChildFlowRecursive(validChanges, childFlow, context));
@@ -136,42 +137,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowRecursive(List<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
         prepareRecursive(validChanges.stream().flatMap(parent -> parent.getChildren(childFlow.getEntityType())).collect(toList()), context, childFlow);
-    }
-
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    void populateKeyToParent(
-            Collection<? extends ChangeEntityCommand<PARENT>> parents,
-            ChangeFlowConfig<CHILD> childFlow,
-            ChangeContext context) {
-
-        if (parents.isEmpty()) {
-            return;
-        }
-
-        CHILD childType = childFlow.getEntityType();
-
-        final EntityType.ForeignKey<CHILD, PARENT> childToParent = childType.getKeyTo(first(parents).getEntityType());
-
-        seq(parents).filter(p -> hasAnyChild(childFlow, p)).forEach(parent -> {
-            final Object[] values = parent.getChangeOperation() == CREATE ? EntityDbUtil.getFieldValues(childToParent.to, parent) : EntityDbUtil.getFieldValues(childToParent.to, context.getEntity(parent));
-            if (childToParent.to.size() != values.length) {
-                throw new IllegalStateException("Found " + values.length + " values of " + childToParent.to.size() + " fields for foreign key from table " + childType.getPrimaryTable().getName());
-            }
-            final UniqueKeyValue<CHILD> keysToParent = new UniqueKeyValue<>(new UniqueKey<>(array(childToParent.from)), values);
-            parent.getChildren(childType).forEach(child -> child.setKeysToParent(keysToParent));
-        });
-    }
-
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> boolean hasAnyChild(ChangeFlowConfig<CHILD> childFlow, ChangeEntityCommand<PARENT> p) {
-        return p.getChildren(childFlow.getEntityType()).findAny().isPresent();
-    }
-
-    private <T> T first(Iterable<T> items) {
-        return items.iterator().next();
-    }
-
-    private <CHILD extends EntityType<CHILD>> EntityField<CHILD, ?>[] array(Collection<EntityField<CHILD, ?>> childFields) {
-        return childFields.toArray(new EntityField[childFields.size()]);
     }
 
     private boolean isMissing(ChangeEntityCommand<?> cmd, ChangeContext context) {

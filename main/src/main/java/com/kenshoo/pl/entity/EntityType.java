@@ -6,10 +6,13 @@ import com.kenshoo.pl.entity.annotation.IdGeneration;
 import org.jooq.Key;
 import org.jooq.Record;
 import org.jooq.TableField;
+import org.jooq.lambda.Seq;
+import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey.FAIL;
@@ -82,12 +85,32 @@ public interface EntityType<E extends EntityType<E>> {
                 other.findFields(foreignKey.getKey().getFields())
         );
     }
+
     class ForeignKey<FROM extends EntityType<FROM>, TO extends EntityType<TO>> {
+
         public ForeignKey(Collection<EntityField<FROM, ?>> from, Collection<EntityField<TO, ?>> to) {
             this.from = from;
             this.to = to;
         }
+
         public final Collection<EntityField<FROM, ?>> from;
         public final Collection<EntityField<TO, ?>> to;
+
+        public ForeignKey<FROM, TO> where(BiPredicate<EntityField<FROM, ?>, EntityField<TO, ?>> predicate) {
+            Tuple2<Seq<EntityField<FROM, ?>>, Seq<EntityField<TO, ?>>> filteredFields = Seq.unzip(seq(from).zip(to).filter(pair -> predicate.test(pair.v1, pair.v2)));
+            return new ForeignKey<>(
+                    filteredFields.v1.toList(),
+                    filteredFields.v2.toList()
+            );
+        }
+
+        @Override
+        public String toString() {
+            return seq(from).zip(to).map(pair -> "[" + fieldName(pair.v1) + "-->" + fieldName(pair.v2) + "]").toString(", ");
+        }
+
+        private String fieldName(EntityField field) {
+            return field.getDbAdapter().getTable().getName() + "." + field;
+        }
     }
 }

@@ -5,22 +5,20 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.*;
-
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
+import static org.jooq.lambda.Seq.seq;
 import static org.junit.Assert.assertThat;
 
 public class PersistenceLayerOneToManyTest {
@@ -63,10 +61,9 @@ public class PersistenceLayerOneToManyTest {
     }
 
     @Test
-    @Ignore
     public void create_parent_with_2_children() {
 
-        final ParentEntityCreateCommand parent = newParent().with(ParentEntity.NAME, "parent")
+        final ParentEntityCreateCommand parent1 = newParent().with(ParentEntity.NAME, "parent1")
                 .with(newChild()
                         .with(ChildEntity.ORDINAL, 1)
                         .with(ChildEntity.FIELD_1, "child1"))
@@ -74,21 +71,25 @@ public class PersistenceLayerOneToManyTest {
                         .with(ChildEntity.ORDINAL, 2)
                         .with(ChildEntity.FIELD_1, "child2"));
 
-        persistenceLayer.create(ImmutableList.of(parent), changeFlowConfig, ParentEntity.Key.DEFINITION);
+        final ParentEntityCreateCommand parent2 = newParent().with(ParentEntity.NAME, "parent2")
+                .with(newChild()
+                        .with(ChildEntity.ORDINAL, 1)
+                        .with(ChildEntity.FIELD_1, "child3"));
 
-        ParentPojo parentFromDB = jooq.select().from(PARENT_TABLE).fetchOne(toParentPojo());
 
-        List<ChildPojo> childrenFromDB = jooq.select().from(CHILD_TABLE).orderBy(CHILD_TABLE.ordinal).fetch(toChildPojo());
+        List<Integer> retrievedParentIds = seq(persistenceLayer.create(ImmutableList.of(parent1, parent2), changeFlowConfig, ParentEntity.Key.DEFINITION))
+                .map(res -> res.getIdentifier().getId()).toList();
 
-        assertThat(childrenFromDB, not(empty()));
+        Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
 
-        assertThat(childrenFromDB.get(0).parentId, is(parentFromDB.id));
-        assertThat(childrenFromDB.get(0).ordinal, is(1));
-        assertThat(childrenFromDB.get(0).field1, is("child1"));
+        assertThat(childrenByNames.get("child1").parentId, is(retrievedParentIds.get(0)));
+        assertThat(childrenByNames.get("child1").ordinal, is(1));
 
-        assertThat(childrenFromDB.get(1).parentId, is(parentFromDB.id));
-        assertThat(childrenFromDB.get(1).ordinal, is(2));
-        assertThat(childrenFromDB.get(1).field1, is("child2"));
+        assertThat(childrenByNames.get("child1").parentId, is(retrievedParentIds.get(0)));
+        assertThat(childrenByNames.get("child2").ordinal, is(2));
+
+        assertThat(childrenByNames.get("child3").parentId, is(retrievedParentIds.get(1)));
+        assertThat(childrenByNames.get("child3").ordinal, is(1));
     }
 
     private ParentEntityCreateCommand newParent() {

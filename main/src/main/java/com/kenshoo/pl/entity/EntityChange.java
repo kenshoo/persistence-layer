@@ -4,6 +4,8 @@ import java.util.stream.Stream;
 
 public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E> {
 
+    E getEntityType();
+
     /**
      * @return a stream of fields modified by this change, each field being included at most once
      */
