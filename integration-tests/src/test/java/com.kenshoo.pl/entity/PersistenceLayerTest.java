@@ -108,6 +108,7 @@ public class PersistenceLayerTest {
         mainTable = EntityForTestTable.INSTANCE;
         if (!tablesCreated) {
             DataTableUtils.createTable(dslContext, mainTable);
+            DataTableUtils.createTable(dslContext, ChildForTestTable.INSTANCE);
         }
         DataTableUtils.populateTable(dslContext, mainTable, DATA);
 
@@ -148,6 +149,7 @@ public class PersistenceLayerTest {
         dslContext.deleteFrom(secondaryTable).execute();
         dslContext.deleteFrom(parentTable).execute();
         dslContext.deleteFrom(complexKeyParentTable).execute();
+        dslContext.truncate("ChildForTest").execute();
     }
 
     @AfterClass
@@ -156,6 +158,37 @@ public class PersistenceLayerTest {
         staticDSLContext.dropTableIfExists(EntityForTestSecondaryTable.INSTANCE).execute();
         staticDSLContext.dropTableIfExists(EntityForTestParentTable.INSTANCE).execute();
         staticDSLContext.dropTableIfExists(EntityForTestComplexKeyParentTable.INSTANCE).execute();
+        staticDSLContext.dropTableIfExists(ChildForTestTable.INSTANCE).execute();
+    }
+
+    @Test
+    public void fetchFieldFromSecondaryTableOfParentTableWhereParentItselfIsNotRequired() {
+
+        CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
+        cmd.set(ChildForTest.ID, 1);
+        cmd.set(ChildForTest.PARENT_ID, ID_1);
+        cmd.set(ChildForTest.FIELD, fromOldValue(EntityForTest.URL, parentUrl -> parentUrl));
+
+        childPL().create(asList(cmd), childFlow(), ChildForTest.Key.DEFINITION);
+
+        Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
+
+        assertThat(childInDB.get(ChildForTestTable.INSTANCE.field), is(GOOGLE_URL));
+    }
+
+    @Test
+    public void fetchFieldFromSecondaryTableOfParentTableWhereParentIsAlsoRequired() {
+
+        CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
+        cmd.set(ChildForTest.ID, 1);
+        cmd.set(ChildForTest.PARENT_ID, ID_1);
+        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> v1.toString() + " " + v2));
+
+        childPL().create(asList(cmd), childFlow(), ChildForTest.Key.DEFINITION);
+
+        Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
+
+        assertThat(childInDB.get(ChildForTestTable.INSTANCE.field), is("Alpha " + GOOGLE_URL));
     }
 
     @Test
@@ -1311,4 +1344,13 @@ public class PersistenceLayerTest {
                 .where(mainTable.id.eq(id))
                 .fetchOne(mainTable.field2);
     }
+
+    private PersistenceLayer<ChildForTest, ChildForTest.Key> childPL() {
+        return new PersistenceLayer<>(dslContext);
+    }
+
+    private ChangeFlowConfig<ChildForTest> childFlow() {
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE).build();
+    }
+
 }
