@@ -122,11 +122,4 @@ public class PersistenceLayerOneToManyTest {
         }};
     }
 
-    private RecordMapper<Record, ParentPojo> toParentPojo() {
-        return rec -> new ParentPojo() {{
-            id = rec.get(PARENT_TABLE.id);
-            id_in_target = rec.get(PARENT_TABLE.idInTarget);
-            name = rec.get(PARENT_TABLE.name);
-        }};
-    }
 }

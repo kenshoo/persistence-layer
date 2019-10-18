@@ -42,8 +42,8 @@ public class HierarchyKeyPopulator {
             ChangeContext context) {
 
         final EntityType.ForeignKey<CHILD, PARENT> allChildToParentFields = childType.getKeyTo(entityType(parents));
-        final EntityType.ForeignKey<CHILD, PARENT> childToParentIdentityFields = allChildToParentFields.where(parentFieldIsAutoIncrementing());
-        final EntityType.ForeignKey<CHILD, PARENT> childToParentNonIdentityFields = allChildToParentFields.where(parentFieldIsNotAutoIncrementing());
+        final EntityType.ForeignKey<CHILD, PARENT> childToParentIdentityFields = allChildToParentFields.filter(parentFieldIsAutoIncrementing());
+        final EntityType.ForeignKey<CHILD, PARENT> childToParentNonIdentityFields = allChildToParentFields.filter(parentFieldIsNotAutoIncrementing());
 
         seq(parents).filter(hasAnyChildOf(childType)).forEach(parent -> {
             final UniqueKeyValue<CHILD> identityValues = parentValues(context, childToParentIdentityFields, identityValueGetter, parent);

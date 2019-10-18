@@ -96,7 +96,7 @@ public interface EntityType<E extends EntityType<E>> {
         public final Collection<EntityField<FROM, ?>> from;
         public final Collection<EntityField<TO, ?>> to;
 
-        public ForeignKey<FROM, TO> where(BiPredicate<EntityField<FROM, ?>, EntityField<TO, ?>> predicate) {
+        public ForeignKey<FROM, TO> filter(BiPredicate<EntityField<FROM, ?>, EntityField<TO, ?>> predicate) {
             Tuple2<Seq<EntityField<FROM, ?>>, Seq<EntityField<TO, ?>>> filteredFields = Seq.unzip(seq(from).zip(to).filter(pair -> predicate.test(pair.v1, pair.v2)));
             return new ForeignKey<>(
                     filteredFields.v1.toList(),
