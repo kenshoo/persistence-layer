@@ -4,6 +4,7 @@ package com.kenshoo.pl.entity;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -24,7 +25,7 @@ import static org.junit.Assert.assertThat;
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeFlowConfigTest {
 
-    private final static Label EXCLUDABLE_ENRICHERS = new Label() {};
+    private final static Label EXCLUDABLE_LABEL = new Label() {};
 
     @After
     public void disableBetaFeatures() {
@@ -58,7 +59,7 @@ public class ChangeFlowConfigTest {
         TestEnricher enricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher));
     }
@@ -69,7 +70,7 @@ public class ChangeFlowConfigTest {
         TestEnricher enricher2 = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_LABEL).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher1, enricher2));
     }
@@ -79,8 +80,8 @@ public class ChangeFlowConfigTest {
         TestEnricher enricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_ENRICHERS).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL).
+                        withoutPostFetchCommandEnrichers(EXCLUDABLE_LABEL).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of());
     }
@@ -91,11 +92,57 @@ public class ChangeFlowConfigTest {
         TestEnricher nonExcludableEnricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL).
                         withPostFetchCommandEnricher(nonExcludableEnricher).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_ENRICHERS).
+                        withoutPostFetchCommandEnrichers(EXCLUDABLE_LABEL).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(nonExcludableEnricher));
+    }
+
+    @Test
+    public void add_excludable_validator_to_flow_config() {
+        ChangesValidator validator = new TestValidator();
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidator(validator, EXCLUDABLE_LABEL).
+                        build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator));
+    }
+
+    @Test
+    public void add_excludable_validators_to_flow_config() {
+        ChangesValidator validator1 = new TestValidator();
+        ChangesValidator validator2 = new TestValidator();
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidators(ImmutableList.of(validator1, validator2), EXCLUDABLE_LABEL).
+                        build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator1, validator2));
+    }
+
+    @Test
+    public void remove_excludable_validator_from_flow_config() {
+        ChangesValidator validator = new TestValidator();
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidator(validator, EXCLUDABLE_LABEL).
+                        withoutLabeledValidators(ImmutableList.of(EXCLUDABLE_LABEL)).
+                        build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of());
+    }
+
+    @Test
+    public void remove_only_excludable_validators_from_flow_config() {
+        ChangesValidator excludableValidator1 = new TestValidator();
+        ChangesValidator excludableValidator2 = new TestValidator();
+        ChangesValidator nonExcludableValidator = new TestValidator();
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidators(ImmutableList.of(excludableValidator1, excludableValidator2), EXCLUDABLE_LABEL).
+                        withValidator(nonExcludableValidator).
+                        withoutLabeledValidators(ImmutableList.of(EXCLUDABLE_LABEL)).
+                        build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(nonExcludableValidator));
     }
 
 
@@ -156,6 +203,18 @@ public class ChangeFlowConfigTest {
         @Override
         public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<TestEntity>> changeEntityCommands, ChangeOperation changeOperation) {
             return null;
+        }
+    }
+
+    private class TestValidator implements ChangesValidator<TestEntity> {
+        @Override
+        public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection collection, ChangeOperation changeOperation) {
+            return null;
+        }
+
+        @Override
+        public void validate(Collection collection, ChangeOperation changeOperation, ChangeContext changeContext) {
+
         }
     }
 }
