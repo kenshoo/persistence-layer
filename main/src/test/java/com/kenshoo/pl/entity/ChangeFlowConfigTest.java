@@ -4,6 +4,7 @@ package com.kenshoo.pl.entity;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -19,12 +20,15 @@ import java.util.stream.Stream;
 import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 
 
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeFlowConfigTest {
 
-    private final static Label EXCLUDABLE_ENRICHERS = new Label() {};
+    private final static Label EXCLUDABLE_LABEL_1 = new Label() {};
+    private final static Label EXCLUDABLE_LABEL_2 = new Label() {};
+    
 
     @After
     public void disableBetaFeatures() {
@@ -33,7 +37,7 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_single_enricher_to_flow_config() {
-        TestEnricher enricher = new TestEnricher();
+        PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
                 withPostFetchCommandEnricher(enricher).
@@ -43,8 +47,8 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_enrichers_with_preserved_order_to_flow_config() {
-        TestEnricher enricher1 = new TestEnricher();
-        TestEnricher enricher2 = new TestEnricher();
+        PostFetchCommandEnricher<TestEntity> enricher1 = mock(PostFetchCommandEnricher.class);
+        PostFetchCommandEnricher<TestEntity> enricher2 = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
                         withPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2)).
@@ -55,47 +59,76 @@ public class ChangeFlowConfigTest {
 
     @Test
     public void add_excludable_enricher_to_flow_config() {
-        TestEnricher enricher = new TestEnricher();
+        PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher));
     }
 
     @Test
     public void add_excludable_enrichers_to_flow_config() {
-        TestEnricher enricher1 = new TestEnricher();
-        TestEnricher enricher2 = new TestEnricher();
+        PostFetchCommandEnricher<TestEntity> enricher1 = mock(PostFetchCommandEnricher.class);
+        PostFetchCommandEnricher<TestEntity> enricher2 = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_ENRICHERS).
+                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher1, enricher2));
     }
 
     @Test
-    public void remove_excludable_enricher_flow_flow_config() {
-        TestEnricher enricher = new TestEnricher();
+    public void add_excludable_validator_to_flow_config() {
+        ChangesValidator validator = mock(ChangesValidator.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_ENRICHERS).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_ENRICHERS).
+                        withLabeledValidator(validator, EXCLUDABLE_LABEL_1).
                         build();
-        Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of());
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator));
     }
 
     @Test
-    public void remove_only_excludable_enricher_flow_flow_config() {
-        TestEnricher excludableEnricher = new TestEnricher();
-        TestEnricher nonExcludableEnricher = new TestEnricher();
+    public void add_excludable_validators_to_flow_config() {
+        ChangesValidator validator1 = mock(ChangesValidator.class);
+        ChangesValidator validator2 = mock(ChangesValidator.class);
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_ENRICHERS).
-                        withPostFetchCommandEnricher(nonExcludableEnricher).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_ENRICHERS).
+                        withLabeledValidators(ImmutableList.of(validator1, validator2), EXCLUDABLE_LABEL_1).
                         build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator1, validator2));
+    }
+
+    @Test
+    public void remove_only_excludable_elements_from_flow_config() {
+        ChangesValidator excludableValidator= mock(ChangesValidator.class);
+        PostFetchCommandEnricher<TestEntity> excludableEnricher = mock(PostFetchCommandEnricher.class);
+        ChangesValidator nonExcludableValidator = mock(ChangesValidator.class);
+        PostFetchCommandEnricher<TestEntity> nonExcludableEnricher = mock(PostFetchCommandEnricher.class);
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
+                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_1).
+                        withValidator(nonExcludableValidator).
+                        withPostFetchCommandEnricher(nonExcludableEnricher).
+                        withoutLabeledElements(EXCLUDABLE_LABEL_1).
+                        build();
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(nonExcludableValidator));
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(nonExcludableEnricher));
+    }
+
+    @Test
+    public void remove_excludable_elements_for_multi_labels_from_flow_config() {
+        ChangesValidator excludableValidator= mock(ChangesValidator.class);
+        PostFetchCommandEnricher<TestEntity> excludableEnricher = mock(PostFetchCommandEnricher.class);
+        ChangeFlowConfig<TestEntity> flow =
+                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                        withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
+                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_2).
+                        withoutLabeledElements(ImmutableList.of(EXCLUDABLE_LABEL_1, EXCLUDABLE_LABEL_2)).
+                        build();
+        Assert.assertTrue(flow.getValidators().isEmpty());
+        Assert.assertTrue(flow.getPostFetchCommandEnrichers().isEmpty());
     }
 
 
@@ -112,7 +145,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void add_false_update_purger__last_to_flow_config() {
         FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger.Builder<TestEntity>().build();
-        TestEnricher enricher = new TestEnricher();
+        PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE);
         flowBuilder.withFalseUpdatesPurger(purger);
@@ -142,20 +175,5 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
 
         assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.empty()));
-    }
-
-    private class TestEnricher implements PostFetchCommandEnricher<TestEntity> {
-
-        @Override
-        public void enrich(Collection<? extends ChangeEntityCommand<TestEntity>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
-        }
-        @Override
-        public SupportedChangeOperation getSupportedChangeOperation() {
-            return null;
-        }
-        @Override
-        public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<TestEntity>> changeEntityCommands, ChangeOperation changeOperation) {
-            return null;
-        }
     }
 }

@@ -30,7 +30,8 @@ import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
 
-    private final static Label NonExcludebale = new Label() {};
+    private final static Label NonExcludebale = new Label() {
+    };
 
     private final E entityType;
     private final List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers;
@@ -119,7 +120,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     public static class Builder<E extends EntityType<E>> {
         private final E entityType;
         private final List<Labeled<? extends PostFetchCommandEnricher<E>>> postFetchCommandEnrichers = new ArrayList<>();
-        private final List<ChangesValidator<E>> validators = new ArrayList<>();
+        private final List<Labeled<ChangesValidator<E>>> validators = new ArrayList<>();
         private final List<OutputGenerator<E>> outputGenerators = new ArrayList<>();
         private final Set<EntityField<E, ?>> requiredRelationFields = new HashSet<>();
         private final Set<EntityField<E, ?>> requiredFields = new HashSet<>();
@@ -163,12 +164,22 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         public Builder<E> withValidator(ChangesValidator<E> validator) {
-            validators.add(validator);
+            this.validators.add(new Labeled<>(validator, NonExcludebale));
             return this;
         }
 
-        public Builder<E> withValidators(Collection<? extends ChangesValidator<E>> validators) {
-            this.validators.addAll(validators);
+        public Builder<E> withValidators(Collection<ChangesValidator<E>> validators) {
+            validators.forEach(validator -> this.validators.add(new Labeled<>(validator, NonExcludebale)));
+            return this;
+        }
+
+        public Builder<E> withLabeledValidator(ChangesValidator<E> validator, Label label) {
+            this.validators.add(new Labeled<>(validator, label));
+            return this;
+        }
+
+        public Builder<E> withLabeledValidators(Collection<ChangesValidator<E>> validators, Label label) {
+            validators.forEach(validator -> this.validators.add(new Labeled<>(validator, label)));
             return this;
         }
 
@@ -178,9 +189,17 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return this;
         }
 
-        public Builder<E> withoutPostFetchCommandEnrichers(Label label){
-            this.postFetchCommandEnrichers.removeIf(enricher -> enricher.lablel().equals(label));
-            this.flowConfigBuilders.forEach(builder -> builder.withoutPostFetchCommandEnrichers(label));
+        public Builder<E> withoutLabeledElements(Label label) {
+           this.withoutLabeledElements(ImmutableList.of(label));
+            return this;
+        }
+
+        public Builder<E> withoutLabeledElements(List<Label> labels) {
+            if (!labels.isEmpty()) {
+                this.validators.removeIf(validator -> labels.contains(validator.lablel()));
+                this.postFetchCommandEnrichers.removeIf(enricher -> labels.contains(enricher.lablel()));
+                this.flowConfigBuilders.forEach(builder -> builder.withoutLabeledElements(labels));
+            }
             return this;
         }
 
@@ -216,7 +235,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         /* not public */ void withImmutableFields(Stream<EntityField<E, ?>> immutableFields) {
             EntityChangeCompositeValidator<E> compositeValidator = new EntityChangeCompositeValidator<>();
             immutableFields.forEach(immutableField -> compositeValidator.register(entityType, new ImmutableFieldValidatorImpl<>(immutableField, Errors.FIELD_IS_IMMUTABLE)));
-            this.validators.add(compositeValidator);
+            this.withValidator(compositeValidator);
         }
 
         public Builder<E> withRetryer(PersistenceLayerRetryer retryer) {
@@ -227,10 +246,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         public ChangeFlowConfig<E> build() {
             ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.builder();
             postFetchCommandEnrichers.forEach(excludableElement -> enrichers.add(excludableElement.element()));
+            ImmutableList.Builder<ChangesValidator<E>> validatorList = ImmutableList.builder();
+            validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
             return new ChangeFlowConfig<>(entityType,
                     enrichers.build(),
-                    ImmutableList.copyOf(validators),
+                    validatorList.build(),
                     ImmutableList.copyOf(outputGenerators),
                     ImmutableSet.copyOf(requiredRelationFields),
                     ImmutableSet.copyOf(requiredFields),
