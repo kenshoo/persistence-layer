@@ -1,5 +1,5 @@
 def BUILD_NUMBER = project.hasProperty('BUILD_NUMBER') ? "$BUILD_NUMBER" : 'undef'
-version = "0.1.$BUILD_NUMBER"
+version = "0.1.$BUILD_NUMBER-jooq-$jooq_version"
 group = 'com.kenshoo'
 def JAR_BASE_NAME = 'persistence-layer'
 

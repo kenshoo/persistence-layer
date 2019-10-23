@@ -121,7 +121,7 @@ public class PersistenceLayerTest {
                     secondaryTable.getName(),
                     secondaryTable.id.getName(),
                     secondaryTable.id.getDataType().getTypeName()));
-            dslContext.alterTable(secondaryTable).add(DSL.constraint("").unique(secondaryTable.entityId)).execute();
+            dslContext.alterTable(secondaryTable).add(DSL.constraint("indexName").unique(secondaryTable.entityId)).execute();
         }
         // Not using DataTableUtils because it doesn't support auto-increment
         BatchBindStep batch = dslContext.batch(dslContext.insertInto(secondaryTable, secondaryTable.entityId, secondaryTable.url).values((Integer) null, null));
