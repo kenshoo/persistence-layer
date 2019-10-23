@@ -128,7 +128,7 @@ public class ChangeFlowConfigTest {
                         withoutLabeledElements(ImmutableList.of(EXCLUDABLE_LABEL_1, EXCLUDABLE_LABEL_2)).
                         build();
         Assert.assertTrue(flow.getValidators().isEmpty());
-        Assert.assertTrue(flow.getValidators().isEmpty());
+        Assert.assertTrue(flow.getPostFetchCommandEnrichers().isEmpty());
     }
 
 
