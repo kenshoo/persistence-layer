@@ -25,7 +25,8 @@ import static org.junit.Assert.assertThat;
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeFlowConfigTest {
 
-    private final static Label EXCLUDABLE_LABEL = new Label() {};
+    private final static Label EXCLUDABLE_LABEL_1 = new Label() {};
+    private final static Label EXCLUDABLE_LABEL_2 = new Label() {};
 
     @After
     public void disableBetaFeatures() {
@@ -59,7 +60,7 @@ public class ChangeFlowConfigTest {
         TestEnricher enricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL).
+                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher));
     }
@@ -70,33 +71,9 @@ public class ChangeFlowConfigTest {
         TestEnricher enricher2 = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_LABEL).
+                        withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher1, enricher2));
-    }
-
-    @Test
-    public void remove_excludable_enricher_flow_flow_config() {
-        TestEnricher enricher = new TestEnricher();
-        ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_LABEL).
-                        build();
-        Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of());
-    }
-
-    @Test
-    public void remove_only_excludable_enricher_flow_flow_config() {
-        TestEnricher excludableEnricher = new TestEnricher();
-        TestEnricher nonExcludableEnricher = new TestEnricher();
-        ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL).
-                        withPostFetchCommandEnricher(nonExcludableEnricher).
-                        withoutPostFetchCommandEnrichers(EXCLUDABLE_LABEL).
-                        build();
-        Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(nonExcludableEnricher));
     }
 
     @Test
@@ -104,7 +81,7 @@ public class ChangeFlowConfigTest {
         ChangesValidator validator = new TestValidator();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledValidator(validator, EXCLUDABLE_LABEL).
+                        withLabeledValidator(validator, EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator));
     }
@@ -115,34 +92,41 @@ public class ChangeFlowConfigTest {
         ChangesValidator validator2 = new TestValidator();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledValidators(ImmutableList.of(validator1, validator2), EXCLUDABLE_LABEL).
+                        withLabeledValidators(ImmutableList.of(validator1, validator2), EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator1, validator2));
     }
 
     @Test
-    public void remove_excludable_validator_from_flow_config() {
-        ChangesValidator validator = new TestValidator();
+    public void remove_only_excludable_elements_from_flow_config() {
+        ChangesValidator excludableValidator= new TestValidator();
+        TestEnricher excludableEnricher = new TestEnricher();
+        ChangesValidator nonExcludableValidator = new TestValidator();
+        TestEnricher nonExcludableEnricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledValidator(validator, EXCLUDABLE_LABEL).
-                        withoutLabeledValidators(ImmutableList.of(EXCLUDABLE_LABEL)).
+                        withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
+                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_1).
+                        withValidator(nonExcludableValidator).
+                        withPostFetchCommandEnricher(nonExcludableEnricher).
+                        withoutLabeledElements(EXCLUDABLE_LABEL_1).
                         build();
-        Assert.assertEquals(flow.getValidators(), ImmutableList.of());
+        Assert.assertEquals(flow.getValidators(), ImmutableList.of(nonExcludableValidator));
+        Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(nonExcludableEnricher));
     }
 
     @Test
-    public void remove_only_excludable_validators_from_flow_config() {
-        ChangesValidator excludableValidator1 = new TestValidator();
-        ChangesValidator excludableValidator2 = new TestValidator();
-        ChangesValidator nonExcludableValidator = new TestValidator();
+    public void remove_excludable_elements_for_multi_labels_from_flow_config() {
+        ChangesValidator excludableValidator= new TestValidator();
+        TestEnricher excludableEnricher = new TestEnricher();
         ChangeFlowConfig<TestEntity> flow =
                 ChangeFlowConfig.builder(TestEntity.INSTANCE).
-                        withLabeledValidators(ImmutableList.of(excludableValidator1, excludableValidator2), EXCLUDABLE_LABEL).
-                        withValidator(nonExcludableValidator).
-                        withoutLabeledValidators(ImmutableList.of(EXCLUDABLE_LABEL)).
+                        withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
+                        withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_2).
+                        withoutLabeledElements(ImmutableList.of(EXCLUDABLE_LABEL_1, EXCLUDABLE_LABEL_2)).
                         build();
-        Assert.assertEquals(flow.getValidators(), ImmutableList.of(nonExcludableValidator));
+        Assert.assertTrue(flow.getValidators().isEmpty());
+        Assert.assertTrue(flow.getValidators().isEmpty());
     }
 
 

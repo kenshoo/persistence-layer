@@ -164,7 +164,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         public Builder<E> withValidator(ChangesValidator<E> validator) {
-            this.withValidators(ImmutableList.of(validator));
+            this.validators.add(new Labeled<>(validator, NonExcludebale));
             return this;
         }
 
@@ -174,7 +174,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         public Builder<E> withLabeledValidator(ChangesValidator<E> validator, Label label) {
-            this.withLabeledValidators(ImmutableList.of(validator), label);
+            this.validators.add(new Labeled<>(validator, label));
             return this;
         }
 
@@ -189,22 +189,17 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return this;
         }
 
-        public Builder<E> withoutLabeledValidator(Label label) {
-            this.withoutLabeledValidators(ImmutableList.of(label));
+        public Builder<E> withoutLabeledElements(Label label) {
+           this.withoutLabeledElements(ImmutableList.of(label));
             return this;
         }
 
-        public Builder<E> withoutLabeledValidators(List<Label> labels) {
+        public Builder<E> withoutLabeledElements(List<Label> labels) {
             if (!labels.isEmpty()) {
                 this.validators.removeIf(validator -> labels.contains(validator.lablel()));
-                this.flowConfigBuilders.forEach(builder -> builder.withoutLabeledValidators(labels));
+                this.postFetchCommandEnrichers.removeIf(enricher -> labels.contains(enricher.lablel()));
+                this.flowConfigBuilders.forEach(builder -> builder.withoutLabeledElements(labels));
             }
-            return this;
-        }
-
-        public Builder<E> withoutPostFetchCommandEnrichers(Label label) {
-            this.postFetchCommandEnrichers.removeIf(enricher -> enricher.lablel().equals(label));
-            this.flowConfigBuilders.forEach(builder -> builder.withoutPostFetchCommandEnrichers(label));
             return this;
         }
 
