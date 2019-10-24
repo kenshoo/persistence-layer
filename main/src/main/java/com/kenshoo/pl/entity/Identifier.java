@@ -12,4 +12,8 @@ public interface Identifier<E extends EntityType<E>>  extends FieldsValueMap<E> 
         return Seq.of(getUniqueKey().getFields()).map(this::get);
     }
 
+    default boolean isEmpty() {
+        return !getValues().findAny().isPresent();
+    }
+
 }

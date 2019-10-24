@@ -1,25 +1,44 @@
 package com.kenshoo.pl.entity;
 
+import com.kenshoo.pl.entity.internal.EntityDbUtil;
+
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
-
-import static com.kenshoo.pl.entity.CommandToValuesStrategies.takeCommandValuesOnCreateAndContextValuesOnUpdate;
+import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static org.jooq.lambda.Seq.seq;
 
 
 public class HierarchyKeyPopulator {
 
     private final CommandToValuesStrategy identityValueGetter;
-    private final CommandToValuesStrategy nonIdentityValueGetter = takeCommandValuesOnCreateAndContextValuesOnUpdate();
+
+    private HierarchyKeyPopulator() {
+        this.identityValueGetter = null;
+    }
 
     private HierarchyKeyPopulator(CommandToValuesStrategy identityValueGetter) {
         this.identityValueGetter = identityValueGetter;
     }
 
-    public static HierarchyKeyPopulator whenGettingIdentityFields(CommandToValuesStrategy identityValueGetter) {
-        return new HierarchyKeyPopulator(identityValueGetter);
+    public static HierarchyKeyPopulator withoutHandlingIdentityFields() {
+        return new HierarchyKeyPopulator();
+    }
+
+    public static HierarchyKeyPopulator takingIdentityValuesFromContext() {
+        return new HierarchyKeyPopulator(takingValuesFromContext());
+    }
+
+    public static <E extends EntityType<E>> CommandToValuesStrategy<E> takingValuesFromContext() {
+        return (fields, cmd, ctx) -> EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
+    }
+
+    public static <E extends EntityType<E>> CommandToValuesStrategy<E> takeCommandValuesOnCreateAndContextValuesOnUpdate() {
+        return (fields, cmd, ctx) -> cmd.getChangeOperation() == CREATE
+                ? EntityDbUtil.getFieldValues(fields, cmd)
+                : EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
     }
 
     public <PARENT extends EntityType<PARENT>>
@@ -32,7 +51,12 @@ public class HierarchyKeyPopulator {
         }
 
         context.getHierarchy().childrenTypes(first(parents).getEntityType())
-                .forEach(childType -> populateKeysToChildrenOfSpecificType(parents, childType, context));
+                .forEach(populateKeysToChildrenOfSpecificTypeConsumer(parents, context));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <PARENT extends EntityType<PARENT>> Consumer<EntityType> populateKeysToChildrenOfSpecificTypeConsumer(Collection<? extends EntityChange<PARENT>> parents, ChangeContext context) {
+        return childType -> populateKeysToChildrenOfSpecificType(parents, childType, context);
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
@@ -46,9 +70,12 @@ public class HierarchyKeyPopulator {
         final EntityType.ForeignKey<CHILD, PARENT> childToParentNonIdentityFields = allChildToParentFields.filter(parentFieldIsNotAutoIncrementing());
 
         seq(parents).filter(hasAnyChildOf(childType)).forEach(parent -> {
-            final UniqueKeyValue<CHILD> identityValues = parentValues(context, childToParentIdentityFields, identityValueGetter, parent);
-            final UniqueKeyValue<CHILD> nonIdentityValues = parentValues(context, childToParentNonIdentityFields, nonIdentityValueGetter, parent);
-            parent.getChildren(childType).forEach(child -> child.setKeysToParent(identityValues.concat(nonIdentityValues)));
+            final UniqueKeyValue<CHILD> identityValues = Optional.ofNullable(identityValueGetter).map(valueGetter -> parentValues(context, childToParentIdentityFields, valueGetter, parent)).orElse(UniqueKeyValue.empty());
+            final UniqueKeyValue<CHILD> nonIdentityValues = parentValues(context, childToParentNonIdentityFields, takeCommandValuesOnCreateAndContextValuesOnUpdate(), parent);
+            Identifier<CHILD> allKeys = identityValues.concat(nonIdentityValues);
+            if (!allKeys.isEmpty()) {
+                parent.getChildren(childType).forEach(child -> child.setKeysToParent(allKeys));
+            }
         });
 
     }
@@ -59,13 +86,11 @@ public class HierarchyKeyPopulator {
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     UniqueKeyValue<CHILD> parentValues(ChangeContext context, EntityType.ForeignKey<CHILD, PARENT> childToParentKeys, CommandToValuesStrategy commandToValuesStrategy, EntityChange<PARENT> parent) {
-        Optional<Object[]> parentValues = commandToValuesStrategy.getValues(childToParentKeys.to, parent, context);
-        return parentValues.map(values -> {
-            if (childToParentKeys.to.size() != values.length) {
-                throw new IllegalStateException("Found " + values.length + " values out of " + childToParentKeys.to.size() + " fields for foreign keys. Keys: " + childToParentKeys);
-            }
-            return new UniqueKeyValue<>(new UniqueKey<>(array(childToParentKeys.from)), values);
-        }).orElse(UniqueKeyValue.empty());
+        Object[] parentValues = commandToValuesStrategy.getValues(childToParentKeys.to(), parent, context);
+        if (childToParentKeys.size() != parentValues.length) {
+            throw new IllegalStateException("Found " + parentValues.length + " values out of " + childToParentKeys.size() + " fields for foreign keys. Keys: " + childToParentKeys);
+        }
+        return new UniqueKeyValue<>(new UniqueKey<>(array(childToParentKeys.from())), parentValues);
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
@@ -87,7 +112,7 @@ public class HierarchyKeyPopulator {
         return items.iterator().next();
     }
 
-    private <CHILD extends EntityType<CHILD>> EntityField<CHILD, ?>[] array(Collection<EntityField<CHILD, ?>> childFields) {
+    private <CHILD extends EntityType<CHILD>> EntityField<CHILD, ?>[] array(Collection<? extends EntityField<CHILD, ?>> childFields) {
         return childFields.toArray(new EntityField[childFields.size()]);
     }
 

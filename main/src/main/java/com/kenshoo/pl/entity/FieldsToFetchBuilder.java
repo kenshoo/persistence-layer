@@ -17,7 +17,7 @@ import static org.jooq.lambda.Seq.seq;
 public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
     public Collection<FieldFetchRequest> build(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        return prepareFieldsToFetchRecursive(new Hierarchy(flowConfig), commands, flowConfig)
+        return prepareFieldsToFetchRecursive(Hierarchy.build(flowConfig), commands, flowConfig)
                 .toList();
     }
 

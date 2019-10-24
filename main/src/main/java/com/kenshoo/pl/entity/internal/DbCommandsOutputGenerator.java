@@ -20,7 +20,6 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
-import static com.kenshoo.pl.entity.CommandToValuesStrategies.takeValuesFromContext;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
@@ -29,7 +28,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
-    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.whenGettingIdentityFields(takeValuesFromContext());
+    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.takingIdentityValuesFromContext();
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());

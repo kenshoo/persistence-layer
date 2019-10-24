@@ -21,7 +21,6 @@ import java.util.function.Predicate;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
-import static com.kenshoo.pl.entity.CommandToValuesStrategies.dontEvenTryToGetValues;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
@@ -32,7 +31,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     private final DSLContext dslContext;
     private final EntitiesToContextFetcher entitiesToContextFetcher;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
-    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.whenGettingIdentityFields(dontEvenTryToGetValues());
+    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.withoutHandlingIdentityFields();
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
@@ -41,7 +40,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
-        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         CreateResult<ROOT, PK> results = toCreateResults(commands, changeContext);
         setIdentifiersToSuccessfulCommands(flowConfig, primaryKey, changeContext, results);
@@ -67,7 +66,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         return new UpdateResult<>(
                 seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -75,7 +74,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> DeleteResult<ROOT, ID> delete(Collection<? extends DeleteEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         return new DeleteResult<>(
                 seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -83,7 +82,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(new Hierarchy(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
         makeChanges(commands, changeContext, flowConfig);
         InsertOnDuplicateUpdateResult<ROOT, ID> results = toUpsertResults(commands, changeContext);
         populateIdentityFieldToSuccessfulUpserts(flowConfig, changeContext, results);

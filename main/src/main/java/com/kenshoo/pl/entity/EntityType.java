@@ -6,7 +6,6 @@ import com.kenshoo.pl.entity.annotation.IdGeneration;
 import org.jooq.Key;
 import org.jooq.Record;
 import org.jooq.TableField;
-import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.Collection;
@@ -88,25 +87,35 @@ public interface EntityType<E extends EntityType<E>> {
 
     class ForeignKey<FROM extends EntityType<FROM>, TO extends EntityType<TO>> {
 
+        public final Collection<Tuple2<EntityField<FROM, ?>, EntityField<TO, ?>>> references;
+
         public ForeignKey(Collection<EntityField<FROM, ?>> from, Collection<EntityField<TO, ?>> to) {
-            this.from = from;
-            this.to = to;
+            this.references = seq(from).zip(to).toList();
         }
 
-        public final Collection<EntityField<FROM, ?>> from;
-        public final Collection<EntityField<TO, ?>> to;
+        public ForeignKey(Iterable<Tuple2<EntityField<FROM, ?>, EntityField<TO, ?>>> references) {
+            this.references = seq(references).toList();
+        }
+
+        public int size() {
+            return references.size();
+        }
+
+        public Collection<? extends EntityField<FROM, ?>> from() {
+            return seq(references).map(pair -> pair.v1).toList();
+        }
+
+        public Collection<? extends EntityField<TO, ?>> to() {
+            return seq(references).map(pair -> pair.v2).toList();
+        }
 
         public ForeignKey<FROM, TO> filter(BiPredicate<EntityField<FROM, ?>, EntityField<TO, ?>> predicate) {
-            Tuple2<Seq<EntityField<FROM, ?>>, Seq<EntityField<TO, ?>>> filteredFields = Seq.unzip(seq(from).zip(to).filter(pair -> predicate.test(pair.v1, pair.v2)));
-            return new ForeignKey<>(
-                    filteredFields.v1.toList(),
-                    filteredFields.v2.toList()
-            );
+            return new ForeignKey<>(seq(references).filter(pair -> predicate.test(pair.v1, pair.v2)));
         }
 
         @Override
         public String toString() {
-            return seq(from).zip(to).map(pair -> "[" + fieldName(pair.v1) + "-->" + fieldName(pair.v2) + "]").toString(", ");
+            return seq(references).map(pair -> "[" + fieldName(pair.v1) + "-->" + fieldName(pair.v2) + "]").toString(", ");
         }
 
         private String fieldName(EntityField field) {
