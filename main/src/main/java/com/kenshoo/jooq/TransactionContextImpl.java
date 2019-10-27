@@ -1,9 +1,6 @@
 package com.kenshoo.jooq;
 
-import org.jooq.Configuration;
-import org.jooq.SQLDialect;
-import org.jooq.Transaction;
-import org.jooq.TransactionContext;
+import org.jooq.*;
 import org.jooq.conf.Settings;
 
 import java.util.Map;
@@ -11,11 +8,14 @@ import java.util.Map;
 public class TransactionContextImpl implements TransactionContext {
 
     private final Configuration config;
+    private final DSLContext dslContext;
     private Transaction transaction;
-    private Exception cause;
+    private Throwable cause;
 
-    public TransactionContextImpl(Configuration config) {
+    public TransactionContextImpl(final Configuration config, final DSLContext dslContext) {
         this.config = config;
+        // As of Jooq 3.10.x the DSLContext can be obtained from the Configuration, but we want to be backwards-compatible to 3.9.x
+        this.dslContext = dslContext;
     }
 
     @Override
@@ -31,6 +31,13 @@ public class TransactionContextImpl implements TransactionContext {
 
     @Override
     public final Exception cause() {
+        return cause instanceof Exception ? (Exception) cause : null;
+    }
+
+    /**
+     * This was introduced in Jooq 3.10. For backwards compatibility of our code omitting the "@Override"
+     */
+    public Throwable causeThrowable() {
         return cause;
     }
 
@@ -40,9 +47,24 @@ public class TransactionContextImpl implements TransactionContext {
         return this;
     }
 
+    /**
+     * This was introduced in Jooq 3.10. For backwards compatibility of our code omitting the "@Override"
+     */
+    public TransactionContext causeThrowable(final Throwable cause) {
+        this.cause = cause;
+        return this;
+    }
+
     @Override
     public Configuration configuration() {
         return config;
+    }
+
+    /**
+     * This was introduced in Jooq 3.10. For backwards compatibility of our code omitting the "@Override"
+     */
+    public DSLContext dsl() {
+        return dslContext;
     }
 
     @Override
