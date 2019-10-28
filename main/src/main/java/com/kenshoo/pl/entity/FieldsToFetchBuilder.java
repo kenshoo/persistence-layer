@@ -6,14 +6,10 @@ import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
-import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
-import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.FieldFetchRequest.newRequest;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
@@ -21,7 +17,7 @@ import static org.jooq.lambda.Seq.seq;
 public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
     public Collection<FieldFetchRequest> build(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        return prepareFieldsToFetchRecursive(new Hierarchy(flowConfig), commands, flowConfig)
+        return prepareFieldsToFetchRecursive(Hierarchy.build(flowConfig), commands, flowConfig)
                 .toList();
     }
 
@@ -113,28 +109,6 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         }
     }
 
-    class Hierarchy {
 
-        final ChangeFlowConfig<ROOT> rootFlow;
-        final Set<EntityType> entityTypes;
-
-        Hierarchy(ChangeFlowConfig<ROOT> rootFlow) {
-            this.rootFlow = rootFlow;
-            this.entityTypes = getAllTypes(rootFlow).collect(Collectors.toSet());
-        }
-
-        EntityType<ROOT> root() {
-            return rootFlow.getEntityType();
-        }
-
-        boolean contains(EntityField<?, ?> field) {
-            return entityTypes.contains(field.getEntityType());
-        }
-
-        private <E extends EntityType<E>> Stream<EntityType> getAllTypes(ChangeFlowConfig<E> flow) {
-            return Stream.concat(Stream.of(flow.getEntityType()), flow.childFlows().stream().flatMap(this::getAllTypes));
-        }
-
-    }
 
 }

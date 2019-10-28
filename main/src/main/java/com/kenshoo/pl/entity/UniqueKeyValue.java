@@ -25,6 +25,10 @@ public class UniqueKeyValue<E extends EntityType<E>> implements Identifier<E> {
         this.values = values;
     }
 
+    public static <E extends EntityType<E>> UniqueKeyValue<E> empty() {
+        return new UniqueKeyValue<>(new UniqueKey<E>(new EntityField[0]), new Object[0]);
+    }
+
     @Override
     public <T> boolean containsField(EntityField<E, T> field) {
         return Stream.of(uniqueKey.getFields()).filter(field::equals).findFirst().isPresent();
@@ -83,6 +87,10 @@ public class UniqueKeyValue<E extends EntityType<E>> implements Identifier<E> {
             i++;
         }
         return stringBuilder.append("}").toString();
+    }
+
+    public Identifier<E> concat(Identifier<E> id2) {
+        return concat(this, id2);
     }
 
     public static <E extends EntityType<E>> Identifier<E> concat(Identifier<E> id1, Identifier<E> id2) {

@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
+import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
@@ -61,6 +63,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                                       entityChanges,
                                                       changeContext,
                                                       primaryTableCommands);
+
+                        new HierarchyKeyPopulator.Builder<E>()
+                                .with(changeContext.getHierarchy())
+                                .whereParentFieldsAre(autoInc())
+                                .gettingValues(fromContext(changeContext)).build()
+                                .populateKeysToChildren(entityChanges);
                     }
                 }
             );

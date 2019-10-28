@@ -19,7 +19,7 @@ public class EntityImpl implements Entity {
         //noinspection unchecked
         T value = (T) fields.get(field);
         if (value == null && !fields.containsKey(field)) {
-            throw new IllegalArgumentException("Field " + field + " is not fetched");
+            throw new IllegalArgumentException("Field " + field + " of entity \"" + field.getEntityType().getName() + "\" is not fetched");
         }
         return value;
     }

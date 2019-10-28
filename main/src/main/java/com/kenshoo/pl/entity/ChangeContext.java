@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -19,6 +20,16 @@ public class ChangeContext {
     private final Map<EntityChange, Entity> entities = new IdentityHashMap<>();
     private final PersistentLayerStats stats = new PersistentLayerStats();
     private final Set<FieldFetchRequest> fieldsToFetchRequests = Sets.newHashSet();
+    private final Hierarchy hierarchy;
+
+    @VisibleForTesting
+    public ChangeContext() {
+        hierarchy = null;
+    }
+
+    public ChangeContext(Hierarchy hierarchy) {
+        this.hierarchy = hierarchy;
+    }
 
     public Entity getEntity(EntityChange entityChange) {
         return entities.get(entityChange);
@@ -65,4 +76,9 @@ public class ChangeContext {
     public Collection<FieldFetchRequest> getFetchRequests() {
         return fieldsToFetchRequests;
     }
+
+    public Hierarchy getHierarchy() {
+        return hierarchy;
+    }
+
 }

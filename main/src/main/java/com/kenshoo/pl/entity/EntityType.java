@@ -6,10 +6,12 @@ import com.kenshoo.pl.entity.annotation.IdGeneration;
 import org.jooq.Key;
 import org.jooq.Record;
 import org.jooq.TableField;
+import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey.FAIL;
@@ -82,12 +84,46 @@ public interface EntityType<E extends EntityType<E>> {
                 other.findFields(foreignKey.getKey().getFields())
         );
     }
+
     class ForeignKey<FROM extends EntityType<FROM>, TO extends EntityType<TO>> {
+
+        public final Collection<Tuple2<EntityField<FROM, ?>, EntityField<TO, ?>>> references;
+
         public ForeignKey(Collection<EntityField<FROM, ?>> from, Collection<EntityField<TO, ?>> to) {
-            this.from = from;
-            this.to = to;
+            this.references = seq(from).zip(to).toList();
         }
-        public final Collection<EntityField<FROM, ?>> from;
-        public final Collection<EntityField<TO, ?>> to;
+
+        public ForeignKey(Iterable<Tuple2<EntityField<FROM, ?>, EntityField<TO, ?>>> references) {
+            this.references = seq(references).toList();
+        }
+
+        public boolean notEmpty() {
+            return size() > 0;
+        }
+
+        public int size() {
+            return references.size();
+        }
+
+        public Collection<? extends EntityField<FROM, ?>> from() {
+            return seq(references).map(pair -> pair.v1).toList();
+        }
+
+        public Collection<? extends EntityField<TO, ?>> to() {
+            return seq(references).map(pair -> pair.v2).toList();
+        }
+
+        public ForeignKey<FROM, TO> filterByTo(Predicate<EntityField<TO, ?>> predicate) {
+            return new ForeignKey<>(seq(references).filter(pair -> predicate.test(pair.v2)));
+        }
+
+        @Override
+        public String toString() {
+            return seq(references).map(pair -> "[" + fieldName(pair.v1) + "-->" + fieldName(pair.v2) + "]").toString(", ");
+        }
+
+        private String fieldName(EntityField field) {
+            return field.getDbAdapter().getTable().getName() + "." + field;
+        }
     }
 }
