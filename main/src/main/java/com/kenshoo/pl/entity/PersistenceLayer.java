@@ -18,9 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
-import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
-import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.ChangeOperation.*;
+import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
@@ -31,7 +30,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     private final DSLContext dslContext;
     private final EntitiesToContextFetcher entitiesToContextFetcher;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
-    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.withoutHandlingIdentityFields();
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
@@ -128,10 +126,24 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
         List<? extends ChangeEntityCommand<E>> validChanges = seq(commands).filter(cmd -> !context.containsErrorNonRecursive(cmd)).toList();
 
-        flow.childFlows().forEach(childFlow -> hierarchyKeyPopulator.populateKeysToChildren(validChanges, context));
+        populateParentKeysIntoChildren(context, validChanges);
 
         // invoke recursive
         flow.childFlows().forEach(childFlow -> prepareChildFlowRecursive(validChanges, childFlow, context));
+    }
+
+    private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, List<? extends ChangeEntityCommand<E>> commands) {
+        new Builder<E>()
+                .with(context.getHierarchy())
+                .whereParentFieldsAre(notAutoInc())
+                .gettingValues(fromCommands()).build()
+                .populateKeysToChildren(only(commands, withOperator(CREATE)));
+
+        new Builder<E>()
+                .with(context.getHierarchy())
+                .whereParentFieldsAre(anyField())
+                .gettingValues(fromContext(context)).build()
+                .populateKeysToChildren(only(commands, withOperator(UPDATE)));
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowRecursive(List<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {

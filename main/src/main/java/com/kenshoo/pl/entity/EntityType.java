@@ -11,7 +11,7 @@ import org.jooq.lambda.tuple.Tuple2;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.data.CreateRecordCommand.OnDuplicateKey.FAIL;
@@ -97,6 +97,10 @@ public interface EntityType<E extends EntityType<E>> {
             this.references = seq(references).toList();
         }
 
+        public boolean notEmpty() {
+            return size() > 0;
+        }
+
         public int size() {
             return references.size();
         }
@@ -109,8 +113,8 @@ public interface EntityType<E extends EntityType<E>> {
             return seq(references).map(pair -> pair.v2).toList();
         }
 
-        public ForeignKey<FROM, TO> filter(BiPredicate<EntityField<FROM, ?>, EntityField<TO, ?>> predicate) {
-            return new ForeignKey<>(seq(references).filter(pair -> predicate.test(pair.v1, pair.v2)));
+        public ForeignKey<FROM, TO> filterByTo(Predicate<EntityField<TO, ?>> predicate) {
+            return new ForeignKey<>(seq(references).filter(pair -> predicate.test(pair.v2)));
         }
 
         @Override

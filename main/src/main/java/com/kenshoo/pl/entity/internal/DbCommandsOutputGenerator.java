@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
+import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
@@ -28,7 +30,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
-    private final HierarchyKeyPopulator hierarchyKeyPopulator = HierarchyKeyPopulator.takingIdentityValuesFromContext();
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
@@ -63,7 +64,11 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                                       changeContext,
                                                       primaryTableCommands);
 
-                        hierarchyKeyPopulator.populateKeysToChildren(entityChanges, changeContext);
+                        new HierarchyKeyPopulator.Builder<E>()
+                                .with(changeContext.getHierarchy())
+                                .whereParentFieldsAre(autoInc())
+                                .gettingValues(fromContext(changeContext)).build()
+                                .populateKeysToChildren(entityChanges);
                     }
                 }
             );
@@ -201,9 +206,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private DatabaseId foreignKeyValues(EntityChange<E> cmd, ChangeOperation changeOperation, ChangeContext context, DataTable childTable) {
         ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(((ChangeEntityCommand) cmd).getEntityType().getPrimaryTable());
         Collection<EntityField<E, ?>> parentFields = entityType(cmd).findFields(foreignKey.getKey().getFields());
-        //
-        // !!!!!!!!!   There is a bug. What if identity(true) but user populated the ID field?
-        //
         Object[] values = changeOperation == CREATE && !entityType.getPrimaryIdentityField().isPresent() ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
         if (foreignKey.getFields().size() != values.length) {
             throw new IllegalStateException("Foreign key from " + childTable.getName() + " doesn't have the same number of fields as " + foreignKey);

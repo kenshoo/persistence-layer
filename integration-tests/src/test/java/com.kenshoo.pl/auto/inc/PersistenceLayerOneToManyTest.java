@@ -77,8 +77,7 @@ public class PersistenceLayerOneToManyTest {
                         .with(ChildEntity.FIELD_1, "child3"));
 
 
-        List<Integer> retrievedParentIds = seq(persistenceLayer.create(ImmutableList.of(parent1, parent2), changeFlowConfig, ParentEntity.Key.DEFINITION))
-                .map(res -> res.getIdentifier().getId()).toList();
+        List<Integer> retrievedParentIds = createAndRetrieveIds(ImmutableList.of(parent1, parent2));
 
         Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
 
@@ -92,12 +91,62 @@ public class PersistenceLayerOneToManyTest {
         assertThat(childrenByNames.get("child3").ordinal, is(1));
     }
 
+    @Test
+    public void upsert_for_non_existing_parent() {
+
+        final UpsertByIdInTarget parent = new UpsertByIdInTarget(1000).with(ParentEntity.NAME, "parent")
+                .with(newChild()
+                        .with(ChildEntity.ORDINAL, 1)
+                        .with(ChildEntity.FIELD_1, "child1"));
+
+        List<Integer> retrievedParentIds = seq(persistenceLayer.upsert(ImmutableList.of(parent), changeFlowConfig))
+                .map(res -> res.getCommand().get(ParentEntity.ID)).toList();
+
+        Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
+
+        assertThat(childrenByNames.get("child1").parentId, is(retrievedParentIds.get(0)));
+        assertThat(childrenByNames.get("child1").ordinal, is(1));
+    }
+
+    @Test
+    public void upsert_for_existing_parent() {
+
+        final ParentEntityCreateCommand parentCreation = newParent()
+                .with(ParentEntity.ID_IN_TARGET, 1000)
+                .with(ParentEntity.NAME, "parent");
+
+        List<Integer> retrievedParentIds = createAndRetrieveIds(ImmutableList.of(parentCreation));
+
+        final UpsertByIdInTarget parentUpsert = new UpsertByIdInTarget(1000)
+                .with(newChild()
+                        .with(ChildEntity.ORDINAL, 1)
+                        .with(ChildEntity.FIELD_1, "child1"));
+
+        persistenceLayer.upsert(ImmutableList.of(parentUpsert), changeFlowConfig);
+
+        Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
+
+        assertThat(childrenByNames.get("child1").parentId, is(retrievedParentIds.get(0)));
+        assertThat(childrenByNames.get("child1").ordinal, is(1));
+    }
+
+    private List<Integer> createAndRetrieveIds(ImmutableList<ParentEntityCreateCommand> of) {
+        return seq(persistenceLayer.create(of, changeFlowConfig, ParentEntity.Key.DEFINITION))
+                .map(res -> res.getIdentifier().getId()).toList();
+    }
+
     private ParentEntityCreateCommand newParent() {
         return new ParentEntityCreateCommand();
     }
 
     private ChildEntityCreateCommand newChild() {
         return new ChildEntityCreateCommand();
+    }
+
+    class UpsertByIdInTarget extends InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.UniqueKey> implements EntityCommandExt<ParentEntity, UpsertByIdInTarget> {
+        public UpsertByIdInTarget(int idInTarget) {
+            super(ParentEntity.INSTANCE, new ParentEntity.UniqueKey(idInTarget));
+        }
     }
 
     class ParentEntityCreateCommand extends CreateEntityCommand<ParentEntity> implements EntityCommandExt<ParentEntity, ParentEntityCreateCommand> {

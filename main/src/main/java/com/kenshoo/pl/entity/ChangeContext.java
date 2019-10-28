@@ -77,7 +77,7 @@ public class ChangeContext {
         return fieldsToFetchRequests;
     }
 
-    Hierarchy getHierarchy() {
+    public Hierarchy getHierarchy() {
         return hierarchy;
     }
 

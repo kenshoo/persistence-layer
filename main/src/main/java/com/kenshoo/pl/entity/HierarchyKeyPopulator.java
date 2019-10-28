@@ -3,107 +3,76 @@ package com.kenshoo.pl.entity;
 import com.kenshoo.pl.entity.internal.EntityDbUtil;
 
 import java.util.Collection;
-import java.util.Optional;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+
 import static org.jooq.lambda.Seq.seq;
 
 
-public class HierarchyKeyPopulator {
+public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
 
-    private final CommandToValuesStrategy identityValueGetter;
+    private final CommandToValuesStrategy<PARENT> valueExtractor;
+    private final Predicate<EntityField<PARENT, ?>> keyFilter;
+    private final Hierarchy hierarchy;
 
-    private HierarchyKeyPopulator() {
-        this.identityValueGetter = null;
+    private HierarchyKeyPopulator(Predicate<EntityField<PARENT, ?>> keyFilter, CommandToValuesStrategy<PARENT> identityValueGetter, Hierarchy hierarchy) {
+        this.valueExtractor = identityValueGetter;
+        this.keyFilter = keyFilter;
+        this.hierarchy = hierarchy;
     }
 
-    private HierarchyKeyPopulator(CommandToValuesStrategy identityValueGetter) {
-        this.identityValueGetter = identityValueGetter;
+    public static <E extends EntityType<E>> CommandToValuesStrategy<E> fromContext(ChangeContext ctx) {
+        return (fields, cmd) -> EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
     }
 
-    public static HierarchyKeyPopulator withoutHandlingIdentityFields() {
-        return new HierarchyKeyPopulator();
+    public static <E extends EntityType<E>> CommandToValuesStrategy<E> fromCommands() {
+        return (fields, cmd) -> EntityDbUtil.getFieldValues(fields, cmd);
     }
 
-    public static HierarchyKeyPopulator takingIdentityValuesFromContext() {
-        return new HierarchyKeyPopulator(takingValuesFromContext());
-    }
-
-    public static <E extends EntityType<E>> CommandToValuesStrategy<E> takingValuesFromContext() {
-        return (fields, cmd, ctx) -> EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
-    }
-
-    public static <E extends EntityType<E>> CommandToValuesStrategy<E> takeCommandValuesOnCreateAndContextValuesOnUpdate() {
-        return (fields, cmd, ctx) -> cmd.getChangeOperation() == CREATE
-                ? EntityDbUtil.getFieldValues(fields, cmd)
-                : EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
-    }
-
-    public <PARENT extends EntityType<PARENT>>
-    void populateKeysToChildren(
-            Collection<? extends EntityChange<PARENT>> parents,
-            ChangeContext context) {
+    public void populateKeysToChildren(Collection<? extends EntityChange<PARENT>> parents) {
 
         if (parents.isEmpty()) {
             return;
         }
 
-        context.getHierarchy().childrenTypes(first(parents).getEntityType())
-                .forEach(populateKeysToChildrenOfSpecificTypeConsumer(parents, context));
+        hierarchy.childrenTypes(entityType(parents))
+                .forEach(populateKeysToChildrenOfSpecificTypeConsumer(parents));
     }
 
     @SuppressWarnings("unchecked")
-    private <PARENT extends EntityType<PARENT>> Consumer<EntityType> populateKeysToChildrenOfSpecificTypeConsumer(Collection<? extends EntityChange<PARENT>> parents, ChangeContext context) {
-        return childType -> populateKeysToChildrenOfSpecificType(parents, childType, context);
+    private Consumer<EntityType> populateKeysToChildrenOfSpecificTypeConsumer(Collection<? extends EntityChange<PARENT>> parents) {
+        return childType -> populateKeysToChildrenOfSpecificType(parents, childType);
     }
 
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <CHILD extends EntityType<CHILD>>
     void populateKeysToChildrenOfSpecificType(
             Collection<? extends EntityChange<PARENT>> parents,
-            CHILD childType,
-            ChangeContext context) {
+            CHILD childType) {
 
-        final EntityType.ForeignKey<CHILD, PARENT> allChildToParentFields = childType.getKeyTo(entityType(parents));
-        final EntityType.ForeignKey<CHILD, PARENT> childToParentIdentityFields = allChildToParentFields.filter(parentFieldIsAutoIncrementing());
-        final EntityType.ForeignKey<CHILD, PARENT> childToParentNonIdentityFields = allChildToParentFields.filter(parentFieldIsNotAutoIncrementing());
+        final EntityType.ForeignKey<CHILD, PARENT> childToParentFields = childType.getKeyTo(entityType(parents)).filterByTo(keyFilter);
 
-        seq(parents).filter(hasAnyChildOf(childType)).forEach(parent -> {
-            final UniqueKeyValue<CHILD> identityValues = Optional.ofNullable(identityValueGetter).map(valueGetter -> parentValues(context, childToParentIdentityFields, valueGetter, parent)).orElse(UniqueKeyValue.empty());
-            final UniqueKeyValue<CHILD> nonIdentityValues = parentValues(context, childToParentNonIdentityFields, takeCommandValuesOnCreateAndContextValuesOnUpdate(), parent);
-            Identifier<CHILD> allKeys = identityValues.concat(nonIdentityValues);
-            if (!allKeys.isEmpty()) {
-                parent.getChildren(childType).forEach(child -> child.setKeysToParent(allKeys));
-            }
-        });
-
+        if (childToParentFields.notEmpty()) {
+            seq(parents).filter(hasAnyChildOf(childType)).forEach(parent -> {
+                final UniqueKeyValue<CHILD> identityValues = parentValues(childToParentFields, valueExtractor, parent);
+                parent.getChildren(childType).forEach(child -> child.setKeysToParent(identityValues.concat(child.getKeysToParent())));
+            });
+        }
     }
 
-    private <PARENT extends EntityType<PARENT>> PARENT entityType(Collection<? extends EntityChange<PARENT>> parents) {
+    private PARENT entityType(Collection<? extends EntityChange<PARENT>> parents) {
         return first(parents).getEntityType();
     }
 
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    UniqueKeyValue<CHILD> parentValues(ChangeContext context, EntityType.ForeignKey<CHILD, PARENT> childToParentKeys, CommandToValuesStrategy commandToValuesStrategy, EntityChange<PARENT> parent) {
-        Object[] parentValues = commandToValuesStrategy.getValues(childToParentKeys.to(), parent, context);
+    private <CHILD extends EntityType<CHILD>>
+    UniqueKeyValue<CHILD> parentValues(EntityType.ForeignKey<CHILD, PARENT> childToParentKeys, CommandToValuesStrategy commandToValuesStrategy, EntityChange<PARENT> parent) {
+        Object[] parentValues = commandToValuesStrategy.getValues(childToParentKeys.to(), parent);
         if (childToParentKeys.size() != parentValues.length) {
             throw new IllegalStateException("Found " + parentValues.length + " values out of " + childToParentKeys.size() + " fields for foreign keys. Keys: " + childToParentKeys);
         }
         return new UniqueKeyValue<>(new UniqueKey<>(array(childToParentKeys.from())), parentValues);
     }
 
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    BiPredicate<EntityField<CHILD, ?>, EntityField<PARENT, ?>> parentFieldIsAutoIncrementing() {
-        return (__, parentField) -> parentField.getDbAdapter().isIdentityField();
-    }
-
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    BiPredicate<EntityField<CHILD, ?>, EntityField<PARENT, ?>> parentFieldIsNotAutoIncrementing() {
-        return (__, parentField) -> !parentField.getDbAdapter().isIdentityField();
-    }
-
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <CHILD extends EntityType<CHILD>>
     Predicate<EntityChange<PARENT>> hasAnyChildOf(CHILD childType) {
         return p -> p.getChildren(childType).findAny().isPresent();
     }
@@ -114,6 +83,47 @@ public class HierarchyKeyPopulator {
 
     private <CHILD extends EntityType<CHILD>> EntityField<CHILD, ?>[] array(Collection<? extends EntityField<CHILD, ?>> childFields) {
         return childFields.toArray(new EntityField[childFields.size()]);
+    }
+
+    public static <PARENT extends EntityType<PARENT>>
+    Predicate<EntityField<PARENT, ?>> autoInc() {
+        return parentField -> parentField.getDbAdapter().isIdentityField();
+    }
+
+    static <PARENT extends EntityType<PARENT>>
+    Predicate<EntityField<PARENT, ?>> notAutoInc() {
+        return parentField -> !parentField.getDbAdapter().isIdentityField();
+    }
+
+    public static <PARENT extends EntityType<PARENT>>
+    Predicate<EntityField<PARENT, ?>> anyField() {
+        return parentField -> true;
+    }
+
+    public static class Builder<E extends EntityType<E>> {
+
+        private CommandToValuesStrategy<E> valueExtractor;
+        private Predicate<EntityField<E, ?>> keyFilter;
+        private Hierarchy hierarchy;
+
+        public Builder<E> with(Hierarchy hierarchy) {
+            this.hierarchy = hierarchy;
+            return this;
+        }
+
+        public Builder<E> gettingValues(CommandToValuesStrategy<E> valueExtractor) {
+            this.valueExtractor = valueExtractor;
+            return this;
+        }
+
+        public Builder<E> whereParentFieldsAre(Predicate<EntityField<E, ?>> keyFilter) {
+            this.keyFilter = keyFilter;
+            return this;
+        }
+
+        public HierarchyKeyPopulator<E> build() {
+            return new HierarchyKeyPopulator<E>(keyFilter, valueExtractor, hierarchy);
+        }
     }
 
 }
