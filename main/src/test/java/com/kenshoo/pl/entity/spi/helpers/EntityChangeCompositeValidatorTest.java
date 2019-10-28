@@ -36,11 +36,11 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
+@RunWith(MockitoJUnitRunner.class)
 public class EntityChangeCompositeValidatorTest {
 
-    public static final int ENTITY_ID = 10;
-    public static final String FIELD_1_VALUE = "value1";
+    private static final int ENTITY_ID = 10;
+    private static final String FIELD_1_VALUE = "value1";
 
     @Mock
     private ChangeContext changeContext;
@@ -162,6 +162,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerRequiredFieldValidatorTest() {
         when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
+        when(requiredFieldValidator.requireWhen()).thenReturn(when-> true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(null);
         validator.register(requiredFieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);

@@ -10,6 +10,7 @@ import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.ValidationError;
 import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
@@ -32,12 +33,12 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
 
     @Override
     public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
-        return Stream.empty();
+        return validator.fetchFields();
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
-        if (entityChange.get(validator.requiredField()) == null) {
+        if (entityChange.get(validator.requiredField()) == null && validator.requireWhen().test(entity)) {
             return new ValidationError(validator.getErrorCode(), validator.requiredField(), ImmutableMap.of("field", validator.requiredField().toString()));
         }
         return null;

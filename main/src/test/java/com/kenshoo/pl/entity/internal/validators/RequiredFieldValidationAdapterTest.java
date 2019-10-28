@@ -15,12 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +41,9 @@ public class RequiredFieldValidationAdapterTest {
     private Entity entity;
 
     @Mock
+    private EntityField<TestEntity, String> fetchField;
+
+    @Mock
     private RequiredFieldValidator<TestEntity, String> validator;
 
     @InjectMocks
@@ -49,6 +52,7 @@ public class RequiredFieldValidationAdapterTest {
     @Before
     public void init() {
         when(validator.requiredField()).thenReturn(TestEntity.FIELD_1);
+        when(validator.requireWhen()).thenReturn(entity -> true);
     }
 
     @Test
@@ -85,9 +89,27 @@ public class RequiredFieldValidationAdapterTest {
     }
 
     @Test
-    public void when_call_fields_to_fetch_then_get_empty_stream() {
+    public void when_call_fields_to_fetch_then_empty() {
         Stream<? extends EntityField<?, ?>> result = underTest.getFieldsToFetch(ChangeOperation.CREATE);
         assertEquals(Optional.empty(), result.findAny());
+    }
+
+    @Test
+    public void when_require_value_and_predicate_false_return_null() {
+        when(entityChange.get(any())).thenReturn(null);
+        when(validator.requireWhen()).thenReturn(entity -> false);
+
+        assertNull(underTest.validate(entityChange, entity, ChangeOperation.CREATE));
+    }
+
+    @Test
+    public void when_call_fields_to_fetch_then_fetched_field_only() {
+        when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
+        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.getFieldsToFetch(ChangeOperation.CREATE);
+        List<? extends EntityField<?, ?>> fieldsToFetch = fetchedStream.collect(Collectors.toList());
+
+        assertFalse("Fetch validated field", fieldsToFetch.contains(TestEntity.FIELD_1));
+        assertTrue("Fetch validated field", fieldsToFetch.contains(fetchField));
     }
 
 }
