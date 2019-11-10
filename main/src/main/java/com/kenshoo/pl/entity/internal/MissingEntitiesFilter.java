@@ -35,11 +35,7 @@ public class MissingEntitiesFilter<E extends EntityType<E>> implements ChangesFi
 
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        if (changeEntityCommands.isEmpty()) {
-            return Stream.of();
-        } else {
-            return Arrays.stream(changeEntityCommands.stream().findFirst().get().getIdentifier().getUniqueKey().getFields());
-        }
+            return Stream.empty();
     }
 
     @Override
