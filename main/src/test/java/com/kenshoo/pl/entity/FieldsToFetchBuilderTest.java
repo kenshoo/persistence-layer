@@ -1,10 +1,15 @@
 package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
+import com.kenshoo.jooq.AbstractDataTable;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.FluidPersistenceCmdBuilder;
+import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.spi.FieldValueSupplier;
 import com.kenshoo.pl.entity.spi.NotSuppliedException;
+import org.jooq.Record;
+import org.jooq.TableField;
+import org.jooq.impl.SQLDataType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.FluidPersistenceCmdBuilder.fluid;
@@ -21,43 +27,33 @@ import static com.kenshoo.pl.entity.TestGrandChildEntity.GRAND_CHILD_FIELD_1;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FieldsToFetchBuilderTest {
-    @Mock
-    private ChangeFlowConfig<TestEntity> flowConfig;
-    @Mock
-    private ChangeFlowConfig<TestChildEntity> childFlowConfig;
-    @Mock
-    private ChangeFlowConfig<TestGrandChildEntity> grandChildFlowConfig;
-    @Mock
-    private EntityField<?, ?> extField;
-    @Mock
-    private AbstractEntityType entityType;
-    @Mock
-    private EntityFieldDbAdapter adapter;
-    @Mock
-    private DataTable primaryTable;
 
+    private ChangeFlowConfig<TestEntity> flowConfig;
+
+    @Mock
+    private PLContext plContext;
     @InjectMocks
     private FieldsToFetchBuilder<TestEntity> fieldsToFetchBuilder;
 
     @Before
     public void init() {
-        when(flowConfig.getEntityType()).thenReturn(TestEntity.INSTANCE);
-        when(childFlowConfig.getEntityType()).thenReturn(TestChildEntity.INSTANCE);
-        when(grandChildFlowConfig.getEntityType()).thenReturn(TestGrandChildEntity.INSTANCE);
-        when(flowConfig.childFlows()).thenReturn(ImmutableList.of(childFlowConfig));
-        when(childFlowConfig.childFlows()).thenReturn(ImmutableList.of(grandChildFlowConfig));
-        when(extField.getEntityType()).thenReturn(entityType);
-        when(extField.getDbAdapter()).thenReturn(adapter);
-        when(adapter.getTable()).thenReturn(primaryTable);
+        flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, TestEntity.INSTANCE).
+                            withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, TestChildEntity.INSTANCE).
+                                withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, TestGrandChildEntity.INSTANCE))).
+                                    build();
     }
 
     @Test
     public void no_requested_entity_field_for_update() {
-        assertThat(calculateRequiredFields(updateParent()), hasSize(0));
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(updateParent());
+
+        assertThat(requests, containsInAnyOrder(
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
+        ));
+
     }
 
     @Test
@@ -73,6 +69,7 @@ public class FieldsToFetchBuilderTest {
         );
 
         assertThat(requests, containsInAnyOrder(
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
                 requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
         ));
     }
@@ -82,12 +79,13 @@ public class FieldsToFetchBuilderTest {
     public void one_entity_field_requested_by_entity_for_upsert() {
 
         Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                upsertParent().with(TestEntity.FIELD_1, supplierRequiring(extField))
+                upsertParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
         ));
     }
 
@@ -95,11 +93,13 @@ public class FieldsToFetchBuilderTest {
     public void one_external_field_requested_by_entity_for_update() {
 
         Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent().with(TestEntity.FIELD_1, supplierRequiring(extField))
+                updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
         ));
     }
 
@@ -107,11 +107,11 @@ public class FieldsToFetchBuilderTest {
     public void one_external_field_requested_by_entity_for_create() {
 
         Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                createParent().with(TestEntity.FIELD_1, supplierRequiring(extField))
+                createParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
+                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
         ));
     }
 
@@ -127,6 +127,8 @@ public class FieldsToFetchBuilderTest {
                 );
 
         assertThat(requests, containsInAnyOrder(
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
                 requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
         ));
     }
@@ -142,6 +144,9 @@ public class FieldsToFetchBuilderTest {
         );
 
         assertThat(requests, containsInAnyOrder(
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
+                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
                 requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
         ));
     }
@@ -152,12 +157,15 @@ public class FieldsToFetchBuilderTest {
         Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent()
                         .withChild(
-                                updateChild().with(CHILD_FIELD_1, supplierRequiring(extField))
+                                updateChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
                         )
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
+                requested(TestChildEntity.CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
+                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
         ));
     }
 
@@ -167,12 +175,12 @@ public class FieldsToFetchBuilderTest {
         Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 createParent()
                         .withChild(
-                                createChild().with(CHILD_FIELD_1, supplierRequiring(extField))
+                                createChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
                         )
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(extField).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
+                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
         ));
     }
 
@@ -191,7 +199,11 @@ public class FieldsToFetchBuilderTest {
         );
 
         assertThat(requests, containsInAnyOrder(
-                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build()
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
+                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
+                requested(TestGrandChildEntity.ID).queryOn(TestGrandChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build(),
+                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build(),
+                requested(TestGrandChildEntity.GRAND_CHILD_FIELD_1).queryOn(TestGrandChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build()
         ));
     }
 
@@ -244,7 +256,7 @@ public class FieldsToFetchBuilderTest {
         return fluid(new CreateEntityCommand<>(TestGrandChildEntity.INSTANCE));
     }
 
-    private <T> FieldValueSupplier<T> supplierRequiring(EntityField<?, ?> requestedField) {
+    private <T> FieldValueSupplier<T> supplierRequiring(final EntityField<?, ?> requestedField) {
         return new FieldValueSupplier<T>() {
             @Override
             public T supply(Entity entity) throws NotSuppliedException {
@@ -261,7 +273,43 @@ public class FieldsToFetchBuilderTest {
     }
 
     private Collection<FieldFetchRequest> calculateRequiredFields(FluidPersistenceCmdBuilder<TestEntity> cmd) {
-        return fieldsToFetchBuilder.build(ImmutableList.of(cmd.get()), flowConfig);
+        return new HashSet<>(fieldsToFetchBuilder.build(ImmutableList.of(cmd.get()), flowConfig));
+    }
+
+    static public class TestParentEntity extends AbstractEntityType<TestParentEntity> {
+
+        public static final TestParentEntity INSTANCE = new TestParentEntity();
+
+        private TestParentEntity() {
+            super("parent");
+        }
+
+        @Id
+        static final EntityField<TestParentEntity, Integer> ID = INSTANCE.field(TestParentTable.TABLE.id);
+        static final EntityField<TestParentEntity, String> SOME_FIELD = INSTANCE.field(TestParentTable.TABLE.some_field);
+
+        @Override
+        public DataTable getPrimaryTable() {
+            return TestParentTable.TABLE;
+        }
+
+    }
+
+    static public class TestParentTable extends AbstractDataTable<TestParentTable> {
+
+        public static final TestParentTable TABLE = new TestParentTable();
+
+        private TestParentTable() {
+            super("parent");
+        }
+
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, String> some_field = createField("field_1", SQLDataType.VARCHAR.length(10));
+
+        @Override
+        public TestParentTable as(String alias) {
+            return null;
+        }
     }
 
 }
