@@ -13,7 +13,7 @@ public class TestChildEntityTable extends AbstractDataTable<TestChildEntityTable
         super("testChildTable");
     }
 
-    public final TableField<Record, Integer> ordinal = createField("ordinal", SQLDataType.INTEGER);
+    public final TableField<Record, Integer> ordinal = createPKField("ordinal", SQLDataType.INTEGER);
     public final TableField<Record, Integer> parent_id = createFKField("parent_id", TestEntityTable.TABLE.id);
     public final TableField<Record, String> child_field_1 = createField("field_1", SQLDataType.VARCHAR.length(10));
     public final TableField<Record, String> child_field_2 = createField("field_2", SQLDataType.VARCHAR.length(10));
