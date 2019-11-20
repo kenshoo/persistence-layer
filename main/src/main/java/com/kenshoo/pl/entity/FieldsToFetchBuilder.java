@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.FieldFetchRequest.newRequest;
 import static java.util.stream.Collectors.toList;
-import static org.jooq.lambda.Seq.duplicate;
 import static org.jooq.lambda.Seq.seq;
 
 public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
@@ -56,13 +55,12 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
                 Stream.concat(flow.currentStateConsumers(), consumerOf(commands))
                         .filter(onlyConsumersWith(operation));
 
-        final Stream<EntityField<?, ?>> fields = Stream.concat(
-                currentStateConsumers.flatMap(
-                        consumer -> validateFieldsToFetch(flow, operation, consumer.getRequiredFields(commands, operation), consumer)
-                ),
-                fieldsOf(commands, operation));
+        final Seq<EntityField<?, ?>> fields = Seq.concat(
+                fieldsConsumedBy(commands, operation, flow, currentStateConsumers),
+                fieldsRelatedByChildrenOf(commands, operation),
+                fieldsOfIdentifiersOf(commands, operation));
 
-        return seq(fields).flatMap(field -> {
+        return fields.flatMap(field -> {
             if (isSameLevel(flow, field)) {
                 return Seq.of(newRequest().field(field).queryOn(currentLevel).askedBy(currentLevel).build());
             } else if (hierarchy.contains(field)) {
@@ -73,10 +71,25 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         });
     }
 
-    private <E extends EntityType<E>> Stream<EntityField<E, ?>> fieldsOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation) {
+    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedBy(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {
+        return currentStateConsumers.flatMap(
+                consumer -> validateFieldsToFetch(flow, operation, consumer.getRequiredFields(commands, operation), consumer)
+        );
+    }
+
+    private <E extends EntityType<E>> Stream<EntityField<E, ?>> fieldsOfIdentifiersOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation) {
         if(!commands.isEmpty() && SupportedChangeOperation.UPDATE_AND_DELETE.supports(operation)) {
             ChangeEntityCommand<E> cmd = commands.stream().findFirst().get();
-            return hasAnyChildCommand(commands) ? Stream.concat(uniqueFields(cmd), primaryKeyFields(cmd)) : uniqueFields(cmd);
+            return uniqueFields(cmd);
+        } else {
+            return Stream.empty();
+        }
+    }
+
+    private <E extends EntityType<E>> Stream<EntityField<E, ?>> fieldsRelatedByChildrenOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation) {
+        if(SupportedChangeOperation.UPDATE_AND_DELETE.supports(operation) && hasAnyChildCommand(commands)) {
+            ChangeEntityCommand<E> cmd = commands.stream().findFirst().get();
+            return primaryKeyFields(cmd);
         } else {
             return Stream.empty();
         }
