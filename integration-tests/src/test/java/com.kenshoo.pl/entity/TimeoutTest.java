@@ -236,6 +236,11 @@ public class TimeoutTest {
         public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<TestEntityType>> changeEntityCommands, ChangeOperation changeOperation) {
             return Stream.empty();
         }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<TestEntityType, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return Stream.empty();
+        }
     }
 
     private class TimeoutOutputGenerator implements OutputGenerator<TestEntityType> {
@@ -266,6 +271,11 @@ public class TimeoutTest {
 
         @Override
         public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<TestEntityType>> changeEntityCommands, ChangeOperation changeOperation) {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<TestEntityType, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.empty();
         }
     }

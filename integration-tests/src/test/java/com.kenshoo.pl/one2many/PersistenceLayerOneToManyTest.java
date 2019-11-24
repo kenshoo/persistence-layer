@@ -404,6 +404,11 @@ public class PersistenceLayerOneToManyTest {
             }
 
             @Override
+            public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<ChildEntity, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+                return (Stream)Stream.of(otherField);
+            }
+
+            @Override
             public SupportedChangeOperation getSupportedChangeOperation() {
                 return CREATE_AND_UPDATE;
             }

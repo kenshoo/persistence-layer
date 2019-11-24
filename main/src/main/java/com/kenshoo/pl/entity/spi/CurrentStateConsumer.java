@@ -15,4 +15,6 @@ import java.util.stream.Stream;
  */
 public interface CurrentStateConsumer<E extends EntityType<E>> {
     Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation);
+
+    Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation);
 }

@@ -217,5 +217,10 @@ public class DeadlockTest {
         public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<TestEntityType>> changeEntityCommands, ChangeOperation changeOperation) {
             return Stream.empty();
         }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<TestEntityType, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return Stream.empty();
+        }
     }
 }

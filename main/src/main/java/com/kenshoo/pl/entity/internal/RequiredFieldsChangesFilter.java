@@ -42,6 +42,11 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return Stream.empty();
+    }
+
+    @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
         return SupportedChangeOperation.CREATE;
     }

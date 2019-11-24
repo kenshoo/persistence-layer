@@ -18,6 +18,12 @@ import java.util.stream.Stream;
 
 public class MissingEntitiesFilter<E extends EntityType<E>> implements ChangesFilter<E> {
 
+    private final E entityType;
+
+    public MissingEntitiesFilter(E entityType) {
+        this.entityType = entityType;
+    }
+
     @Override
     public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
         return Collections2.filter(changes, command -> {
@@ -36,6 +42,11 @@ public class MissingEntitiesFilter<E extends EntityType<E>> implements ChangesFi
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
             return Stream.empty();
+    }
+
+    @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return Stream.empty();
     }
 
     @Override

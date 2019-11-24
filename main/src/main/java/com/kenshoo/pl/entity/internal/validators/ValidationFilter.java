@@ -38,6 +38,11 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
     }
 
     @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return validators.stream().flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
+    }
+
+    @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
         return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
     }

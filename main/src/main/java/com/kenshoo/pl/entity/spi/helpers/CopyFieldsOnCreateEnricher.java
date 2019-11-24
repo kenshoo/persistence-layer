@@ -89,6 +89,12 @@ public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements Post
         return requiredFields.stream();
     }
 
+    @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return requiredFields.stream();
+    }
+
+
     public static class Field2Copy<E extends EntityType<E>, T> {
         private final EntityField<?, T> source;
         private final EntityField<E, T> target;
