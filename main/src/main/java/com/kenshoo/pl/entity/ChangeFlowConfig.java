@@ -60,7 +60,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.requiredRelationFields = requiredRelationFields;
         this.requiredFields = requiredFields;
         this.childFlows = childFlows;
-        this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>(), new FieldsRequiredByChildrenFilter<>());
+        this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>());
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
     }
