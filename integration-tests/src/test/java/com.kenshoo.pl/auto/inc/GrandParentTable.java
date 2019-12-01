@@ -7,7 +7,7 @@ import org.jooq.impl.SQLDataType;
 
 public class GrandParentTable extends AbstractDataTable<GrandParentTable> {
 
-    public static final GrandParentTable INSTANCE = new GrandParentTable("ParentTable");
+    public static final GrandParentTable INSTANCE = new GrandParentTable("GrandParentTable");
 
     final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
 

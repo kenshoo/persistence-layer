@@ -15,8 +15,6 @@ public class ParentEntityWithRequiredRelation extends AbstractEntityType<ParentE
     @Id
     public static final EntityField<ParentEntityWithRequiredRelation, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
 
-    public static final EntityField<ParentEntityWithRequiredRelation, Integer> ID_IN_TARGET = INSTANCE.field(ParentTable.INSTANCE.idInTarget);
-
     @Required(RELATION)
     public static final EntityField<ParentEntityWithRequiredRelation, Integer> GRAND_PARENT_ID = INSTANCE.field(ParentTable.INSTANCE.grand_parent_id);
 
@@ -47,16 +45,5 @@ public class ParentEntityWithRequiredRelation extends AbstractEntityType<ParentE
         }
     }
 
-    public static class UniqueKey extends SingleUniqueKeyValue<ParentEntityWithRequiredRelation, Integer> {
-        public static final SingleUniqueKey<ParentEntityWithRequiredRelation, Integer> DEFINITION = new SingleUniqueKey<ParentEntityWithRequiredRelation, Integer>(ParentEntityWithRequiredRelation.ID_IN_TARGET) {
-            @Override
-            protected UniqueKey createValue(Integer value) {
-                return new UniqueKey(value);
-            }
-        };
 
-        public UniqueKey(Integer val) {
-            super(DEFINITION, val);
-        }
-    }
 }

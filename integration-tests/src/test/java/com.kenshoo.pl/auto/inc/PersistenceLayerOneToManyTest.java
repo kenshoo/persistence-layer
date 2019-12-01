@@ -171,7 +171,7 @@ public class PersistenceLayerOneToManyTest {
                 .map(res -> res.getIdentifier().getId()).toList();
     }
 
-    private List<Integer> createAndRetrieveIdsOfParentsWithRequiredRelation(ImmutableList<CreateEntityCommand<ParentEntityWithRequiredRelation>> of) {
+    private List<Integer> createAndRetrieveIdsOfParentsWithRequiredRelation(List<CreateEntityCommand<ParentEntityWithRequiredRelation>> commands) {
 
         PersistenceLayer<ParentEntityWithRequiredRelation, ParentEntityWithRequiredRelation.Key> pl = new PersistenceLayer<>(jooq);
 
@@ -179,7 +179,7 @@ public class PersistenceLayerOneToManyTest {
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
                 .build();
 
-        return seq(pl.create(of, flow, ParentEntityWithRequiredRelation.Key.DEFINITION))
+        return seq(pl.create(commands, flow, ParentEntityWithRequiredRelation.Key.DEFINITION))
                 .map(res -> res.getIdentifier().getId()).toList();
     }
 
