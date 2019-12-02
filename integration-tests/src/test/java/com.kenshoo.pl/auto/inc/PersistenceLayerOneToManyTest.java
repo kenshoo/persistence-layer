@@ -177,6 +177,7 @@ public class PersistenceLayerOneToManyTest {
 
         ChangeFlowConfig<ParentEntityWithRequiredRelation> flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntityWithRequiredRelation.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
+                .with(new FeatureSet(AutoIncrementSupport))
                 .build();
 
         return seq(pl.create(commands, flow, ParentEntityWithRequiredRelation.Key.DEFINITION))

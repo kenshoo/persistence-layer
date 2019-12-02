@@ -150,10 +150,6 @@ public class FalseUpdatesPurgerTest {
                 return (T)state.get(field);
             }
 
-            @Override
-            public <T> void set(EntityField<?, T> field, T value) {
-                throw new UnsupportedOperationException();
-            }
         };
     }
 

@@ -109,8 +109,11 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                             final CreateRecordCommand cmd = pair.getRight().get();
                             Object generatedValue = cmd.get(identityTableField);
                             Entity dataFromDB = changeContext.getEntity(pair.getLeft());
-                            Entity enrichedEntity = new EntityWithSharedData(dataFromDB);
-                            enrichedEntity.set(identityField, generatedValue);
+                            EntityWithGeneratedId enrichedEntity = new EntityWithGeneratedId(
+                                    dataFromDB,
+                                    identityField,
+                                    generatedValue
+                                    );
                             changeContext.addEntity(pair.getLeft(), enrichedEntity);
                 });
     }
