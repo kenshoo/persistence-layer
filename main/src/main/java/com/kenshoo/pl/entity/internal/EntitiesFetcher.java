@@ -3,7 +3,6 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
-import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
@@ -17,17 +16,25 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.kenshoo.pl.BetaTesting.Feature.FindSecondaryTablesOfParents;
+import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
 
+
 public class EntitiesFetcher {
 
     private final DSLContext dslContext;
+    private final Predicate<Feature> features;
 
     public EntitiesFetcher(DSLContext dslContext) {
         this.dslContext = dslContext;
+        this.features = __ -> false;
+    }
+
+    public EntitiesFetcher(DSLContext dslContext, Predicate<Feature> features) {
+        this.dslContext = dslContext;
+        this.features = features;
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(E entityType, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> keys, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
@@ -119,7 +126,7 @@ public class EntitiesFetcher {
     }
 
     private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<? extends Field<?>> keyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return BetaTesting.isEnabled(FindSecondaryTablesOfParents)
+        return features.test(FindSecondaryTablesOfParents)
                 ? buildFetchQuery_NEW(startingTable, keyFields, fieldsToFetch)
                 : buildFetchQuery_DEPRECATED(startingTable, keyFields, fieldsToFetch);
     }

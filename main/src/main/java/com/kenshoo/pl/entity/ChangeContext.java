@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.jooq.lambda.Seq.seq;
@@ -21,14 +22,21 @@ public class ChangeContext {
     private final PersistentLayerStats stats = new PersistentLayerStats();
     private final Set<FieldFetchRequest> fieldsToFetchRequests = Sets.newHashSet();
     private final Hierarchy hierarchy;
+    private final Predicate<Feature> features;
 
     @VisibleForTesting
     public ChangeContext() {
         hierarchy = null;
+        features = __ -> false;
     }
 
-    public ChangeContext(Hierarchy hierarchy) {
+    public ChangeContext(Hierarchy hierarchy, Predicate<Feature> features) {
         this.hierarchy = hierarchy;
+        this.features = features;
+    }
+
+    public boolean isEnabled(Feature feature) {
+        return features.test(feature);
     }
 
     public Entity getEntity(EntityChange entityChange) {

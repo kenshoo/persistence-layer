@@ -1,6 +1,7 @@
-package com.kenshoo.pl.entity;
+package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.FluidPersistenceCmdBuilder;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
 import org.jooq.lambda.Seq;

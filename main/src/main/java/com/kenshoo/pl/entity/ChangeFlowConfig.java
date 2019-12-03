@@ -22,11 +22,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
 import static java.util.stream.Collectors.toCollection;
+import static org.jooq.lambda.Seq.seq;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
 
@@ -44,6 +47,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
+    private final Predicate<Feature> features;
 
     private ChangeFlowConfig(E entityType,
                              List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers,
@@ -52,7 +56,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              Set<EntityField<E, ?>> requiredRelationFields,
                              Set<EntityField<E, ?>> requiredFields,
                              List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
-                             PersistenceLayerRetryer retryer) {
+                             PersistenceLayerRetryer retryer,
+                             Predicate<Feature> features) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
         this.outputGenerators = outputGenerators;
@@ -63,6 +68,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>());
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
+        this.features = features;
     }
 
     public E getEntityType() {
@@ -114,7 +120,13 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     }
 
     public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
-        return getEntityType().getPrimaryIdentityField();
+        return features.test(AutoIncrementSupport)
+            ? getEntityType().getPrimaryIdentityField()
+            : Optional.empty();
+    }
+
+    public Predicate<Feature> getFeatures() {
+        return this.features;
     }
 
     public static class Builder<E extends EntityType<E>> {
@@ -127,10 +139,21 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-
+        private Predicate<Feature> features = __ -> false;
 
         public Builder(E entityType) {
             this.entityType = entityType;
+        }
+
+        public Builder<E> withFeatures(Predicate<Feature> features) {
+            this.features = features;
+            return this;
+        }
+
+        public Builder<E> withFeatures(Iterable<Feature> features) {
+            Set<Feature> featureSet = seq(features).toSet();
+            this.features = featureSet::contains;
+            return this;
         }
 
         public Builder<E> withLabeledPostFetchCommandEnricher(PostFetchCommandEnricher<E> enricher, Label label) {
@@ -196,8 +219,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         public Builder<E> withoutLabeledElements(List<Label> labels) {
             if (!labels.isEmpty()) {
-                this.validators.removeIf(validator -> labels.contains(validator.lablel()));
-                this.postFetchCommandEnrichers.removeIf(enricher -> labels.contains(enricher.lablel()));
+                this.validators.removeIf(validator -> labels.contains(validator.label()));
+                this.postFetchCommandEnrichers.removeIf(enricher -> labels.contains(enricher.label()));
                 this.flowConfigBuilders.forEach(builder -> builder.withoutLabeledElements(labels));
             }
             return this;
@@ -256,7 +279,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                     ImmutableSet.copyOf(requiredRelationFields),
                     ImmutableSet.copyOf(requiredFields),
                     flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
-                    retryer
+                    retryer,
+                    features
             );
         }
 
@@ -274,7 +298,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                 return element;
             }
 
-            Label lablel() {
+            Label label() {
                 return label;
             }
         }

@@ -1,16 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Sets;
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeFlowConfig;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.FieldFetchRequest;
-import com.kenshoo.pl.entity.Identifier;
-import com.kenshoo.pl.entity.UniqueKey;
+import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
 
 import java.util.Collection;
@@ -30,14 +21,14 @@ import static org.jooq.lambda.Seq.seq;
 
 public class EntitiesToContextFetcher {
 
-    private final EntitiesFetcher entitiesFetcher;
+    private final Function<ChangeFlowConfig, EntitiesFetcher> entitiesFetcherFactory;
 
     public EntitiesToContextFetcher(DSLContext dslContext) {
-        this.entitiesFetcher = new EntitiesFetcher(dslContext);
+        this.entitiesFetcherFactory = flow -> new EntitiesFetcher(dslContext, flow.getFeatures());
     }
 
-    public EntitiesToContextFetcher(EntitiesFetcher entitiesFetcher) {
-        this.entitiesFetcher = entitiesFetcher;
+    EntitiesToContextFetcher(EntitiesFetcher entitiesFetcher) {
+        this.entitiesFetcherFactory = __ -> entitiesFetcher;
     }
 
     public <E extends EntityType<E>> void fetchEntities(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext context, ChangeFlowConfig<E> flow) {
@@ -116,7 +107,7 @@ public class EntitiesToContextFetcher {
                 cmd -> concat(cmd.getIdentifier(), cmd.getKeysToParent())));
         //noinspection ConstantConditions
         UniqueKey<E> uniqueKey = keysByCommand.values().iterator().next().getUniqueKey();
-        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByKeys(flowConfig.getEntityType(), uniqueKey, keysByCommand.values(), fieldsToFetch);
+        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcherFactory.apply(flowConfig).fetchEntitiesByKeys(flowConfig.getEntityType(), uniqueKey, keysByCommand.values(), fieldsToFetch);
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
 
@@ -129,7 +120,7 @@ public class EntitiesToContextFetcher {
         }
         final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
         Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
-        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
+        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcherFactory.apply(flowConfig).fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
 

@@ -3,11 +3,11 @@ package com.kenshoo.pl.auto.inc;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
-import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
+import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
+import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static org.hamcrest.core.Is.is;
 import static org.jooq.lambda.Seq.seq;
 import static org.junit.Assert.assertThat;
@@ -38,12 +38,12 @@ public class PersistenceLayerOneToManyTest {
 
     @Before
     public void setupTables() {
-        BetaTesting.enable(AutoIncrementSupport);
 
         plContext = new PLContext.Builder(jooq).build();
 
         changeFlowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
+                .withFeatures(Seq.of(AutoIncrementSupport))
                 .build();
 
         persistenceLayer = new PersistenceLayer<>(jooq);
@@ -55,7 +55,6 @@ public class PersistenceLayerOneToManyTest {
 
     @After
     public void tearDown() {
-        BetaTesting.disable(AutoIncrementSupport);
         Stream.of(PARENT_TABLE, CHILD_TABLE)
                 .forEach(table -> dslContext.dropTable(table).execute());
     }
