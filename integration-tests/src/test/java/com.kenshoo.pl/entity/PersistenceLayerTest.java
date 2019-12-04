@@ -1352,7 +1352,7 @@ public class PersistenceLayerTest {
 
     private ChangeFlowConfig<ChildForTest> childFlow(Feature... features) {
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE)
-                .withFeatures(Seq.of(features))
+                .with(new FeatureSet(features))
                 .build();
     }
 

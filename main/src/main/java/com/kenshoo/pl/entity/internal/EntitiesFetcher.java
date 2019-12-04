@@ -25,14 +25,14 @@ import static org.jooq.lambda.Seq.seq;
 public class EntitiesFetcher {
 
     private final DSLContext dslContext;
-    private final Predicate<Feature> features;
+    private final FeatureSet features;
 
     public EntitiesFetcher(DSLContext dslContext) {
         this.dslContext = dslContext;
-        this.features = __ -> false;
+        this.features = FeatureSet.EMPTY;
     }
 
-    public EntitiesFetcher(DSLContext dslContext, Predicate<Feature> features) {
+    public EntitiesFetcher(DSLContext dslContext, FeatureSet features) {
         this.dslContext = dslContext;
         this.features = features;
     }
@@ -126,7 +126,7 @@ public class EntitiesFetcher {
     }
 
     private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<? extends Field<?>> keyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return features.test(FindSecondaryTablesOfParents)
+        return features.isEnabled(FindSecondaryTablesOfParents)
                 ? buildFetchQuery_NEW(startingTable, keyFields, fieldsToFetch)
                 : buildFetchQuery_DEPRECATED(startingTable, keyFields, fieldsToFetch);
     }

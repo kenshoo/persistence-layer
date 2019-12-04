@@ -7,7 +7,6 @@ import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
-import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +42,7 @@ public class PersistenceLayerOneToManyTest {
 
         changeFlowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .withFeatures(Seq.of(AutoIncrementSupport))
+                .with(new FeatureSet(AutoIncrementSupport))
                 .build();
 
         persistenceLayer = new PersistenceLayer<>(jooq);

@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
-import org.jooq.lambda.Seq;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -151,7 +150,7 @@ public class ChangeFlowConfigTest {
             ChangeFlowConfig.builder(TestEntityAutoInc.INSTANCE);
 
         final ChangeFlowConfig<TestEntityAutoInc> flow = flowBuilder
-                .withFeatures(Seq.of(AutoIncrementSupport))
+                .with(new FeatureSet(AutoIncrementSupport))
                 .build();
 
         assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.of(TestEntityAutoInc.ID)));

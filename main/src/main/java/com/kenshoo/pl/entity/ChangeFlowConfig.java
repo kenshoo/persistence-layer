@@ -2,34 +2,18 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.internal.ChangesFilter;
-import com.kenshoo.pl.entity.internal.Errors;
-import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
-import com.kenshoo.pl.entity.internal.MissingEntitiesFilter;
-import com.kenshoo.pl.entity.internal.MissingParentEntitiesFilter;
-import com.kenshoo.pl.entity.internal.RequiredFieldsChangesFilter;
-import com.kenshoo.pl.entity.spi.ChangesValidator;
-import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
-import com.kenshoo.pl.entity.spi.OutputGenerator;
-import com.kenshoo.pl.entity.spi.PersistenceLayerRetryer;
-import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
 import static java.util.stream.Collectors.toCollection;
-import static org.jooq.lambda.Seq.seq;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
 
@@ -47,7 +31,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
-    private final Predicate<Feature> features;
+    private final FeatureSet features;
 
     private ChangeFlowConfig(E entityType,
                              List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers,
@@ -57,7 +41,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              Set<EntityField<E, ?>> requiredFields,
                              List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
                              PersistenceLayerRetryer retryer,
-                             Predicate<Feature> features) {
+                             FeatureSet features) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
         this.outputGenerators = outputGenerators;
@@ -120,12 +104,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     }
 
     public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
-        return features.test(AutoIncrementSupport)
+        return features.isEnabled(AutoIncrementSupport)
             ? getEntityType().getPrimaryIdentityField()
             : Optional.empty();
     }
 
-    public Predicate<Feature> getFeatures() {
+    public FeatureSet getFeatures() {
         return this.features;
     }
 
@@ -139,20 +123,14 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-        private Predicate<Feature> features = __ -> false;
+        private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
             this.entityType = entityType;
         }
 
-        public Builder<E> withFeatures(Predicate<Feature> features) {
+        public Builder<E> with(FeatureSet features) {
             this.features = features;
-            return this;
-        }
-
-        public Builder<E> withFeatures(Iterable<Feature> features) {
-            Set<Feature> featureSet = seq(features).toSet();
-            this.features = featureSet::contains;
             return this;
         }
 

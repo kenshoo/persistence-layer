@@ -3,10 +3,7 @@ package com.kenshoo.pl.entity;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.kenshoo.pl.entity.internal.ChangesFilter;
-import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
-import com.kenshoo.pl.entity.internal.RequiredFieldsCommandsFilter;
+import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import com.kenshoo.pl.entity.spi.ValidationException;
@@ -30,12 +27,10 @@ import static java.util.stream.Collectors.toList;
 public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifier<ROOT>> {
 
     private final DSLContext dslContext;
-    private final EntitiesToContextFetcher entitiesToContextFetcher;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
-        this.entitiesToContextFetcher = new EntitiesToContextFetcher(dslContext);
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
     }
 
@@ -183,7 +178,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         }
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        entitiesToContextFetcher.fetchEntities(commands, changeOperation, changeContext, flowConfig);
+        fetcher(flowConfig.getFeatures()).fetchEntities(commands, changeOperation, changeContext, flowConfig);
         changeContext.getStats().addFetchTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         commands = filterCommands(commands, getSupportedFilters(flowConfig.getPostFetchFilters(), changeOperation), changeOperation, changeContext);
@@ -192,6 +187,10 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         enrichCommandsPostFetch(commands, flowConfig, changeOperation, changeContext);
 
         return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
+    }
+
+    private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
+        return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext, features));
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> resolveSuppliersAndFilterErrors(Collection<C> commands, ChangeContext changeContext) {

@@ -15,7 +15,9 @@ public class ChangeFlowConfigBuilderFactory {
 
      public static <E extends EntityType<E>> ChangeFlowConfig.Builder<E> newInstance(PLContext plContext, E entityType) {
         //noinspection unchecked
-        ChangeFlowConfig.Builder<E> builder = ChangeFlowConfig.builder(entityType).withOutputGenerator(new DbCommandsOutputGenerator<>(entityType, plContext));
+        ChangeFlowConfig.Builder<E> builder = ChangeFlowConfig.builder(entityType)
+                .withOutputGenerator(new DbCommandsOutputGenerator<>(entityType, plContext))
+                .with(plContext.generateFeatureSet());
 
         builder.withRetryer(plContext.persistenceLayerRetryer());
         builder.withFalseUpdatesPurger(new FalseUpdatesPurger.Builder<E>()

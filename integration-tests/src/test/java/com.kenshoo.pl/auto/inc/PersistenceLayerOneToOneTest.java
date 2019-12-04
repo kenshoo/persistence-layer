@@ -5,7 +5,6 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.*;
 import org.jooq.DSLContext;
-import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class PersistenceLayerOneToOneTest {
         final PLContext plContext = new PLContext.Builder(dslContext).build();
         flowConfig = ChangeFlowConfigBuilderFactory
                 .newInstance(plContext, TestEntity.INSTANCE)
-                .withFeatures(Seq.of(AutoIncrementSupport))
+                .with(new FeatureSet(AutoIncrementSupport))
                 .build();
 
         Stream.of(PRIMARY_TABLE, SECONDARY_TABLE)
