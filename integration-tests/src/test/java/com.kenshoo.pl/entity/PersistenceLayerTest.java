@@ -4,7 +4,6 @@ import com.google.common.collect.*;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.jooq.TestJooqConfig;
-import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.internal.ChangesContainer;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
@@ -17,6 +16,7 @@ import com.kenshoo.pl.entity.spi.helpers.FixedFieldValueSupplier;
 import org.hamcrest.Matchers;
 import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.BetaTesting.Feature.FindSecondaryTablesOfParents;
+import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
@@ -147,7 +147,6 @@ public class PersistenceLayerTest {
 
     @After
     public void clearTables() {
-        BetaTesting.disable(FindSecondaryTablesOfParents);
         dslContext.deleteFrom(mainTable).execute();
         dslContext.deleteFrom(secondaryTable).execute();
         dslContext.deleteFrom(parentTable).execute();
@@ -166,14 +165,13 @@ public class PersistenceLayerTest {
 
     @Test
     public void fetchFieldFromSecondaryTableOfParentTableWhereParentItselfIsNotRequired() {
-        BetaTesting.enable(FindSecondaryTablesOfParents);
 
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromOldValue(EntityForTest.URL, parentUrl -> parentUrl));
 
-        childPL().create(asList(cmd), childFlow(), ChildForTest.Key.DEFINITION);
+        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents), ChildForTest.Key.DEFINITION);
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 
@@ -182,13 +180,12 @@ public class PersistenceLayerTest {
 
     @Test
     public void fetchFieldFromSecondaryTableOfParentTableWhereParentIsAlsoRequired() {
-        BetaTesting.enable(FindSecondaryTablesOfParents);
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> v1.toString() + " " + v2));
 
-        childPL().create(asList(cmd), childFlow(), ChildForTest.Key.DEFINITION);
+        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents), ChildForTest.Key.DEFINITION);
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 
@@ -1353,8 +1350,10 @@ public class PersistenceLayerTest {
         return new PersistenceLayer<>(dslContext);
     }
 
-    private ChangeFlowConfig<ChildForTest> childFlow() {
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE).build();
+    private ChangeFlowConfig<ChildForTest> childFlow(Feature... features) {
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildForTest.INSTANCE)
+                .with(new FeatureSet(features))
+                .build();
     }
 
 }

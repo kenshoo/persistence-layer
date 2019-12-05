@@ -21,14 +21,21 @@ public class ChangeContext {
     private final PersistentLayerStats stats = new PersistentLayerStats();
     private final Set<FieldFetchRequest> fieldsToFetchRequests = Sets.newHashSet();
     private final Hierarchy hierarchy;
+    private final FeatureSet features;
 
     @VisibleForTesting
     public ChangeContext() {
         hierarchy = null;
+        features = FeatureSet.EMPTY;
     }
 
-    public ChangeContext(Hierarchy hierarchy) {
+    public ChangeContext(Hierarchy hierarchy, FeatureSet features) {
         this.hierarchy = hierarchy;
+        this.features = features;
+    }
+
+    public boolean isEnabled(Feature feature) {
+        return features.isEnabled(feature);
     }
 
     public Entity getEntity(EntityChange entityChange) {

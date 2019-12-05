@@ -3,11 +3,7 @@ package com.kenshoo.pl.entity;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.kenshoo.pl.BetaTesting;
-import com.kenshoo.pl.entity.internal.ChangesFilter;
-import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
-import com.kenshoo.pl.entity.internal.RequiredFieldsCommandsFilter;
+import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import com.kenshoo.pl.entity.spi.ValidationException;
@@ -20,28 +16,26 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.*;
+import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
+import static java.util.stream.Collectors.toList;
 
 
 public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifier<ROOT>> {
 
     private final DSLContext dslContext;
-    private final EntitiesToContextFetcher entitiesToContextFetcher;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
-        this.entitiesToContextFetcher = new EntitiesToContextFetcher(dslContext);
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
     }
 
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
-        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         makeChanges(commands, changeContext, flowConfig);
         CreateResult<ROOT, PK> results = toCreateResults(commands, changeContext);
         setIdentifiersToSuccessfulCommands(flowConfig, primaryKey, changeContext, results);
@@ -67,7 +61,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> UpdateResult<ROOT, ID> update(Collection<? extends UpdateEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         makeChanges(commands, changeContext, flowConfig);
         return new UpdateResult<>(
                 seq(commands).map(cmd -> new EntityUpdateResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -75,7 +69,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> DeleteResult<ROOT, ID> delete(Collection<? extends DeleteEntityCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         makeChanges(commands, changeContext, flowConfig);
         return new DeleteResult<>(
                 seq(commands).map(cmd -> new EntityDeleteResult<>(cmd, changeContext.getValidationErrors(cmd))),
@@ -83,7 +77,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     public <ID extends Identifier<ROOT>> InsertOnDuplicateUpdateResult<ROOT, ID> upsert(Collection<? extends InsertOnDuplicateUpdateCommand<ROOT, ID>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig));
+        ChangeContext changeContext = new ChangeContext(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         makeChanges(commands, changeContext, flowConfig);
         InsertOnDuplicateUpdateResult<ROOT, ID> results = toUpsertResults(commands, changeContext);
         populateIdentityFieldToSuccessfulUpserts(flowConfig, changeContext, results);
@@ -136,7 +130,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, List<? extends ChangeEntityCommand<E>> commands) {
-        if (BetaTesting.isEnabled(AutoIncrementSupport)) {
+        if (context.isEnabled(AutoIncrementSupport)) {
             new Builder<E>()
                     .with(context.getHierarchy())
                     .whereParentFieldsAre(notAutoInc())
@@ -184,7 +178,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         }
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        entitiesToContextFetcher.fetchEntities(commands, changeOperation, changeContext, flowConfig);
+        fetcher(flowConfig.getFeatures()).fetchEntities(commands, changeOperation, changeContext, flowConfig);
         changeContext.getStats().addFetchTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
         commands = filterCommands(commands, getSupportedFilters(flowConfig.getPostFetchFilters(), changeOperation), changeOperation, changeContext);
@@ -193,6 +187,10 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         enrichCommandsPostFetch(commands, flowConfig, changeOperation, changeContext);
 
         return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
+    }
+
+    private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
+        return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext, features));
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> resolveSuppliersAndFilterErrors(Collection<C> commands, ChangeContext changeContext) {

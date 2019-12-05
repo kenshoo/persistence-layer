@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.BetaTesting;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -18,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.BetaTesting.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
 import static org.jooq.lambda.Seq.seq;
@@ -37,11 +36,11 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     @Override
-    public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
-        if (BetaTesting.isEnabled(AutoIncrementSupport)) {
-            generateWithAutoIncSupport(entityChanges, operator, changeContext);
+    public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext context) {
+        if (context.isEnabled(AutoIncrementSupport)) {
+            generateWithAutoIncSupport(entityChanges, operator, context);
         } else {
-            generateWithoutAutoIncSupport(entityChanges, operator, changeContext);
+            generateWithoutAutoIncSupport(entityChanges, operator, context);
         }
     }
 
@@ -206,7 +205,8 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private DatabaseId foreignKeyValues(EntityChange<E> cmd, ChangeOperation changeOperation, ChangeContext context, DataTable childTable) {
         ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(((ChangeEntityCommand) cmd).getEntityType().getPrimaryTable());
         Collection<EntityField<E, ?>> parentFields = entityType(cmd).findFields(foreignKey.getKey().getFields());
-        Object[] values = changeOperation == CREATE && !entityType.getPrimaryIdentityField().isPresent() ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
+        boolean hasIdentity = context.isEnabled(AutoIncrementSupport) && entityType.getPrimaryIdentityField().isPresent();
+        Object[] values = changeOperation == CREATE && !hasIdentity ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
         if (foreignKey.getFields().size() != values.length) {
             throw new IllegalStateException("Foreign key from " + childTable.getName() + " doesn't have the same number of fields as " + foreignKey);
         }
