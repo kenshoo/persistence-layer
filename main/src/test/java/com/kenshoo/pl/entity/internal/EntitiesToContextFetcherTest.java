@@ -59,7 +59,7 @@ public class EntitiesToContextFetcherTest {
 
     @SafeVarargs
     private final <E extends EntityType<E>> ChangeContext fetchToContext(ChangeFlowConfig.Builder flow, ChangeOperation op, ChangeEntityCommand<E>... commands) {
-        ChangeContext ctx = new ChangeContext();
+        ChangeContext ctx = new ChangeContextImpl(null, FeatureSet.EMPTY);
         classUnderTest.fetchEntities(Seq.of(commands).toList(), op, ctx, flow.build());
         return ctx;
     }
