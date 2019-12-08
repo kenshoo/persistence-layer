@@ -7,6 +7,8 @@ import org.jooq.TableField;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.jooq.lambda.Seq.seq;
+
 
 /**
  * Specifies UniqueKey of entry.
@@ -28,6 +30,10 @@ public class UniqueKey<E extends EntityType<E>> {
                 .toArray(TableField[]::new);
     }
 
+    public UniqueKey(Iterable<? extends EntityField<E, ?>> fields) {
+        this(seq(fields).toArray(EntityField[]::new));
+    }
+
     public EntityField<E, ?>[] getFields() {
         return fields;
     }
@@ -43,6 +49,13 @@ public class UniqueKey<E extends EntityType<E>> {
             values[i] = fieldsValueMap.get(fields[i]);
         }
         return new UniqueKeyValue<>(this, values);
+    }
+
+    public E getEntityType() {
+        if(this.fields.length == 0) {
+            throw new IllegalStateException("unique key does not contain any fields.");
+        }
+        return (E) this.fields[0].getEntityType();
     }
 
     @Override

@@ -3,16 +3,15 @@ package com.kenshoo.pl.entity;
 import com.kenshoo.pl.entity.internal.EntityFieldImpl;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
+import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.*;
+import org.jooq.lambda.Seq;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static org.jooq.lambda.Seq.seq;
 
 abstract public class ChangeEntityCommand<E extends EntityType<E>> implements MutableCommand<E> {
 
@@ -21,6 +20,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
     private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
+    private final List<MissingChildrenSupplier<? extends EntityType>> missingChildrenSuppliers = newArrayListWithCapacity(1);
 
     private ChangeEntityCommand parent;
     private Identifier<E> keysToParent;
@@ -90,8 +90,8 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
             @Override
             public T supply(Entity entity) throws ValidationException {
                 FieldsValueMap<E> result = delegatingSupplier.supply(entity);
-                if(result.containsField(entityField)) {
-                   return result.get(entityField);
+                if (result.containsField(entityField)) {
+                    return result.get(entityField);
                 } else {
                     throw new NotSuppliedException();
                 }
@@ -144,7 +144,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     @Override
     public <CHILD extends EntityType<CHILD>> Stream<ChangeEntityCommand<CHILD>> getChildren(CHILD type) {
         //noinspection unchecked
-        return children.stream().filter(cmd -> cmd.getEntityType() == type).map(cmd -> (ChangeEntityCommand<CHILD>)cmd);
+        return children.stream().filter(cmd -> cmd.getEntityType() == type).map(cmd -> (ChangeEntityCommand<CHILD>) cmd);
     }
 
     @Override
@@ -170,7 +170,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         }
     }
 
-    Stream<? extends CurrentStateConsumer<E>>  getCurrentStateConsumers() {
+    Stream<? extends CurrentStateConsumer<E>> getCurrentStateConsumers() {
         return currentStateConsumers.stream();
     }
 
@@ -192,7 +192,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
 
     static private <E extends EntityType<E>> void copyFields(ChangeEntityCommand<E> toCommand, EntityField<E, ?>[] fields, FieldsValueMap<E> fieldsValueMap) {
         //noinspection unchecked
-        Stream.of(fields).map(field -> (EntityFieldImpl<E,?>)field).forEach(field -> toCommand.set(field, fieldsValueMap.get(field)));
+        Stream.of(fields).map(field -> (EntityFieldImpl<E, ?>) field).forEach(field -> toCommand.set(field, fieldsValueMap.get(field)));
     }
 
 
@@ -211,4 +211,16 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         return parent;
     }
 
+    public void add(MissingChildrenSupplier<? extends EntityType> missingChildrenSupplier) {
+        missingChildrenSuppliers.add(missingChildrenSupplier);
+    }
+
+    List<MissingChildrenSupplier<? extends EntityType>> getMissingChildrenSuppliers() {
+        return missingChildrenSuppliers;
+    }
+
+    <CHILD extends EntityType<CHILD>> Optional<MissingChildrenSupplier<CHILD>> getMissingChildrenSupplier(CHILD entityType) {
+        final Optional<MissingChildrenSupplier<? extends EntityType>> missingChildrenSupplier = seq(this.missingChildrenSuppliers).findFirst(supplier -> entityType.equals(supplier.getChildType()));
+        return missingChildrenSupplier.map(supplier -> (MissingChildrenSupplier<CHILD>) supplier);
+    }
 }

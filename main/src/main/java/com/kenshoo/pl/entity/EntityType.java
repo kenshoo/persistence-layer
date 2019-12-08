@@ -85,6 +85,12 @@ public interface EntityType<E extends EntityType<E>> {
         );
     }
 
+    default UniqueKey<E> getPrimaryKey(){
+        final org.jooq.UniqueKey<Record> dbKey  = this.getPrimaryTable().getPrimaryKey();
+        final Collection<EntityField<E, ?>> fields = this.findFields(dbKey.getFields());
+        return new UniqueKey<E>(fields);
+    }
+
     class ForeignKey<FROM extends EntityType<FROM>, TO extends EntityType<TO>> {
 
         public final Collection<Tuple2<EntityField<FROM, ?>, EntityField<TO, ?>>> references;
