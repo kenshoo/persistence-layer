@@ -98,7 +98,7 @@ public class ParentConditionCompositeValidatorTest {
         parentConditionCompositeValidator.register(validator2);
         Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.getRequiredFields(commands, ChangeOperation.UPDATE).collect(toSet());
         assertEquals("Required field size", fields.size(), 2);
-        assertTrue("Required field2", fields.contains(field1));
+        assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
     }
 
@@ -118,7 +118,7 @@ public class ParentConditionCompositeValidatorTest {
         parentConditionCompositeValidator.register(validator2);
         Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(toSet());
         assertEquals("Required field size", fields.size(), 2);
-        assertTrue("Required field2", fields.contains(field1));
+        assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
     }
 
