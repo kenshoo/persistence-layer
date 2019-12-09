@@ -2,16 +2,7 @@ package com.kenshoo.pl.entity.spi.helpers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityFieldPrototype;
-import com.kenshoo.pl.entity.PrototypeFieldsCombination;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestDataFieldPrototype;
-import com.kenshoo.pl.entity.TestEntity;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.validators.EntityChangeValidator;
 import com.kenshoo.pl.entity.spi.FieldComplexValidator;
 import com.kenshoo.pl.entity.spi.FieldValidator;
@@ -29,8 +20,13 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -73,7 +69,7 @@ public class EntityChangeCompositeValidatorTest {
     RequiredFieldValidator<TestEntity, String> requiredFieldValidator;
 
     @Mock
-    private EntityChange<TestEntity> entityChange;
+    private ChangeEntityCommand<TestEntity> entityChange;
 
     @Mock
     private Entity entity;
@@ -81,7 +77,7 @@ public class EntityChangeCompositeValidatorTest {
     @InjectMocks
     EntityChangeCompositeValidator<TestEntity> validator;
 
-    private Collection<EntityChange<TestEntity>> entityChanges;
+    private Collection<ChangeEntityCommand<TestEntity>> entityChanges;
 
     @Before
     public void setUp(){
@@ -167,5 +163,26 @@ public class EntityChangeCompositeValidatorTest {
         validator.register(requiredFieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(changeContext).addValidationError(eq(entityChange), any(ValidationError.class));
+    }
+
+    @Test
+    public void getRequiredFields_new_api() {
+        when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
+        when(requiredFieldValidator.fetchFields()).thenReturn(Stream.of(TestEntity.ID));
+        validator.register(requiredFieldValidator);
+        List<? extends EntityField<?, ?>> fields = validator.requiredFields(ImmutableList.of(TestEntity.FIELD_1), ChangeOperation.CREATE).collect(Collectors.toList());
+        assertThat(fields.size(), is(1));
+        assertThat(fields, containsInAnyOrder(TestEntity.ID));
+    }
+
+    @Test
+    public void getRequiredFields_old_api() {
+        when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
+        when(requiredFieldValidator.fetchFields()).thenReturn(Stream.of(TestEntity.ID));
+        when(entityChange.getChangedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
+        validator.register(requiredFieldValidator);
+        List<? extends EntityField<?, ?>> fields = validator.getRequiredFields(ImmutableList.of(entityChange), ChangeOperation.CREATE).collect(Collectors.toList());
+        assertThat(fields.size(), is(1));
+        assertThat(fields, containsInAnyOrder(TestEntity.ID));
     }
 }
