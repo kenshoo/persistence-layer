@@ -99,10 +99,11 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
+        ChangeContext overridingCtx = context.isEnabled(AutoIncrementSupport) ? new OverridingContext(context) : context;
         if (!validCmds.isEmpty()) {
-            flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, context))));
+            flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
-        return context;
+        return overridingCtx;
     }
 
     private <E extends EntityType<E>> void prepareRecursive(

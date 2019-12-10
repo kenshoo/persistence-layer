@@ -5,26 +5,27 @@ import com.kenshoo.pl.entity.EntityField;
 
 public class EntityWithGeneratedId implements Entity {
 
-    private final Entity sharedData;
     private final EntityField<?, Object> idField;
     private final Object idValue;
 
-    public EntityWithGeneratedId(Entity sharedData, EntityField<?, Object> idField, Object idValue) {
-        this.sharedData = sharedData;
+    public EntityWithGeneratedId(EntityField<?, Object> idField, Object idValue) {
         this.idField = idField;
         this.idValue = idValue;
     }
 
     @Override
     public boolean containsField(EntityField<?, ?> field) {
-        return field == idField || sharedData.containsField(field);
+        return field == idField;
     }
 
     @Override
     public <T> T get(EntityField<?, T> field) {
-        return field == idField
-                ? (T)idValue
-                : sharedData.get(field);
+        if (idValue == null) {
+            throw new IllegalArgumentException("Field " + field + " of entity \"" + field.getEntityType().getName() + "\" is not fetched");
+        }
+        //noinspection unchecked
+        return (T) idValue;
+
     }
 
 }

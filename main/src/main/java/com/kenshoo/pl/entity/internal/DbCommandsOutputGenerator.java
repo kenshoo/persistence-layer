@@ -108,13 +108,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                 .forEach(pair -> {
                             final CreateRecordCommand cmd = pair.getRight().get();
                             Object generatedValue = cmd.get(identityTableField);
-                            Entity dataFromDB = changeContext.getEntity(pair.getLeft());
-                            EntityWithGeneratedId enrichedEntity = new EntityWithGeneratedId(
-                                    dataFromDB,
-                                    identityField,
-                                    generatedValue
-                                    );
-                            changeContext.addEntity(pair.getLeft(), enrichedEntity);
+                            changeContext.addEntity(pair.getLeft(), new EntityWithGeneratedId(identityField, generatedValue));
                 });
     }
 
