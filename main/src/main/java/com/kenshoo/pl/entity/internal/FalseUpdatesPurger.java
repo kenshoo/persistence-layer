@@ -10,6 +10,7 @@ import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldChange;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.List;
@@ -59,6 +60,11 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return commands.stream().flatMap(ChangeEntityCommand::getChangedFields);
+    }
+
+    @Override
+    public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return Seq.seq(fieldsToUpdate);
     }
 
     @Override

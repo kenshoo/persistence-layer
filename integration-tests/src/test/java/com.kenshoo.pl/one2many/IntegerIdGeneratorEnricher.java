@@ -42,4 +42,9 @@ public class IntegerIdGeneratorEnricher<E extends EntityType<E>> implements Post
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation op) {
         return Stream.empty();
     }
+
+    @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return Stream.empty();
+    }
 }

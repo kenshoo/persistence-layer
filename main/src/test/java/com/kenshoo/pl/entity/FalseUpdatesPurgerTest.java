@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
@@ -8,8 +9,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Arrays.asList;
@@ -17,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -31,13 +36,28 @@ public class FalseUpdatesPurgerTest {
     private EntityField<TestEntity, Integer> field1;
     @Mock
     private EntityField<TestEntity, String> field2;
-
+    @Mock
+    private UpdateEntityCommand<TestEntity,?> cmd;
 
     @Before
     public void setup() {
         when(field1.valuesEqual(anyInt(), anyInt())).thenAnswer(i -> Objects.equals(i.getArguments()[0], i.getArguments()[1]));
         when(field2.valuesEqual(anyString(), anyString())).thenAnswer(i -> Objects.equals(i.getArguments()[0], i.getArguments()[1]));
     }
+
+    @Test
+    public void requiredFieldsForUpdateNewApi() {
+        List<EntityField<?, ?>> fields = purger().build().requiredFields(ImmutableList.of(field1,field2), UPDATE).collect(toList());
+        assertThat(fields, containsInAnyOrder(field1, field2));
+    }
+
+    @Test
+    public void requiredFieldsForUpdateOldApi() {
+        when(cmd.getChangedFields()).thenReturn(Stream.of(field1, field2));
+        List<EntityField<?, ?>> fields = purger().build().getRequiredFields(ImmutableList.of(cmd), UPDATE).collect(toList());
+        assertThat(fields, containsInAnyOrder(field1, field2));
+    }
+
 
     @Test
     public void allFalseUpdates() {

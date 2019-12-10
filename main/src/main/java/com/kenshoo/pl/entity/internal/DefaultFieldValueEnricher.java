@@ -40,4 +40,9 @@ public class DefaultFieldValueEnricher<E extends EntityType<E>, T> implements Po
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
         return Stream.empty();
     }
+
+    @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return Stream.empty();
+    }
 }

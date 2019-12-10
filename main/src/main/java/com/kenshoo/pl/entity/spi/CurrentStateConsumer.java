@@ -14,5 +14,10 @@ import java.util.stream.Stream;
  * <b>Client classes should not implement this interface directly, it is used internally by the framework.</b>
  */
 public interface CurrentStateConsumer<E extends EntityType<E>> {
+
     Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation);
+
+    default Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation){
+        return Stream.empty();
+    }
 }

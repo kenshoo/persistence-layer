@@ -37,6 +37,12 @@ public class ParentConditionCompositeValidator<E extends EntityType<E>> implemen
         return parentValidators.values().stream().map(ParentConditionValidator::parentIdField);
     }
 
+    @Override
+    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return parentValidators.values().stream().map(ParentConditionValidator::parentIdField);
+    }
+
+
     private <T> void validateForField(Collection<? extends EntityChange<E>> entityChanges, final ChangeContext changeContext, final EntityField<?, T> field) {
         //noinspection unchecked
         Collection<ParentConditionValidator<T>> validators = (Collection<ParentConditionValidator<T>>) (Collection) parentValidators.get(field);

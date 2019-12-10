@@ -47,7 +47,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     @Override
     public <T> void set(EntityField<E, T> field, FieldValueSupplier<T> valueSupplier) {
         suppliers.put(field, valueSupplier);
-        currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
+        addCurrentStateConsumer(valueSupplier);
     }
 
     @Override
@@ -59,11 +59,25 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     @Override
     public void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier) {
         LazyDelegatingMultiSupplier<E> delegatingMultiSupplier = new LazyDelegatingMultiSupplier<>(valueSupplier);
-        currentStateConsumers.add((changeEntityCommands, changeOperation) -> valueSupplier.fetchFields(changeOperation));
+        addCurrentStateConsumer(valueSupplier);
 
         for (EntityField<E, ?> field : fields) {
             addAsSingleValueSupplier(field, delegatingMultiSupplier);
         }
+    }
+
+    private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
+        currentStateConsumers.add(new CurrentStateConsumer<E>() {
+            @Override
+            public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
+                return valueSupplier.fetchFields(changeOperation);
+            }
+
+            @Override
+            public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+                return valueSupplier.fetchFields(changeOperation);
+            }
+        });
     }
 
     private <T> void addAsSingleValueSupplier(final EntityField<E, T> entityField, final MultiFieldValueSupplier<E> delegatingSupplier) {

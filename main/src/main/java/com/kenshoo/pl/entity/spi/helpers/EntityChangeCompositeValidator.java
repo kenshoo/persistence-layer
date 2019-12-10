@@ -33,6 +33,7 @@ import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -128,13 +129,13 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
 
     @Override
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
-        entityChanges.stream().forEach(entityChange -> {
+        entityChanges.forEach(entityChange -> {
             Entity entity = changeContext.getEntity(entityChange);
             Collection<EntityChangeValidator<E>> validators = findValidators(entityChange);
             validators.stream()
                     .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                     .map(validator -> validator.validate(entityChange, entity, changeOperation))
-                    .filter(validationError -> validationError != null)
+                    .filter(Objects::nonNull)
                     .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
         });
     }
@@ -143,6 +144,14 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         Stream<EntityField<E, ?>> changeFeids = commands.stream().flatMap(ChangeEntityCommand::getChangedFields);
         return changeFeids
+                .flatMap(field -> changesValidators.get(field).stream())
+                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
+                .flatMap(validator -> validator.getFieldsToFetch(changeOperation));
+    }
+
+    @Override
+    public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+        return fieldsToUpdate.stream()
                 .flatMap(field -> changesValidators.get(field).stream())
                 .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                 .flatMap(validator -> validator.getFieldsToFetch(changeOperation));

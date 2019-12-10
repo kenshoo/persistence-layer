@@ -541,6 +541,11 @@ public class PersistenceLayerTest {
             public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation) {
                 return Stream.of(EntityForTestComplexKeyParent.FIELD1);
             }
+
+            @Override
+            public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+                return Stream.of(EntityForTestComplexKeyParent.FIELD1);
+            }
         };
 
         ChangeFlowConfig<EntityForTest> flowConfig = changeFlowConfig().withPostFetchCommandEnricher(enricher).build();
@@ -787,6 +792,11 @@ public class PersistenceLayerTest {
 
             @Override
             public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
+                return Stream.empty();
+            }
+
+            @Override
+            public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
                 return Stream.empty();
             }
         }).build();
@@ -1112,6 +1122,11 @@ public class PersistenceLayerTest {
         public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation) {
             return Stream.of(EntityForTestParent.FIELD1);
         }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return Stream.of(EntityForTestParent.FIELD1);
+        }
     }
 
     private static class TestOutputGeneratorWithSecondary implements OutputGenerator<EntityForTest> {
@@ -1138,6 +1153,11 @@ public class PersistenceLayerTest {
 
         @Override
         public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
+            return Stream.of(EntityForTest.FIELD1, EntityForTest.URL);
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.of(EntityForTest.FIELD1, EntityForTest.URL);
         }
     }
@@ -1167,6 +1187,11 @@ public class PersistenceLayerTest {
         public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
             return Stream.of(EntityForTestParent.FIELD1);
         }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return Stream.of(EntityForTestParent.FIELD1);
+        }
     }
 
     private static class TestIdGeneratorEnricher<E extends EntityType<E>> implements PostFetchCommandEnricher<E> {
@@ -1191,6 +1216,11 @@ public class PersistenceLayerTest {
 
         @Override
         public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.empty();
         }
     }
@@ -1246,6 +1276,11 @@ public class PersistenceLayerTest {
 
         @Override
         public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
+            return Stream.of(EntityForTestParent.FIELD1);
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.of(EntityForTestParent.FIELD1);
         }
     }
