@@ -4,9 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.*;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
+import org.jooq.*;
+import org.jooq.impl.DefaultTransactionListener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +33,8 @@ public class PersistenceLayerOneToManyTest {
 
     private PersistenceLayer<ParentEntity, ParentEntity.Key> persistenceLayer;
 
-    private ChangeFlowConfig<ParentEntity> changeFlowConfig;
+    private ChangeFlowConfig.Builder<ParentEntity> flow;
+    private ChangeFlowConfig.Builder<ParentEntityWithRequiredRelation> flowOfParentWithRequiredRelation;
 
     private static DSLContext dslContext;
 
@@ -43,10 +43,13 @@ public class PersistenceLayerOneToManyTest {
 
         plContext = new PLContext.Builder(jooq).build();
 
-        changeFlowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE).
+        flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE)
+                .withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
+                .with(new FeatureSet(AutoIncrementSupport));
+
+        flowOfParentWithRequiredRelation = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntityWithRequiredRelation.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .with(new FeatureSet(AutoIncrementSupport))
-                .build();
+                .with(new FeatureSet(AutoIncrementSupport));
 
         persistenceLayer = new PersistenceLayer<>(jooq);
 
@@ -96,7 +99,19 @@ public class PersistenceLayerOneToManyTest {
     }
 
     @Test
+    public void create_parent_with_required_relation_to_same_grand_parent_and_2_children_with_retry() {
+        onTransactionRollback(this::insertParentIntoTable);
+        flowOfParentWithRequiredRelation.withOutputGenerator(new ThrowingOutputGenerator<>(1));
+        flowOfParentWithRequiredRelation.withRetryer(new CountdownRetryer(2));
+        run_scenario_create_parent_with_required_relation_to_same_grand_parent_and_2_children();
+    }
+
+    @Test
     public void create_parent_with_required_relation_to_same_grand_parent_and_2_children() {
+        run_scenario_create_parent_with_required_relation_to_same_grand_parent_and_2_children();
+    }
+
+    private void run_scenario_create_parent_with_required_relation_to_same_grand_parent_and_2_children() {
 
         final int GRAND_PARENT_ID = 100;
 
@@ -135,7 +150,7 @@ public class PersistenceLayerOneToManyTest {
                         .with(ChildEntity.ORDINAL, 1)
                         .with(ChildEntity.FIELD_1, "child1"));
 
-        List<Integer> retrievedParentIds = seq(persistenceLayer.upsert(ImmutableList.of(parent), changeFlowConfig))
+        List<Integer> retrievedParentIds = seq(persistenceLayer.upsert(ImmutableList.of(parent), flow.build()))
                 .map(res -> res.getCommand().get(ParentEntity.ID)).toList();
 
         Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
@@ -158,7 +173,7 @@ public class PersistenceLayerOneToManyTest {
                         .with(ChildEntity.ORDINAL, 1)
                         .with(ChildEntity.FIELD_1, "child1"));
 
-        persistenceLayer.upsert(ImmutableList.of(parentUpsert), changeFlowConfig);
+        persistenceLayer.upsert(ImmutableList.of(parentUpsert), flow.build());
 
         Map<String, ChildPojo> childrenByNames = jooq.select().from(CHILD_TABLE).fetchMap(CHILD_TABLE.field1, toChildPojo());
 
@@ -167,7 +182,7 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private List<Integer> createAndRetrieveIds(ImmutableList<ParentEntityCreateCommand> of) {
-        return seq(persistenceLayer.create(of, changeFlowConfig, ParentEntity.Key.DEFINITION))
+        return seq(persistenceLayer.create(of, flow.build(), ParentEntity.Key.DEFINITION))
                 .map(res -> res.getIdentifier().getId()).toList();
     }
 
@@ -175,12 +190,8 @@ public class PersistenceLayerOneToManyTest {
 
         PersistenceLayer<ParentEntityWithRequiredRelation, ParentEntityWithRequiredRelation.Key> pl = new PersistenceLayer<>(jooq);
 
-        ChangeFlowConfig<ParentEntityWithRequiredRelation> flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntityWithRequiredRelation.INSTANCE).
-                withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .with(new FeatureSet(AutoIncrementSupport))
-                .build();
 
-        return seq(pl.create(commands, flow, ParentEntityWithRequiredRelation.Key.DEFINITION))
+        return seq(pl.create(commands, flowOfParentWithRequiredRelation.build(), ParentEntityWithRequiredRelation.Key.DEFINITION))
                 .map(res -> res.getIdentifier().getId()).toList();
     }
 
@@ -226,6 +237,19 @@ public class PersistenceLayerOneToManyTest {
             ordinal = rec.get(CHILD_TABLE.ordinal);
             field1 = rec.get(CHILD_TABLE.field1);
         }};
+    }
+
+    private void onTransactionRollback(Runnable action) {
+        jooq.configuration().set(new DefaultTransactionListener() {
+            @Override
+            public void rollbackEnd(TransactionContext ctx) {
+                action.run();
+            }
+        });
+    }
+
+    private int insertParentIntoTable() {
+        return jooq.insertInto(PARENT_TABLE).set(PARENT_TABLE.name, "extra row for incremented ID").execute();
     }
 
 }
