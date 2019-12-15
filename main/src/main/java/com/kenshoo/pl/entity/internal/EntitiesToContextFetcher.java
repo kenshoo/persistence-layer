@@ -110,15 +110,15 @@ public class EntitiesToContextFetcher {
         E entityType = flowConfig.getEntityType();
         Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields());
         if (foreignKeys.isEmpty()) {
-            commands.forEach(cmd -> changeContext.addEntity(cmd, new EntityImpl()));
-            return;
+            EntityImpl sharedEntity = new EntityImpl();
+            commands.forEach(cmd -> changeContext.addEntity(cmd, sharedEntity));
+        } else {
+            final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
+            Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
+            Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
+            addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
         }
-        final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
-        Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
-        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
-        addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
-
 
     private <E extends EntityType<E>> void addFetchedEntitiesToChangeContext(Map<Identifier<E>, Entity> fetchedEntities, ChangeContext changeContext, Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand) {
         for (Map.Entry<? extends ChangeEntityCommand<E>, Identifier<E>> entry : keysByCommand.entrySet()) {

@@ -12,6 +12,7 @@ public class ParentTable extends AbstractDataTable<ParentTable> {
     final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, Integer> idInTarget = createField("idInTarget", SQLDataType.INTEGER);
     final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(40));
+    final TableField<Record, Integer> grand_parent_id = createFKField("grand_parent_id", GrandParentTable.INSTANCE.id);
 
     public ParentTable(String name) {
         super(name);
