@@ -5,6 +5,7 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.FluidPersistenceCmdBuilder;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.ChangeValidator;
 import com.kenshoo.pl.entity.spi.FieldComplexValidator;
 import com.kenshoo.pl.entity.spi.FieldValidator;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -41,6 +43,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.jooq.lambda.Seq.seq;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -59,6 +62,8 @@ public class PersistenceLayerOneToManyTest {
     private PLContext plContext;
 
     private PersistenceLayer<ParentEntity, ParentEntity.Key> persistenceLayer;
+
+    private final DeletionOfOther deletionOfOther = new DeletionOfOther(ChildEntity.INSTANCE);
 
     @Before
     public void setupTables() {
@@ -395,6 +400,99 @@ public class PersistenceLayerOneToManyTest {
         assertThat(actualChildren, contains("izak (child of avraham)"));
     }
 
+    @Test
+    public void delete_missing_children_create_new_and_update_existing_another_commands() {
+
+        insert(newParent()
+                .with(upsertChild(1).with(FIELD_1, "child1"))
+                .with(upsertChild(2).with(FIELD_1, "child2"))
+        );
+
+        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
+                .with(upsertChild(1).with(FIELD_1, "child1 updated").get())
+                .with(upsertChild(3).with(FIELD_1, "child3").get())
+                .with(deletionOfOther);
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+
+        assertThat(childrenByOrdinal.get(1).field1, is("child1 updated"));
+        assertThat(childrenByOrdinal.get(3).field1, is("child3"));
+        assertFalse(childrenByOrdinal.containsKey(2));
+    }
+
+    @Test
+    public void when_no_children_in_parent_then_delete_all_children() {
+
+        insert(newParent()
+                .with(upsertChild(1).with(FIELD_1, "child1"))
+                .with(upsertChild(2).with(FIELD_1, "child2"))
+        );
+
+        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0)).with(deletionOfOther);;
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+
+        assertFalse(childrenByOrdinal.containsKey(1));
+        assertFalse(childrenByOrdinal.containsKey(2));
+    }
+
+    @Test
+    public void when_no_missing_children_in_parent_then_success_to_update_other_child() {
+
+        insert(newParent());
+
+        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
+                .with(upsertChild(1).with(FIELD_1, "child1"))
+                .with(deletionOfOther);;
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+
+        assertTrue(childrenByOrdinal.containsKey(1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void when_parent_does_not_assign_to_child_with_its_identifier_then_throw_exception() {
+
+        final ParentCmdBuilder parentBuilder = existingParentWithUniqueKey(11)
+                .with(upsertChild(1).with(FIELD_1, "child1 updated"))
+                .with(deletionOfOther);;
+
+        update(parentFlow(childFlow()), parentBuilder);
+    }
+
+    @Test
+    public void check_each_parent_not_delete_another_parents_child() {
+
+        insert(newParent()
+                .with(upsertChild(1).with(FIELD_1, "child1"))
+        );
+
+        insert(newParent()
+                .with(upsertChild(2).with(FIELD_1, "child2"))
+        );
+
+        final ParentCmdBuilder parentBuilder1 = existingParentWithId(generatedId(0))
+                .with(upsertChild(1).with(FIELD_1, "child1 updated").get())
+                .with(deletionOfOther);
+
+        final ParentCmdBuilder parentBuilder2 = existingParentWithId(generatedId(1))
+                .with(upsertChild(2).with(FIELD_1, "child2 updated").get())
+                .with(deletionOfOther);
+
+        update(parentFlow(childFlow()), parentBuilder1, parentBuilder2);
+
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+
+        assertThat(childrenByOrdinal.get(1).field1, is("child1 updated"));
+        assertThat(childrenByOrdinal.get(2).field1, is("child2 updated"));
+    }
+
 
     private PostFetchCommandEnricher<ChildEntity> enrichWithValueFrom(EntityField otherField, BiConsumer<ChangeEntityCommand<ChildEntity>, Object> enrichment) {
         return new PostFetchCommandEnricher<ChildEntity>() {
@@ -511,6 +609,11 @@ public class PersistenceLayerOneToManyTest {
 
         ParentCmdBuilder with(FluidPersistenceCmdBuilder<ChildEntity> child) {
             cmd.addChild(child.get());
+            return this;
+        }
+
+        ParentCmdBuilder with(MissingChildrenSupplier<ChildEntity> supplier) {
+            cmd.add(supplier);
             return this;
         }
 

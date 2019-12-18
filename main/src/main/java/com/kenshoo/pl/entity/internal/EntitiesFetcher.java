@@ -49,7 +49,7 @@ public class EntitiesFetcher {
         }
     }
 
-    private <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> queryExtender(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
+    <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> queryExtender(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
         List<FieldAndValues<?>> conditions = new ArrayList<>();
         for (EntityField<E, ?> field : uniqueKey.getFields()) {
             addToConditions(field, identifiers, conditions);

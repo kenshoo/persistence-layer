@@ -47,6 +47,12 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
         return field;
     }
 
+    protected final <FT> TableField<Record, FT> createPKAndFKField(String name, DataType<FT> type, TableField<Record, FT> referenceField) {
+        final TableField<Record, FT> field = createPKField(name, type);
+        foreignKeyFields.put(referenceField.getTable(), new FieldsPair(field, referenceField));
+        return field;
+    }
+
     protected final <FT> TableField<Record, FT> createFKField(String name, TableField<Record, FT> referenceField) {
         TableField<Record, FT> field = createField(name, referenceField.getDataType().identity(false));
         foreignKeyFields.put(referenceField.getTable(), new FieldsPair(field, referenceField));
@@ -94,6 +100,8 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
         Identity<Record, ?> createPKIdentity() {
             return identityField != null ? createIdentity(AbstractDataTable.this, identityField) : null;
         }
+
+
     }
 
     private static class FieldsPair {

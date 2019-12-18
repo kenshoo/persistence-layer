@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
@@ -32,6 +33,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
     private final FeatureSet features;
+
 
     private ChangeFlowConfig(E entityType,
                              List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers,
@@ -105,13 +107,14 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
     public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
         return features.isEnabled(AutoIncrementSupport)
-            ? getEntityType().getPrimaryIdentityField()
-            : Optional.empty();
+                ? getEntityType().getPrimaryIdentityField()
+                : Optional.empty();
     }
 
     public FeatureSet getFeatures() {
         return this.features;
     }
+
 
     public static class Builder<E extends EntityType<E>> {
         private final E entityType;
@@ -191,7 +194,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         public Builder<E> withoutLabeledElements(Label label) {
-           this.withoutLabeledElements(ImmutableList.of(label));
+            this.withoutLabeledElements(ImmutableList.of(label));
             return this;
         }
 

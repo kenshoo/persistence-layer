@@ -10,9 +10,7 @@ import com.kenshoo.pl.entity.spi.ValidationException;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -28,10 +26,12 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
     private final DSLContext dslContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
+    private MissingChildrenHandler missingChildrenHandler;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
+        this.missingChildrenHandler = new MissingChildrenHandler(dslContext);
     }
 
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
@@ -95,6 +95,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     private ChangeContext makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
+        missingChildrenHandler.handle(commands, flowConfig);
         ChangeContextImpl context = new ChangeContextImpl(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
@@ -124,7 +125,6 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
         populateParentKeysIntoChildren(context, validChanges);
 
-        // invoke recursive
         flow.childFlows().forEach(childFlow -> prepareChildFlowRecursive(validChanges, childFlow, context));
     }
 
