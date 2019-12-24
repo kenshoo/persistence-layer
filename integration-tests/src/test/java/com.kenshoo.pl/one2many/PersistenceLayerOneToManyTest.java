@@ -515,6 +515,16 @@ public class PersistenceLayerOneToManyTest {
             public void enrich(Collection<? extends ChangeEntityCommand<ChildEntity>> commands, ChangeOperation op, ChangeContext ctx) {
                 commands.forEach(cmd -> enrichment.accept(cmd, cmd.containsField(otherField) ? cmd.get(otherField) : ctx.getEntity(cmd).get(otherField)));
             }
+
+            @Override
+            public Stream<EntityField<ChildEntity, ?>> fieldsToEnrich() {
+                return Stream.of(otherField);
+            }
+
+            @Override
+            public boolean shouldRun(Collection<? extends ChangeEntityCommand<ChildEntity>> changeEntityCommands) {
+                return true;
+            }
         };
     }
 

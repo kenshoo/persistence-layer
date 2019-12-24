@@ -39,12 +39,12 @@ public class IntegerIdGeneratorEnricher<E extends EntityType<E>> implements Post
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation op) {
-        return Stream.empty();
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.of(idField);
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return Stream.empty();
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+        return commands.stream().anyMatch(cmd -> !cmd.isFieldChanged(idField));
     }
 }

@@ -32,17 +32,18 @@ public class DefaultFieldValueEnricher<E extends EntityType<E>, T> implements Po
     }
 
     @Override
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.of(field);
+    }
+
+    @Override
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands) {
+        return changeEntityCommands.stream().anyMatch(cmd -> !cmd.isFieldChanged(field));
+    }
+
+    @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
         return SupportedChangeOperation.CREATE;
     }
 
-    @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
-
-    @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
 }

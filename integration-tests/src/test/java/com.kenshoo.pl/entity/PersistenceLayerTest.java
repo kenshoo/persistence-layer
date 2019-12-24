@@ -16,7 +16,6 @@ import com.kenshoo.pl.entity.spi.helpers.FixedFieldValueSupplier;
 import org.hamcrest.Matchers;
 import org.jooq.*;
 import org.jooq.impl.DSL;
-import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -530,6 +529,16 @@ public class PersistenceLayerTest {
                 assertNotNull(command);
                 Entity entity = changeContext.getEntity(command);
                 command.set(EntityForTest.FIELD2, Integer.parseInt(entity.get(EntityForTestComplexKeyParent.FIELD1)));
+            }
+
+            @Override
+            public Stream<EntityField<EntityForTest, ?>> fieldsToEnrich() {
+                return Stream.of(EntityForTest.FIELD2);
+            }
+
+            @Override
+            public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
+                return changeEntityCommands.stream().anyMatch(cmd -> cmd.isFieldChanged(EntityForTest.FIELD2));
             }
 
             @Override
@@ -1114,6 +1123,16 @@ public class PersistenceLayerTest {
         }
 
         @Override
+        public Stream<EntityField<EntityForTest, ?>> fieldsToEnrich() {
+            return Stream.of(EntityForTest.FIELD2);
+        }
+
+        @Override
+        public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
+            return changeEntityCommands.stream().anyMatch(cmd -> !cmd.isFieldChanged(EntityForTest.FIELD2));
+        }
+
+        @Override
         public SupportedChangeOperation getSupportedChangeOperation() {
             return SupportedChangeOperation.CREATE_AND_UPDATE;
         }
@@ -1207,6 +1226,16 @@ public class PersistenceLayerTest {
         @Override
         public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
             changeEntityCommands.forEach(c -> c.set(idField, id.incrementAndGet()));
+        }
+
+        @Override
+        public Stream<EntityField<E, ?>> fieldsToEnrich() {
+            return Stream.of(idField);
+        }
+
+        @Override
+        public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+            return true;
         }
 
         @Override
