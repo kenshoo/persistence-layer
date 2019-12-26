@@ -22,9 +22,11 @@ import java.util.HashSet;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.FluidPersistenceCmdBuilder.fluid;
-import static com.kenshoo.pl.entity.TestChildEntity.CHILD_FIELD_1;
+import static com.kenshoo.pl.entity.TestChildEntity.*;
+import static com.kenshoo.pl.entity.TestEntity.SECONDARY_FIELD_1;
 import static com.kenshoo.pl.entity.TestGrandChildEntity.GRAND_CHILD_FIELD_1;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
@@ -226,6 +228,32 @@ public class FieldsToFetchBuilderTest {
                 //
                 requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build()
         ));
+    }
+
+    @Test
+    public void ignore_entity_fields_on_create() {
+
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
+                createParent().withChild(createChild()
+                                        .with(CHILD_FIELD_1, supplierRequiring(CHILD_FIELD_2))
+                                        .with(CHILD_FIELD_3, supplierRequiring(TestEntity.ID))
+                        // TODO: add secondary table
+                        ));
+
+        assertThat(requests, containsInAnyOrder(
+                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
+        ));
+    }
+
+    @Test
+    public void ignore_entity_field_of_secondary_table_on_create() {
+
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
+                createParent()
+                        .with(TestEntity.FIELD_1, supplierRequiring(SECONDARY_FIELD_1))
+                );
+
+        assertThat(requests, empty());
     }
 
     private FluidPersistenceCmdBuilder<TestEntity> updateParent() {
