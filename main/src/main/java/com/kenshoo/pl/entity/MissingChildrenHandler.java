@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.internal.ChildrenIdFetcher;
 import org.jooq.*;
@@ -14,7 +15,7 @@ import static org.jooq.lambda.Seq.seq;
 
 public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> {
 
-    private final ChildrenIdFetcher childrenIdFetcher;
+    private ChildrenIdFetcher childrenIdFetcher;
 
     public MissingChildrenHandler(DSLContext jooq) {
         childrenIdFetcher = new ChildrenIdFetcher(jooq);
@@ -94,5 +95,10 @@ public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD ext
 
     private <T> Predicate<T> notIn(Set<T> set) {
         return item -> !set.contains(item);
+    }
+
+    @VisibleForTesting
+    void setChildrenIdFetcher(ChildrenIdFetcher childrenIdFetcher){
+        this.childrenIdFetcher = childrenIdFetcher;
     }
 }
