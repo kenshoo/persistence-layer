@@ -14,6 +14,7 @@ import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.FieldFetchRequest.newRequest;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.function.Functions.not;
 
 public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
@@ -138,17 +139,15 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
     private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> validateFieldsToFetch(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {
         if(changeOperation == CREATE) {
-            return fieldsToFetch.filter(entityField -> {
-                if (entityField.getDbAdapter().getTable().equals(flowConfig.getEntityType().getPrimaryTable())) {
-                    throw new IllegalStateException("Field " + entityField + " of the entity type: " + entityField.getEntityType() + " and primary table is requested in CREATE flow by " + consumer);
-                }
-                return true;
-            });
+            return fieldsToFetch.filter(not(ofEntity(flowConfig.getEntityType())));
         } else {
             return fieldsToFetch;
         }
     }
 
+    private <E extends EntityType<E>, EF extends EntityField<?, ?>> Predicate<EF> ofEntity(EntityType<E> entityType) {
+        return entityField -> entityField.getEntityType().equals(entityType);
+    }
 
 
 }
