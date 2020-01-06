@@ -58,6 +58,16 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     }
 
     @Override
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.empty();
+    }
+
+    @Override
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+        return true;
+    }
+
+    @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return commands.stream().flatMap(ChangeEntityCommand::getChangedFields);
     }

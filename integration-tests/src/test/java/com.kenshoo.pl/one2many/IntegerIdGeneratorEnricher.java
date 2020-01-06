@@ -7,6 +7,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 
 import java.util.Collection;
 import java.util.function.Supplier;
@@ -39,12 +40,12 @@ public class IntegerIdGeneratorEnricher<E extends EntityType<E>> implements Post
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation op) {
-        return Stream.empty();
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.of(idField);
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return Stream.empty();
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+        return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(commands, idField);
     }
 }

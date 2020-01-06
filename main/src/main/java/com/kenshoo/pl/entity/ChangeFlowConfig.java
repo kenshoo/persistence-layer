@@ -134,6 +134,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         public Builder<E> with(FeatureSet features) {
             this.features = features;
+            this.flowConfigBuilders.forEach(builder -> builder.with(features));
             return this;
         }
 

@@ -2,12 +2,15 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.spi.ChangeOperationSpecificConsumer;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
+import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
@@ -57,7 +60,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
                         .filter(onlyConsumersWith(operation));
 
         final Seq<EntityField<?, ?>> fields = Seq.concat(
-                fieldsConsumedBy(commands, operation, flow, currentStateConsumers),
+                flow.getFeatures().isEnabled(Feature.RequiredFieldsNewApi) ? fieldsConsumedBy(commands, operation, flow, currentStateConsumers) : fieldsConsumedByDeprecated(commands, operation, flow, currentStateConsumers),
                 fieldsRelatedByChildrenOf(commands, operation),
                 fieldsOfIdentifiersOf(commands, operation));
 
@@ -72,9 +75,18 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         });
     }
 
-    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedBy(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {
+    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedByDeprecated(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {
         return currentStateConsumers.flatMap(
-                consumer -> validateFieldsToFetch(flow, operation, consumer.getRequiredFields(commands, operation), consumer)
+                consumer -> filterFieldsByOperator(flow, operation, consumer.getRequiredFields(commands, operation), consumer)
+        );
+    }
+
+    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedBy(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {
+        Stream<EntityField<E, ?>> fieldsByCommands = commands.stream().flatMap(ChangeEntityCommand::getChangedFields);
+        Stream<EntityField<E, ?>> fieldsToEnrich = flow.getPostFetchCommandEnrichers().stream().filter(enricher -> enricher.shouldRun(commands)).flatMap(PostFetchCommandEnricher::fieldsToEnrich);
+        Set<EntityField<E, ?>> fieldsToUpdate = Stream.concat(fieldsByCommands, fieldsToEnrich).collect(Collectors.toSet());
+        return currentStateConsumers.flatMap(
+                consumer -> filterFieldsByOperator(flow, operation, consumer.requiredFields(fieldsToUpdate, operation), consumer)
         );
     }
 
@@ -137,7 +149,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         };
     }
 
-    private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> validateFieldsToFetch(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {
+    private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> filterFieldsByOperator(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {
         if(changeOperation == CREATE) {
             return fieldsToFetch.filter(not(ofEntity(flowConfig.getEntityType())));
         } else {
