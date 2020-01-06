@@ -10,6 +10,7 @@ import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.internal.EntityDbUtil;
 import com.kenshoo.pl.entity.internal.Errors;
 import com.kenshoo.pl.entity.spi.*;
+import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 import com.kenshoo.pl.entity.spi.helpers.EntitiesTempTableCreator;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.FixedFieldValueSupplier;
@@ -538,7 +539,7 @@ public class PersistenceLayerTest {
 
             @Override
             public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
-                return changeEntityCommands.stream().anyMatch(cmd -> cmd.isFieldChanged(EntityForTest.FIELD2));
+                return CommandsFieldMatcher.isAnyFieldContainedInAnyCommand(changeEntityCommands, EntityForTest.FIELD2);
             }
 
             @Override
@@ -1129,7 +1130,7 @@ public class PersistenceLayerTest {
 
         @Override
         public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
-            return changeEntityCommands.stream().anyMatch(cmd -> !cmd.isFieldChanged(EntityForTest.FIELD2));
+            return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(changeEntityCommands, EntityForTest.FIELD2);
         }
 
         @Override

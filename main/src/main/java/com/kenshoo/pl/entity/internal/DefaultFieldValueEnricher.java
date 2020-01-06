@@ -7,6 +7,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -38,7 +39,7 @@ public class DefaultFieldValueEnricher<E extends EntityType<E>, T> implements Po
 
     @Override
     public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands) {
-        return changeEntityCommands.stream().anyMatch(cmd -> !cmd.isFieldChanged(field));
+        return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(changeEntityCommands, field);
     }
 
     @Override
