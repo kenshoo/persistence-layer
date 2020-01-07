@@ -31,10 +31,10 @@ class TempTableEngine {
 
     static private <T extends Table<Record>> TempTableResource<T> tempTable(final DSLContext dslContext, T table, Field<?>[] fields, TablePopulator tablePopulator, TempTable.Type tableType) {
         final TransactionProvider txProvider = dslContext.configuration().transactionProvider();
-        final TransactionContext tx = new TransactionContextImpl(dslContext.configuration(), dslContext);
+        final TransactionContext tx = new TransactionContextImpl(dslContext.configuration().derive(), dslContext);
         txProvider.begin(tx);
 
-        TempTable<T> tempTable = new TempTable<>(dslContext, table, fields, tablePopulator, tableType);
+        TempTable<T> tempTable = new TempTable<>(tx.dsl(), table, fields, tablePopulator, tableType);
         try {
             tempTable.create();
             return new TempTableResource<T>() {

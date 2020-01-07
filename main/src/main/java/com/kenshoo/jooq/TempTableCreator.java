@@ -73,7 +73,7 @@ class TempTableCreator {
         return tempTable;
     }
 
-    private static class TempTablePopulator implements TablePopulator {
+    public static class TempTablePopulator implements TablePopulator {
         private final List<FieldAndValues<?>> fieldsWithValues;
 
         TempTablePopulator(List<FieldAndValues<?>> fieldsWithValues) {
