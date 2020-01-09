@@ -7,6 +7,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
+import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -32,17 +33,18 @@ public class DefaultFieldValueEnricher<E extends EntityType<E>, T> implements Po
     }
 
     @Override
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.of(field);
+    }
+
+    @Override
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands) {
+        return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(changeEntityCommands, field);
+    }
+
+    @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
         return SupportedChangeOperation.CREATE;
     }
 
-    @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
-
-    @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
 }

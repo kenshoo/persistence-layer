@@ -30,7 +30,6 @@ class TempTableEngine {
         final Configuration newJooq = dslContext.configuration().derive();
         final TransactionContext tx = new TransactionContextImpl(newJooq, dslContext);
         txProvider.begin(tx);
-
         TempTable<T> tempTable = new TempTable<>(DSL.using(newJooq), table, fields, tablePopulator, tableType);
         try {
             tempTable.create();

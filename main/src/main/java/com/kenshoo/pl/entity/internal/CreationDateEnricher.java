@@ -26,7 +26,17 @@ public class CreationDateEnricher<E extends EntityType<E>> implements PostFetchC
     @Override
     public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
         Instant now = Instant.now();
-        changeEntityCommands.stream().forEach(command -> command.set(creationDateField, now));
+        changeEntityCommands.forEach(command -> command.set(creationDateField, now));
+    }
+
+    @Override
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.of(creationDateField);
+    }
+
+    @Override
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+        return true;
     }
 
     @Override
@@ -34,13 +44,4 @@ public class CreationDateEnricher<E extends EntityType<E>> implements PostFetchC
         return SupportedChangeOperation.CREATE;
     }
 
-    @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
-
-    @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
 }

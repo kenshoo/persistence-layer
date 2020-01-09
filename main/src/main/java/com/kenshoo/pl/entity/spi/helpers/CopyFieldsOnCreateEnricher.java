@@ -1,12 +1,6 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 
 import java.util.ArrayList;
@@ -78,6 +72,16 @@ public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements Post
                 copyField(field2Copy, entity, command);
             }
         }
+    }
+
+    @Override
+    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return fields2Copy.stream().map(pair -> pair.target);
+    }
+
+    @Override
+    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands) {
+        return true;
     }
 
     private <T> void copyField(Field2Copy<E, T> field2Copy, Entity entity, ChangeEntityCommand<E> command) {
