@@ -242,6 +242,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     private <E extends EntityType<E>> void generateOutputRecursive(ChangeFlowConfig<E> flowConfig, Collection<? extends EntityChange<E>> commands, ChangeContext context) {
         for (OutputGenerator<E> outputGenerator : flowConfig.getOutputGenerators()) {
             Seq.of(DELETE, UPDATE, CREATE)
+                    .filter(op -> outputGenerator.getSupportedChangeOperation().supports(op))
                     .map(op -> seq(commands).filter(cmd -> cmd.getChangeOperation() == op).toList())
                     .filter(list -> !list.isEmpty())
                     .forEach(list -> outputGenerator.generate(list, list.get(0).getChangeOperation(), context));

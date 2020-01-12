@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.spi.ChangeOperationSpecificConsumer;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.Seq;
@@ -143,10 +142,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
     }
 
     private <E extends EntityType<E>> Predicate<CurrentStateConsumer<E>> onlyConsumersWith(ChangeOperation changeOperation) {
-        return input -> {
-            boolean isOperationSpecificConsumer = input instanceof ChangeOperationSpecificConsumer;
-            return !isOperationSpecificConsumer || ((ChangeOperationSpecificConsumer<E>) input).getSupportedChangeOperation().supports(changeOperation);
-        };
+        return input -> input.getSupportedChangeOperation().supports(changeOperation);
     }
 
     private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> filterFieldsByOperator(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {

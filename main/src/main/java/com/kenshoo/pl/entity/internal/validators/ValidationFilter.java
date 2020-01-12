@@ -25,21 +25,23 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
     }
 
     public <T extends EntityChange<E>> Collection<T> filter(Collection<T> commands, final ChangeOperation changeOperation, final ChangeContext changeContext) {
-        for (ChangesValidator<E> validator : validators) {
-            validator.validate(commands, changeOperation, changeContext);
-        }
+        validators.stream().filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation)).
+                forEach(validator -> validator.validate(commands, changeOperation, changeContext));
         return Collections2.filter(commands, (Predicate<EntityChange<E>>) entityChange -> !changeContext.containsErrorNonRecursive(entityChange));
     }
 
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return validators.stream()
+                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                 .flatMap(validator -> validator.getRequiredFields(commands, changeOperation));
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return validators.stream().flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
+        return validators.stream()
+                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
+                .flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
     }
 
     @Override

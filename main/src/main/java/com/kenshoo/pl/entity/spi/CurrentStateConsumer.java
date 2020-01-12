@@ -1,9 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.*;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -14,6 +11,10 @@ import java.util.stream.Stream;
  * <b>Client classes should not implement this interface directly, it is used internally by the framework.</b>
  */
 public interface CurrentStateConsumer<E extends EntityType<E>> {
+
+    default SupportedChangeOperation getSupportedChangeOperation() {
+        return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
+    }
 
     default Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return Stream.empty();

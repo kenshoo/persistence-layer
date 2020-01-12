@@ -23,19 +23,22 @@ public class CompoundChangesValidator<E extends EntityType<E>> implements Change
 
     @Override
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
-        for (ChangesValidator<E> changesValidator : changesValidators) {
-            changesValidator.validate(entityChanges, changeOperation, changeContext);
-        }
+        changesValidators.stream().
+                filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation)).
+                    forEach(validator -> validator.validate(entityChanges, changeOperation, changeContext));
     }
 
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return changesValidators.stream()
+                .filter(changesValidators -> changesValidators.getSupportedChangeOperation().supports(changeOperation))
                 .flatMap(changesValidator -> changesValidator.getRequiredFields(commands, changeOperation));
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return changesValidators.stream().flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
+        return changesValidators.stream()
+                .filter(changesValidators -> changesValidators.getSupportedChangeOperation().supports(changeOperation))
+                .flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
     }
 }
