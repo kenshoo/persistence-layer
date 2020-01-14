@@ -1,6 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
@@ -154,9 +155,10 @@ public class EntitiesFetcher {
         }
         final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
+        final Map<DataTable, DataTable> secondaryTableToPrimaryTable = Maps.newHashMap();
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
 
-        BFS.visit(startingEdge, edge -> edgesComingOutOf(edge))
+        BFS.visit(startingEdge, this::edgesComingOutOf)
                 .limitUntil(__ -> targetTables.isEmpty())
                 .forEach(edge -> {
                     final DataTable table = edge.target.table;
@@ -167,12 +169,15 @@ public class EntitiesFetcher {
                         targetTables.remove(table);
                         joinMissingTablesInPath(query, joinedTables, edge);
                     }
-                    addToJoin(query, table, secondaryTables);
+                    secondaryTables.forEach(secondaryTable ->
+                                                secondaryTableToPrimaryTable.putIfAbsent(secondaryTable, table));
                 });
 
         if (!targetTables.isEmpty()) {
             throw new IllegalStateException("Tables " + targetTables + " could not be reached via joins");
         }
+
+        leftJoinMissingSecondaryTables(query, joinedTables, secondaryTableToPrimaryTable);
 
         return query;
     }
@@ -204,11 +209,14 @@ public class EntitiesFetcher {
         return testedTable -> !testedTable.getReferencesTo(toTable).isEmpty();
     }
 
-    private SelectJoinStep<Record> addToJoin(SelectJoinStep<Record> query, DataTable startingTable, Iterable<DataTable> secondaryTables) {
-        for (DataTable secondaryTable : secondaryTables) {
-            query = query.leftOuterJoin(secondaryTable).on(getJoinCondition(secondaryTable, startingTable));
-        }
-        return query;
+    private void leftJoinMissingSecondaryTables(SelectJoinStep<Record> query, Set<DataTable> joinedTables, Map<DataTable, DataTable> secondaryTableToPrimaryTable) {
+        secondaryTableToPrimaryTable.entrySet().stream()
+                                    .filter(entry -> !joinedTables.contains(entry.getKey()))
+                                    .forEach(entry -> leftJoin(query, entry.getKey(), entry.getValue()));
+    }
+
+    private void leftJoin(SelectJoinStep<Record> query, DataTable table1, DataTable table2) {
+        query.leftOuterJoin(table1).on(getJoinCondition(table1, table2));
     }
 
     private static String keyFieldAlias(int keyFieldIndex) {
