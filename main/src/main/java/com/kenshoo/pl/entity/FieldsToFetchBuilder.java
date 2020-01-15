@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.spi.ChangeOperationSpecificConsumer;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.Seq;
@@ -15,6 +14,7 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.FieldFetchRequest.newRequest;
+import static com.kenshoo.pl.entity.spi.CurrentStateConsumer.supporting;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
@@ -57,7 +57,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
         final Stream<CurrentStateConsumer<E>> currentStateConsumers =
                 Stream.concat(flow.currentStateConsumers(), consumerOf(commands))
-                        .filter(onlyConsumersWith(operation));
+                        .filter(supporting(operation));
 
         final Seq<EntityField<?, ?>> fields = Seq.concat(
                 flow.getFeatures().isEnabled(Feature.RequiredFieldsNewApi) ? fieldsConsumedBy(commands, operation, flow, currentStateConsumers) : fieldsConsumedByDeprecated(commands, operation, flow, currentStateConsumers),
@@ -140,13 +140,6 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
     private <E extends EntityType<E>> Stream<CurrentStateConsumer<E>> consumerOf(Collection<? extends ChangeEntityCommand<E>> commands) {
         return commands.stream()
                 .flatMap(ChangeEntityCommand::getCurrentStateConsumers);
-    }
-
-    private <E extends EntityType<E>> Predicate<CurrentStateConsumer<E>> onlyConsumersWith(ChangeOperation changeOperation) {
-        return input -> {
-            boolean isOperationSpecificConsumer = input instanceof ChangeOperationSpecificConsumer;
-            return !isOperationSpecificConsumer || ((ChangeOperationSpecificConsumer<E>) input).getSupportedChangeOperation().supports(changeOperation);
-        };
     }
 
     private <E extends EntityType<E>, EF extends EntityField<?, ?>> Stream<EF> filterFieldsByOperator(ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, Stream<EF> fieldsToFetch, CurrentStateConsumer<E> consumer) {

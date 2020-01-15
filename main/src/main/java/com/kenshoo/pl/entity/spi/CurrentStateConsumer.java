@@ -1,11 +1,9 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.*;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -15,11 +13,24 @@ import java.util.stream.Stream;
  */
 public interface CurrentStateConsumer<E extends EntityType<E>> {
 
+    default SupportedChangeOperation getSupportedChangeOperation() {
+        return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
+    }
+
     default Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return Stream.empty();
     }
 
     default Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return Stream.empty();
+    }
+
+
+    static <E extends EntityType<E>> Predicate<CurrentStateConsumer<E>> supporting(ChangeOperation op) {
+        return consumer -> consumer.getSupportedChangeOperation().supports(op);
+    }
+
+    static <E extends EntityType<E>> Predicate<ChangeOperation> supporting(CurrentStateConsumer<E> consumer) {
+        return op -> consumer.getSupportedChangeOperation().supports(op);
     }
 }

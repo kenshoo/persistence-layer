@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  *
  * @param <E>
  */
-public interface PostFetchCommandEnricher<E extends EntityType<E>> extends ChangeOperationSpecificConsumer<E> {
+public interface PostFetchCommandEnricher<E extends EntityType<E>> extends CurrentStateConsumer<E> {
 
     /**
      * "Enriches" the commands with system-imposed changes.

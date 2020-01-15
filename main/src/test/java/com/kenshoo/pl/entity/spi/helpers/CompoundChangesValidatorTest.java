@@ -1,11 +1,6 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.TestEntity;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,11 +15,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class CompoundChangesValidatorTest {
@@ -56,6 +48,8 @@ public class CompoundChangesValidatorTest {
 
     @Before
     public void setUp(){
+        when(validator1.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_UPDATE_AND_DELETE);
+        when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_UPDATE_AND_DELETE);
         when(validator1.getRequiredFields(commands, ChangeOperation.CREATE)).thenAnswer(invocationOnMock -> Stream.of(field1));
         when(validator2.getRequiredFields(commands, ChangeOperation.CREATE)).thenAnswer(invocationOnMock -> Stream.of(field2));
 
@@ -70,11 +64,30 @@ public class CompoundChangesValidatorTest {
     }
 
     @Test
+    public void testRequiredFieldsForOneValidatorNotFitOperation() {
+        when(validator1.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.UPDATE);
+        compoundChangesValidator.register(validator1);
+        Stream<EntityField<?, ?>> requiredFields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE);
+        assertEquals(0, requiredFields.count());
+    }
+
+    @Test
     public void testRequiredFieldsForMultipleValidators() {
         compoundChangesValidator.register(validator1);
         compoundChangesValidator.register(validator2);
         Collection<EntityField<?, ?>> fields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
         assertTrue("Required field1", fields.contains(field1));
+        assertTrue("Required field2", fields.contains(field2));
+    }
+
+    @Test
+    public void testRequiredFieldsForMultipleValidatorsOnlyOneFitOperation() {
+        when(validator1.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.UPDATE);
+        when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE);
+        compoundChangesValidator.register(validator1);
+        compoundChangesValidator.register(validator2);
+        Collection<EntityField<?, ?>> fields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
+        assertFalse("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
     }
 
@@ -93,4 +106,16 @@ public class CompoundChangesValidatorTest {
         verify(validator1, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(validator2, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
     }
+
+    @Test
+    public void testDelegateToMultipleValidatorsForSupportOperation() {
+        when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE);
+        when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.UPDATE);
+        compoundChangesValidator.register(validator1);
+        compoundChangesValidator.register(validator2);
+        compoundChangesValidator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(validator1, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(validator2, never()).validate(entityChanges, ChangeOperation.CREATE, changeContext);
+    }
+
 }
