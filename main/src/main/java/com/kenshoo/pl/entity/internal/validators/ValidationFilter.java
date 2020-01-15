@@ -11,6 +11,7 @@ import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.internal.ChangesFilter;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
+import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,7 +26,7 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
     }
 
     public <T extends EntityChange<E>> Collection<T> filter(Collection<T> commands, final ChangeOperation changeOperation, final ChangeContext changeContext) {
-        validators.stream().filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation)).
+        validators.stream().filter(CurrentStateConsumer.supporting(changeOperation)).
                 forEach(validator -> validator.validate(commands, changeOperation, changeContext));
         return Collections2.filter(commands, (Predicate<EntityChange<E>>) entityChange -> !changeContext.containsErrorNonRecursive(entityChange));
     }
@@ -33,14 +34,14 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
     @Override
     public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
         return validators.stream()
-                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
+                .filter(CurrentStateConsumer.supporting(changeOperation))
                 .flatMap(validator -> validator.getRequiredFields(commands, changeOperation));
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return validators.stream()
-                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
+                .filter(CurrentStateConsumer.supporting(changeOperation))
                 .flatMap(changesValidator -> changesValidator.requiredFields(fieldsToUpdate, changeOperation));
     }
 

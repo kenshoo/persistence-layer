@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
+import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import com.kenshoo.pl.entity.spi.ValidationException;
 import org.jooq.DSLContext;
@@ -218,13 +219,13 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
     private <E extends EntityType<E>> void enrichCommandsPostFetch(Collection<? extends ChangeEntityCommand<E>> commands, ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, ChangeContext changeContext) {
         flowConfig.getPostFetchCommandEnrichers().stream()
-                .filter(enricher -> enricher.getSupportedChangeOperation().supports(changeOperation))
+                .filter(CurrentStateConsumer.supporting(changeOperation))
                 .forEach(enricher -> enricher.enrich(commands,  changeOperation, changeContext));
     }
 
 
     private <E extends EntityType<E>> List<ChangesFilter<E>> getSupportedFilters(List<ChangesFilter<E>> filters, ChangeOperation changeOperation) {
-        return filters.stream().filter(f -> f.getSupportedChangeOperation().supports(changeOperation)).collect(toList());
+        return filters.stream().filter(CurrentStateConsumer.supporting(changeOperation)).collect(toList());
     }
 
     private <E extends EntityType<E>, T extends EntityChange<E>> Collection<T> filterCommands(Collection<T> changes, List<ChangesFilter<E>> changesFilters, ChangeOperation changeOperation, ChangeContext changeContext) {
@@ -242,7 +243,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     private <E extends EntityType<E>> void generateOutputRecursive(ChangeFlowConfig<E> flowConfig, Collection<? extends EntityChange<E>> commands, ChangeContext context) {
         for (OutputGenerator<E> outputGenerator : flowConfig.getOutputGenerators()) {
             Seq.of(DELETE, UPDATE, CREATE)
-                    .filter(op -> outputGenerator.getSupportedChangeOperation().supports(op))
+                    .filter(CurrentStateConsumer.supporting(outputGenerator))
                     .map(op -> seq(commands).filter(cmd -> cmd.getChangeOperation() == op).toList())
                     .filter(list -> !list.isEmpty())
                     .forEach(list -> outputGenerator.generate(list, list.get(0).getChangeOperation(), context));

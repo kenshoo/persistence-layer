@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity.spi;
 import com.kenshoo.pl.entity.*;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -22,5 +23,14 @@ public interface CurrentStateConsumer<E extends EntityType<E>> {
 
     default Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return Stream.empty();
+    }
+
+
+    static <E extends EntityType<E>> Predicate<CurrentStateConsumer<E>> supporting(ChangeOperation op) {
+        return consumer -> consumer.getSupportedChangeOperation().supports(op);
+    }
+
+    static <E extends EntityType<E>> Predicate<ChangeOperation> supporting(CurrentStateConsumer<E> consumer) {
+        return op -> consumer.getSupportedChangeOperation().supports(op);
     }
 }
