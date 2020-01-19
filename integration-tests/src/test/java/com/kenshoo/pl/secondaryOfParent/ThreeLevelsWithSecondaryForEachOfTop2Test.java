@@ -27,34 +27,30 @@ import static java.util.Collections.singleton;
 
 /**
  * Test that fields are properly fetched by the fetcher for a hierarchy of 3 levels with 1 secondary for each of the upper levels.<br>
- * See diagrams below. Straight arrows are relations between <b>tables</b> and curvy arrows are between <b>entity types</b>:
+ * See diagram below:
  * <pre>
  *
- * ------------------------
- * |        Table2        |~~~~~~~~
- * ------------------------       )
- *     / \  / \   / \             (
- *      |    )     |             \ /
- *      |    (     |       ---------------
- *      |    )     --------|  Table2Sec  |
- *      |    (             ---------------
- *      |    )     
- * ------------------------
- * |        Table1        |~~~~~~~~
- * ------------------------       )
- *     / \  / \   / \             (
- *      |    )     |             \ /
- *      |    )     |       ---------------
- *      |    (     --------|  Table1Sec  |
- *      |    )             ---------------
- *      |    (
- *   -------------
- *   |   Table0   |
- *   -------------
+ * ---------- (1)    (1) -------------
+ * | Table2 |------------| Table2Sec |
+ * ----------            -------------
+ * (1) / \
+ *      |
+ *      |
+ * (n)  |
+ * ---------- (1)    (1) -------------
+ * | Table1 |------------| Table1Sec |
+ * ----------            -------------
+ * (1) / \
+ *      |
+ *      |
+ * (n)  |
+ * ----------
+ * | Table0 |
+ * ----------
  *
  * </pre>
  */
-public class SecondaryOfParentFetcherHierarchy3Test {
+public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
     private static final int ENTITY_0_ID = 10;
     private static final int ENTITY_1_ID = 11;

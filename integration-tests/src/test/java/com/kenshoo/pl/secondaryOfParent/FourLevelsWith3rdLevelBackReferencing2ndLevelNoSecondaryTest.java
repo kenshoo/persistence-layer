@@ -36,30 +36,31 @@ import static java.util.Collections.singleton;
  *         -------------
  *         |  Table3   |
  *         -------------
- *              / \
+ *              / \ (1)
  *               |
- *               |
+ *               |  (n)
  *         -------------
  *         |  Table2   |
  *         -------------
- *            |  / \
+ * (n)        |  / \      (1)
  *      -------   |
  *      |         ------
- *     \ /             |
+ * (1) \ /             |  (n)
  * -----------    -----------
  * | Table11 |    | Table12 |
  * -----------    -----------
- *     / \           / \
+ * (1) / \           / \  (1)
  *      |             |
  *      ------   ------
  *           |   |
  *        -----------
  *        | Table0  |
- *        -----------
+ * (n)    -----------     (n)
+ *
  * </pre>
  *
  */
-public class SecondaryOfParentFetcherHierarchy1Test {
+public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
     private static final int ENTITY_0_ID = 1;
     private static final int ENTITY_11_ID = 2;

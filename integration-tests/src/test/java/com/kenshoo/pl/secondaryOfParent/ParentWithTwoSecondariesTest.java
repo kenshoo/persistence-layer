@@ -32,31 +32,27 @@ import static java.util.Collections.singleton;
  *     <li>parent</li>
  *     <li>2 secondary tables of parent</li>
  * </ul>
- * See diagrams below. Straight arrows are relations between <b>tables</b> and curvy arrows are between <b>entity types</b>:
+ * See diagram below:
  * <pre>
  *
- * ---------------------------
- * |                         |~~~~~~~~~~~~~~~~~
- * |          Parent         |                )
- * |                         |~~~~            (
- * ---------------------------   )            )
- *     / \  / \  / \  / \       \ /           (
- *      |    )    |    |     --------------   )
- *      |    (    |    ------| ParentSec1 |   (
- *      |    )    |          --------------   )
- *      |    (    |                          \ /
- *      |    )    |                  --------------
- *      |    (    -------------------| ParentSec2 |
- *      |    )                       --------------
- *      |    (
- *      |    (
- *   -------------
- *   |   Child   |
- *   -------------
+ * ---------- (1)   (1) --------------
+ * |        |-----------| ParentSec1 |
+ * |        |           --------------
+ * | Parent |
+ * |        | (1)   (1) --------------
+ * |        |-----------| ParentSec2 |
+ * ----------           --------------
+ * (1) / \
+ *      |
+ *      |
+ * (n)  |
+ * ---------
+ * | Child |
+ * ---------
  *
  * </pre>
  */
-public class SecondaryOfParentFetcherHierarchy4Test {
+public class ParentWithTwoSecondariesTest {
 
     private static final int CHILD_ID = 1;
     private static final int PARENT_ID = 2;
@@ -230,11 +226,11 @@ public class SecondaryOfParentFetcherHierarchy4Test {
             super("child");
         }
 
-        static class Key extends SingleUniqueKeyValue<SecondaryOfParentFetcherHierarchy4Test.ChildEntityType, Integer> {
-            static final SingleUniqueKey<SecondaryOfParentFetcherHierarchy4Test.ChildEntityType, Integer> DEFINITION = new SingleUniqueKey<SecondaryOfParentFetcherHierarchy4Test.ChildEntityType, Integer>(SecondaryOfParentFetcherHierarchy4Test.ChildEntityType.ID) {
+        static class Key extends SingleUniqueKeyValue<ParentWithTwoSecondariesTest.ChildEntityType, Integer> {
+            static final SingleUniqueKey<ParentWithTwoSecondariesTest.ChildEntityType, Integer> DEFINITION = new SingleUniqueKey<ParentWithTwoSecondariesTest.ChildEntityType, Integer>(ParentWithTwoSecondariesTest.ChildEntityType.ID) {
                 @Override
-                protected SecondaryOfParentFetcherHierarchy4Test.ChildEntityType.Key createValue(Integer value) {
-                    return new SecondaryOfParentFetcherHierarchy4Test.ChildEntityType.Key(value);
+                protected ParentWithTwoSecondariesTest.ChildEntityType.Key createValue(Integer value) {
+                    return new ParentWithTwoSecondariesTest.ChildEntityType.Key(value);
                 }
             };
 
@@ -264,11 +260,11 @@ public class SecondaryOfParentFetcherHierarchy4Test {
             super("parent");
         }
 
-        static class Key extends SingleUniqueKeyValue<SecondaryOfParentFetcherHierarchy4Test.ParentEntityType, Integer> {
-            static final SingleUniqueKey<SecondaryOfParentFetcherHierarchy4Test.ParentEntityType, Integer> DEFINITION = new SingleUniqueKey<SecondaryOfParentFetcherHierarchy4Test.ParentEntityType, Integer>(SecondaryOfParentFetcherHierarchy4Test.ParentEntityType.ID) {
+        static class Key extends SingleUniqueKeyValue<ParentWithTwoSecondariesTest.ParentEntityType, Integer> {
+            static final SingleUniqueKey<ParentWithTwoSecondariesTest.ParentEntityType, Integer> DEFINITION = new SingleUniqueKey<ParentWithTwoSecondariesTest.ParentEntityType, Integer>(ParentWithTwoSecondariesTest.ParentEntityType.ID) {
                 @Override
-                protected SecondaryOfParentFetcherHierarchy4Test.ParentEntityType.Key createValue(Integer value) {
-                    return new SecondaryOfParentFetcherHierarchy4Test.ParentEntityType.Key(value);
+                protected ParentWithTwoSecondariesTest.ParentEntityType.Key createValue(Integer value) {
+                    return new ParentWithTwoSecondariesTest.ParentEntityType.Key(value);
                 }
             };
 

@@ -32,25 +32,23 @@ import static java.util.Collections.singleton;
  *     <li>parent</li>
  *     <li>secondary table of parent</li>
  * </ul>
- * See diagrams below. Straight arrows are relations between <b>tables</b> and curvy arrows are between <b>entity types</b>:
+ * See diagram below:
  * <pre>
  *
- * ---------------------------
- * |        Parent           |~~~~~~~~
- * ---------------------------       )
- *     / \  / \   / \                (
- *      |    )     |                \ /
- *      |    )     |          ---------------
- *      |    (     -----------|  Secondary  |
- *      |    )                ---------------
- *      |    (
- *   -------------
- *   |   Child   |
- *   -------------
+ * ---------- (1)    (1) -------------
+ * | Parent | -----------| Secondary |
+ * ----------            -------------
+ * (1) / \
+ *      |
+ *      |
+ * (n)  |
+ * ---------
+ * | Child |
+ * ---------
  *
  * </pre>
  */
-public class SecondaryOfParentFetcherHierarchy2Test {
+public class ParentWithSecondaryTest {
 
     private static final int CHILD_ID = 1;
     private static final int PARENT_ID = 2;
