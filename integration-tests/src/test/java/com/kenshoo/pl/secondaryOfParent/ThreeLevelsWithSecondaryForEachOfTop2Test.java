@@ -20,10 +20,12 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
-import static com.kenshoo.pl.testutils.EntityTestUtils.assertFetchedEntity;
 import static java.util.Collections.singleton;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test that fields are properly fetched by the fetcher for a hierarchy of 3 levels with 1 secondary for each of the upper levels.<br>
@@ -54,9 +56,10 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
     private static final int ENTITY_0_ID = 10;
     private static final int ENTITY_1_ID = 11;
-    private static final String ENTITY_1_SEC_FIELD_1 = "entity1SecField1";
+    private static final String ENTITY_1_SEC_FIELD_1_VALUE = "entity1SecField1";
     private static final int ENTITY_2_ID = 12;
-    private static final String ENTITY_2_SEC_FIELD_1 = "entity2SecField1";
+    private static final String ENTITY_2_FIELD_1_VALUE = "entity2Field1Value";
+    private static final String ENTITY_2_SEC_FIELD_1_VALUE = "entity2SecField1";
 
     private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(
         Table0.INSTANCE,
@@ -78,11 +81,12 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         dslContext.insertInto(Table2.INSTANCE)
                   .set(Table2.INSTANCE.id, ENTITY_2_ID)
+                  .set(Table2.INSTANCE.field_1, ENTITY_2_FIELD_1_VALUE)
                   .execute();
 
         dslContext.insertInto(Table2Sec.INSTANCE)
                   .set(Table2Sec.INSTANCE.entity2_id, ENTITY_2_ID)
-                  .set(Table2Sec.INSTANCE.field_1, ENTITY_2_SEC_FIELD_1)
+                  .set(Table2Sec.INSTANCE.field_1, ENTITY_2_SEC_FIELD_1_VALUE)
                   .execute();
 
         dslContext.insertInto(Table1.INSTANCE)
@@ -92,7 +96,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         dslContext.insertInto(Table1Sec.INSTANCE)
                   .set(Table1Sec.INSTANCE.entity1_id, ENTITY_1_ID)
-                  .set(Table1Sec.INSTANCE.field_1, ENTITY_1_SEC_FIELD_1)
+                  .set(Table1Sec.INSTANCE.field_1, ENTITY_1_SEC_FIELD_1_VALUE)
                   .execute();
 
         dslContext.insertInto(Table0.INSTANCE)
@@ -121,9 +125,9 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                            hasFieldValues(fieldValue(EntityType1.ENTITY_1_SEC_FIELD_1, ENTITY_1_SEC_FIELD_1_VALUE),
+                                           fieldValue(EntityType2.ENTITY_2_SEC_FIELD_1, ENTITY_2_SEC_FIELD_1_VALUE)));
     }
 
     @Test
@@ -140,9 +144,10 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                   hasFieldValues(fieldValue(EntityType2.FIELD_1, ENTITY_2_FIELD_1_VALUE),
+                                  fieldValue(EntityType1.ENTITY_1_SEC_FIELD_1, ENTITY_1_SEC_FIELD_1_VALUE),
+                                  fieldValue(EntityType2.ENTITY_2_SEC_FIELD_1, ENTITY_2_SEC_FIELD_1_VALUE)));
     }
 
     private static class Table0 extends AbstractDataTable<Table0> {

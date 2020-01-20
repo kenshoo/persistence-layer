@@ -20,10 +20,12 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
-import static com.kenshoo.pl.testutils.EntityTestUtils.assertFetchedEntity;
 import static java.util.Collections.singleton;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test that fields are properly fetched by the fetcher for a hierarchy of 2 levels with:
@@ -123,9 +125,11 @@ public class ParentWithTwoSecondariesTest {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                   hasFieldValues(fieldValue(ParentEntityType.SEC_1_FIELD_1, PARENT_SEC_1_FIELD_1_VALUE),
+                                  fieldValue(ParentEntityType.SEC_1_FIELD_2, PARENT_SEC_1_FIELD_2_VALUE),
+                                  fieldValue(ParentEntityType.SEC_2_FIELD_1, PARENT_SEC_2_FIELD_1_VALUE),
+                                  fieldValue(ParentEntityType.SEC_2_FIELD_2, PARENT_SEC_2_FIELD_2_VALUE)));
     }
 
     private static class ChildTable extends AbstractDataTable<ChildTable> {
@@ -214,13 +218,13 @@ public class ParentWithTwoSecondariesTest {
         }
     }
 
-    private static class ChildEntityType extends AbstractEntityType<ChildEntityType> {
+    public static class ChildEntityType extends AbstractEntityType<ChildEntityType> {
         static final ChildEntityType INSTANCE = new ChildEntityType();
 
         @Id
-        static final EntityField<ChildEntityType, Integer> ID = INSTANCE.field(ChildTable.INSTANCE.id);
+        public static final EntityField<ChildEntityType, Integer> ID = INSTANCE.field(ChildTable.INSTANCE.id);
         @Required(RELATION)
-        static final EntityField<ChildEntityType, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
+        public static final EntityField<ChildEntityType, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
 
         ChildEntityType() {
             super("child");
@@ -245,16 +249,16 @@ public class ParentWithTwoSecondariesTest {
         }
     }
 
-    private static class ParentEntityType extends AbstractEntityType<ParentEntityType> {
+    public static class ParentEntityType extends AbstractEntityType<ParentEntityType> {
         static final ParentEntityType INSTANCE = new ParentEntityType();
 
         @Id
-        static final EntityField<ParentEntityType, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
-        static final EntityField<ParentEntityType, String> FIELD_1 = INSTANCE.field(ParentTable.INSTANCE.field_1);
-        static final EntityField<ParentEntityType, String> SEC_1_FIELD_1 = INSTANCE.field(ParentSec1Table.INSTANCE.field_1);
-        static final EntityField<ParentEntityType, String> SEC_1_FIELD_2 = INSTANCE.field(ParentSec1Table.INSTANCE.field_2);
-        static final EntityField<ParentEntityType, String> SEC_2_FIELD_1 = INSTANCE.field(ParentSec2Table.INSTANCE.field_1);
-        static final EntityField<ParentEntityType, String> SEC_2_FIELD_2 = INSTANCE.field(ParentSec2Table.INSTANCE.field_2);
+        public static final EntityField<ParentEntityType, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
+        public static final EntityField<ParentEntityType, String> FIELD_1 = INSTANCE.field(ParentTable.INSTANCE.field_1);
+        public static final EntityField<ParentEntityType, String> SEC_1_FIELD_1 = INSTANCE.field(ParentSec1Table.INSTANCE.field_1);
+        public static final EntityField<ParentEntityType, String> SEC_1_FIELD_2 = INSTANCE.field(ParentSec1Table.INSTANCE.field_2);
+        public static final EntityField<ParentEntityType, String> SEC_2_FIELD_1 = INSTANCE.field(ParentSec2Table.INSTANCE.field_1);
+        public static final EntityField<ParentEntityType, String> SEC_2_FIELD_2 = INSTANCE.field(ParentSec2Table.INSTANCE.field_2);
 
         ParentEntityType() {
             super("parent");

@@ -20,10 +20,12 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
-import static com.kenshoo.pl.testutils.EntityTestUtils.assertFetchedEntity;
 import static java.util.Collections.singleton;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test that fields are properly fetched by the fetcher for the following hierarchy:
@@ -137,9 +139,9 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                   hasFieldValues(fieldValue(EntityType2.NAME, ENTITY_2_NAME),
+                                  fieldValue(EntityType3.NAME, ENTITY_3_NAME)));
     }
 
     private static class Table0 extends AbstractDataTable<Table0> {
@@ -249,15 +251,15 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
         }
     }
 
-    private static class EntityType0 extends AbstractEntityType<EntityType0> {
+    public static class EntityType0 extends AbstractEntityType<EntityType0> {
         static final EntityType0 INSTANCE = new EntityType0();
 
         @Id
-        static final EntityField<EntityType0, Integer> ID = INSTANCE.field(Table0.INSTANCE.id);
+        public static final EntityField<EntityType0, Integer> ID = INSTANCE.field(Table0.INSTANCE.id);
         @Required(RELATION)
-        static final EntityField<EntityType0, Integer> ENTITY12_ID = INSTANCE.field(Table0.INSTANCE.entity12_id);
+        public static final EntityField<EntityType0, Integer> ENTITY12_ID = INSTANCE.field(Table0.INSTANCE.entity12_id);
         @Required(RELATION)
-        static final EntityField<EntityType0, Integer> ENTITY11_ID = INSTANCE.field(Table0.INSTANCE.entity11_id);
+        public static final EntityField<EntityType0, Integer> ENTITY11_ID = INSTANCE.field(Table0.INSTANCE.entity11_id);
 
         EntityType0() {
             super("entity0");
@@ -282,16 +284,16 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
         }
     }
 
-    private static class EntityType2 extends AbstractEntityType<EntityType2> {
+    public static class EntityType2 extends AbstractEntityType<EntityType2> {
         static final EntityType2 INSTANCE = new EntityType2();
 
         @Id
-        static final EntityField<EntityType2, Integer> ID = INSTANCE.field(Table2.INSTANCE.id);
-        static final EntityField<EntityType2, String> NAME = INSTANCE.field(Table2.INSTANCE.name);
+        public static final EntityField<EntityType2, Integer> ID = INSTANCE.field(Table2.INSTANCE.id);
+        public static final EntityField<EntityType2, String> NAME = INSTANCE.field(Table2.INSTANCE.name);
         @Required(RELATION)
-        static final EntityField<EntityType2, Integer> ENTITY3_ID = INSTANCE.field(Table2.INSTANCE.entity3_id);
+        public static final EntityField<EntityType2, Integer> ENTITY3_ID = INSTANCE.field(Table2.INSTANCE.entity3_id);
         @Required(RELATION)
-        static final EntityField<EntityType2, Integer> ENTITY2_ID = INSTANCE.field(Table2.INSTANCE.entity11_id);
+        public static final EntityField<EntityType2, Integer> ENTITY2_ID = INSTANCE.field(Table2.INSTANCE.entity11_id);
 
         EntityType2() {
             super("entity2");
@@ -316,12 +318,12 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
         }
     }
 
-    private static class EntityType3 extends AbstractEntityType<EntityType3> {
+    public static class EntityType3 extends AbstractEntityType<EntityType3> {
         static final EntityType3 INSTANCE = new EntityType3();
 
         @Id
-        static final EntityField<EntityType3, Integer> ID = INSTANCE.field(Table3.INSTANCE.id);
-        static final EntityField<EntityType3, String> NAME = INSTANCE.field(Table3.INSTANCE.name);
+        public static final EntityField<EntityType3, Integer> ID = INSTANCE.field(Table3.INSTANCE.id);
+        public static final EntityField<EntityType3, String> NAME = INSTANCE.field(Table3.INSTANCE.name);
 
         public EntityType3() {
             super("entity3");

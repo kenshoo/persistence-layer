@@ -20,10 +20,12 @@ import org.junit.Test;
 import java.util.Map;
 import java.util.Set;
 
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
+import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
-import static com.kenshoo.pl.testutils.EntityTestUtils.assertFetchedEntity;
 import static java.util.Collections.singleton;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test that fields are properly fetched by the fetcher for a hierarchy of 2 levels with:
@@ -52,6 +54,7 @@ public class ParentWithSecondaryTest {
 
     private static final int CHILD_ID = 1;
     private static final int PARENT_ID = 2;
+    private static final String PARENT_FIELD_1_VALUE = "parentField1";
     private static final String SEC_FIELD_1_VALUE = "secField1";
     private static final String SEC_FIELD_2_VALUE = "secField2";
 
@@ -73,6 +76,7 @@ public class ParentWithSecondaryTest {
 
         dslContext.insertInto(ParentTable.INSTANCE)
                   .set(ParentTable.INSTANCE.id, PARENT_ID)
+                  .set(ParentTable.INSTANCE.field_1, PARENT_FIELD_1_VALUE)
                   .execute();
 
         dslContext.insertInto(SecondaryOfParentTable.INSTANCE)
@@ -107,9 +111,9 @@ public class ParentWithSecondaryTest {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                   hasFieldValues(fieldValue(ParentEntityType.SEC_FIELD_1, SEC_FIELD_1_VALUE),
+                                  fieldValue(ParentEntityType.SEC_FIELD_2, SEC_FIELD_2_VALUE)));
     }
 
     @Test
@@ -126,9 +130,10 @@ public class ParentWithSecondaryTest {
                                                 singleton(keyToFetch),
                                                 fieldsToFetch);
 
-        assertFetchedEntity(fetchedKeyToEntity,
-                            keyToFetch,
-                            fieldsToFetch);
+        assertThat(fetchedKeyToEntity.get(keyToFetch),
+                   hasFieldValues(fieldValue(ParentEntityType.FIELD_1, PARENT_FIELD_1_VALUE),
+                                  fieldValue(ParentEntityType.SEC_FIELD_1, SEC_FIELD_1_VALUE),
+                                  fieldValue(ParentEntityType.SEC_FIELD_2, SEC_FIELD_2_VALUE)));
     }
 
     private static class ChildTable extends AbstractDataTable<ChildTable> {
@@ -195,13 +200,13 @@ public class ParentWithSecondaryTest {
         }
     }
 
-    private static class ChildEntityType extends AbstractEntityType<ChildEntityType> {
+    public static class ChildEntityType extends AbstractEntityType<ChildEntityType> {
         static final ChildEntityType INSTANCE = new ChildEntityType();
 
         @Id
-        static final EntityField<ChildEntityType, Integer> ID = INSTANCE.field(ChildTable.INSTANCE.id);
+        public static final EntityField<ChildEntityType, Integer> ID = INSTANCE.field(ChildTable.INSTANCE.id);
         @Required(RELATION)
-        static final EntityField<ChildEntityType, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
+        public static final EntityField<ChildEntityType, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
 
         ChildEntityType() {
             super("child");
@@ -226,14 +231,14 @@ public class ParentWithSecondaryTest {
         }
     }
 
-    private static class ParentEntityType extends AbstractEntityType<ParentEntityType> {
+    public static class ParentEntityType extends AbstractEntityType<ParentEntityType> {
         static final ParentEntityType INSTANCE = new ParentEntityType();
 
         @Id
-        static final EntityField<ParentEntityType, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
-        static final EntityField<ParentEntityType, String> FIELD_1 = INSTANCE.field(ParentTable.INSTANCE.field_1);
-        static final EntityField<ParentEntityType, String> SEC_FIELD_1 = INSTANCE.field(SecondaryOfParentTable.INSTANCE.sec_field_1);
-        static final EntityField<ParentEntityType, String> SEC_FIELD_2 = INSTANCE.field(SecondaryOfParentTable.INSTANCE.sec_field_2);
+        public static final EntityField<ParentEntityType, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
+        public static final EntityField<ParentEntityType, String> FIELD_1 = INSTANCE.field(ParentTable.INSTANCE.field_1);
+        public static final EntityField<ParentEntityType, String> SEC_FIELD_1 = INSTANCE.field(SecondaryOfParentTable.INSTANCE.sec_field_1);
+        public static final EntityField<ParentEntityType, String> SEC_FIELD_2 = INSTANCE.field(SecondaryOfParentTable.INSTANCE.sec_field_2);
 
         ParentEntityType() {
             super("parent");
