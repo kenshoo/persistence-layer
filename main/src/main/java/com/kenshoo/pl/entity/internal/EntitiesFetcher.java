@@ -13,6 +13,7 @@ import org.jooq.lambda.Seq;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -20,6 +21,7 @@ import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.function.Functions.not;
 
 
 public class EntitiesFetcher {
@@ -140,10 +142,20 @@ public class EntitiesFetcher {
      */
     private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> keyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
-        Set<DataTable> targetTables = fieldsToFetch.stream()
-                .map(field -> field.getDbAdapter().getTable())
-                .filter(tb -> !tb.equals(startingTable))
-                .collect(toSet());
+        Set<DataTable> targetPrimaryTables = fieldsToFetch.stream()
+                                                   .map(field -> field.getEntityType().getPrimaryTable())
+                                                   .filter(tb -> !tb.equals(startingTable))
+                                                   .collect(toSet());
+
+        final Set<OneToOneTableRelation> targetOneToOneRelations =
+            fieldsToFetch.stream()
+                         .filter(not(isOfPrimaryTable()))
+                         .map(field -> OneToOneTableRelation.builder()
+                                                            .secondary(field.getDbAdapter().getTable())
+                                                            .primary(field.getEntityType().getPrimaryTable())
+                                                            .build())
+                         .collect(toSet());
+
         Collection<SelectField<?>> selectFields = fieldsToFetch.stream()
                 .flatMap(field -> field.getDbAdapter().getTableFields())
                 .collect(toList());
@@ -156,25 +168,28 @@ public class EntitiesFetcher {
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
 
-        BFS.visit(startingEdge, edge -> edgesComingOutOf(edge))
-                .limitUntil(__ -> targetTables.isEmpty())
+        BFS.visit(startingEdge, this::edgesComingOutOf)
+                .limitUntil(__ -> targetPrimaryTables.isEmpty())
                 .forEach(edge -> {
                     final DataTable table = edge.target.table;
-                    final List<DataTable> secondaryTables = seq(targetTables).filter(hasReferenceTo(table)).toList();
 
-                    targetTables.removeAll(secondaryTables);
-                    if (edge != startingEdge && (targetTables.contains(table) || !secondaryTables.isEmpty())) {
-                        targetTables.remove(table);
+                    if (edge != startingEdge && targetPrimaryTables.contains(table)) {
+                        targetPrimaryTables.remove(table);
                         joinMissingTablesInPath(query, joinedTables, edge);
                     }
-                    addToJoin(query, table, secondaryTables);
                 });
 
-        if (!targetTables.isEmpty()) {
-            throw new IllegalStateException("Tables " + targetTables + " could not be reached via joins");
+        if (!targetPrimaryTables.isEmpty()) {
+            throw new IllegalStateException("Tables " + targetPrimaryTables + " could not be reached via joins");
         }
 
+        leftJoinMissingSecondaryTables(query, joinedTables, targetOneToOneRelations);
+
         return query;
+    }
+
+    private Predicate<EntityField<?, ?>> isOfPrimaryTable() {
+        return field -> field.getDbAdapter().getTable().equals(field.getEntityType().getPrimaryTable());
     }
 
     private Seq<TreeEdge> edgesComingOutOf(TreeEdge edge) {
@@ -200,19 +215,28 @@ public class EntitiesFetcher {
         }
     }
 
-    private Predicate<DataTable> hasReferenceTo(DataTable toTable) {
-        return testedTable -> !testedTable.getReferencesTo(toTable).isEmpty();
+    private void leftJoinMissingSecondaryTables(final SelectJoinStep<Record> query,
+                                                final Set<? extends Table<Record>> alreadyJoinedTables,
+                                                final Set<OneToOneTableRelation> targetOneToOneRelations) {
+        targetOneToOneRelations.stream()
+                               .filter(not(secondaryTableIn(alreadyJoinedTables)))
+                               .forEach(addLeftJoinTo(query));
     }
 
-    private SelectJoinStep<Record> addToJoin(SelectJoinStep<Record> query, DataTable startingTable, Iterable<DataTable> secondaryTables) {
-        for (DataTable secondaryTable : secondaryTables) {
-            query = query.leftOuterJoin(secondaryTable).on(getJoinCondition(secondaryTable, startingTable));
-        }
-        return query;
+    private Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {
+        return relation -> joinedTables.contains(relation.getSecondary());
+    }
+
+    private Consumer<OneToOneTableRelation> addLeftJoinTo(SelectJoinStep<Record> query) {
+        return relation -> query.leftOuterJoin(relation.getSecondary()).on(getJoinCondition(relation));
     }
 
     private static String keyFieldAlias(int keyFieldIndex) {
         return "key_field_" + keyFieldIndex;
+    }
+
+    private Condition getJoinCondition(final OneToOneTableRelation relation) {
+        return getJoinCondition(relation.getSecondary(), relation.getPrimary());
     }
 
     private Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
