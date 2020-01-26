@@ -15,10 +15,15 @@ import static org.jooq.lambda.Seq.seq;
 
 public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> {
 
-    private ChildrenIdFetcher childrenIdFetcher;
+    private final ChildrenIdFetcher childrenIdFetcher;
 
     public MissingChildrenHandler(DSLContext jooq) {
         childrenIdFetcher = new ChildrenIdFetcher(jooq);
+    }
+
+    @VisibleForTesting
+    public MissingChildrenHandler(ChildrenIdFetcher childrenIdFetcher) {
+        this.childrenIdFetcher = childrenIdFetcher;
     }
 
     public void
@@ -95,10 +100,5 @@ public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD ext
 
     private <T> Predicate<T> notIn(Set<T> set) {
         return item -> !set.contains(item);
-    }
-
-    @VisibleForTesting
-    void setChildrenIdFetcher(ChildrenIdFetcher childrenIdFetcher){
-        this.childrenIdFetcher = childrenIdFetcher;
     }
 }

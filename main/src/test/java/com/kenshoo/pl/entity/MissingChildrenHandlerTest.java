@@ -1,10 +1,14 @@
 package com.kenshoo.pl.entity;
 
 import com.google.common.collect.Lists;
+import com.kenshoo.jooq.AbstractDataTable;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.internal.ChildrenIdFetcher;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
-import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.TableField;
+import org.jooq.impl.SQLDataType;
 import org.jooq.lambda.Seq;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,151 +34,201 @@ import static org.mockito.Mockito.*;
 public class MissingChildrenHandlerTest {
 
     @Mock
-    private DSLContext jooq;
-    @Mock
-    private ChangeEntityCommand parentCmd;
-    @Mock
-    private ChangeEntityCommand childCmd;
-    @Mock
-    private ChangeFlowConfig changeFlowConfig;
-    @Mock
-    private ChangeFlowConfig childChangeFlowConfig;
-    @Mock
     private ChildrenIdFetcher childrenIdFetcher;
-    @Mock
-    private EntityType childType;
-    @Mock
-    private EntityType parentType;
     @Mock
     private MissingChildrenSupplier missingChildrenSupplier;
     @Mock
     private ChangeEntityCommand deleteCommand;
     @Mock
     private Identifier childIdentifier;
-    @Mock
-    private Identifier parentIdentifier;
-    @Mock
-    private EntityFieldDbAdapter entityFieldDbAdapter;
-    @Mock
-    private EntityField parentId;
-    @Mock
-    private EntityField childParentId;
+
 
     private final Integer parentIdValue = 10;
+    private final ChildEntity childEntity = ChildEntity.INSTANCE;
+    private final ParentEntity parentEntity = ParentEntity.INSTANCE;
 
     private UniqueKeyValue childParentIdentifier;
-    private MissingChildrenHandler underTest = new MissingChildrenHandler(jooq);
+    private MissingChildrenHandler underTest;
+    private ChangeFlowConfig config;
+    private ChangeEntityCommand parentCmd;
 
     @Before
     public void setUp() {
-        underTest.setChildrenIdFetcher(childrenIdFetcher);
-        mockChildParentIdentifier();
+        underTest = new MissingChildrenHandler(childrenIdFetcher);
+        config = new ChangeFlowConfig.Builder(parentEntity).withChildFlowBuilder(new ChangeFlowConfig.Builder(childEntity)).build();
+
+        childParentIdentifier = setupChildParentIdentifier();
+        parentCmd = setupParentCmd();
     }
 
     @Test
-    public void when_no_found_MissingChildrenSupplier_then_verify_fetch_from_db_is_not_called() throws Exception {
-        mockChildFlows();
+    public void when_no_found_MissingChildrenSupplier_then_verify_fetch_from_db_is_not_called() {
+        when(parentCmd.getMissingChildrenSupplier(childEntity)).thenReturn(Optional.empty());
 
-        when(parentCmd.getMissingChildrenSupplier(childType)).thenReturn(Optional.empty());
+        underTest.handle(Lists.newArrayList(parentCmd), config);
 
-        underTest.handle(Lists.newArrayList(parentCmd), changeFlowConfig);
-
-        verify(childrenIdFetcher, never()).fetch(Lists.newArrayList(parentCmd), childType);
+        verify(childrenIdFetcher, never()).fetch(Lists.newArrayList(parentCmd), childEntity);
     }
 
     @Test
-    public void when_no_return_results_from_db_then_no_call_to_supplyNewCommand_method() throws Exception {
-        mockChildFlows();
-        mockParentCmd();
-        mockForeignKey();
-        mockMissingChildSupplier();
+    public void when_no_return_results_from_db_then_no_call_to_supplyNewCommand_method() {
+        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childEntity)).thenReturn(Stream.empty());
 
-        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childType)).thenReturn(Stream.empty());
-
-        underTest.handle(Lists.newArrayList(parentCmd), changeFlowConfig);
+        underTest.handle(Lists.newArrayList(parentCmd), config);
 
         verify(missingChildrenSupplier, never()).supplyNewCommand(any(Identifier.class));
 
     }
 
     @Test
-    public void when_no_found_childs_in_parent_cmd_then_call_supplyNewCommand_for_each_child_that_returned_from_db() throws Exception {
-        mockChildFlows();
-        mockParentCmd();
-        mockForeignKey();
-        mockMissingChildSupplier();
+    public void when_no_found_childs_in_parent_cmd_then_call_supplyNewCommand_for_each_child_that_returned_from_db() {
+        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childEntity)).thenReturn(Seq.of(setUpChildrenIdFetcher()));
+        when(parentCmd.getChildren(childEntity)).thenReturn(empty());
 
-        mockChildrenIdFetcher();
-        when(parentCmd.getChildren(childType)).thenReturn(empty());
-
-        underTest.handle(Lists.newArrayList(parentCmd), changeFlowConfig);
+        underTest.handle(Lists.newArrayList(parentCmd), config);
 
         verify(missingChildrenSupplier).supplyNewCommand(childIdentifier);
     }
 
-    private void mockChildrenIdFetcher() {
-        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childType)).thenReturn(Seq.of(new FullIdentifier(childParentIdentifier, childIdentifier)));
-    }
-
     @Test
-    public void when_childCmd_equals_to_childDb_then_no_call_supplyNewCommand_method() throws Exception {
-        mockChildFlows();
-        mockParentCmd();
-        mockForeignKey();
-        mockMissingChildSupplier();
-        mockChildrenIdFetcher();
+    public void when_childCmd_equals_to_childDb_then_no_call_supplyNewCommand_method() {
+        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childEntity)).thenReturn(Seq.of(setUpChildrenIdFetcher()));
 
-        when(parentCmd.getChildren(childType)).thenReturn(Seq.of(childCmd));
+        ChangeEntityCommand childCmd = mock(ChangeEntityCommand.class);
+        when(parentCmd.getChildren(childEntity)).thenReturn(Seq.of(childCmd));
         when(childCmd.getParent()).thenReturn(parentCmd);
         when(childCmd.getIdentifier()).thenReturn(childIdentifier);
 
 
-        underTest.handle(Lists.newArrayList(parentCmd), changeFlowConfig);
+        underTest.handle(Lists.newArrayList(parentCmd), config);
 
         verify(missingChildrenSupplier, never()).supplyNewCommand(childIdentifier);
     }
 
     @Test
-    public void add_child_cmd_to_parent_cmd_for_missing_child() throws Exception {
-        mockChildFlows();
-        mockParentCmd();
-        mockForeignKey();
-        mockMissingChildSupplier();
-        mockChildrenIdFetcher();
+    public void add_child_cmd_to_parent_cmd_for_missing_child() {
+        when(childrenIdFetcher.fetch(Lists.newArrayList(parentCmd), childEntity)).thenReturn(Seq.of(setUpChildrenIdFetcher()));
 
-        when(parentCmd.getChildren(childType)).thenReturn(empty());
+        when(parentCmd.getChildren(childEntity)).thenReturn(empty());
         when(missingChildrenSupplier.supplyNewCommand(childIdentifier)).thenReturn(Optional.of(deleteCommand));
 
-        underTest.handle(Lists.newArrayList(parentCmd), changeFlowConfig);
+        underTest.handle(Lists.newArrayList(parentCmd), config);
 
         verify(missingChildrenSupplier).supplyNewCommand(childIdentifier);
         verify(parentCmd).addChild(deleteCommand);
     }
 
-    private void mockChildFlows() {
-        when(changeFlowConfig.childFlows()).thenReturn(Lists.newArrayList(childChangeFlowConfig));
-        when(childChangeFlowConfig.getEntityType()).thenReturn(childType);
-    }
-
-    private void mockParentCmd() {
-        when(parentCmd.getEntityType()).thenReturn(parentType);
+    private ChangeEntityCommand setupParentCmd() {
+       ChangeEntityCommand parentCmd = mock(ChangeEntityCommand.class);
+        Identifier parentIdentifier = mock(Identifier.class);
+        when(parentCmd.getEntityType()).thenReturn(parentEntity);
+        when(parentCmd.getMissingChildrenSupplier(childEntity)).thenReturn(Optional.of(missingChildrenSupplier));
         when(parentCmd.getIdentifier()).thenReturn(parentIdentifier);
-        when(parentIdentifier.get(parentId)).thenReturn(parentIdValue);
+        when(parentIdentifier.get(parentEntity.ID)).thenReturn(parentIdValue);
+        return parentCmd;
     }
 
-    private void mockMissingChildSupplier() {
-        when(parentCmd.getMissingChildrenSupplier(childType)).thenReturn(Optional.of(missingChildrenSupplier));
+    private UniqueKeyValue setupChildParentIdentifier() {
+        final UniqueKey uniqueKey = new UniqueKey(Lists.newArrayList(childEntity.PARENT_ID));
+        return new UniqueKeyValue(uniqueKey, seq(IntStream.of(parentIdValue)).toArray());
     }
 
-    private void mockForeignKey() {
-        when(childType.getKeyTo(parentType)).thenReturn(new EntityType.ForeignKey(Lists.newArrayList(childParentId), Lists.newArrayList(parentId)));
+    private FullIdentifier setUpChildrenIdFetcher() {
+        return new FullIdentifier(childParentIdentifier, childIdentifier);
     }
 
-    private void mockChildParentIdentifier() {
-        when(childParentId.getDbAdapter()).thenReturn(entityFieldDbAdapter);
-        when(entityFieldDbAdapter.getTableFields()).thenReturn(empty(), empty(), empty());
-        final UniqueKey uniqueKey = new UniqueKey(Lists.newArrayList(childParentId));
-        childParentIdentifier = new UniqueKeyValue(uniqueKey, seq(IntStream.of(parentIdValue)).toArray());
+
+    static class ParentTable extends AbstractDataTable<ParentTable> {
+
+        static final ParentTable INSTANCE = new ParentTable();
+
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+
+        public ParentTable() {
+            super("ParentTable");
+        }
+
+        public ParentTable(ParentTable aliased, String alias) {
+            super(aliased, alias);
+        }
+
+        @Override
+        public ParentTable as(String alias) {
+            return new ParentTable(this, alias);
+        }
+    }
+
+
+    static class ChildTable extends AbstractDataTable<ChildTable> {
+
+        static final ChildTable INSTANCE = new ChildTable();
+
+        final TableField<Record, Integer> parent_id = createPKAndFKField("parent_id", SQLDataType.INTEGER, ParentTable.INSTANCE.id);
+        final TableField<Record, Integer> child_id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(64));
+
+        public ChildTable() {
+            super("ChildTable");
+        }
+
+        public ChildTable(ChildTable aliased, String alias) {
+            super(aliased, alias);
+        }
+
+        @Override
+        public ChildTable as(String alias) {
+            return new ChildTable(this, alias);
+        }
+    }
+
+
+    static class ParentEntity extends AbstractEntityType<ParentEntity> {
+
+        static final ParentEntity INSTANCE = new ParentEntity();
+
+        @Id
+        static final EntityField<ParentEntity, Integer> ID = INSTANCE.field(ParentTable.INSTANCE.id);
+
+        private ParentEntity() {
+            super("parent");
+        }
+
+        @Override
+        public DataTable getPrimaryTable() {
+            return ParentTable.INSTANCE;
+        }
+
+        @Override
+        public SupportedChangeOperation getSupportedOperation()  {
+            return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
+        }
+    }
+
+
+    static class ChildEntity extends AbstractEntityType<ChildEntity> {
+
+        static final ChildEntity INSTANCE = new ChildEntity();
+
+
+        static final EntityField<ChildEntity, Integer> CHILD_ID = INSTANCE.field(ChildTable.INSTANCE.child_id);
+
+        static final EntityField<ChildEntity, String> NAME = INSTANCE.field(ChildTable.INSTANCE.name);
+
+        static final EntityField<ChildEntity, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
+
+        private ChildEntity() {
+            super("child");
+        }
+
+        @Override
+        public DataTable getPrimaryTable() {
+            return ChildTable.INSTANCE;
+        }
+
+        @Override
+        public SupportedChangeOperation getSupportedOperation()  {
+            return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
+        }
     }
 
 }
