@@ -32,7 +32,9 @@ public interface PostFetchCommandEnricher<E extends EntityType<E>> extends Curre
      *
      * @return the fields should be enriched
      */
-    Stream<EntityField<E, ?>> fieldsToEnrich();
+    default Stream<EntityField<E, ?>> fieldsToEnrich() {
+        return Stream.empty();
+    }
 
     /**
      * @param commands to enrich

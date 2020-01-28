@@ -14,12 +14,13 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.hamcrest.core.Is.is;
 
 @RunWith(MockitoJUnitRunner.class)
-public class SimpleFieldEnricherTest {
+public class SingleFieldEnricherTest {
 
     static final String VALUE = "value";
     public static final String OVERRIDE_VALUE = "override value";
+    public static final String DO_NOT_ENRICH_VALUE = "do not enrich";
 
-    private SimpleFieldEnricher<TestEntity, String> simpleFieldEnricher = new TestFieldEnricher();
+    private SingleFieldEnricher<TestEntity, String> simpleFieldEnricher = new TestFieldEnricher();
 
     @Test
     public void enriched_fields() {
@@ -39,12 +40,20 @@ public class SimpleFieldEnricherTest {
     }
 
     @Test
-    public void do_not_enrich_command() {
+    public void should_not_run_enrich_command() {
         CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
         cmd.set(TestEntity.FIELD_1, VALUE);
         simpleFieldEnricher.enrich(ImmutableList.of(cmd), ChangeOperation.CREATE, prepareCtx(cmd, OVERRIDE_VALUE));
         assertThat(cmd.get(TestEntity.FIELD_1), is(VALUE));
     }
+
+    @Test
+    public void do_not_need_enrich_command() {
+        CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
+        simpleFieldEnricher.enrich(ImmutableList.of(cmd), ChangeOperation.CREATE, prepareCtx(cmd, DO_NOT_ENRICH_VALUE));
+        assertThat(cmd.containsField(TestEntity.FIELD_1), is(false));
+    }
+
 
     @Test
     public void enrich_should_run() {
@@ -75,16 +84,20 @@ public class SimpleFieldEnricherTest {
         return ctx;
     }
 
-    static class TestFieldEnricher extends SimpleFieldEnricher<TestEntity, String> {
-
+    static class TestFieldEnricher extends SingleFieldEnricher<TestEntity, String> {
         @Override
-        protected EntityField<TestEntity, String> field() {
+        protected EntityField<TestEntity, String> enrichedField() {
             return TestEntity.FIELD_1;
         }
 
         @Override
-        protected String fieldValue(EntityChange<TestEntity> entityChange, Entity entity) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity entity) {
             return entity.get(TestEntity.FIELD_2);
+        }
+
+        @Override
+        protected boolean needEnrich(EntityChange<TestEntity> entityChange, Entity entity) {
+            return !(entity.containsField(TestEntity.FIELD_2) && entity.get(TestEntity.FIELD_2).equals(DO_NOT_ENRICH_VALUE));
         }
     }
 }
