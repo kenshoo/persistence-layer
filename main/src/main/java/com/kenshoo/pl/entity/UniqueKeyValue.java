@@ -1,8 +1,12 @@
 package com.kenshoo.pl.entity;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.jooq.lambda.Seq;
+import org.jooq.lambda.tuple.Tuple2;
 
-import java.util.Arrays;
+import java.util.*;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 
@@ -100,9 +104,12 @@ public class UniqueKeyValue<E extends EntityType<E>> implements Identifier<E> {
         if (id2 == null) {
             return id1;
         }
-        return new UniqueKeyValue<>(
-                new UniqueKey<>(ArrayUtils.addAll(id1.getUniqueKey().getFields(), id2.getUniqueKey().getFields())),
-                Stream.concat(id1.getValues(), id2.getValues()).toArray(Object[]::new)
-        );
+
+        Seq<Tuple2<EntityField<E, ?>, Object>> pairs1 = Seq.of(id1.getUniqueKey().getFields()).zip(id1.getValues());
+        Seq<Tuple2<EntityField<E, ?>, Object>> pairs2 = Seq.of(id2.getUniqueKey().getFields()).zip(id2.getValues());
+        Tuple2<Seq<EntityField<E, ?>>, Seq<Object>> merged = Seq.unzip(pairs1.concat(pairs2).distinct(pair -> pair.v1));
+
+        return new UniqueKeyValue<>(new UniqueKey<>(merged.v1), merged.v2.toArray());
     }
+
 }

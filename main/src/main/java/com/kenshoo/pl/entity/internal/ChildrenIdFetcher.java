@@ -2,17 +2,18 @@ package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
-import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.UniqueKey;
+import com.kenshoo.pl.entity.*;
 import org.jooq.*;
+import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
-import static java.util.stream.Stream.empty;
-import static org.jooq.lambda.Seq.seq;
+import static java.util.stream.Collectors.toList;
+
 
 public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> {
 
@@ -22,87 +23,71 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
         this.jooq = jooq;
     }
 
-    public Stream<FullIdentifier<CHILD>>
-    fetch(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        if (parents.isEmpty()) {
-            return empty();
+    public Stream<FullIdentifier<PARENT, CHILD>>
+    fetch(Collection<? extends Identifier<PARENT>> parentIds, UniqueKey<CHILD> childKey) {
+
+        if (parentIds.isEmpty()) {
+            return Stream.empty();
         }
-        UniqueKey<CHILD> partialChildKey = getPartialChildKey(parents, childType);
-        final Set<Identifier<CHILD>> parentIds = collectParentIds(parents, childType);
-        return queryForChildrenIds(partialChildKey, parentIds);
-    }
 
-    private Set<Identifier<CHILD>>
-    collectParentIds(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        final EntityType.ForeignKey<CHILD, PARENT> keyToParent = childType.getKeyTo(first(parents).getEntityType());
-        return seq(parents)
-                .map(parentCmd -> {
-                    Object[] values = keyToParent.to().stream().map(field -> parentCmd.getIdentifier().get(field)).toArray();
-                    return (Identifier<CHILD>) new UniqueKeyValue<>(new UniqueKey<>(keyToParent.from()), values);
-                }).toSet();
-    }
+        final PARENT parentType = first(parentIds).getUniqueKey().getEntityType();
+        final CHILD childType = childKey.getEntityType();
+        final EntityType.ForeignKey<CHILD, PARENT> keyToParent = childType.getKeyTo(parentType);
+        final UniqueKey<PARENT> parentKey = first(parentIds).getUniqueKey();
+        final UniqueKey<CHILD> childFK = new UniqueKey<>(keyToParent.from());
+        final DataTable childTable = childType.getPrimaryTable();
 
-    private Stream<FullIdentifier<CHILD>>
-    queryForChildrenIds(UniqueKey<CHILD> childKey, Set<Identifier<CHILD>> parentIds) {
-        final UniqueKey<CHILD> parentKey = first(parentIds).getUniqueKey();
-        final List<EntityField<CHILD, ?>> fullFields = Seq.of(parentKey.getFields()).concat(childKey.getFields()).toList();
-        final DataTable primaryTable = childKey.getEntityType().getPrimaryTable();
-        final SelectFinalStep<Record> query = jooq.select(getTableFields(fullFields)).from(primaryTable);
-        final QueryExtension<SelectFinalStep<Record>> queryExtender = new EntitiesFetcher(jooq).queryExtender(query, primaryTable, parentKey, parentIds);
+        final SelectFinalStep<Record> query = jooq.select(getTableFields(Seq.concat(
+                Seq.of(parentKey.getFields()),
+                Seq.of(childKey.getFields()),
+                Seq.of(childFK.getFields())))
+        )
+                .from(childTable)
+                .join(parentType.getPrimaryTable())
+                .on(everyFieldOf(keyToParent));
+
+        final QueryExtension<SelectFinalStep<Record>> queryExtender = new EntitiesFetcher(jooq).queryExtender(query, childTable, parentKey, parentIds);
         final ResultQuery<Record> finalQuery = queryExtender.getQuery();
         return finalQuery.stream()
-                .map(record -> readIdentifiers(record, parentKey, childKey))
+                .map(record -> readIdentifiers(record, parentKey, childKey, childFK))
                 .onClose(() -> {
                     queryExtender.close();
                     query.close();
                 });
     }
 
-    private FullIdentifier<CHILD>
-    readIdentifiers(Record record, UniqueKey<CHILD> parentKey, UniqueKey<CHILD> childKey) {
-        return new FullIdentifier<>(fetchIdFromDB(parentKey, record), fetchIdFromDB(childKey, record));
+    private Condition everyFieldOf(EntityType.ForeignKey<CHILD,PARENT> keyToParent) {
+        // TODO: Test keyToParent with more than one field
+        List<Condition> conditions = keyToParent.references.stream().map(ref -> dbFieldOf(ref.v1).eq(dbFieldOf(ref.v2))).collect(toList());
+        return DSL.and(conditions);
     }
 
-    private Identifier<CHILD>
-    fetchIdFromDB(UniqueKey<CHILD> key, Record values) {
+    private Field dbFieldOf(EntityField<?,?> field) {
+        return field.getDbAdapter().getTableFields().findFirst().get();
+    }
+
+    private FullIdentifier<PARENT, CHILD>
+    readIdentifiers(Record record, UniqueKey<PARENT> parentKey, UniqueKey<CHILD> childKey, UniqueKey<CHILD> childFK) {
+        return new FullIdentifier<>(
+                parse(parentKey, record),
+                parse(childKey, record),
+                parse(childFK, record)
+        );
+    }
+
+    private <T extends EntityType<T>> Identifier<T> parse(UniqueKey<T> key, Record values) {
         final Object[] ids = Seq.of(key.getFields())
                 .map(field -> {
-                    final List<TableField<Record, ?>> tableFields = getTableField(field).collect(Collectors.toList());
-                    final String id = String.valueOf(tableFields.get(0).get(values));
-                    return field.getStringValueConverter().convertFrom(id);
+                    Stream dbValues = field.getDbAdapter().getTableFields().map(values::get);
+                    return field.getDbAdapter().getFromRecord(dbValues.iterator());
                 })
                 .toArray();
         return new UniqueKeyValue<>(key, ids);
     }
 
-    private UniqueKey<CHILD>
-    getPartialChildKey(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        final Optional<ChangeEntityCommand<CHILD>> childCommand = firstChild(parents, childType);
-        return childCommand.map(changeEntityCommand -> changeEntityCommand.getIdentifier().getUniqueKey())
-                .orElseGet(() -> getPartialChildKeyFromDBFields(first(parents).getEntityType(), childType));
-    }
-
-    private UniqueKey<CHILD>
-    getPartialChildKeyFromDBFields(PARENT parentType, CHILD childType) {
-        final EntityField<CHILD, ?>[] fullChildKey = childType.getPrimaryKey().getFields();
-        final Collection<? extends EntityField<CHILD, ?>> childParentKey = childType.getKeyTo(parentType).from();
-        return new UniqueKey<>(Seq.of(fullChildKey).filter(key -> !childParentKey.contains(key)).toList());
-    }
-
     private Collection<TableField<Record, ?>>
-    getTableFields(Collection<? extends EntityField<CHILD, ?>> fields) {
-        return seq(fields)
-                .flatMap(this::getTableField)
-                .toList();
-    }
-
-    private Stream<TableField<Record, ?>>
-    getTableField(EntityField<CHILD, ?> field) {
-        return field.getDbAdapter().getTableFields();
-    }
-
-    private Optional<ChangeEntityCommand<CHILD>> firstChild(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        return seq(parents).flatMap(parent -> parent.getChildren(childType)).findFirst();
+    getTableFields(Stream<EntityField<?, ?>> entityFields) {
+        return entityFields.flatMap(f -> f.getDbAdapter().getTableFields()).collect(toList());
     }
 
     private <T> T first(Collection<T> collection) {

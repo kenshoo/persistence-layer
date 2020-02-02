@@ -4,6 +4,8 @@ package com.kenshoo.pl;
 import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.MissingChildrenHandler;
+import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.FieldValueSupplier;
 
 public class FluidPersistenceCmdBuilder<E extends EntityType<E>>{
@@ -41,4 +43,10 @@ public class FluidPersistenceCmdBuilder<E extends EntityType<E>>{
         cmd.addChild(childCmd.get());
         return this;
     }
+
+    public <CHILD extends EntityType<CHILD>> FluidPersistenceCmdBuilder<E> with(MissingChildrenSupplier<CHILD> s) {
+        cmd.add(s);
+        return this;
+    }
+
 }

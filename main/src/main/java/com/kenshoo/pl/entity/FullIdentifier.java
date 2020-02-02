@@ -1,16 +1,20 @@
 package com.kenshoo.pl.entity;
 
-public class FullIdentifier<CHILD extends EntityType<CHILD>>{
+import java.util.Objects;
 
-    private final Identifier<CHILD> parentId;
+public class FullIdentifier<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>{
+
+    private final Identifier<PARENT> parentId;
     private final Identifier<CHILD> childId;
+    private final Identifier<CHILD> keyToParent;
 
-    public FullIdentifier(Identifier<CHILD> parentId, Identifier<CHILD> childId) {
+    public FullIdentifier(Identifier<PARENT> parentId, Identifier<CHILD> childId, Identifier<CHILD> keyToParent) {
         this.parentId = parentId;
         this.childId = childId;
+        this.keyToParent = keyToParent;
     }
 
-    public Identifier<CHILD> getParentId() {
+    public Identifier<PARENT> getParentId() {
         return parentId;
     }
 
@@ -18,22 +22,23 @@ public class FullIdentifier<CHILD extends EntityType<CHILD>>{
         return childId;
     }
 
+    public Identifier<CHILD> getKetToParent() {
+        return keyToParent;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        FullIdentifier<?> that = (FullIdentifier<?>) o;
-
-        if (parentId != null ? !parentId.equals(that.parentId) : that.parentId != null) return false;
-        return childId != null ? childId.equals(that.childId) : that.childId == null;
+        FullIdentifier<?, ?> that = (FullIdentifier<?, ?>) o;
+        return Objects.equals(parentId, that.parentId) &&
+                Objects.equals(childId, that.childId) &&
+                Objects.equals(keyToParent, that.keyToParent);
     }
 
     @Override
     public int hashCode() {
-        int result = parentId != null ? parentId.hashCode() : 0;
-        result = 31 * result + (childId != null ? childId.hashCode() : 0);
-        return result;
+        return Objects.hash(parentId, childId, keyToParent);
     }
 
     @Override
