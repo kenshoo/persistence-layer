@@ -1,7 +1,9 @@
 package com.kenshoo.pl.entity.spi;
 
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 ;import java.util.Collection;
+import java.util.List;
 
 public interface MutableCommand<E extends EntityType<E>> extends EntityChange<E> {
 
@@ -16,4 +18,6 @@ public interface MutableCommand<E extends EntityType<E>> extends EntityChange<E>
      void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier);
 
      <CHILD extends EntityType<CHILD>> void addChild(ChangeEntityCommand<CHILD> childCmd);
+
+     void add(MissingChildrenSupplier<? extends EntityType> missingChildrenSupplier);
 }

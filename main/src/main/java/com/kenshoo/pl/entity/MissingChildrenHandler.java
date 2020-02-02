@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.internal.ChildrenIdFetcher;
 import org.jooq.*;
@@ -18,6 +19,11 @@ public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD ext
 
     public MissingChildrenHandler(DSLContext jooq) {
         childrenIdFetcher = new ChildrenIdFetcher(jooq);
+    }
+
+    @VisibleForTesting
+    public MissingChildrenHandler(ChildrenIdFetcher childrenIdFetcher) {
+        this.childrenIdFetcher = childrenIdFetcher;
     }
 
     public void
