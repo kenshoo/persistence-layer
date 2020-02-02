@@ -32,6 +32,19 @@ public class TestChildEntity extends AbstractEntityType<TestChildEntity> {
         }
     }
 
+    public static class ParentId extends SingleUniqueKeyValue<TestChildEntity, Integer> {
+        public static final SingleUniqueKey<TestChildEntity, Integer> DEFINITION = new SingleUniqueKey<TestChildEntity, Integer>(TestChildEntity.PARENT_ID) {
+            @Override
+            protected SingleUniqueKeyValue<TestChildEntity, Integer> createValue(Integer value) {
+                return new ParentId(value);
+            }
+        };
+
+        public ParentId(int val) {
+            super(DEFINITION, val);
+        }
+    }
+
 
     @Override
     public DataTable getPrimaryTable() {
