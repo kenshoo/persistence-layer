@@ -102,7 +102,7 @@ public class EntitiesToContextFetcher {
                 cmd -> concat(cmd.getIdentifier(), cmd.getKeysToParent())));
         //noinspection ConstantConditions
         UniqueKey<E> uniqueKey = keysByCommand.values().iterator().next().getUniqueKey();
-        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByKeys(flowConfig.getEntityType(), uniqueKey, keysByCommand.values(), fieldsToFetch);
+        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByIds(keysByCommand.values(), fieldsToFetch);
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
 
