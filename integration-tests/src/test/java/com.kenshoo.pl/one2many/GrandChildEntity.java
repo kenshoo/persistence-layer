@@ -15,15 +15,17 @@ public class GrandChildEntity extends AbstractEntityType<GrandChildEntity> {
     }
 
     public static class Color extends SingleUniqueKeyValue<GrandChildEntity, String> {
-        public static final SingleUniqueKey<GrandChildEntity, String> DEFINITION = new SingleUniqueKey<>(GrandChildEntity.COLOR) {
-            @Override
-            protected SingleUniqueKeyValue<GrandChildEntity, String> createValue(String value) {
-                return new Color(value);
-            }
-        };
 
-        public Color(String val) {
-            super(DEFINITION, val);
+        public static final SingleUniqueKey<GrandChildEntity, String> DEFINITION =
+                new SingleUniqueKey<GrandChildEntity, String>(GrandChildEntity.COLOR) {
+                    @Override
+                    protected GrandChildEntity.Color createValue(String color) {
+                        return new GrandChildEntity.Color(color);
+                    }
+                };
+
+        public Color(String color) {
+            super(DEFINITION, color);
         }
     }
 
