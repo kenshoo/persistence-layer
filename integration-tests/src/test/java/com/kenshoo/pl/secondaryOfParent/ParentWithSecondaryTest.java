@@ -101,15 +101,11 @@ public class ParentWithSecondaryTest {
     @Test
     public void fetchFieldsOfSecondaryOnly() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(ParentEntityType.SEC_FIELD_1,
-                                                                          ParentEntityType.SEC_FIELD_2);
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
         final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(ChildEntityType.INSTANCE,
-                                                ChildEntityType.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
+                                               ParentEntityType.SEC_FIELD_1, ParentEntityType.SEC_FIELD_2);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                    hasFieldValues(fieldValue(ParentEntityType.SEC_FIELD_1, SEC_FIELD_1_VALUE),
@@ -119,16 +115,11 @@ public class ParentWithSecondaryTest {
     @Test
     public void fetchFieldsOfParentAndSecondary() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(ParentEntityType.FIELD_1,
-                                                                          ParentEntityType.SEC_FIELD_1,
-                                                                          ParentEntityType.SEC_FIELD_2);
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
         final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(ChildEntityType.INSTANCE,
-                                                ChildEntityType.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
+                                               ParentEntityType.FIELD_1, ParentEntityType.SEC_FIELD_1, ParentEntityType.SEC_FIELD_2);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                    hasFieldValues(fieldValue(ParentEntityType.FIELD_1, PARENT_FIELD_1_VALUE),

@@ -113,17 +113,14 @@ public class ParentWithTwoSecondariesTest {
     @Test
     public void fetchFieldsOfBothSecondaries() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(ParentEntityType.SEC_1_FIELD_1,
-                                                                          ParentEntityType.SEC_1_FIELD_2,
-                                                                          ParentEntityType.SEC_2_FIELD_1,
-                                                                          ParentEntityType.SEC_2_FIELD_2);
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
         final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(ChildEntityType.INSTANCE,
-                                                ChildEntityType.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
+                                               ParentEntityType.SEC_1_FIELD_1,
+                                               ParentEntityType.SEC_1_FIELD_2,
+                                               ParentEntityType.SEC_2_FIELD_1,
+                                               ParentEntityType.SEC_2_FIELD_2);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                    hasFieldValues(fieldValue(ParentEntityType.SEC_1_FIELD_1, PARENT_SEC_1_FIELD_1_VALUE),

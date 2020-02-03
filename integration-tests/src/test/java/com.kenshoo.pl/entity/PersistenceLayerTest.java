@@ -32,6 +32,7 @@ import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.*;
@@ -654,8 +655,28 @@ public class PersistenceLayerTest {
         Instant expectedCreationDate = Instant.now();
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
-        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByKeys(EntityForTest.INSTANCE, EntityForTest.Key.DEFINITION,
-                ImmutableList.of(new EntityForTest.Key(newId)), ImmutableList.of(EntityForTest.CREATION_DATE));
+        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(new EntityForTest.Key(newId)),
+                                                                                              EntityForTest.CREATION_DATE);
+        assertThat(entityMap.size(), is(1));
+        Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
+        assertThat(Math.abs(actualCreationDate.toEpochMilli() - expectedCreationDate.toEpochMilli()), lessThan(2000L));
+    }
+
+    @Deprecated
+    @Test
+    public void creationDateWithDeprecatedFetcherAPI() {
+        int newId = 11;
+        CreateTestCommand command = new CreateTestCommand();
+        command.set(EntityForTest.ID, newId);
+        command.set(EntityForTest.FIELD1, TestEnum.Alpha);
+        command.set(EntityForTest.PARENT_ID, PARENT_ID_1);
+        Instant expectedCreationDate = Instant.now();
+        CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
+        assertThat(results.hasErrors(), is(false));
+        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByKeys(EntityForTest.INSTANCE,
+                                                                                               EntityForTest.Key.DEFINITION,
+                                                                                               singleton(new EntityForTest.Key(newId)),
+                                                                                               singleton(EntityForTest.CREATION_DATE));
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
         assertThat(Math.abs(actualCreationDate.toEpochMilli() - expectedCreationDate.toEpochMilli()), lessThan(2000L));

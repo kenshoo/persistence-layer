@@ -115,15 +115,11 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
     @Test
     public void fetchFieldsFromBothSecondaryTables() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(EntityType1.ENTITY_1_SEC_FIELD_1,
-                                                                          EntityType2.ENTITY_2_SEC_FIELD_1);
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
         final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(EntityType0.INSTANCE,
-                                                EntityType0.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
+                                               EntityType1.ENTITY_1_SEC_FIELD_1, EntityType2.ENTITY_2_SEC_FIELD_1);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                             hasFieldValues(fieldValue(EntityType1.ENTITY_1_SEC_FIELD_1, ENTITY_1_SEC_FIELD_1_VALUE),
@@ -133,16 +129,11 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
     @Test
     public void fetchFieldsFromTable2AndBothSecondaryTables() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(EntityType1.ENTITY_1_SEC_FIELD_1,
-                                                                          EntityType2.FIELD_1,
-                                                                          EntityType2.ENTITY_2_SEC_FIELD_1);
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
         final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(EntityType0.INSTANCE,
-                                                EntityType0.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
+                                               EntityType1.ENTITY_1_SEC_FIELD_1, EntityType2.FIELD_1, EntityType2.ENTITY_2_SEC_FIELD_1);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                    hasFieldValues(fieldValue(EntityType2.FIELD_1, ENTITY_2_FIELD_1_VALUE),

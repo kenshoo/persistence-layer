@@ -129,15 +129,10 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
     @Test
     public void fetchFieldsFromEntities2And3() {
 
-        final Set<EntityField<?, String>> fieldsToFetch = ImmutableSet.of(EntityType2.NAME,
-                                                                          EntityType3.NAME);
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
         final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
-            entitiesFetcher.fetchEntitiesByKeys(EntityType0.INSTANCE,
-                                                EntityType0.Key.DEFINITION,
-                                                singleton(keyToFetch),
-                                                fieldsToFetch);
+            entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch), EntityType2.NAME, EntityType3.NAME);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),
                    hasFieldValues(fieldValue(EntityType2.NAME, ENTITY_2_NAME),

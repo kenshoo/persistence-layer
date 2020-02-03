@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity.internal;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
@@ -39,17 +40,38 @@ public class EntitiesFetcher {
         this.features = features;
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(E entityType, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> keys, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        if (keys.isEmpty()) {
+    /**
+     * @deprecated replaced by {@link #fetchEntitiesByIds(Collection, EntityField[])} or {@link #fetchEntitiesByIds(Collection, Collection)}
+     */
+    @Deprecated
+    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
+                                                                                    final UniqueKey<E> uniqueKey,
+                                                                                    final Collection<? extends Identifier<E>> keys,
+                                                                                    final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        return fetchEntitiesByIds(keys, fieldsToFetch);
+
+    }
+
+    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                   final EntityField<?, ?>... fieldsToFetchArgs) {
+        return fetchEntitiesByIds(ids, ImmutableList.copyOf(fieldsToFetchArgs));
+    }
+
+    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                   final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        if (ids.isEmpty()) {
             return Collections.emptyMap();
         }
+        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+        final EntityType<E> entityType = uniqueKey.getEntityType();
 
         //noinspection ConstantConditions
-        SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), uniqueKey.getTableFields(), fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryExtender(query, entityType.getPrimaryTable(), uniqueKey, keys)) {
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), uniqueKey.getTableFields(), fieldsToFetch);
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryExtender(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
         }
     }
+
 
     <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> queryExtender(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
         List<FieldAndValues<?>> conditions = new ArrayList<>();
@@ -94,7 +116,7 @@ public class EntitiesFetcher {
         }
         UniqueKey<E> uniqueKey = keys.iterator().next().getUniqueKey();
         final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
-        Map<Identifier<E>, Entity> entityMap = fetchEntitiesByKeys(entityType, uniqueKey, keys, entityMethodsMap.values());
+        Map<Identifier<E>, Entity> entityMap = fetchEntitiesByIds(keys, entityMethodsMap.values());
         ClassLoader classLoader = entityIface.getClassLoader();
         Class<?>[] interfaces = {entityIface};
         //noinspection unchecked
