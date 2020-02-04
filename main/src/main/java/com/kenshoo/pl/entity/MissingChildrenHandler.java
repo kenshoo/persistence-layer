@@ -1,19 +1,18 @@
 package com.kenshoo.pl.entity;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.internal.ChildrenIdFetcher;
-import org.jooq.*;
+import org.jooq.DSLContext;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptySet;
+import static com.kenshoo.pl.entity.UniqueKeyValue.concat;
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
 
-public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> {
+public class MissingChildrenHandler {
 
     private final ChildrenIdFetcher childrenIdFetcher;
 
@@ -26,79 +25,127 @@ public class MissingChildrenHandler<PARENT extends EntityType<PARENT>, CHILD ext
         this.childrenIdFetcher = childrenIdFetcher;
     }
 
-    public void
-    handle(Collection<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<PARENT> config) {
-        seq(config.childFlows())
-                .forEach(childflow -> {
-                    final CHILD childType = (CHILD) childflow.getEntityType();
-                    final Collection<? extends ChangeEntityCommand<PARENT>> parentsWithChildSupplier = seq(parents).filter(parent -> havingSupplierFor(parent, childType)).toList();
-                    if (!parentsWithChildSupplier.isEmpty()) {
-                        handleFor(parentsWithChildSupplier, childType);
-                    }
-                });
+    public <PARENT extends EntityType<PARENT>>
+    void handleRecursive(Iterable<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<PARENT> config) {
+
+        final Collection<? extends ChangeEntityCommand<PARENT>> parentsWithChildSupplier = seq(parents)
+                .filter(this::recursivelyCheckForAnyMissingCmdSupplier)
+                .toList();
+
+        if (parentsWithChildSupplier.isEmpty()) {
+            return;
+        }
+
+        seq(config.childFlows()).forEach(childflow -> handleChildFlow(parentsWithChildSupplier, childflow));
     }
 
-    private void
-    handleFor(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        final EntityType.ForeignKey<CHILD, PARENT> keyToParent = childType.getKeyTo(first(parents).getEntityType());
-        final Map<Identifier<CHILD>, Set<Identifier<CHILD>>> missingChildrenByParents = getMissingChildByParents(parents, childType);
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    void handleChildFlow(Collection<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<CHILD> childFlow) {
+        final CHILD childType = childFlow.getEntityType();
+        ChildrenFromDB<PARENT, CHILD> childrenFromDB = getExistingChildrenFromDB(parents, childType);
+        populateKeyToParent(parents, childType, childrenFromDB);
+        populateCommandForMissingChildren(parents, childType, childrenFromDB);
+        handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)), childFlow);
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    ChildrenFromDB<PARENT, CHILD> getExistingChildrenFromDB(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
+        List<Identifier<PARENT>> parentIds = seq(parents).map(p -> concatenatedId(p)).toList();
+        final UniqueKey<CHILD> childKey = identifierOfFirstChildCmd(parents, childType).orElseGet(childType::getPrimaryKey);
+        return new ChildrenFromDB<>(childrenIdFetcher.fetch(parentIds, childKey));
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    void populateCommandForMissingChildren(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
         seq(parents).forEach(parent -> {
-            final MissingChildrenSupplier<CHILD> missingChildrenSupplier = parent.getMissingChildrenSupplier(childType).get();
-            final Set<Identifier<CHILD>> missingChildIds = missingChildrenByParents.getOrDefault(getChildParentId(parent, keyToParent), emptySet());
-            seq(missingChildIds).forEach(childId -> {
-                missingChildrenSupplier.supplyNewCommand(childId).ifPresent(parent::addChild);
-            });
+            final Set<Identifier<CHILD>> childrenFromCommand = childrenIdsOf(childType, parent);
+            ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
+            seq(parentChildrenFromDB.map)
+                    .filter(childIds -> !childrenFromCommand.contains(childIds.v1))
+                    .forEach(missingChildIds -> {
+                            parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
+                                parent.addChild(newCmd);
+                                newCmd.setKeysToParent(missingChildIds.v2);
+                            });
+                    });
         });
     }
 
-    private Map<Identifier<CHILD>, Set<Identifier<CHILD>>>
-    getMissingChildByParents(Collection<? extends ChangeEntityCommand<PARENT>> parentsCmd, CHILD childType) {
-        try (Stream<FullIdentifier<CHILD>> childIdsFromDB = childrenIdFetcher.fetch(parentsCmd, childType)) {
-            Set<FullIdentifier<CHILD>> childIdsFromCmd = collectChildIds(parentsCmd, childType);
-            Stream<FullIdentifier<CHILD>> missingChildIds = childIdsFromDB.filter(notIn(childIdsFromCmd));
-            return groupByParents(missingChildIds);
+    private
+    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    void populateKeyToParent(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
+        seq(parents).forEach(parent -> {
+            ChildrenWithKeyToParent<CHILD> childrenOfParent = childrenFromDB.of(parent);
+            parent.getChildren(childType).forEach(child -> child.setKeysToParent(childrenOfParent.keyToParentOf(child.getIdentifier())));
+        });
+    }
+
+    private static <E extends EntityType<E>> Identifier<E> concatenatedId(ChangeEntityCommand<E> entity) {
+        return concat(entity.getIdentifier(), entity.getKeysToParent());
+    }
+
+    private
+    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    Set<Identifier<CHILD>> childrenIdsOf(CHILD childType, ChangeEntityCommand<PARENT> parent) {
+        return parent.getChildren(childType).map(EntityChange::getIdentifier)
+                .filter(Objects::nonNull)
+                .collect(toSet());
+    }
+
+    private
+    <E extends EntityType<E>>
+    boolean recursivelyCheckForAnyMissingCmdSupplier(ChangeEntityCommand<E> parent) {
+        return !parent.getMissingChildrenSuppliers().isEmpty() || parent.getChildren().anyMatch(child -> recursivelyCheckForAnyMissingCmdSupplier(child));
+    }
+
+    private
+    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    Optional<UniqueKey<CHILD>>
+    identifierOfFirstChildCmd(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
+        return parents.stream()
+                .flatMap(p -> p.getChildren(childType))
+                .map(EntityChange::getIdentifier)
+                .filter(Objects::nonNull)
+                .map(Identifier::getUniqueKey)
+                .findFirst();
+    }
+
+    /**
+     * Lookup maps for everything we fetched from DB.
+     * Parent identifiers are concatenated IDs (see method concatenatedId) so they are always unique.
+     */
+    private static class ChildrenFromDB<PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> {
+        final Map<Identifier<PARENT>, ChildrenWithKeyToParent<CHILD>> map;
+        final ChildrenWithKeyToParent<CHILD> EMPTY = new ChildrenWithKeyToParent<>(emptyMap());
+
+        public ChildrenFromDB(Stream<FullIdentifier<PARENT, CHILD>> stream) {
+            map = stream.collect(groupingBy(FullIdentifier::getParentId,
+                    collectingAndThen(toMap(FullIdentifier::getChildId, FullIdentifier::getKetToParent), ChildrenWithKeyToParent::new)));
+            stream.close();
+        }
+
+        ChildrenWithKeyToParent<CHILD> of(ChangeEntityCommand<PARENT> parent) {
+            return map.getOrDefault(concatenatedId(parent), EMPTY);
         }
     }
 
-    private Map<Identifier<CHILD>, Set<Identifier<CHILD>>>
-    groupByParents(Stream<FullIdentifier<CHILD>> childIds) {
-        return childIds
-                .collect(Collectors.groupingBy(
-                        FullIdentifier::getParentId,
-                        Collectors.mapping(FullIdentifier::getChildId, Collectors.toSet())));
+    /**
+     * This is a subset of what we fetched from DB: these are the children of
+     * a specific parent.
+     */
+    private static class ChildrenWithKeyToParent<CHILD extends EntityType<CHILD>> {
+        // child identifier (from the original command) mapped to the child keyToParent.
+        // this is required to populate keyToParent for the child commands to be available
+        // for the next recursive iteration.
+        final Map<Identifier<CHILD>, Identifier<CHILD>> map;
+
+        private ChildrenWithKeyToParent(Map<Identifier<CHILD>, Identifier<CHILD>> childrenWithKeyToParent) {
+            this.map = childrenWithKeyToParent;
+        }
+
+        public Identifier<CHILD> keyToParentOf(Identifier<CHILD> childId) {
+            return map.get(childId);
+        }
     }
 
-    private Set<FullIdentifier<CHILD>>
-    collectChildIds(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
-        final EntityType.ForeignKey<CHILD, PARENT> keyToParent = childType.getKeyTo(first(parents).getEntityType());
-        return seq(parents)
-                .flatMap(parent -> parent.getChildren(childType))
-                .filter(child -> child.getIdentifier() != null)
-                .map(childCmd -> getChildFullId(keyToParent, childCmd))
-                .toSet();
-    }
-
-    private FullIdentifier<CHILD> getChildFullId(EntityType.ForeignKey<CHILD, PARENT> keyToParent, ChangeEntityCommand<CHILD> childCmd) {
-        final Identifier<CHILD> parentId = getChildParentId(childCmd.getParent(), keyToParent);
-        final Identifier<CHILD> childId = childCmd.getIdentifier();
-        return new FullIdentifier<>(parentId, childId);
-    }
-
-    private Identifier<CHILD>
-    getChildParentId(ChangeEntityCommand<PARENT> parentCmd, EntityType.ForeignKey<CHILD, PARENT> keyToParent) {
-        Object[] values = keyToParent.to().stream().map(field-> parentCmd.getIdentifier().get(field)).toArray();
-        return new UniqueKeyValue<>(new UniqueKey<>(keyToParent.from()), values);
-    }
-
-    private boolean havingSupplierFor(ChangeEntityCommand<PARENT> parent, CHILD childType) {
-        return parent.getMissingChildrenSupplier(childType).isPresent();
-    }
-
-    private <T> T first(Collection<T> collection) {
-        return collection.iterator().next();
-    }
-
-    private <T> Predicate<T> notIn(Set<T> set) {
-        return item -> !set.contains(item);
-    }
 }

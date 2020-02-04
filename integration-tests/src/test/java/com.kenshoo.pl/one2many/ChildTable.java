@@ -9,9 +9,10 @@ public class ChildTable extends AbstractDataTable<ChildTable> {
 
     public static final ChildTable INSTANCE = new ChildTable("ChildTable");
 
-    final TableField<Record, Integer> parent_id = createPKAndFKField("parent_id", SQLDataType.INTEGER, ParentTable.INSTANCE.id);
-    final TableField<Record, Integer> ordinal = createPKField("ordinal", SQLDataType.INTEGER);
+    final TableField<Record, Integer> parent_id = createFKField("parent_id", ParentTable.INSTANCE.id);
+    final TableField<Record, Integer> ordinal = createField("ordinal", SQLDataType.INTEGER);
     final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR(64));
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
 
     public ChildTable(String name) {
         super(name);

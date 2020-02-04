@@ -96,7 +96,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     private ChangeContext makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        missingChildrenHandler.handle(commands, flowConfig);
+        missingChildrenHandler.handleRecursive(commands, flowConfig);
         ChangeContextImpl context = new ChangeContextImpl(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);

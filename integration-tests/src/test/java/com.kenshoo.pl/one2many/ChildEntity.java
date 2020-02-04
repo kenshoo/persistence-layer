@@ -12,6 +12,7 @@ public class ChildEntity extends AbstractEntityType<ChildEntity> {
 
     public static final ChildEntity INSTANCE = new ChildEntity();
 
+    public static final EntityField<ChildEntity, Integer> ID = INSTANCE.field(ChildTable.INSTANCE.id);
 
     public static final EntityField<ChildEntity, Integer> ORDINAL = INSTANCE.field(ChildTable.INSTANCE.ordinal);
 
@@ -49,4 +50,18 @@ public class ChildEntity extends AbstractEntityType<ChildEntity> {
         }
     }
 
+    public static class Id extends SingleUniqueKeyValue<ChildEntity, Integer> {
+
+        public static final SingleUniqueKey<ChildEntity, Integer> DEFINITION =
+                new SingleUniqueKey<ChildEntity, Integer>(ID) {
+                    @Override
+                    protected Id createValue(Integer Id) {
+                        return new Id(Id);
+                    }
+                };
+
+        public Id(int Id) {
+            super(DEFINITION, Id);
+        }
+    }
 }

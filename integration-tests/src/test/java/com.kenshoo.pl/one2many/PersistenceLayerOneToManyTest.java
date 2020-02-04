@@ -54,6 +54,7 @@ public class PersistenceLayerOneToManyTest {
 
     private final static ParentTable PARENT = ParentTable.INSTANCE;
     private final static ChildTable CHILD = ChildTable.INSTANCE;
+    private final static GrandChildTable GRAND_CHILD = GrandChildTable.INSTANCE;
 
     private final IdGenerator idGenerator = new IdGenerator();
 
@@ -63,7 +64,7 @@ public class PersistenceLayerOneToManyTest {
 
     private PersistenceLayer<ParentEntity, ParentEntity.Key> persistenceLayer;
 
-    private final DeletionOfOther deletionOfOther = new DeletionOfOther(ChildEntity.INSTANCE);
+    private final DeletionOfOther<ChildEntity> deletionOfOther = new DeletionOfOther<>(ChildEntity.INSTANCE);
 
     @Before
     public void setupTables() {
@@ -77,6 +78,7 @@ public class PersistenceLayerOneToManyTest {
         tablesSetup.staticDSLContext = jooq;
         DataTableUtils.createTable(jooq, PARENT);
         DataTableUtils.createTable(jooq, CHILD);
+        DataTableUtils.createTable(jooq, GRAND_CHILD);
         jooq.alterTable(PARENT).add(DSL.constraint("unique_id").unique(PARENT.id)).execute();
         jooq.alterTable(PARENT).add(DSL.constraint("unique_key").unique(PARENT.idInTarget)).execute();
         jooq.alterTable(CHILD).add(DSL.constraint("unique_parent_and_ordinal").unique(CHILD.ordinal, CHILD.parent_id)).execute();
@@ -447,7 +449,7 @@ public class PersistenceLayerOneToManyTest {
 
         final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
                 .with(upsertChild(1).with(FIELD_1, "child1"))
-                .with(deletionOfOther);;
+                .with(deletionOfOther);
 
         update(parentFlow(childFlow()), parentBuilder);
 
@@ -456,14 +458,88 @@ public class PersistenceLayerOneToManyTest {
         assertTrue(childrenByOrdinal.containsKey(1));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void when_parent_does_not_assign_to_child_with_its_identifier_then_throw_exception() {
+    @Test
+    public void when_parent_does_not_assign_to_child_with_its_identifier_then_success_to_update_other_child() {
+
+        insert(newParentWithUniqueKey(11)
+                .with(upsertChild(1).with(FIELD_1, "child1"))
+                .with(upsertChild(2).with(FIELD_1, "child2"))
+        );
 
         final ParentCmdBuilder parentBuilder = existingParentWithUniqueKey(11)
                 .with(upsertChild(1).with(FIELD_1, "child1 updated"))
-                .with(deletionOfOther);;
+                .with(deletionOfOther);
 
         update(parentFlow(childFlow()), parentBuilder);
+
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+
+        assertTrue(childrenByOrdinal.containsKey(1));
+        assertFalse(childrenByOrdinal.containsKey(2));
+    }
+
+    @Test
+    public void delete_missing_grandchildren_of_two_different_children_of_same_parent() {
+
+        insert(newParent()
+                .with(upsertChild(1)
+                        .withChild(upsertGrandChild("red"))
+                        .withChild(upsertGrandChild("blue"))
+                )
+                .with(upsertChild(2)
+                        .withChild(upsertGrandChild("green"))
+                        .withChild(upsertGrandChild("yellow"))
+                )
+        );
+
+        ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
+                .with(upsertChild(1)
+                        .withChild(upsertGrandChild("red"))
+                        .with(new DeletionOfOther<>(GrandChildEntity.INSTANCE))
+                        .get())
+                .with(upsertChild(2)
+                        .withChild(upsertGrandChild("yellow"))
+                        .with(new DeletionOfOther<>(GrandChildEntity.INSTANCE))
+                        .get());
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+
+        assertThat(colorsInDB, containsInAnyOrder("red", "yellow"));
+    }
+
+    @Test
+    public void delete_missing_grandchildren_of_two_different_parents_where_children_have_same_identifier() {
+
+        insert(newParent()
+                        .with(upsertChild(1)
+                                .withChild(upsertGrandChild("red"))
+                                .withChild(upsertGrandChild("blue"))
+                        ),
+                newParent()
+                        .with(upsertChild(1)
+                                .withChild(upsertGrandChild("green"))
+                                .withChild(upsertGrandChild("yellow"))
+                        )
+        );
+
+        update(parentFlow(childFlow()),
+                existingParentWithId(generatedId(0))
+                        .with(upsertChild(1)
+                                .withChild(upsertGrandChild("red"))
+                                .with(new DeletionOfOther<>(GrandChildEntity.INSTANCE))
+                                .get()),
+                existingParentWithId(generatedId(1))
+                        .with(upsertChild(1)
+                                .withChild(upsertGrandChild("yellow"))
+                                .with(new DeletionOfOther<>(GrandChildEntity.INSTANCE))
+                                .get())
+        );
+
+        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+
+        assertThat(colorsInDB, containsInAnyOrder("red", "yellow"));
     }
 
     @Test
@@ -629,6 +705,10 @@ public class PersistenceLayerOneToManyTest {
 
     }
 
+    private FluidPersistenceCmdBuilder<GrandChildEntity> upsertGrandChild(String color) {
+        return fluid(new InsertOnDuplicateUpdateCommand<>(GrandChildEntity.INSTANCE, new GrandChildEntity.Color(color)));
+    }
+
     private FluidPersistenceCmdBuilder<ChildEntity> upsertChild(int ordinal) {
         return fluid(new InsertOnDuplicateUpdateCommand<>(ChildEntity.INSTANCE, new ChildEntity.Ordinal(ordinal)));
     }
@@ -649,6 +729,12 @@ public class PersistenceLayerOneToManyTest {
         return new ParentCmdBuilder(new CreateEntityCommand<>(ParentEntity.INSTANCE));
     }
 
+    private ParentCmdBuilder newParentWithUniqueKey(Integer idInTarget) {
+        CreateEntityCommand<ParentEntity> cmd = new CreateEntityCommand<>(ParentEntity.INSTANCE);
+        cmd.set(ParentEntity.ID_IN_TARGET, idInTarget);
+        return new ParentCmdBuilder(cmd);
+    }
+
     private ParentCmdBuilder existingParentWithId(Integer id) {
         return new ParentCmdBuilder(new UpdateEntityCommand<>(ParentEntity.INSTANCE, new ParentEntity.Key(id)));
     }
@@ -658,23 +744,31 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private ChangeFlowConfig.Builder<ChildEntity> childFlow() {
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE);
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
+                .withPostFetchCommandEnricher(childrenIdGenerator)
+                .withChildFlowBuilder(grandChildFlow());
+    }
+
+    private ChangeFlowConfig.Builder<GrandChildEntity> grandChildFlow() {
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, GrandChildEntity.INSTANCE);
     }
 
     private ChangeFlowConfig.Builder<ChildEntity> childFlow(ChangeValidator... validators) {
         EntityChangeCompositeValidator<ChildEntity> compositeValidator = new EntityChangeCompositeValidator<>();
         Seq.of(validators).forEach(v -> compositeValidator.register(ChildEntity.INSTANCE, v));
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
+                .withPostFetchCommandEnricher(childrenIdGenerator)
                 .withValidator(compositeValidator);
     }
 
     private ChangeFlowConfig.Builder<ChildEntity> childFlow(PostFetchCommandEnricher<ChildEntity>... enrichers) {
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
+                .withPostFetchCommandEnricher(childrenIdGenerator)
                 .withPostFetchCommandEnrichers(Arrays.stream(enrichers).collect(toList()));
     }
 
     private ChangeFlowConfig.Builder<ParentEntity> parentFlow(ChangeFlowConfig.Builder<ChildEntity> childFlow) {
-        final IntegerIdGeneratorEnricher idEnricher = new IntegerIdGeneratorEnricher(idGenerator, ParentEntity.ID);
+        final IntegerIdGeneratorEnricher<ParentEntity> idEnricher = new IntegerIdGeneratorEnricher(idGenerator, ParentEntity.ID);
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE)
                 .withPostFetchCommandEnricher(idEnricher)
                 .withChildFlowBuilder(childFlow);
@@ -699,5 +793,7 @@ public class PersistenceLayerOneToManyTest {
             }
         };
     }
+
+    final IntegerIdGeneratorEnricher<ChildEntity> childrenIdGenerator = new IntegerIdGeneratorEnricher<>(new IdGenerator(), ChildEntity.ID);
 
 }
