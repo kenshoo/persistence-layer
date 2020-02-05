@@ -9,19 +9,19 @@ import java.util.stream.Stream;
 abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements PostFetchCommandEnricher<E> {
 
     @Override
-    public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
+    final public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
         changeEntityCommands.stream()
                 .filter(command -> shouldRunForCommand(command) && needEnrich(command, changeContext.getEntity(command)))
                 .forEach(command -> command.set(enrichedField(), enrichedValue(command, changeContext.getEntity(command))));
     }
 
     @Override
-    public Stream<EntityField<E, ?>> fieldsToEnrich() {
+    final public Stream<EntityField<E, ?>> fieldsToEnrich() {
         return Stream.of(enrichedField());
     }
 
     @Override
-    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+    final public boolean shouldRun(Collection<? extends EntityChange<E>> commands) {
         return commands.stream().anyMatch(this::shouldRunForCommand);
     }
 
@@ -33,7 +33,7 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
         return true;
     }
 
-    protected boolean shouldRunForCommand(ChangeEntityCommand<E> command) {
-        return !command.isFieldChanged(enrichedField());
+    protected boolean shouldRunForCommand(EntityChange<E> entityChange) {
+        return !entityChange.isFieldChanged(enrichedField());
     }
 }

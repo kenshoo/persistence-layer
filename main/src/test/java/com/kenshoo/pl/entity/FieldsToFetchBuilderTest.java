@@ -526,11 +526,6 @@ public class FieldsToFetchBuilderTest {
             }
 
             @Override
-            public boolean shouldRun(Collection<? extends ChangeEntityCommand<TestEntity>> changeEntityCommands) {
-                return true;
-            }
-
-            @Override
             public SupportedChangeOperation getSupportedChangeOperation() {
                 return changeOperation;
             }

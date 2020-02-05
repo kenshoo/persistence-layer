@@ -34,10 +34,6 @@ public class CreationDateEnricher<E extends EntityType<E>> implements PostFetchC
         return Stream.of(creationDateField);
     }
 
-    @Override
-    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
-        return true;
-    }
 
     @Override
     public SupportedChangeOperation getSupportedChangeOperation() {

@@ -597,10 +597,6 @@ public class PersistenceLayerOneToManyTest {
                 return Stream.of(otherField);
             }
 
-            @Override
-            public boolean shouldRun(Collection<? extends ChangeEntityCommand<ChildEntity>> changeEntityCommands) {
-                return true;
-            }
         };
     }
 
