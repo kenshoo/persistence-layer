@@ -37,11 +37,11 @@ public interface PostFetchCommandEnricher<E extends EntityType<E>> extends Curre
     }
 
     /**
-     * @param commands to enrich
+     * @param entityChanges to enrich
      *
      * @return indicator that enricher should be run
      */
-    default boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+    default boolean shouldRun(Collection<? extends EntityChange<E>> entityChanges) {
         return true;
     }
 

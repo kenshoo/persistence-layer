@@ -539,7 +539,7 @@ public class PersistenceLayerTest {
             }
 
             @Override
-            public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
+            public boolean shouldRun(Collection<? extends EntityChange<EntityForTest>> changeEntityCommands) {
                 return CommandsFieldMatcher.isAnyFieldContainedInAnyCommand(changeEntityCommands, EntityForTest.FIELD2);
             }
 
@@ -1150,7 +1150,7 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public boolean shouldRun(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands) {
+        public boolean shouldRun(Collection<? extends EntityChange<EntityForTest>> changeEntityCommands) {
             return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(changeEntityCommands, EntityForTest.FIELD2);
         }
 
@@ -1253,11 +1253,6 @@ public class PersistenceLayerTest {
         @Override
         public Stream<EntityField<E, ?>> fieldsToEnrich() {
             return Stream.of(idField);
-        }
-
-        @Override
-        public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
-            return true;
         }
 
         @Override

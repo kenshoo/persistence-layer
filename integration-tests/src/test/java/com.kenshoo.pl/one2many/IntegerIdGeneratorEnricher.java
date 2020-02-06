@@ -1,11 +1,6 @@
 package com.kenshoo.pl.one2many;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 
@@ -45,7 +40,7 @@ public class IntegerIdGeneratorEnricher<E extends EntityType<E>> implements Post
     }
 
     @Override
-    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> commands) {
+    public boolean shouldRun(Collection<? extends EntityChange<E>> commands) {
         return CommandsFieldMatcher.isAnyFieldMissingInAnyCommand(commands, idField);
     }
 }

@@ -78,12 +78,7 @@ public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements Post
     public Stream<EntityField<E, ?>> fieldsToEnrich() {
         return fields2Copy.stream().map(pair -> pair.target);
     }
-
-    @Override
-    public boolean shouldRun(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands) {
-        return true;
-    }
-
+    
     private <T> void copyField(Field2Copy<E, T> field2Copy, Entity entity, ChangeEntityCommand<E> command) {
         command.set(field2Copy.target, entity.get(field2Copy.source));
     }
