@@ -37,6 +37,11 @@ public class VirtualEntityFieldDbAdapter2<T, T1, T2> implements EntityFieldDbAda
     }
 
     @Override
+    public Object getFirstDbValue(T value) {
+        throw new IllegalStateException("Virtual fields can not be written to the database");
+    }
+
+    @Override
     public T getFromRecord(Iterator<Object> valuesIterator) {
         return combiningFunction.apply(adapter1.getFromRecord(valuesIterator), adapter2.getFromRecord(valuesIterator));
     }

@@ -33,7 +33,12 @@ public class SimpleEntityFieldDbAdapter<T, DBT> implements EntityFieldDbAdapter<
 
     @Override
     public Stream<Object> getDbValues(T value) {
-        return Stream.of(valueConverter.convertTo(value));
+        return Stream.of(getFirstDbValue(value));
+    }
+
+    @Override
+    public Object getFirstDbValue(T value) {
+        return valueConverter.convertTo(value);
     }
 
     @Override

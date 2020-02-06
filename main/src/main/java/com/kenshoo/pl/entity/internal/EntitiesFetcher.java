@@ -1,6 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
@@ -19,8 +20,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
+import static org.apache.commons.lang3.Validate.notEmpty;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
@@ -65,13 +69,30 @@ public class EntitiesFetcher {
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
 
-        //noinspection ConstantConditions
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), uniqueKey.getTableFields(), fieldsToFetch);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryExtender(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
         }
     }
 
+    public <E extends EntityType<E>> List<Entity> fetch(final E entityType,
+                                                        final PLCondition plCondition,
+                                                        final EntityField<?, ?>... fieldsToFetch) {
+        requireNonNull(entityType, "An entity type must be provided");
+        requireNonNull(plCondition, "A condition must be provided");
+        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
+
+        final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
+        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getAffectedFields());
+
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(),
+                                                             emptyList(),
+                                                             allFieldsToFetch);
+        final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
+
+        return query.where(completeJooqCondition)
+                    .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
+    }
 
     <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> queryExtender(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
         List<FieldAndValues<?>> conditions = new ArrayList<>();
@@ -91,7 +112,6 @@ public class EntitiesFetcher {
         EntityFieldDbAdapter<T> dbAdapter = field.getDbAdapter();
         List<Object> fieldValues = new ArrayList<>(identifiers.size());
         for (Identifier<E> identifier : identifiers) {
-            //noinspection unchecked
             dbAdapter.getDbValues(identifier.get(field)).sequential().forEach(fieldValues::add);
         }
         Optional<TableField<Record, ?>> tableField = dbAdapter.getTableFields().findFirst();
@@ -105,7 +125,6 @@ public class EntitiesFetcher {
                     .map(field -> foreignKeysTable.getTable().getField(field))
                     .collect(toList());
             SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), keyFields, fieldsToFetch);
-            //noinspection unchecked
             return fetchEntitiesMap(query, foreignUniqueKey, fieldsToFetch);
         }
     }
@@ -231,7 +250,6 @@ public class EntitiesFetcher {
         // Perform the joins
         for (TreeEdge join : joins) {
             DataTable rhs = join.target.table;
-            //noinspection unchecked
             query.join(rhs).on(getJoinCondition(join.source.table, join.target.table));
             tablesAlreadyJoined.add(rhs);
         }
@@ -393,7 +411,6 @@ public class EntitiesFetcher {
             if (joinCondition == null) {
                 continue;
             }
-            //noinspection unchecked
             query = query.leftOuterJoin(table).on(joinCondition);
             tablesToFetchIterator.remove();
         }
@@ -436,4 +453,22 @@ public class EntitiesFetcher {
         return query;
     }
 
+    private <E extends EntityType<E>> Condition addVirtualPartitionConditions(final E entityType, final Condition inputJooqCondition) {
+        return entityType.getPrimaryTable().getVirtualPartition().stream()
+                         .map(this::asTypedFieldAndValue)
+                         .map(fieldAndValue -> fieldAndValue.getField().eq(fieldAndValue.getValue()))
+                         .reduce(inputJooqCondition, Condition::and);
+    }
+
+    private Entity mapRecordToEntity(final Record record, final Collection<EntityField<?, ?>> fieldsToFetch) {
+        final EntityImpl entity = new EntityImpl();
+        final Iterator<Object> valuesIterator = record.intoList().iterator();
+        fieldsToFetch.forEach( field -> fieldFromRecordToEntity(entity, field, valuesIterator));
+        return entity;
+    }
+
+    @SuppressWarnings("unchecked")
+    private FieldAndValue<Object> asTypedFieldAndValue(final FieldAndValue<?> fv) {
+        return (FieldAndValue<Object>)fv;
+    }
 }

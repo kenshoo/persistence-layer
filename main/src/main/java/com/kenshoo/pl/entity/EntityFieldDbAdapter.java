@@ -23,15 +23,34 @@ public interface EntityFieldDbAdapter<T> {
     DataTable getTable();
 
     /**
-     * @return the list of the table fields this entity field maps to
+     * @return the table fields this entity field maps to
      */
     Stream<TableField<Record, ?>> getTableFields();
 
     /**
+     * @return the first table field that this entity field maps to
+     * @throws IllegalStateException if there are no fields
+     */
+    default TableField<Record, ?> getFirstTableField() {
+        return getTableFields().findFirst()
+                               .orElseThrow(() -> new IllegalStateException("There must be at least one field but none found"));
+    }
+
+    /**
      * @param value value of entity field to translate
-     * @return the list of values for the fields returned by {@link #getTableFields()}, in the same order
+     * @return the values for the fields returned by {@link #getTableFields()}, in the same order
      */
     Stream<Object> getDbValues(T value);
+
+    /**
+     * @param value value of entity field to translate
+     * @return the first value for the fields returned by {@link #getTableFields()}, in field order
+     * @throws IllegalStateException if there are no fields
+     */
+    default Object getFirstDbValue(T value) {
+        return getDbValues(value).findFirst()
+                                 .orElseThrow(() -> new IllegalStateException("There must be at least DB value but none found"));
+    }
 
     /**
      * Composes the value of the entity field out of values of individual table fields. The iterator passed to

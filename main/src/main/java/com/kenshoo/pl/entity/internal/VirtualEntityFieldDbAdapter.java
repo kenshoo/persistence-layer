@@ -35,6 +35,11 @@ public class VirtualEntityFieldDbAdapter<T, T1> implements EntityFieldDbAdapter<
     }
 
     @Override
+    public Object getFirstDbValue(T value) {
+        throw new IllegalStateException("Virtual fields can not be written to the database");
+    }
+
+    @Override
     public T getFromRecord(Iterator<Object> valuesIterator) {
         return translationFunction.apply(adapter1.getFromRecord(valuesIterator));
     }
