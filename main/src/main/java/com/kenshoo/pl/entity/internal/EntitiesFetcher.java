@@ -75,15 +75,15 @@ public class EntitiesFetcher {
         }
     }
 
-    public <E extends EntityType<E>> List<Entity> fetch(final E entityType,
-                                                        final PLCondition plCondition,
-                                                        final EntityField<?, ?>... fieldsToFetch) {
+    public List<Entity> fetch(final EntityType<?> entityType,
+                              final PLCondition plCondition,
+                              final EntityField<?, ?>... fieldsToFetch) {
         requireNonNull(entityType, "An entity type must be provided");
         requireNonNull(plCondition, "A condition must be provided");
         notEmpty(fieldsToFetch, "There must be at least one field to fetch");
 
         final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
-        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getAffectedFields());
+        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(),
                                                              emptyList(),
@@ -453,7 +453,7 @@ public class EntitiesFetcher {
         return query;
     }
 
-    private <E extends EntityType<E>> Condition addVirtualPartitionConditions(final E entityType, final Condition inputJooqCondition) {
+    private Condition addVirtualPartitionConditions(final EntityType<?> entityType, final Condition inputJooqCondition) {
         return entityType.getPrimaryTable().getVirtualPartition().stream()
                          .map(this::asTypedFieldAndValue)
                          .map(fieldAndValue -> fieldAndValue.getField().eq(fieldAndValue.getValue()))

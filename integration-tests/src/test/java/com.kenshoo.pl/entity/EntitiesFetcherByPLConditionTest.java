@@ -34,7 +34,10 @@ public class EntitiesFetcherByPLConditionTest {
 
     private static final TestTable table = TestTable.INSTANCE;
     private static final TestParentTable parent_table = TestParentTable.INSTANCE;
-    private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(table, parent_table);
+    private static final TestParentSecondaryTable parent_sec_table = TestParentSecondaryTable.INSTANCE;
+    private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(table,
+                                                                     parent_table,
+                                                                     parent_sec_table);
 
     private static DSLContext staticDSLContext;
     private static boolean tablesCreated;
@@ -52,10 +55,17 @@ public class EntitiesFetcherByPLConditionTest {
             tablesCreated = true;
         }
         dslContext.insertInto(parent_table)
-                  .columns(parent_table.id, parent_table.field1)
-                  .values(1, "ParentAlpha")
-                  .values(2, "ParentBravo")
-                  .values(3, "ParentCharlie")
+                  .columns(parent_table.id, parent_table.field1, parent_table.field2)
+                  .values(1, "ParentAlpha", "ParentAlpha2")
+                  .values(2, "ParentBravo", "ParentBravo2")
+                  .values(3, "ParentCharlie", "ParentCharlie2")
+                  .execute();
+
+        dslContext.insertInto(parent_sec_table)
+                  .columns(parent_sec_table.id, parent_sec_table.field1, parent_sec_table.field2, parent_sec_table.parent_id)
+                  .values(1, "ParentSecondaryAlpha", "ParentSecondaryAlpha2", 1)
+                  .values(2, "ParentSecondaryBravo", "ParentSecondaryBravo2", 2)
+                  .values(3, "ParentSecondaryCharlie", "ParentSecondaryCharlie2", 3)
                   .execute();
 
         dslContext.insertInto(table)
@@ -140,7 +150,7 @@ public class EntitiesFetcherByPLConditionTest {
     }
 
     @Test
-    public void fetchByEqualsConditionWhereParentFieldRequestedAndOneMatch() {
+    public void fetchByEqualsConditionWhereConditionOnChildAndParentRequested() {
         final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Alpha"),
                                                             TestParentEntityType.FIELD1);
@@ -152,21 +162,126 @@ public class EntitiesFetcherByPLConditionTest {
     }
 
     @Test
-    public void fetchByEqualsConditionWhereParentFieldRequestedAndTwoMatch() {
+    public void fetchByEqualsConditionWhereConditionOnChildAndParentSecondaryRequested() {
         final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
-                                                            TestEntityType.ID.eq(1),
+                                                            TestEntityType.FIELD1.eq("Alpha"),
+                                                            TestParentEntityType.SECONDARY_FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryAlpha")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnChildAndBothParentAndSecondaryRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestEntityType.FIELD1.eq("Charlie"),
+                                                            TestParentEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestParentEntityType.FIELD1, "ParentBravo"),
+                                  fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentAndChildRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.FIELD2.eq("ParentBravo2"),
+                                                            TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestEntityType.FIELD1, "Charlie")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentAndParentRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.FIELD2.eq("ParentBravo2"),
                                                             TestParentEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
-                   entities.size(), is(2));
+                   entities.size(), is(1));
 
-        final List<Entity> sortedEntities = entities.stream()
-                                                    .sorted(comparing(entity -> entity.get(TestParentEntityType.FIELD1)))
-                                                    .collect(toList());
-
-        assertThat(sortedEntities.get(0),
-                   hasFieldValues(fieldValue(TestParentEntityType.FIELD1, "ParentAlpha")));
-        assertThat(sortedEntities.get(1),
+        assertThat(entities.get(0),
                    hasFieldValues(fieldValue(TestParentEntityType.FIELD1, "ParentBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentAndParentSecondaryRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.FIELD2.eq("ParentBravo2"),
+                                                            TestParentEntityType.SECONDARY_FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentAndBothChildAndParentSecondaryRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.FIELD2.eq("ParentBravo2"),
+                                                            TestEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestEntityType.FIELD1, "Charlie"),
+                                  fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndChildRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
+                                                            TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestEntityType.FIELD1, "Charlie")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndParentRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
+                                                            TestParentEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestParentEntityType.FIELD1, "ParentBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndParentSecondaryRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
+                                                            TestParentEntityType.SECONDARY_FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryBravo")));
+    }
+
+    @Test
+    public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndBothChildAndParentRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                                                            TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
+                                                            TestEntityType.FIELD1, TestParentEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                   entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                   hasFieldValues(fieldValue(TestEntityType.FIELD1, "Charlie"),
+                                  fieldValue(TestParentEntityType.FIELD1, "ParentBravo")));
     }
 
     @Test
@@ -274,6 +389,7 @@ public class EntitiesFetcherByPLConditionTest {
 
         private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, String> field2 = createField("field2", SQLDataType.VARCHAR.length(50));
 
         public TestParentTable(String name) {
             super(name);
@@ -286,6 +402,28 @@ public class EntitiesFetcherByPLConditionTest {
         @Override
         public TestParentTable as(String alias) {
             return new TestParentTable(this, alias);
+        }
+    }
+
+    private static class TestParentSecondaryTable extends AbstractDataTable<TestParentSecondaryTable> {
+        private static final TestParentSecondaryTable INSTANCE = new TestParentSecondaryTable("testParentSecondary");
+
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, String> field2 = createField("field2", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, Integer> parent_id = createFKField("parent_id", TestParentTable.INSTANCE.id);
+
+        public TestParentSecondaryTable(String name) {
+            super(name);
+        }
+
+        public TestParentSecondaryTable(TestParentSecondaryTable aliased, String alias) {
+            super(aliased, alias);
+        }
+
+        @Override
+        public TestParentSecondaryTable as(String alias) {
+            return new TestParentSecondaryTable(this, alias);
         }
     }
 
@@ -315,6 +453,9 @@ public class EntitiesFetcherByPLConditionTest {
 
         public static final EntityField<TestParentEntityType, Integer> ID = INSTANCE.field(parent_table.id);
         public static final EntityField<TestParentEntityType, String> FIELD1 = INSTANCE.field(parent_table.field1);
+        public static final EntityField<TestParentEntityType, String> FIELD2 = INSTANCE.field(parent_table.field2);
+        public static final EntityField<TestParentEntityType, String> SECONDARY_FIELD1 = INSTANCE.field(parent_sec_table.field1);
+        public static final EntityField<TestParentEntityType, String> SECONDARY_FIELD2 = INSTANCE.field(parent_sec_table.field2);
 
         private TestParentEntityType() {
             super("testParent");
