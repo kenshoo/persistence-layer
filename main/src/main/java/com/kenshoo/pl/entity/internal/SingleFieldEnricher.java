@@ -33,7 +33,35 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
         return true;
     }
 
+    protected Stream<EntityField<E, ?>> triggeredByFields() {
+        return Stream.empty();
+    }
+
+    protected boolean considerNullAsMissing() {
+        return false;
+    }
+
     protected boolean shouldRunForCommand(EntityChange<E> entityChange) {
+        return shouldEnrichField(entityChange) && (triggeredFieldIsNotRequested() || hasAnyTriggeredField(entityChange));
+    }
+
+    private boolean shouldEnrichField(EntityChange<E> entityChange) {
+        return enrichedFieldIsMissing(entityChange) || (considerNullAsMissing() && enrichedFieldHasNullValue(entityChange));
+    }
+
+    private boolean enrichedFieldHasNullValue(EntityChange<E> entityChange) {
+        return entityChange.get(enrichedField()) == null;
+    }
+
+    private boolean triggeredFieldIsNotRequested() {
+        return triggeredByFields().count() == 0;
+    }
+
+    private boolean hasAnyTriggeredField(EntityChange<E> entityChange) {
+        return triggeredByFields().anyMatch(entityChange::isFieldChanged);
+    }
+
+    private boolean enrichedFieldIsMissing(EntityChange<E> entityChange) {
         return !entityChange.isFieldChanged(enrichedField());
     }
 }
