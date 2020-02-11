@@ -8,7 +8,7 @@ import org.jooq.TableField;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-public class EmptyVirtualEntityFieldDbAdapter<T, T1> implements EntityFieldDbAdapter<T> {
+public class EmptyVirtualEntityFieldDbAdapter<T> implements EntityFieldDbAdapter<T> {
 
     private final DataTable table;
 
@@ -28,6 +28,11 @@ public class EmptyVirtualEntityFieldDbAdapter<T, T1> implements EntityFieldDbAda
 
     @Override
     public Stream<Object> getDbValues(T value) {
+        throw new IllegalStateException("Virtual fields can not be written to the database");
+    }
+
+    @Override
+    public Object getFirstDbValue(T value) {
         throw new IllegalStateException("Virtual fields can not be written to the database");
     }
 

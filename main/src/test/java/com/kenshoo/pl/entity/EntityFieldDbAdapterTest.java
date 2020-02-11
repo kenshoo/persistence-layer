@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -10,18 +9,42 @@ import java.util.Iterator;
 import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class EntityFieldDbAdapterTest {
 
+    private EntityFieldDbAdapterForIdentity adapterForIdentity = new EntityFieldDbAdapterForIdentity();
+    private EntityFieldDbAdapterForNonIdentity adapterForNonIdentity = new EntityFieldDbAdapterForNonIdentity();
+    private EntityFieldDbAdapterWithoutFields adapterWithoutFields = new EntityFieldDbAdapterWithoutFields();
+
     @Test
     public void isIdentityFieldReturnsTrueWhenMatches() {
-        assertThat(new EntityFieldDbAdapterForIdentity().isIdentityField(), is(true));
+        assertThat(adapterForIdentity.isIdentityField(), is(true));
     }
 
     @Test
     public void isIdentityFieldReturnsTrueWhenDoesntMatch() {
-        assertThat(new EntityFieldDbAdapterForNonIdentity().isIdentityField(), is(false));
+        assertThat(adapterForNonIdentity.isIdentityField(), is(false));
+    }
+
+    @Test
+    public void getFirstTableFieldWhenExistsShouldReturnCorrectField() {
+        assertThat(adapterForIdentity.getFirstTableField(), is(TestEntityAutoIncTable.TABLE.id));
+    }
+
+    @Test
+    public void getFirstDbValueWhenExistsShouldReturnCorrectValue() {
+        assertThat(adapterForIdentity.getFirstDbValue(1), is(1));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getFirstTableFieldWhenDoesntExistShouldThrowException() {
+        adapterWithoutFields.getFirstTableField();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getFirstDbValueWhenDoesntExistShouldThrowException() {
+        adapterWithoutFields.getFirstDbValue(1);
     }
 
     private static class EntityFieldDbAdapterForIdentity implements EntityFieldDbAdapter<Object> {
@@ -33,17 +56,17 @@ public class EntityFieldDbAdapterTest {
 
         @Override
         public Stream<TableField<Record, ?>> getTableFields() {
-            return ImmutableSet.<TableField<Record, ?>>of(TestEntityAutoIncTable.TABLE.id).stream();
+            return Stream.of(TestEntityAutoIncTable.TABLE.id);
         }
 
         @Override
         public Stream<Object> getDbValues(final Object value) {
-            return null;
+            return Stream.of(value);
         }
 
         @Override
         public Object getFromRecord(final Iterator<Object> valuesIterator) {
-            return null;
+            return valuesIterator.next();
         }
     }
 
@@ -56,12 +79,35 @@ public class EntityFieldDbAdapterTest {
 
         @Override
         public Stream<TableField<Record, ?>> getTableFields() {
-            return ImmutableSet.<TableField<Record, ?>>of(TestEntityTable.TABLE.id).stream();
+            return Stream.of(TestEntityTable.TABLE.id);
         }
 
         @Override
         public Stream<Object> getDbValues(final Object value) {
-            return null;
+            return Stream.of(value);
+        }
+
+        @Override
+        public Object getFromRecord(final Iterator<Object> valuesIterator) {
+            return valuesIterator.next();
+        }
+    }
+
+    private static class EntityFieldDbAdapterWithoutFields implements EntityFieldDbAdapter<Object> {
+
+        @Override
+        public DataTable getTable() {
+            return TestEntityTable.TABLE;
+        }
+
+        @Override
+        public Stream<TableField<Record, ?>> getTableFields() {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<Object> getDbValues(final Object value) {
+            return Stream.empty();
         }
 
         @Override
