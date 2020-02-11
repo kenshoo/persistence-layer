@@ -29,7 +29,7 @@ public class MissingChildrenHandler {
     void handleRecursive(Iterable<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<PARENT> config) {
 
         final Collection<? extends ChangeEntityCommand<PARENT>> parentsWithChildSupplier = seq(parents)
-                .filter(this::recursivelyCheckForAnyMissingCmdSupplier)
+                .filter(this::recursivelyCheckIfAnyShouldCascade)
                 .toList();
 
         if (parentsWithChildSupplier.isEmpty()) {
@@ -45,6 +45,7 @@ public class MissingChildrenHandler {
         ChildrenFromDB<PARENT, CHILD> childrenFromDB = getExistingChildrenFromDB(parents, childType);
         populateKeyToParent(parents, childType, childrenFromDB);
         populateCommandForMissingChildren(parents, childType, childrenFromDB);
+        populateDeletionCommandForCascadeChildren(parents, childType, childrenFromDB);
         handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)), childFlow);
     }
 
@@ -63,16 +64,31 @@ public class MissingChildrenHandler {
             seq(parentChildrenFromDB.map)
                     .filter(childIds -> !childrenFromCommand.contains(childIds.v1))
                     .forEach(missingChildIds -> {
-                            parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
-                                parent.addChild(newCmd);
-                                newCmd.setKeysToParent(missingChildIds.v2);
-                            });
+                        parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
+                            parent.addChild(newCmd);
+                            newCmd.setKeysToParent(missingChildIds.v2);
+                        });
                     });
         });
     }
 
-    private
-    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    void populateDeletionCommandForCascadeChildren(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
+        seq(parents)
+                .filter(this::isCascadeDeletion)
+                .forEach(parent -> {
+                    ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
+                    seq(parentChildrenFromDB.map)
+                            .forEach(childId -> {
+                                Identifier<CHILD> key = childId.v1;
+                                DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> cmd = new DeleteEntityCommand<>(childType, key).setCascade();
+                                parent.addChild(cmd);
+                                cmd.setKeysToParent(childId.v2);
+                            });
+                });
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     void populateKeyToParent(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
         seq(parents).forEach(parent -> {
             ChildrenWithKeyToParent<CHILD> childrenOfParent = childrenFromDB.of(parent);
@@ -84,18 +100,21 @@ public class MissingChildrenHandler {
         return concat(entity.getIdentifier(), entity.getKeysToParent());
     }
 
-    private
-    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     Set<Identifier<CHILD>> childrenIdsOf(CHILD childType, ChangeEntityCommand<PARENT> parent) {
         return parent.getChildren(childType).map(EntityChange::getIdentifier)
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
 
-    private
-    <E extends EntityType<E>>
-    boolean recursivelyCheckForAnyMissingCmdSupplier(ChangeEntityCommand<E> parent) {
-        return !parent.getMissingChildrenSuppliers().isEmpty() || parent.getChildren().anyMatch(child -> recursivelyCheckForAnyMissingCmdSupplier(child));
+    private <E extends EntityType<E>>
+    boolean recursivelyCheckIfAnyShouldCascade(ChangeEntityCommand<E> parent) {
+        return !parent.getMissingChildrenSuppliers().isEmpty() || isCascadeDeletion(parent) || parent.getChildren().anyMatch(child -> recursivelyCheckIfAnyShouldCascade(child));
+    }
+
+    private <E extends EntityType<E>>
+    boolean isCascadeDeletion(ChangeEntityCommand<E> cmd) {
+        return cmd instanceof DeleteEntityCommand && ((DeleteEntityCommand) cmd).isCascade();
     }
 
     private

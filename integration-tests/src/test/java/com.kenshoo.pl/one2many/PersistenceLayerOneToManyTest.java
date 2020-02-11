@@ -89,6 +89,7 @@ public class PersistenceLayerOneToManyTest {
     public void clearTables() {
         jooq.deleteFrom(PARENT).execute();
         jooq.deleteFrom(CHILD).execute();
+        jooq.deleteFrom(GRAND_CHILD).execute();
     }
 
     @AfterClass
@@ -569,6 +570,78 @@ public class PersistenceLayerOneToManyTest {
         assertThat(childrenByOrdinal.get(2).field1, is("child2 updated"));
     }
 
+    @Test
+    public void cascade_delete_children() {
+
+        insert(newParent()
+                        .with(upsertChild(1)
+                                .withChild(upsertGrandChild("red"))
+                                .withChild(upsertGrandChild("blue"))
+                        )
+        );
+
+        delete(parentFlow(childFlow()), new ParentCmdBuilder(deleteParentWithId(generatedId(0)).setCascade()));
+
+        List<ChildPojo> childs = jooq.select().from(CHILD).fetch(toChildPojo());
+        List<String> grandChildIds = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+
+        assertThat(childs.size(), is(0));
+        assertThat(grandChildIds.size(), is(0));
+    }
+
+    @Test
+    public void cascade_delete_just_grandchild() {
+
+        insert(newParent()
+                .with(upsertChild(1)
+                        .withChild(upsertGrandChild("red"))
+                        .withChild(upsertGrandChild("blue"))
+                )
+                .with(upsertChild(2)
+                        .withChild(upsertGrandChild("white"))
+                )
+        );
+
+        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
+                .with(deleteChild(1).setCascade());
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        List<Integer> parentIds = jooq.select().from(PARENT).fetch(rec -> rec.get(PARENT.id));
+        List<Integer> childOrdinals = jooq.select().from(CHILD).fetch(rec -> rec.get(CHILD.ordinal));
+        List<String> grandChildColors = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+
+        assertThat(parentIds, containsInAnyOrder(generatedId(0)));
+        assertThat(childOrdinals, containsInAnyOrder(2));
+        assertThat(grandChildColors, containsInAnyOrder("white"));
+    }
+
+    @Test
+    public void DeletionOfOther_supplier_automatic_set_cascade() {
+
+        insert(newParent()
+                .with(upsertChild(1)
+                        .withChild(upsertGrandChild("red"))
+                        .withChild(upsertGrandChild("blue"))
+                )
+                .with(upsertChild(2)
+                        .withChild(upsertGrandChild("green"))
+                        .withChild(upsertGrandChild("yellow"))
+                )
+        );
+
+        ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0))
+                .with(new DeletionOfOther<>(ChildEntity.INSTANCE))
+                .with(upsertChild(1)
+                        .get());
+
+        update(parentFlow(childFlow()), parentBuilder);
+
+        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+
+        assertThat(colorsInDB, containsInAnyOrder("red", "blue"));
+    }
+
 
     private PostFetchCommandEnricher<ChildEntity> enrichWithValueFrom(EntityField otherField, BiConsumer<ChangeEntityCommand<ChildEntity>, Object> enrichment) {
         return new PostFetchCommandEnricher<ChildEntity>() {
@@ -672,6 +745,13 @@ public class PersistenceLayerOneToManyTest {
                 parentFlow.build());
     }
 
+    private DeleteResult<ParentEntity, ParentEntity.Key> delete(ChangeFlowConfig.Builder<ParentEntity> parentFlow, ParentCmdBuilder... cmds) {
+        final List<DeleteEntityCommand<ParentEntity, ParentEntity.Key>> changes = Seq.of(cmds).map(c -> (DeleteEntityCommand<ParentEntity, ParentEntity.Key>)c.cmd).toList();
+        return persistenceLayer.delete(
+                changes,
+                parentFlow.build());
+    }
+
     class ParentCmdBuilder {
         final ChangeEntityCommand<ParentEntity> cmd;
 
@@ -733,6 +813,10 @@ public class PersistenceLayerOneToManyTest {
 
     private ParentCmdBuilder existingParentWithId(Integer id) {
         return new ParentCmdBuilder(new UpdateEntityCommand<>(ParentEntity.INSTANCE, new ParentEntity.Key(id)));
+    }
+
+    private DeleteEntityCommand deleteParentWithId(Integer id) {
+        return new DeleteEntityCommand<>(ParentEntity.INSTANCE, new ParentEntity.Key(id));
     }
 
     private ParentCmdBuilder existingParentWithUniqueKey(Integer idInTarget) {
