@@ -43,9 +43,9 @@ public class DeletionCommandPopulator {
     void handleChildFlow(Collection<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<CHILD> childFlow) {
         final CHILD childType = childFlow.getEntityType();
         ChildrenFromDB<PARENT, CHILD> childrenFromDB = getExistingChildrenFromDB(parents, childType);
-        populateKeyToParent(parents, childType, childrenFromDB);
         addDeletionChildCommands(seq(parents).filter(this::isCascadeDeletion), childType, childrenFromDB);
         supplyChildCommands(seq(parents).filter(this::withMissingChildSupplier), childType, childrenFromDB);
+        populateKeyToParent(parents, childType, childrenFromDB);
         handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)), childFlow);
     }
 
@@ -66,7 +66,6 @@ public class DeletionCommandPopulator {
                     .forEach(missingChildIds -> {
                         parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
                             parent.addChild(newCmd);
-                            newCmd.setKeysToParent(missingChildIds.v2);
                         });
                     });
         });
@@ -78,10 +77,8 @@ public class DeletionCommandPopulator {
                     ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
                     seq(parentChildrenFromDB.map)
                             .forEach(childId -> {
-                                Identifier<CHILD> key = childId.v1;
-                                DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> cmd = new DeleteEntityCommand<>(childType, key).setCascade();
-                                parent.addChild(cmd);
-                                cmd.setKeysToParent(childId.v2);
+                                DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> newCmd = new DeleteEntityCommand<>(childType, childId.v1).setCascade();
+                                parent.addChild(newCmd);
                             });
                 });
     }
