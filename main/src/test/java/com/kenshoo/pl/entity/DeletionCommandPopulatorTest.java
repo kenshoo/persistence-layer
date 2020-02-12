@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
  * Created by libbyfr on 12/26/2019.
  */
 @RunWith(MockitoJUnitRunner.class)
-public class MissingChildrenHandlerTest {
+public class DeletionCommandPopulatorTest {
 
     @Mock
     private ChildrenIdFetcher childrenIdFetcher;
@@ -38,11 +38,11 @@ public class MissingChildrenHandlerTest {
     private Identifier childId2 = new TestChildEntity.Ordinal(333);
 
     private ChangeFlowConfig flowConfig;
-    private MissingChildrenHandler underTest;
+    private DeletionCommandPopulator underTest;
 
     @Before
     public void setUp() {
-        underTest = new MissingChildrenHandler(childrenIdFetcher);
+        underTest = new DeletionCommandPopulator(childrenIdFetcher);
         flowConfig = new ChangeFlowConfig.Builder(parentEntity)
                 .withChildFlowBuilder(new ChangeFlowConfig.Builder(childEntity))
                 .build();
