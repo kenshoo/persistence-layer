@@ -4,7 +4,6 @@ package com.kenshoo.pl;
 import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.MissingChildrenHandler;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.FieldValueSupplier;
 

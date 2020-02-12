@@ -27,12 +27,12 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
 
     private final DSLContext dslContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
-    private MissingChildrenHandler missingChildrenHandler;
+    private DeletionCommandPopulator deletionCommandPopulator;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
-        this.missingChildrenHandler = new MissingChildrenHandler(dslContext);
+        this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext);
     }
 
     public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
@@ -96,7 +96,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
     }
 
     private ChangeContext makeChanges(Collection<? extends ChangeEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
-        missingChildrenHandler.handleRecursive(commands, flowConfig);
+        deletionCommandPopulator.handleRecursive(commands, flowConfig);
         ChangeContextImpl context = new ChangeContextImpl(Hierarchy.build(flowConfig), flowConfig.getFeatures());
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);

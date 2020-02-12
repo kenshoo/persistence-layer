@@ -13,7 +13,7 @@ public class DeletionOfOther<E extends EntityType<E>> implements MissingChildren
     }
 
     public Optional<ChangeEntityCommand<E>> supplyNewCommand(Identifier<E> id) {
-        return Optional.of(new DeleteEntityCommand(childType, id));
+        return Optional.of(new DeleteEntityCommand(childType, id).setCascade());
     }
 
     @Override

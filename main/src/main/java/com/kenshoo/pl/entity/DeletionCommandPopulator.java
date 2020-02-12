@@ -12,16 +12,16 @@ import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
 
-public class MissingChildrenHandler {
+public class DeletionCommandPopulator {
 
     private final ChildrenIdFetcher childrenIdFetcher;
 
-    public MissingChildrenHandler(DSLContext jooq) {
+    public DeletionCommandPopulator(DSLContext jooq) {
         childrenIdFetcher = new ChildrenIdFetcher(jooq);
     }
 
     @VisibleForTesting
-    public MissingChildrenHandler(ChildrenIdFetcher childrenIdFetcher) {
+    public DeletionCommandPopulator(ChildrenIdFetcher childrenIdFetcher) {
         this.childrenIdFetcher = childrenIdFetcher;
     }
 
@@ -29,7 +29,7 @@ public class MissingChildrenHandler {
     void handleRecursive(Iterable<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<PARENT> config) {
 
         final Collection<? extends ChangeEntityCommand<PARENT>> parentsWithChildSupplier = seq(parents)
-                .filter(this::recursivelyCheckForAnyMissingCmdSupplier)
+                .filter(this::recursivelyCheckIfAnyShouldCascade)
                 .toList();
 
         if (parentsWithChildSupplier.isEmpty()) {
@@ -43,8 +43,9 @@ public class MissingChildrenHandler {
     void handleChildFlow(Collection<? extends ChangeEntityCommand<PARENT>> parents, ChangeFlowConfig<CHILD> childFlow) {
         final CHILD childType = childFlow.getEntityType();
         ChildrenFromDB<PARENT, CHILD> childrenFromDB = getExistingChildrenFromDB(parents, childType);
+        addDeletionChildCommands(seq(parents).filter(this::isCascadeDeletion), childType, childrenFromDB);
+        supplyChildCommands(seq(parents).filter(this::withMissingChildSupplier), childType, childrenFromDB);
         populateKeyToParent(parents, childType, childrenFromDB);
-        populateCommandForMissingChildren(parents, childType, childrenFromDB);
         handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)), childFlow);
     }
 
@@ -56,23 +57,31 @@ public class MissingChildrenHandler {
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    void populateCommandForMissingChildren(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
-        seq(parents).forEach(parent -> {
+    void supplyChildCommands(Stream<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
+        parents.forEach(parent -> {
             final Set<Identifier<CHILD>> childrenFromCommand = childrenIdsOf(childType, parent);
-            ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
-            seq(parentChildrenFromDB.map)
-                    .filter(childIds -> !childrenFromCommand.contains(childIds.v1))
+            seq(childrenFromDB.getChildIds(parent))
+                    .filter(childIds -> !childrenFromCommand.contains(childIds))
                     .forEach(missingChildIds -> {
-                            parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
-                                parent.addChild(newCmd);
-                                newCmd.setKeysToParent(missingChildIds.v2);
-                            });
+                        parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds)).ifPresent(newCmd -> {
+                            parent.addChild(newCmd);
+                        });
                     });
         });
     }
 
-    private
-    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    void addDeletionChildCommands(Stream<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
+        parents.forEach(parent ->
+            childrenFromDB.getChildIds(parent)
+                    .forEach(childId -> {
+                        DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> newCmd = new DeleteEntityCommand<>(childType, childId).setCascade();
+                        parent.addChild(newCmd);
+                    })
+        );
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     void populateKeyToParent(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
         seq(parents).forEach(parent -> {
             ChildrenWithKeyToParent<CHILD> childrenOfParent = childrenFromDB.of(parent);
@@ -84,22 +93,28 @@ public class MissingChildrenHandler {
         return concat(entity.getIdentifier(), entity.getKeysToParent());
     }
 
-    private
-    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     Set<Identifier<CHILD>> childrenIdsOf(CHILD childType, ChangeEntityCommand<PARENT> parent) {
         return parent.getChildren(childType).map(EntityChange::getIdentifier)
                 .filter(Objects::nonNull)
                 .collect(toSet());
     }
 
-    private
-    <E extends EntityType<E>>
-    boolean recursivelyCheckForAnyMissingCmdSupplier(ChangeEntityCommand<E> parent) {
-        return !parent.getMissingChildrenSuppliers().isEmpty() || parent.getChildren().anyMatch(child -> recursivelyCheckForAnyMissingCmdSupplier(child));
+    private <E extends EntityType<E>>
+    boolean recursivelyCheckIfAnyShouldCascade(ChangeEntityCommand<E> parent) {
+        return withMissingChildSupplier(parent) || isCascadeDeletion(parent) || parent.getChildren().anyMatch(child -> recursivelyCheckIfAnyShouldCascade(child));
     }
 
-    private
-    <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
+    private <E extends EntityType<E>>
+    boolean isCascadeDeletion(ChangeEntityCommand<E> cmd) {
+        return cmd instanceof DeleteEntityCommand && ((DeleteEntityCommand) cmd).isCascade();
+    }
+
+    private <PARENT extends EntityType<PARENT>> boolean withMissingChildSupplier(ChangeEntityCommand<PARENT> cmd) {
+        return !cmd.getMissingChildrenSuppliers().isEmpty();
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     Optional<UniqueKey<CHILD>>
     identifierOfFirstChildCmd(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
         return parents.stream()
@@ -126,6 +141,10 @@ public class MissingChildrenHandler {
 
         ChildrenWithKeyToParent<CHILD> of(ChangeEntityCommand<PARENT> parent) {
             return map.getOrDefault(concatenatedId(parent), EMPTY);
+        }
+
+        Set<Identifier<CHILD>> getChildIds(ChangeEntityCommand<PARENT> parent) {
+            return of(parent).map.keySet();
         }
     }
 

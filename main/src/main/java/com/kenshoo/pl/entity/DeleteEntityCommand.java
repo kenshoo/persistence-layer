@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 public class DeleteEntityCommand<E extends EntityType<E>, ID extends Identifier<E>> extends ChangeEntityCommand<E> {
 
     private final ID key;
+    private boolean isCascade;
 
     public DeleteEntityCommand(E entityType,  ID key) {
         super(entityType);
@@ -20,5 +21,14 @@ public class DeleteEntityCommand<E extends EntityType<E>, ID extends Identifier<
     @Override
     public ChangeOperation getChangeOperation() {
         return ChangeOperation.DELETE;
+    }
+
+    public DeleteEntityCommand<E, ID> setCascade() {
+        this.isCascade = true;
+        return this;
+    }
+
+    public boolean isCascade() {
+        return this.isCascade;
     }
 }
