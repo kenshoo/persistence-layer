@@ -4,6 +4,7 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements PostFetchCommandEnricher<E> {
@@ -11,6 +12,7 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
     @Override
     final public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
         changeEntityCommands.stream()
+                .filter(commandFilter())
                 .filter(command -> shouldRunForCommand(command) && needEnrich(command, changeContext.getEntity(command)))
                 .forEach(command -> command.set(enrichedField(), enrichedValue(command, changeContext.getEntity(command))));
     }
@@ -22,7 +24,7 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
 
     @Override
     final public boolean shouldRun(Collection<? extends EntityChange<E>> commands) {
-        return commands.stream().anyMatch(this::shouldRunForCommand);
+        return commands.stream().filter(commandFilter()).anyMatch(this::shouldRunForCommand);
     }
 
     abstract protected EntityField<E, T> enrichedField();
@@ -33,8 +35,8 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
         return true;
     }
 
-    protected Stream<EntityField<E, ?>> triggeredByFields() {
-        return Stream.empty();
+    protected Predicate<EntityChange<E>> commandFilter() {
+        return entityChange -> true;
     }
 
     protected boolean considerNullAsMissing() {
@@ -42,7 +44,7 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
     }
 
     protected boolean shouldRunForCommand(EntityChange<E> entityChange) {
-        return shouldEnrichField(entityChange) && (triggeredFieldIsNotRequested() || hasAnyTriggeredField(entityChange));
+        return shouldEnrichField(entityChange);
     }
 
     private boolean shouldEnrichField(EntityChange<E> entityChange) {
@@ -51,14 +53,6 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
 
     private boolean enrichedFieldHasNullValue(EntityChange<E> entityChange) {
         return entityChange.get(enrichedField()) == null;
-    }
-
-    private boolean triggeredFieldIsNotRequested() {
-        return triggeredByFields().count() == 0;
-    }
-
-    private boolean hasAnyTriggeredField(EntityChange<E> entityChange) {
-        return triggeredByFields().anyMatch(entityChange::isFieldChanged);
     }
 
     private boolean enrichedFieldIsMissing(EntityChange<E> entityChange) {

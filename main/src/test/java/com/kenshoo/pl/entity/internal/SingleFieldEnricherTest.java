@@ -7,8 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -178,8 +178,8 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected Stream<EntityField<TestEntity, ?>> triggeredByFields() {
-            return triggeredField != null ? Stream.of(triggeredField) : super.triggeredByFields();
+        protected Predicate<EntityChange<TestEntity>> commandFilter() {
+            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.commandFilter();
         }
 
         public static class Builder {
