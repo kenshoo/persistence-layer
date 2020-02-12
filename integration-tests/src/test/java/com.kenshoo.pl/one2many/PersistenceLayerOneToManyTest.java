@@ -110,9 +110,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(ParentEntity.NAME, "new name")
         );
 
-        String name = jooq.select(PARENT.name).from(PARENT).fetch(PARENT.name).get(0);
-
-        assertThat(name, is("new name"));
+        assertThat(parentNamesInDB(), containsInAnyOrder("new name"));
     }
 
     @Test
@@ -123,7 +121,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(upsertChild(8).with(FIELD_1, "child2"))
         );
 
-        List<ChildPojo> children = jooq.select().from(CHILD).orderBy(CHILD.ordinal).fetch(toChildPojo());
+        List<ChildPojo> children = childrenInDb();
 
         assertThat(children, not(empty()));
 
@@ -149,9 +147,9 @@ public class PersistenceLayerOneToManyTest {
                 .with(updateChild(2).with(FIELD_1, "child2_UPDATED!"))
         );
 
-        ChildPojo child2 = jooq.select().from(CHILD).where(CHILD.ordinal.eq(2)).fetchOne(toChildPojo());
+        List<String> childsFromDB = seq(childrenInDb()).map(child -> child.field1).collect(toList());
 
-        assertThat(child2.field1, is("child2_UPDATED!"));
+        assertThat(childsFromDB, containsInAnyOrder("child1", "child2_UPDATED!", "child3"));
     }
 
     @Test
@@ -169,7 +167,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(deleteChild(4))
         );
 
-        List<Integer> remainingChildren = jooq.select().from(CHILD).fetch(CHILD.ordinal);
+        List<Integer> remainingChildren = seq(childrenInDb()).map(rec -> rec.ordinal).collect(toList());;
 
         assertThat(remainingChildren, containsInAnyOrder(1, 2));
     }
@@ -184,7 +182,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(existingParentWithId(generatedId(0)).with(deleteChild(1)));
 
-        List<String> remainingChildren = jooq.select().from(CHILD).fetch(CHILD.field1);
+        List<String> remainingChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
 
         assertThat(remainingChildren, containsInAnyOrder("child2"));
     }
@@ -203,7 +201,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(upsertChild(3).with(FIELD_1,  "new_child3"))
         );
 
-        List<ChildPojo> children = jooq.select().from(CHILD).orderBy(CHILD.ordinal).fetch(toChildPojo());
+        List<ChildPojo> children = childrenInDb();
 
         assertThat(children, hasSize(2));
 
@@ -231,7 +229,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(upsertChild(3).with(FIELD_1,  "new_child3"))
         );
 
-        List<ChildPojo> children = jooq.select().from(CHILD).orderBy(CHILD.ordinal).fetch(toChildPojo());
+        List<ChildPojo> children = childrenInDb();
 
         assertThat(children, hasSize(2));
 
@@ -254,7 +252,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(updateChild(0).with(FIELD_1, supplyFromField(ParentEntity.NAME, parentName -> "I'm the child of " + parentName)))
         );
 
-        ChildPojo child = jooq.select().from(CHILD).fetchOne(toChildPojo());
+        ChildPojo child = childrenInDb().get(0);
 
         assertThat(child.field1, is("I'm the child of moshe"));
     }
@@ -271,7 +269,7 @@ public class PersistenceLayerOneToManyTest {
                 )
         );
 
-        ChildPojo child = jooq.select().from(CHILD).fetchOne(toChildPojo());
+        ChildPojo child = childrenInDb().get(0);
 
         assertThat(child.field1, is("I'm the child of moshe"));
     }
@@ -289,7 +287,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> v + " + something")))
         );
 
-        List<String> results = jooq.select().from(CHILD).fetch(row -> row.get(ChildTable.INSTANCE.field1));
+        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
 
         assertThat(results, containsInAnyOrder("one", "two + something", "three"));
     }
@@ -309,7 +307,7 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(2)).with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> "prefix_" + v)))
         );
 
-        List<String> results = jooq.select().from(CHILD).fetch(row -> row.get(ChildTable.INSTANCE.field1));
+        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
 
         assertThat(results, containsInAnyOrder("prefix_one_suffix", "prefix_two_suffix", "prefix_three_suffix"));
     }
@@ -327,11 +325,10 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(ParentEntity.NAME, "parent2_new").with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = jooq.select().from(CHILD).orderBy(CHILD.parent_id).fetch(r -> r.get(CHILD.field1));
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
         assertThat(children, contains("one", "valid child"));
 
-        List<String> parentNames = jooq.select().from(PARENT).orderBy(PARENT.id).fetch(r -> r.get(PARENT.name));
-        assertThat(parentNames, contains("parent1", "parent2_new"));
+        assertThat(parentNamesInDB(), containsInAnyOrder("parent1", "parent2_new"));
 
         assertFalse(first(results).isSuccess());
         assertThat(first(results).getErrors(), hasSize(1));
@@ -359,11 +356,10 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = jooq.select().from(CHILD).orderBy(CHILD.parent_id).fetch(r -> r.get(CHILD.field1));
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
         assertThat(children, contains("one", "valid child"));
 
-        List<String> parentNames = jooq.select().from(PARENT).orderBy(PARENT.id).fetch(r -> r.get(PARENT.name));
-        assertThat(parentNames, contains("parent1", "parent2"));
+        assertThat(parentNamesInDB(), contains("parent1", "parent2"));
     }
 
     @Test
@@ -379,11 +375,10 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(ParentEntity.NAME, "parent2_new").with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = jooq.select().from(CHILD).orderBy(CHILD.parent_id).fetch(r -> r.get(CHILD.field1));
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
         assertThat(children, contains("one", "valid child"));
 
-        List<String> parentNames = jooq.select().from(PARENT).orderBy(PARENT.id).fetch(r -> r.get(PARENT.name));
-        assertThat(parentNames, contains("parent1", "parent2_new"));
+        assertThat(parentNamesInDB(), contains("parent1", "parent2_new"));
     }
 
     @Test
@@ -398,7 +393,7 @@ public class PersistenceLayerOneToManyTest {
             )
         );
 
-        List<String> actualChildren = jooq.select().from(CHILD).fetch(row -> row.get(ChildTable.INSTANCE.field1));
+        List<String> actualChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
 
         assertThat(actualChildren, contains("izak (child of avraham)"));
     }
@@ -418,7 +413,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(childrenInDb()).toMap(child -> child.ordinal);
 
         assertThat(childrenByOrdinal.get(1).field1, is("child1 updated"));
         assertThat(childrenByOrdinal.get(3).field1, is("child3"));
@@ -437,7 +432,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(childrenInDb()).toMap(child -> child.ordinal);
 
         assertFalse(childrenByOrdinal.containsKey(1));
         assertFalse(childrenByOrdinal.containsKey(2));
@@ -454,7 +449,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(childrenInDb()).toMap(child -> child.ordinal);
 
         assertTrue(childrenByOrdinal.containsKey(1));
     }
@@ -473,7 +468,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(childrenInDb()).toMap(child -> child.ordinal);
 
         assertTrue(childrenByOrdinal.containsKey(1));
         assertFalse(childrenByOrdinal.containsKey(2));
@@ -505,9 +500,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
-
-        assertThat(colorsInDB, containsInAnyOrder("red", "yellow"));
+        assertThat(grandChildrenColorsInDB(), containsInAnyOrder("red", "yellow"));
     }
 
     @Test
@@ -538,9 +531,7 @@ public class PersistenceLayerOneToManyTest {
                                 .get())
         );
 
-        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
-
-        assertThat(colorsInDB, containsInAnyOrder("red", "yellow"));
+        assertThat(grandChildrenColorsInDB(), containsInAnyOrder("red", "yellow"));
     }
 
     @Test
@@ -564,14 +555,14 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder1, parentBuilder2);
 
-        Map<Integer, ChildPojo> childrenByOrdinal = seq(jooq.select().from(CHILD).fetch(toChildPojo())).toMap(child -> child.ordinal);
+        Map<Integer, ChildPojo> childrenByOrdinal = seq(childrenInDb()).toMap(child -> child.ordinal);
 
         assertThat(childrenByOrdinal.get(1).field1, is("child1 updated"));
         assertThat(childrenByOrdinal.get(2).field1, is("child2 updated"));
     }
 
     @Test
-    public void cascade_delete_children() {
+    public void when_deleting_parent_with_cascade_then_delete_children_and_grand() {
 
         insert(newParent()
                         .with(upsertChild(1)
@@ -582,15 +573,12 @@ public class PersistenceLayerOneToManyTest {
 
         delete(parentFlow(childFlow()), new ParentCmdBuilder(deleteParentWithId(generatedId(0)).setCascade()));
 
-        List<ChildPojo> childs = jooq.select().from(CHILD).fetch(toChildPojo());
-        List<String> grandChildIds = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
-
-        assertThat(childs.size(), is(0));
-        assertThat(grandChildIds.size(), is(0));
+        assertThat(childrenInDb(), empty());
+        assertThat(grandChildrenColorsInDB(), empty());
     }
 
     @Test
-    public void cascade_delete_just_grandchild() {
+    public void when_deleting_child_with_cascade_then_delete_all_grand_children() {
 
         insert(newParent()
                 .with(upsertChild(1)
@@ -607,17 +595,13 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        List<Integer> parentIds = jooq.select().from(PARENT).fetch(rec -> rec.get(PARENT.id));
-        List<Integer> childOrdinals = jooq.select().from(CHILD).fetch(rec -> rec.get(CHILD.ordinal));
-        List<String> grandChildColors = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
-
-        assertThat(parentIds, containsInAnyOrder(generatedId(0)));
-        assertThat(childOrdinals, containsInAnyOrder(2));
-        assertThat(grandChildColors, containsInAnyOrder("white"));
+        assertThat(parentIdsInDB(), containsInAnyOrder(generatedId(0)));
+        assertThat(seq(childrenInDb()).map(rec -> rec.ordinal).collect(toList()), containsInAnyOrder(2));
+        assertThat(grandChildrenColorsInDB(), containsInAnyOrder("white"));
     }
 
     @Test
-    public void DeletionOfOther_supplier_automatic_set_cascade() {
+    public void when_deleting_other_children_then_grand_children_are_deleted() {
 
         insert(newParent()
                 .with(upsertChild(1)
@@ -637,9 +621,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(parentFlow(childFlow()), parentBuilder);
 
-        List<String> colorsInDB = jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
-
-        assertThat(colorsInDB, containsInAnyOrder("red", "blue"));
+        assertThat(grandChildrenColorsInDB(), containsInAnyOrder("red", "blue"));
     }
 
 
@@ -876,4 +858,19 @@ public class PersistenceLayerOneToManyTest {
 
     final IntegerIdGeneratorEnricher<ChildEntity> childrenIdGenerator = new IntegerIdGeneratorEnricher<>(new IdGenerator(), ChildEntity.ID);
 
+    private List<Integer> parentIdsInDB() {
+        return jooq.select().from(PARENT).fetch(rec -> rec.get(PARENT.id));
+    }
+
+    private List<String> parentNamesInDB() {
+        return jooq.select().from(PARENT).fetch(rec -> rec.get(PARENT.name));
+    }
+
+    private List<String> grandChildrenColorsInDB() {
+        return jooq.select().from(GRAND_CHILD).fetch(rec -> rec.get(GRAND_CHILD.color));
+    }
+
+    private List<ChildPojo> childrenInDb() {
+        return jooq.select().from(CHILD).fetch(toChildPojo());
+    }
 }

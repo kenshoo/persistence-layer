@@ -60,11 +60,10 @@ public class DeletionCommandPopulator {
     void supplyChildCommands(Stream<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
         parents.forEach(parent -> {
             final Set<Identifier<CHILD>> childrenFromCommand = childrenIdsOf(childType, parent);
-            ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
-            seq(parentChildrenFromDB.map)
-                    .filter(childIds -> !childrenFromCommand.contains(childIds.v1))
+            seq(childrenFromDB.getChildIds(parent))
+                    .filter(childIds -> !childrenFromCommand.contains(childIds))
                     .forEach(missingChildIds -> {
-                        parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds.v1)).ifPresent(newCmd -> {
+                        parent.getMissingChildrenSupplier(childType).flatMap(s -> s.supplyNewCommand(missingChildIds)).ifPresent(newCmd -> {
                             parent.addChild(newCmd);
                         });
                     });
@@ -73,14 +72,13 @@ public class DeletionCommandPopulator {
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     void addDeletionChildCommands(Stream<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType, ChildrenFromDB<PARENT, CHILD> childrenFromDB) {
-        parents.forEach(parent -> {
-                    ChildrenWithKeyToParent<CHILD> parentChildrenFromDB = childrenFromDB.of(parent);
-                    seq(parentChildrenFromDB.map)
-                            .forEach(childId -> {
-                                DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> newCmd = new DeleteEntityCommand<>(childType, childId.v1).setCascade();
-                                parent.addChild(newCmd);
-                            });
-                });
+        parents.forEach(parent ->
+            childrenFromDB.getChildIds(parent)
+                    .forEach(childId -> {
+                        DeleteEntityCommand<CHILD, ? extends Identifier<CHILD>> newCmd = new DeleteEntityCommand<>(childType, childId).setCascade();
+                        parent.addChild(newCmd);
+                    })
+        );
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
@@ -143,6 +141,10 @@ public class DeletionCommandPopulator {
 
         ChildrenWithKeyToParent<CHILD> of(ChangeEntityCommand<PARENT> parent) {
             return map.getOrDefault(concatenatedId(parent), EMPTY);
+        }
+
+        Set<Identifier<CHILD>> getChildIds(ChangeEntityCommand<PARENT> parent) {
+            return of(parent).map.keySet();
         }
     }
 
