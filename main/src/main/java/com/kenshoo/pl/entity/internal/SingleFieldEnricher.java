@@ -41,20 +41,8 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
         return (entityChange, entity) -> true;
     }
 
-    protected boolean considerNullAsMissing() {
-        return false;
-    }
-
     protected boolean shouldRunForCommand(EntityChange<E> entityChange) {
-        return shouldEnrichField(entityChange);
-    }
-
-    private boolean shouldEnrichField(EntityChange<E> entityChange) {
-        return enrichedFieldIsMissing(entityChange) || (considerNullAsMissing() && enrichedFieldHasNullValue(entityChange));
-    }
-
-    private boolean enrichedFieldHasNullValue(EntityChange<E> entityChange) {
-        return entityChange.get(enrichedField()) == null;
+        return enrichedFieldIsMissing(entityChange);
     }
 
     private boolean enrichedFieldIsMissing(EntityChange<E> entityChange) {
