@@ -14,8 +14,8 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
     final public void enrich(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
         changeEntityCommands.stream()
                 .filter(this::shouldRunForCommand)
-                .filter(preFetchShouldEnrichFilter())
-                .filter(command-> postFetchShouldEnrichFilter().test(command, changeContext.getEntity(command)))
+                .filter(additionalCommandFilter())
+                .filter(command-> additionalPostFetchCommandFilter().test(command, changeContext.getEntity(command)))
                 .forEach(command -> command.set(enrichedField(), enrichedValue(command, changeContext.getEntity(command))));
     }
 
@@ -26,18 +26,18 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
 
     @Override
     final public boolean shouldRun(Collection<? extends EntityChange<E>> commands) {
-        return commands.stream().filter(preFetchShouldEnrichFilter()).anyMatch(this::shouldRunForCommand);
+        return commands.stream().filter(additionalCommandFilter()).anyMatch(this::shouldRunForCommand);
     }
 
     abstract protected EntityField<E, T> enrichedField();
 
     abstract protected T enrichedValue(EntityChange<E> entityChange, Entity entity);
 
-    protected Predicate<EntityChange<E>> preFetchShouldEnrichFilter() {
+    protected Predicate<EntityChange<E>> additionalCommandFilter() {
         return entityChange -> true;
     }
 
-    protected BiPredicate<EntityChange<E>, Entity> postFetchShouldEnrichFilter() {
+    protected BiPredicate<EntityChange<E>, Entity> additionalPostFetchCommandFilter() {
         return (entityChange, entity) -> true;
     }
 

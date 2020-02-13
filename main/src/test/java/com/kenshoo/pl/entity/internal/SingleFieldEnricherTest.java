@@ -169,7 +169,7 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected BiPredicate<EntityChange<TestEntity>, Entity> postFetchShouldEnrichFilter() {
+        protected BiPredicate<EntityChange<TestEntity>, Entity> additionalPostFetchCommandFilter() {
             return (entityChange, entity ) -> !(entity.containsField(TestEntity.FIELD_2) && entity.get(TestEntity.FIELD_2).equals(DO_NOT_ENRICH_VALUE));
         }
 
@@ -179,8 +179,8 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected Predicate<EntityChange<TestEntity>> preFetchShouldEnrichFilter() {
-            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.preFetchShouldEnrichFilter();
+        protected Predicate<EntityChange<TestEntity>> additionalCommandFilter() {
+            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.additionalCommandFilter();
         }
 
         public static class Builder {
