@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -168,8 +169,8 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected boolean needEnrich(EntityChange<TestEntity> entityChange, Entity entity) {
-            return !(entity.containsField(TestEntity.FIELD_2) && entity.get(TestEntity.FIELD_2).equals(DO_NOT_ENRICH_VALUE));
+        protected BiPredicate<EntityChange<TestEntity>, Entity> postFetchShouldEnrichFilter() {
+            return (entityChange, entity ) -> !(entity.containsField(TestEntity.FIELD_2) && entity.get(TestEntity.FIELD_2).equals(DO_NOT_ENRICH_VALUE));
         }
 
         @Override
@@ -178,8 +179,8 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected Predicate<EntityChange<TestEntity>> commandFilter() {
-            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.commandFilter();
+        protected Predicate<EntityChange<TestEntity>> preFetchShouldEnrichFilter() {
+            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.preFetchShouldEnrichFilter();
         }
 
         public static class Builder {
