@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.spi.PersistenceLayerRetryer;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
@@ -31,6 +32,20 @@ public class PLContext {
 
     public PersistenceLayerRetryer persistenceLayerRetryer() {
         return  retryer;
+    }
+
+    /**
+     * Start building a query to fetch entities with the given fields.
+     *
+     * @param fields the fields to fetch, must not be empty
+     * @return the next step in which the entity type will be specified
+     */
+    public FetchFromStep select(final EntityField<?, ?>... fields) {
+        return new FluentEntitiesFetcher(fetcher(), fields);
+    }
+
+    private EntitiesFetcher fetcher() {
+        return new EntitiesFetcher(dslContext, generateFeatureSet());
     }
 
     public static class Builder {
