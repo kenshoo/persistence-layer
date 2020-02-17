@@ -1,7 +1,8 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.spi;
 
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.internal.SingleFieldEnricher;
 
 public abstract class MissingFieldEnricher<E extends EntityType<E>, T> extends SingleFieldEnricher<E, T> {
 

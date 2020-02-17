@@ -1,7 +1,8 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.spi.MissingFieldEnricher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
