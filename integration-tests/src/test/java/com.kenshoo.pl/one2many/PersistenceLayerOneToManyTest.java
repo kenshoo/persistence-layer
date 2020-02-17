@@ -1,5 +1,6 @@
 package com.kenshoo.pl.one2many;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
@@ -35,6 +36,7 @@ import static com.kenshoo.pl.FluidPersistenceCmdBuilder.fluid;
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE_AND_UPDATE;
 import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
 import static com.kenshoo.pl.one2many.ChildEntity.ORDINAL;
+import static com.kenshoo.pl.one2many.ParentEntity.ID_IN_TARGET;
 import static com.kenshoo.pl.one2many.ParentEntity.NAME;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.contains;
@@ -575,6 +577,37 @@ public class PersistenceLayerOneToManyTest {
 
         assertThat(childrenInDb(), empty());
         assertThat(grandChildrenColorsInDB(), empty());
+    }
+
+    @Test
+    public void dont_crash_when_upserting_children_with_deletion_of_other_grandchildren() {
+
+        insert(newParent().with(upsertChild(1).withChild(upsertGrandChild("red"))));
+
+        update(parentFlow(childFlow()), existingParentWithId(generatedId(0))
+                        .with(upsertChild(1).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
+                        .with(upsertChild(2).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
+        );
+
+        assertThat(grandChildrenColorsInDB(), empty());
+        assertThat(childrenInDb(), hasSize(2));
+    }
+
+    @Test
+    public void dont_crash_when_upserting_parents_with_deletion_of_other_children() {
+
+        insert(newParent().with(ID_IN_TARGET, 1).with(insertChild()));
+
+        List<InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.UniqueKey>> upserts = ImmutableList.of(
+                new InsertOnDuplicateUpdateCommand<>(ParentEntity.INSTANCE, new ParentEntity.UniqueKey(1)),
+                new InsertOnDuplicateUpdateCommand<>(ParentEntity.INSTANCE, new ParentEntity.UniqueKey(2))
+        );
+
+        upserts.forEach(cmd -> cmd.add(new DeletionOfOther<ChildEntity>(ChildEntity.INSTANCE)));
+
+        persistenceLayer.upsert(upserts, parentFlow(childFlow()).build());
+
+        assertThat(childrenInDb(), empty());
     }
 
     @Test
