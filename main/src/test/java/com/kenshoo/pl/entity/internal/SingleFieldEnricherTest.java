@@ -54,27 +54,12 @@ public class SingleFieldEnricherTest {
     }
 
     @Test
-    public void should_not_enrich_command_when_field_contains_null() {
-        CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
-        cmd.set(TestEntity.FIELD_1, (String)null);
-        enricher().build().enrich(ImmutableList.of(cmd), ChangeOperation.CREATE, prepareCtx(cmd, VALUE));
-        assertThat(cmd.get(TestEntity.FIELD_1), is((String)null));
-    }
-
-    @Test
     public void should_not_enrich_command_when_triggered_field_is_not_exist() {
         CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
         enricher().withTriggeredField(TestEntity.FIELD_3).build().enrich(ImmutableList.of(cmd), ChangeOperation.CREATE, prepareCtx(cmd, VALUE));
         assertThat(cmd.containsField(TestEntity.FIELD_1), is(false));
     }
 
-    @Test
-    public void enrich_command_when_field_contains_null() {
-        CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
-        cmd.set(TestEntity.FIELD_1, (String)null);
-        enricher().considerNullAsMissing().build().enrich(ImmutableList.of(cmd), ChangeOperation.CREATE, prepareCtx(cmd, VALUE));
-        assertThat(cmd.get(TestEntity.FIELD_1), is(VALUE));
-    }
 
     @Test
     public void enrich_command_when_triggered_field_exist() {
@@ -114,20 +99,6 @@ public class SingleFieldEnricherTest {
     }
 
     @Test
-    public void enrich_should_not_run_when_field_has_null() {
-        CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
-        cmd.set(TestEntity.FIELD_1, (String)null);
-        assertThat(enricher().build().shouldRun(ImmutableList.of(cmd)), is(false));
-    }
-
-    @Test
-    public void enrich_should_run_when_field_has_null_but_considered_as_field_is_not_exist() {
-        CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
-        cmd.set(TestEntity.FIELD_1, (String)null);
-        assertThat(enricher().considerNullAsMissing().build().shouldRun(ImmutableList.of(cmd)), is(true));
-    }
-
-    @Test
     public void enrich_should_not_run_when_triggered_field_is_not_exist() {
         CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
         assertThat(enricher().withTriggeredField(TestEntity.FIELD_3).build().shouldRun(ImmutableList.of(cmd)), is(false));
@@ -150,11 +121,9 @@ public class SingleFieldEnricherTest {
 
     static class TestFieldEnricher extends SingleFieldEnricher<TestEntity, String> {
 
-        private final boolean considerNullAsMissing;
         private final EntityField<TestEntity, ?> triggeredField;
 
-        TestFieldEnricher(boolean considerNullAsMissing, EntityField<TestEntity, ?> triggeredField) {
-            this.considerNullAsMissing = considerNullAsMissing;
+        TestFieldEnricher(EntityField<TestEntity, ?> triggeredField) {
             this.triggeredField = triggeredField;
         }
 
@@ -174,24 +143,13 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected boolean considerNullAsMissing() {
-            return considerNullAsMissing;
-        }
-
-        @Override
         protected Predicate<EntityChange<TestEntity>> additionalCommandFilter() {
-            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField): super.additionalCommandFilter();
+            return triggeredField != null ? entityChange -> entityChange.isFieldChanged(triggeredField) : entityChange -> true;
         }
 
         public static class Builder {
 
-            private boolean considerNullAsMissing = false;
             private EntityField<TestEntity, ?> triggeredField;
-
-            Builder considerNullAsMissing() {
-                this.considerNullAsMissing = true;
-                return this;
-            }
 
             Builder withTriggeredField(EntityField<TestEntity, ?> triggeredField) {
                 this.triggeredField = triggeredField;
@@ -199,7 +157,7 @@ public class SingleFieldEnricherTest {
             }
 
             public TestFieldEnricher build(){
-                return new TestFieldEnricher(considerNullAsMissing, triggeredField);
+                return new TestFieldEnricher(triggeredField);
             }
         }
     }
