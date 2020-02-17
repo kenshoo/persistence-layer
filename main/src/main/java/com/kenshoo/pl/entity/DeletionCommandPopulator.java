@@ -46,7 +46,7 @@ public class DeletionCommandPopulator {
         addDeletionChildCommands(seq(parents).filter(this::isCascadeDeletion), childType, childrenFromDB);
         supplyChildCommands(seq(parents).filter(this::withMissingChildSupplier), childType, childrenFromDB);
         populateKeyToParent(parents, childType, childrenFromDB);
-        handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)), childFlow);
+        handleRecursive(seq(parents).flatMap(p -> p.getChildren(childType)).filter(child -> child.getKeysToParent() != null), childFlow);
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
