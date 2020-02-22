@@ -41,7 +41,7 @@ public class DeadlockTest {
 
     private DSLContext dslContext = TestJooqConfig.create();
 
-    private PersistenceLayer<TestEntityType, TestEntityType.Key> persistenceLayer;
+    private PersistenceLayer<TestEntityType> persistenceLayer;
 
     private static TestTable table1;
     private static TestTable table2;
