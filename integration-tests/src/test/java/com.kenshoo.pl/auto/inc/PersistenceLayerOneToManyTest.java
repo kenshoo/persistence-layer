@@ -182,7 +182,7 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private List<Integer> createAndRetrieveIds(ImmutableList<ParentEntityCreateCommand> of) {
-        return seq(persistenceLayer.create(of, flow.build(), ParentEntity.Key.DEFINITION))
+        return seq(persistenceLayer.create(of, flow.build()))
                 .map(res -> res.getIdentifier().get(ParentEntity.ID)).toList();
     }
 
@@ -203,9 +203,9 @@ public class PersistenceLayerOneToManyTest {
         return new ChildEntityCreateCommand();
     }
 
-    class UpsertByIdInTarget extends InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.UniqueKey> implements EntityCommandExt<ParentEntity, UpsertByIdInTarget> {
+    class UpsertByIdInTarget extends InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.IdInTarget> implements EntityCommandExt<ParentEntity, UpsertByIdInTarget> {
         public UpsertByIdInTarget(int idInTarget) {
-            super(ParentEntity.INSTANCE, new ParentEntity.UniqueKey(idInTarget));
+            super(ParentEntity.INSTANCE, new ParentEntity.IdInTarget(idInTarget));
         }
     }
 

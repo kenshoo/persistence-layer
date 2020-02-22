@@ -30,29 +30,15 @@ public class ParentEntity extends AbstractEntityType<ParentEntity> {
         return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
     }
 
-    public static class Key extends SingleUniqueKeyValue<ParentEntity, Integer> {
-        public static final SingleUniqueKey<ParentEntity, Integer> DEFINITION = new SingleUniqueKey<ParentEntity, Integer>(ParentEntity.ID) {
-            @Override
-            protected Key createValue(Integer value) {
-                return new Key(value);
-            }
-        };
-
-        public Key(int id) {
-            super(DEFINITION, id);
+    public static class ParentId extends SingleUniqueKeyValue<ParentEntity, Integer> {
+        public ParentId(int id) {
+            super(ID, id);
         }
     }
 
-    public static class UniqueKey extends SingleUniqueKeyValue<ParentEntity, Integer> {
-        public static final SingleUniqueKey<ParentEntity, Integer> DEFINITION = new SingleUniqueKey<ParentEntity, Integer>(ParentEntity.ID_IN_TARGET) {
-            @Override
-            protected UniqueKey createValue(Integer value) {
-                return new UniqueKey(value);
-            }
-        };
-
-        public UniqueKey(Integer val) {
-            super(DEFINITION, val);
+    public static class IdInTarget extends SingleUniqueKeyValue<ParentEntity, Integer> {
+        public IdInTarget(Integer val) {
+            super(ID_IN_TARGET, val);
         }
     }
 }

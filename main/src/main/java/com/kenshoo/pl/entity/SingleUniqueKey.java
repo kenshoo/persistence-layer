@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity;
 /**
  *
  */
-public abstract class SingleUniqueKey<E extends EntityType<E>, A> extends UniqueKey<E> {
+public class SingleUniqueKey<E extends EntityType<E>, A> extends UniqueKey<E> {
 
     private final EntityField<E, A> a;
 
@@ -13,7 +13,9 @@ public abstract class SingleUniqueKey<E extends EntityType<E>, A> extends Unique
         this.a = a;
     }
 
-    protected abstract SingleUniqueKeyValue<E, A> createValue(A value);
+    protected SingleUniqueKeyValue<E, A> createValue(A value) {
+        return new SingleUniqueKeyValue<>(this, value);
+    }
 
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
