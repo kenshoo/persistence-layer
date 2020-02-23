@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public interface EntityPersistence<E extends EntityType<E>, PK extends Identifier<E>> {
+public interface EntityPersistence<E extends EntityType<E>> {
 
     CreateEntityCommand<E> buildCreateCommand();
 
-    CreateResult<E, PK> create(List<? extends CreateEntityCommand<E>> commands);
+    CreateResult<E, Identifier<E>> create(List<? extends CreateEntityCommand<E>> commands);
 
-    CreateResult<E, PK> customCreate(List<? extends CreateEntityCommand<E>> commands, Function<ChangeFlowConfig.Builder<E>, ChangeFlowConfig.Builder<E>> flowConfigModifier);
+    CreateResult<E, Identifier<E>> customCreate(List<? extends CreateEntityCommand<E>> commands, Function<ChangeFlowConfig.Builder<E>, ChangeFlowConfig.Builder<E>> flowConfigModifier);
 
 
     <ID extends Identifier<E>> UpdateEntityCommand<E, ID> buildUpdateCommand(ID id);
