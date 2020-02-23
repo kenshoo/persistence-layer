@@ -1,9 +1,6 @@
 package com.kenshoo.pl.entity;
 
-/**
- *
- */
-public abstract class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
+public class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
     private final EntityField<E, A> a;
     private final EntityField<E, B> b;
 
@@ -14,7 +11,9 @@ public abstract class PairUniqueKey<E extends EntityType<E>, A, B> extends Uniqu
         this.b = b;
     }
 
-    protected abstract PairUniqueKeyValue<E, A, B> createValue(A a, B b);
+    protected PairUniqueKeyValue<E, A, B> createValue(A a, B b) {
+        return new PairUniqueKeyValue<>(new PairUniqueKey<>(this.a, this.b), a, b);
+    }
 
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
