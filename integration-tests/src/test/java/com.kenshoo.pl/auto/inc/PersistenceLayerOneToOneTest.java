@@ -30,7 +30,7 @@ public class PersistenceLayerOneToOneTest {
     private static final TestSecondaryEntityTable SECONDARY_TABLE = TestSecondaryEntityTable.INSTANCE;
 
     private DSLContext dslContext;
-    private PersistenceLayer<TestEntity, TestEntity.Key> persistenceLayer;
+    private PersistenceLayer<TestEntity> persistenceLayer;
     private ChangeFlowConfig<TestEntity> flowConfig;
 
     @Before
@@ -111,7 +111,7 @@ public class PersistenceLayerOneToOneTest {
     @Test
     public void test_upserts() {
 
-        EntityChangeResult<TestEntity, TestEntity.Key, CreateEntityCommand<TestEntity>> existingItem = persistenceLayer.create(singletonList(
+        EntityChangeResult<TestEntity, Identifier<TestEntity>, CreateEntityCommand<TestEntity>> existingItem = persistenceLayer.create(singletonList(
                 new TestEntityCreateCommand().with(NAME, "existing item")
         ), flowConfig, TestEntity.Key.DEFINITION).iterator().next();
 

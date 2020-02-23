@@ -54,9 +54,9 @@ public class PersistenceLayerTest {
     private EntityForTestComplexKeyParentTable complexKeyParentTable;
     private PLContext plContext;
 
-    private PersistenceLayer<EntityForTest, EntityForTest.Key> persistenceLayer;
+    private PersistenceLayer<EntityForTest> persistenceLayer;
     private EntitiesFetcher entitiesFetcher;
-    private PersistenceLayer<EntityForTestParent, EntityForTestParent.Key> persistenceLayerParent;
+    private PersistenceLayer<EntityForTestParent> persistenceLayerParent;
     private EntitiesTempTableCreator entitiesTempTableCreator;
 
     private static final int ID_1 = 1;
@@ -172,7 +172,7 @@ public class PersistenceLayerTest {
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromOldValue(EntityForTest.URL, parentUrl -> parentUrl));
 
-        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents), ChildForTest.Key.DEFINITION);
+        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 
@@ -186,7 +186,7 @@ public class PersistenceLayerTest {
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> v1.toString() + " " + v2));
 
-        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents), ChildForTest.Key.DEFINITION);
+        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 
@@ -228,7 +228,7 @@ public class PersistenceLayerTest {
         command2.set(EntityForTest.FIELD1, TestEnum.Delta);
         command2.set(EntityForTest.PARENT_ID, PARENT_ID_2);
 
-        CreateResult<EntityForTest, EntityForTest.Key> createResult = persistenceLayer.create(ImmutableList.of(command1, command2), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
+        CreateResult<EntityForTest, Identifier<EntityForTest>> createResult = persistenceLayer.create(ImmutableList.of(command1, command2), changeFlowConfig().build());
 
         assertThat(createResult.getStats().getAffectedRowsOf(mainTable.getName()).getInserted(), is(2));
         assertThat(createResult.getStats().getAffectedRowsOf(mainTable.getName()).getUpdated(), is(0));
@@ -1427,7 +1427,7 @@ public class PersistenceLayerTest {
                 .fetchOne(mainTable.field2);
     }
 
-    private PersistenceLayer<ChildForTest, ChildForTest.Key> childPL() {
+    private PersistenceLayer<ChildForTest> childPL() {
         return new PersistenceLayer<>(dslContext);
     }
 

@@ -1,9 +1,6 @@
 package com.kenshoo.pl.entity;
 
-/**
- *
- */
-public abstract class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey<E> {
+public class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey<E> {
 
     private final EntityField<E, A> a;
     private final EntityField<E, B> b;
@@ -17,7 +14,9 @@ public abstract class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends 
         this.c = c;
     }
 
-    protected abstract TripleUniqueKeyValue<E, A, B, C> createValue(A a, B b, C c);
+    protected TripleUniqueKeyValue<E, A, B, C> createValue(A a, B b, C c) {
+        return new TripleUniqueKeyValue<>(new TripleUniqueKey<>(this.a, this.b, this.c), a, b, c);
+    }
 
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {

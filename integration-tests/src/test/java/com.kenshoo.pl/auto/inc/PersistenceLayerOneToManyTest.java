@@ -31,7 +31,7 @@ public class PersistenceLayerOneToManyTest {
 
     private PLContext plContext;
 
-    private PersistenceLayer<ParentEntity, ParentEntity.Key> persistenceLayer;
+    private PersistenceLayer<ParentEntity> persistenceLayer;
 
     private ChangeFlowConfig.Builder<ParentEntity> flow;
     private ChangeFlowConfig.Builder<ParentEntityWithRequiredRelation> flowOfParentWithRequiredRelation;
@@ -182,17 +182,17 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private List<Integer> createAndRetrieveIds(ImmutableList<ParentEntityCreateCommand> of) {
-        return seq(persistenceLayer.create(of, flow.build(), ParentEntity.Key.DEFINITION))
-                .map(res -> res.getIdentifier().getId()).toList();
+        return seq(persistenceLayer.create(of, flow.build()))
+                .map(res -> res.getIdentifier().get(ParentEntity.ID)).toList();
     }
 
     private List<Integer> createAndRetrieveIdsOfParentsWithRequiredRelation(List<CreateEntityCommand<ParentEntityWithRequiredRelation>> commands) {
 
-        PersistenceLayer<ParentEntityWithRequiredRelation, ParentEntityWithRequiredRelation.Key> pl = new PersistenceLayer<>(jooq);
+        PersistenceLayer<ParentEntityWithRequiredRelation> pl = new PersistenceLayer<>(jooq);
 
 
         return seq(pl.create(commands, flowOfParentWithRequiredRelation.build(), ParentEntityWithRequiredRelation.Key.DEFINITION))
-                .map(res -> res.getIdentifier().getId()).toList();
+                .map(res -> res.getIdentifier().get(ParentEntityWithRequiredRelation.ID)).toList();
     }
 
     private ParentEntityCreateCommand newParent() {
@@ -203,9 +203,9 @@ public class PersistenceLayerOneToManyTest {
         return new ChildEntityCreateCommand();
     }
 
-    class UpsertByIdInTarget extends InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.UniqueKey> implements EntityCommandExt<ParentEntity, UpsertByIdInTarget> {
+    class UpsertByIdInTarget extends InsertOnDuplicateUpdateCommand<ParentEntity, ParentEntity.IdInTarget> implements EntityCommandExt<ParentEntity, UpsertByIdInTarget> {
         public UpsertByIdInTarget(int idInTarget) {
-            super(ParentEntity.INSTANCE, new ParentEntity.UniqueKey(idInTarget));
+            super(ParentEntity.INSTANCE, new ParentEntity.IdInTarget(idInTarget));
         }
     }
 

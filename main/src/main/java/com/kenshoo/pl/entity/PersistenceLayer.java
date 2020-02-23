@@ -23,7 +23,7 @@ import static org.jooq.lambda.Seq.seq;
 import static java.util.stream.Collectors.toList;
 
 
-public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifier<ROOT>> {
+public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
     private final DSLContext dslContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
@@ -35,14 +35,20 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
         this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext);
     }
 
-    public CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
+    public <PK extends Identifier<ROOT>>
+    CreateResult<ROOT, PK> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey) {
         ChangeContext changeContext = makeChanges(commands, flowConfig);
         CreateResult<ROOT, PK> results = toCreateResults(commands, changeContext);
         setIdentifiersToSuccessfulCommands(flowConfig, primaryKey, changeContext, results);
         return results;
     }
 
-    private void setIdentifiersToSuccessfulCommands(ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey, ChangeContext changeContext, CreateResult<ROOT, PK> results) {
+    public CreateResult<ROOT, Identifier<ROOT>> create(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeFlowConfig<ROOT> flowConfig) {
+        return create(commands, flowConfig, flowConfig.getEntityType().getPrimaryKey());
+    }
+
+    private <PK extends Identifier<ROOT>>
+    void setIdentifiersToSuccessfulCommands(ChangeFlowConfig<ROOT> flowConfig, UniqueKey<ROOT> primaryKey, ChangeContext changeContext, CreateResult<ROOT, PK> results) {
         final Optional<EntityField<ROOT, Object>> optionalIdentityField = flowConfig.getPrimaryIdentityField();
 
         seq(results.iterator())
@@ -54,7 +60,8 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>, PK extends Identifi
             });
     }
 
-    private CreateResult<ROOT, PK> toCreateResults(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeContext changeContext) {
+    private <PK extends Identifier<ROOT>>
+    CreateResult<ROOT, PK> toCreateResults(Collection<? extends CreateEntityCommand<ROOT>> commands, ChangeContext changeContext) {
         return new CreateResult<>(
                     seq(commands).map(cmd -> new EntityCreateResult<>(cmd, changeContext.getValidationErrors(cmd))),
                     changeContext.getStats());

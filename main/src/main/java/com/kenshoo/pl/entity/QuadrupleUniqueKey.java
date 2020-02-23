@@ -1,9 +1,6 @@
 package com.kenshoo.pl.entity;
 
-/**
- *
- */
-public abstract class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends UniqueKey<E> {
+public class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends UniqueKey<E> {
 
     private final EntityField<E, A> a;
     private final EntityField<E, B> b;
@@ -19,7 +16,9 @@ public abstract class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> ex
         this.d = d;
     }
 
-    protected abstract QuadrupleUniqueKeyValue<E, A, B, C, D> createValue(A a, B b, C c, D d);
+    protected QuadrupleUniqueKeyValue<E, A, B, C, D> createValue(A a, B b, C c, D d) {
+        return new QuadrupleUniqueKeyValue<>(new QuadrupleUniqueKey<>(this.a, this.b, this.c, this.d), a, b, c, d);
+    }
 
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {

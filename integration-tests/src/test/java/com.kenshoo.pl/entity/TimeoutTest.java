@@ -48,7 +48,7 @@ public class TimeoutTest {
 
     private DSLContext dslContext = TestJooqConfig.create();
 
-    private PersistenceLayer<TestEntityType, TestEntityType.Key> persistenceLayer;
+    private PersistenceLayer<TestEntityType> persistenceLayer;
 
     private static TestTable table1;
     private static TestEntityType entityType;

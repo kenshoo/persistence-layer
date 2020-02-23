@@ -64,7 +64,7 @@ public class PersistenceLayerOneToManyTest {
 
     private PLContext plContext;
 
-    private PersistenceLayer<ParentEntity, ParentEntity.Key> persistenceLayer;
+    private PersistenceLayer<ParentEntity> persistenceLayer;
 
     private final DeletionOfOther<ChildEntity> deletionOfOther = new DeletionOfOther<>(ChildEntity.INSTANCE);
 
