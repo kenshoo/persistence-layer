@@ -28,7 +28,6 @@ public class EntityForTest extends AbstractEntityType<EntityForTest> {
     public static final EntityField<EntityForTest, Integer> ID = INSTANCE.field(EntityForTestTable.INSTANCE.id);
     public static final EntityField<EntityForTest, TestEnum> FIELD1 = INSTANCE.field(EntityForTestTable.INSTANCE.field1, EnumAsStringValueConverter.create(TestEnum.class));
     @DefaultValue("999")
-    @NotAudited
     public static final EntityField<EntityForTest, Integer> FIELD2 = INSTANCE.field(EntityForTestTable.INSTANCE.field2);
     @CreationDate
     @Immutable
