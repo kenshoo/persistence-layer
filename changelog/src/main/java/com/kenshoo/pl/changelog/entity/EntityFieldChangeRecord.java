@@ -6,28 +6,28 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class EntityFieldChangeRecord<E extends EntityType<E>, T> {
-    private final EntityField<E, T> field;
-    private final T oldValue;
-    private final T newValue;
+public class EntityFieldChangeRecord<E extends EntityType<E>> {
+    private final EntityField<E, ?> field;
+    private final Object oldValue;
+    private final Object newValue;
 
-    public EntityFieldChangeRecord(final EntityField<E, T> field,
-                                   final T oldValue,
-                                   final T newValue) {
+    public EntityFieldChangeRecord(final EntityField<E, ?> field,
+                                   final Object oldValue,
+                                   final Object newValue) {
         this.field = field;
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
 
-    public EntityField<E, T> getField() {
+    public EntityField<E, ?> getField() {
         return field;
     }
 
-    public T getOldValue() {
+    public Object getOldValue() {
         return oldValue;
     }
 
-    public T getNewValue() {
+    public Object getNewValue() {
         return newValue;
     }
 
@@ -38,7 +38,7 @@ public class EntityFieldChangeRecord<E extends EntityType<E>, T> {
         if (o == null || getClass() != o.getClass()) return false;
 
         @SuppressWarnings("unchecked")
-        final EntityFieldChangeRecord<E, T> that = (EntityFieldChangeRecord<E, T>) o;
+        final EntityFieldChangeRecord<E> that = (EntityFieldChangeRecord<E>) o;
 
         return new EqualsBuilder()
             .append(field, that.field)

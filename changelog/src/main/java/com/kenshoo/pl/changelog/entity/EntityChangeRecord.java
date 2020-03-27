@@ -1,37 +1,37 @@
 package com.kenshoo.pl.changelog.entity;
 
+import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.Identifier;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.time.Instant;
 import java.util.Collection;
 
 public class EntityChangeRecord<E extends EntityType<E>> {
-    private final EntityType<E> entityType;
+    private final E entityType;
     private final Identifier<E> entityId;
-    private final Collection<? extends EntityFieldChangeRecord<E, ?>> fieldChanges;
+    private final Collection<? extends EntityFieldChangeRecord<E>> fieldChanges;
     private final Collection<? extends EntityChangeRecord<?>> childChanges;
-    private final OperationType operationType;
-    private final Instant changeTime;
+    private final ChangeOperation operation;
+    private final String actionId;
 
-    public EntityChangeRecord(final EntityType<E> entityType,
+    public EntityChangeRecord(final E entityType,
                               final Identifier<E> entityId,
-                              final Collection<? extends EntityFieldChangeRecord<E, ?>> fieldChanges,
+                              final Collection<? extends EntityFieldChangeRecord<E>> fieldChanges,
                               final Collection<? extends EntityChangeRecord<?>> childChanges,
-                              final OperationType operationType,
-                              final Instant changeTime) {
+                              final ChangeOperation operation,
+                              final String actionId) {
         this.entityType = entityType;
         this.entityId = entityId;
         this.fieldChanges = fieldChanges;
         this.childChanges = childChanges;
-        this.operationType = operationType;
-        this.changeTime = changeTime;
+        this.operation = operation;
+        this.actionId = actionId;
     }
 
-    public EntityType<E> getEntityType() {
+    public E getEntityType() {
         return entityType;
     }
 
@@ -39,7 +39,7 @@ public class EntityChangeRecord<E extends EntityType<E>> {
         return entityId;
     }
 
-    public Collection<? extends EntityFieldChangeRecord<E, ?>> getFieldChanges() {
+    public Collection<? extends EntityFieldChangeRecord<E>> getFieldChanges() {
         return fieldChanges;
     }
 
@@ -47,12 +47,12 @@ public class EntityChangeRecord<E extends EntityType<E>> {
         return childChanges;
     }
 
-    public OperationType getOperationType() {
-        return operationType;
+    public ChangeOperation getOperation() {
+        return operation;
     }
 
-    public Instant getChangeTime() {
-        return changeTime;
+    public String getActionId() {
+        return actionId;
     }
 
     @Override
@@ -61,16 +61,15 @@ public class EntityChangeRecord<E extends EntityType<E>> {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        @SuppressWarnings("unchecked")
-        final EntityChangeRecord<E> that = (EntityChangeRecord<E>) o;
+        EntityChangeRecord<?> that = (EntityChangeRecord<?>) o;
 
         return new EqualsBuilder()
             .append(entityType, that.entityType)
             .append(entityId, that.entityId)
             .append(fieldChanges, that.fieldChanges)
             .append(childChanges, that.childChanges)
-            .append(operationType, that.operationType)
-            .append(changeTime, that.changeTime)
+            .append(operation, that.operation)
+            .append(actionId, that.actionId)
             .isEquals();
     }
 
@@ -81,8 +80,8 @@ public class EntityChangeRecord<E extends EntityType<E>> {
             .append(entityId)
             .append(fieldChanges)
             .append(childChanges)
-            .append(operationType)
-            .append(changeTime)
+            .append(operation)
+            .append(actionId)
             .toHashCode();
     }
 
@@ -93,8 +92,57 @@ public class EntityChangeRecord<E extends EntityType<E>> {
             .append("entityId", entityId)
             .append("fieldChanges", fieldChanges)
             .append("childChanges", childChanges)
-            .append("operationType", operationType)
-            .append("changeTime", changeTime)
+            .append("operation", operation)
+            .append("actionId", actionId)
             .toString();
+    }
+
+
+    public static class Builder<E extends EntityType<E>> {
+        private E entityType;
+        private Identifier<E> entityId;
+        private Collection<? extends EntityFieldChangeRecord<E>> fieldChanges;
+        private Collection<? extends EntityChangeRecord<?>> childChanges;
+        private ChangeOperation operation;
+        private String actionId;
+
+        public Builder<E> withEntityType(E entityType) {
+            this.entityType = entityType;
+            return this;
+        }
+
+        public Builder<E> withEntityId(Identifier<E> entityId) {
+            this.entityId = entityId;
+            return this;
+        }
+
+        public Builder<E> withFieldChanges(Collection<? extends EntityFieldChangeRecord<E>> fieldChanges) {
+            this.fieldChanges = fieldChanges;
+            return this;
+        }
+
+        public Builder<E> withChildChanges(Collection<? extends EntityChangeRecord<?>> childChanges) {
+            this.childChanges = childChanges;
+            return this;
+        }
+
+        public Builder<E> withOperation(ChangeOperation operation) {
+            this.operation = operation;
+            return this;
+        }
+
+        public Builder<E> withActionId(String actionId) {
+            this.actionId = actionId;
+            return this;
+        }
+
+        public EntityChangeRecord<E> build() {
+            return new EntityChangeRecord<>(entityType,
+                                            entityId,
+                                            fieldChanges,
+                                            childChanges,
+                                            operation,
+                                            actionId);
+        }
     }
 }
