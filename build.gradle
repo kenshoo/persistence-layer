@@ -13,4 +13,5 @@ apply from:"${rootProject.projectDir}/dependencies.gradle"
 
 dependencies {
     compile project(':main')
+    compile project(':changelog')
 }
