@@ -1,4 +1,4 @@
-package com.kenshoo.pl.changelog.annotation;
+package com.kenshoo.pl.entity.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -2,19 +2,25 @@ package com.kenshoo.pl.entity;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.kenshoo.pl.entity.internal.EntityChangeLoggableFieldSet;
+import com.kenshoo.pl.entity.internal.EntityChangeLoggableFieldsResolver;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 
@@ -23,7 +29,10 @@ public class ChangeFlowConfigTest {
 
     private final static Label EXCLUDABLE_LABEL_1 = new Label() {};
     private final static Label EXCLUDABLE_LABEL_2 = new Label() {};
-    
+
+    @Mock
+    private EntityChangeLoggableFieldsResolver entityChangeLoggableFieldsResolver;
+
     @Test
     public void add_single_enricher_to_flow_config() {
         PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
@@ -164,5 +173,35 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
 
         assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void should_create_entity_change_record_generator_with_field_set_if_loggable_fields_defined() {
+
+        final EntityChangeLoggableFieldSet<TestEntity> changeRecordFieldSet = new EntityChangeLoggableFieldSet<>(TestEntity.ID,
+                                                                                                                 ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2));
+        doReturn(Optional.of(changeRecordFieldSet)).when(entityChangeLoggableFieldsResolver).resolve(TestEntity.INSTANCE);
+
+        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                                                       entityChangeLoggableFieldsResolver).build();
+        assertThat("Change record generator should exist",
+                   flowConfig.optionalChangeRecordGenerator().isPresent(), is(true));
+
+        flowConfig.optionalChangeRecordGenerator().ifPresent(changeRecordGenerator ->
+            assertThat("Incorrect field set passed to change record generator: ",
+                       changeRecordGenerator.getFullLoggableFieldSet(), is(changeRecordFieldSet)
+            )
+        );
+    }
+
+    @Test
+    public void should_not_create_entity_change_record_generator_if_no_loggable_fields_defined() {
+
+        doReturn(Optional.empty()).when(entityChangeLoggableFieldsResolver).resolve(TestEntity.INSTANCE);
+
+        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                                                       entityChangeLoggableFieldsResolver).build();
+        assertThat("Change record generator should not exist",
+                   flowConfig.optionalChangeRecordGenerator().isPresent(), is(false));
     }
 }

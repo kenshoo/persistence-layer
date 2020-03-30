@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
@@ -32,6 +33,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
+    private final EntityChangeRecordGenerator<E> entityChangeRecordGenerator;
     private final FeatureSet features;
 
 
@@ -43,6 +45,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              Set<EntityField<E, ?>> requiredFields,
                              List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
                              PersistenceLayerRetryer retryer,
+                             EntityChangeRecordGenerator<E> entityChangeRecordGenerator,
                              FeatureSet features) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
@@ -54,6 +57,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>(entityType));
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
+        this.entityChangeRecordGenerator = entityChangeRecordGenerator;
         this.features = features;
     }
 
@@ -63,6 +67,10 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
     public PersistenceLayerRetryer retryer() {
         return retryer;
+    }
+
+    public Optional<EntityChangeRecordGenerator<E>> optionalChangeRecordGenerator() {
+        return Optional.ofNullable(entityChangeRecordGenerator);
     }
 
     public List<PostFetchCommandEnricher<E>> getPostFetchCommandEnrichers() {
@@ -78,7 +86,13 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     }
 
     public Stream<CurrentStateConsumer<E>> currentStateConsumers() {
-        return Stream.concat(postFetchFilters.stream(), Stream.concat(postSupplyFilters.stream(), Stream.concat(Stream.concat(postFetchCommandEnrichers.stream(), validators.stream()), outputGenerators.stream())));
+        return Stream.of(postFetchFilters,
+                         postSupplyFilters,
+                         postFetchCommandEnrichers,
+                         validators,
+                         outputGenerators,
+                         singletonList(entityChangeRecordGenerator))
+                     .flatMap(List::stream);
     }
 
     static <E extends EntityType<E>> Builder<E> builder(E entityType) {
@@ -126,10 +140,20 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
+        private final EntityChangeRecordGenerator<E> entityChangeRecordGenerator;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
+            this(entityType, EntityChangeLoggableFieldsResolver.INSTANCE);
+        }
+
+        @VisibleForTesting
+        Builder(final E entityType,
+                final EntityChangeLoggableFieldsResolver entityChangeLoggableFieldsResolver) {
             this.entityType = entityType;
+            this.entityChangeRecordGenerator = entityChangeLoggableFieldsResolver.resolve(entityType)
+                                                                                 .map(EntityChangeRecordGenerator::new)
+                                                                                 .orElse(null);
         }
 
         public Builder<E> with(FeatureSet features) {
@@ -255,14 +279,15 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
             return new ChangeFlowConfig<>(entityType,
-                    enrichers.build(),
-                    validatorList.build(),
-                    ImmutableList.copyOf(outputGenerators),
-                    ImmutableSet.copyOf(requiredRelationFields),
-                    ImmutableSet.copyOf(requiredFields),
-                    flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
-                    retryer,
-                    features
+                                          enrichers.build(),
+                                          validatorList.build(),
+                                          ImmutableList.copyOf(outputGenerators),
+                                          ImmutableSet.copyOf(requiredRelationFields),
+                                          ImmutableSet.copyOf(requiredFields),
+                                          flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
+                                          retryer,
+                                          entityChangeRecordGenerator,
+                                          features
             );
         }
 

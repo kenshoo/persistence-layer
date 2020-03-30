@@ -11,7 +11,9 @@ import com.kenshoo.pl.entity.spi.ValidationException;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -19,8 +21,8 @@ import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
 import static java.util.Collections.emptyList;
-import static org.jooq.lambda.Seq.seq;
 import static java.util.stream.Collectors.toList;
+import static org.jooq.lambda.Seq.seq;
 
 
 public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
@@ -112,6 +114,11 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         if (!validCmds.isEmpty()) {
             flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
+        final Collection<? extends EntityTreeChangeRecord<ROOT>> changeRecords =
+            EntityTreeChangeRecordGenerator.INSTANCE.generateMany(flowConfig,
+                                                                  validCmds,
+                                                                  overridingCtx);
+        //changeLogPublisher.publish(changeRecords);
         return overridingCtx;
     }
 

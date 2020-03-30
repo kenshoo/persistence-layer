@@ -1,4 +1,3 @@
 rootProject.name = 'persistence-layer'
 include 'main',
-        'changelog',
         'integration-tests'

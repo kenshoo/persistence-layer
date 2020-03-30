@@ -3,12 +3,7 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.base.Throwables;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.kenshoo.pl.entity.AbstractEntityType;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldPrototype;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.PartialEntity;
-import com.kenshoo.pl.entity.PrototypedEntityField;
+import com.kenshoo.pl.entity.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -119,7 +114,13 @@ public abstract class EntityTypeReflectionUtil {
     }
 
     public static <E extends EntityType<E>, A extends Annotation> Predicate<EntityField<E, ?>> annotatedWith(E entityType, Class<A> annotationType) {
-        return field -> getFieldAnnotation(entityType, field, annotationType) != null;
+        return field -> isAnnotatedWith(entityType, annotationType, field);
+    }
+
+    public static <E extends EntityType<E>, A extends Annotation> boolean isAnnotatedWith(final EntityType<E> entityType,
+                                                                                          final Class<A> annotationType,
+                                                                                          final EntityField<E, ?> field) {
+        return getFieldAnnotation(entityType, field, annotationType) != null;
     }
 
 

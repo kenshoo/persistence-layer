@@ -1,4 +1,4 @@
-package com.kenshoo.pl.changelog.entity;
+package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
