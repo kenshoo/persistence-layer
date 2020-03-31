@@ -4,7 +4,8 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -129,4 +130,31 @@ public class CommonTypesStringConverterTest {
         onTest.convertFrom("2012-04-01");
     }
 
+    @Test
+    public void localDateValid() {
+        CommonTypesStringConverter<LocalDate> onTest = new CommonTypesStringConverter<>(LocalDate.class);
+
+        testToAndFromString(onTest, LocalDate.of(2020, 3, 31));
+    }
+
+    @Test(expected = DateTimeParseException.class)
+    public void localDateInvalidCase1() {
+        CommonTypesStringConverter<LocalDate> onTest = new CommonTypesStringConverter<>(LocalDate.class);
+
+        onTest.convertFrom("1234");
+    }
+
+    @Test(expected = DateTimeParseException.class)
+    public void localDateInvalidCase2() {
+        CommonTypesStringConverter<LocalDate> onTest = new CommonTypesStringConverter<>(LocalDate.class);
+
+        onTest.convertFrom("2020/01/01");
+    }
+
+    @Test(expected = DateTimeParseException.class)
+    public void localDateInvalidCase3() {
+        CommonTypesStringConverter<LocalDate> onTest = new CommonTypesStringConverter<>(LocalDate.class);
+
+        onTest.convertFrom("2020-01");
+    }
 }
