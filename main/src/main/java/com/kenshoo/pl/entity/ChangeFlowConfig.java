@@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.internal.changelog.EntityChangeLoggableFieldsResolver;
+import com.kenshoo.pl.entity.internal.changelog.EntityChangeRecordGenerator;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;

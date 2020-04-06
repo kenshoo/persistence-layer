@@ -4,6 +4,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
+import com.kenshoo.pl.entity.internal.changelog.EntityTreeChangeRecord;
+import com.kenshoo.pl.entity.internal.changelog.EntityTreeChangeRecordGenerator;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -30,11 +32,13 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     private final DSLContext dslContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
     private DeletionCommandPopulator deletionCommandPopulator;
+    private final EntityTreeChangeRecordGenerator entityTreeChangeRecordGenerator;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
         this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext);
+        this.entityTreeChangeRecordGenerator = new EntityTreeChangeRecordGenerator();
     }
 
     public <PK extends Identifier<ROOT>>
@@ -115,9 +119,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
             flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
         final Collection<? extends EntityTreeChangeRecord<ROOT>> changeRecords =
-            EntityTreeChangeRecordGenerator.INSTANCE.generateMany(flowConfig,
-                                                                  validCmds,
-                                                                  overridingCtx);
+            entityTreeChangeRecordGenerator.generateMany(flowConfig,
+                                                         validCmds,
+                                                         overridingCtx);
         //changeLogPublisher.publish(changeRecords);
         return overridingCtx;
     }

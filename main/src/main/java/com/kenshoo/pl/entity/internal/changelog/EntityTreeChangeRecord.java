@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.changelog;
 
 import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.EqualsBuilder;

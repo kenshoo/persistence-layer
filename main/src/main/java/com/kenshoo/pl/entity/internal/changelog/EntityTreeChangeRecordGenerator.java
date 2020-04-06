@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.changelog;
 
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeFlowConfig;
@@ -11,8 +11,6 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
 
 public class EntityTreeChangeRecordGenerator {
-
-    public static final EntityTreeChangeRecordGenerator INSTANCE = new EntityTreeChangeRecordGenerator();
 
     public <E extends EntityType<E>> Collection<? extends EntityTreeChangeRecord<E>> generateMany(
         final ChangeFlowConfig<E> flowConfig,
@@ -66,9 +64,5 @@ public class EntityTreeChangeRecordGenerator {
         return generateMany(childFlowConfig,
                             entityChange.getChildren(childFlowConfig.getEntityType()).collect(toSet()),
                             changeContext);
-    }
-
-    private EntityTreeChangeRecordGenerator() {
-        // singleton
     }
 }

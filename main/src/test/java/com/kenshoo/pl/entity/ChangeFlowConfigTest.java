@@ -3,8 +3,8 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.internal.EntityChangeLoggableFieldSet;
-import com.kenshoo.pl.entity.internal.EntityChangeLoggableFieldsResolver;
+import com.kenshoo.pl.entity.internal.changelog.EntityChangeLoggableFieldSet;
+import com.kenshoo.pl.entity.internal.changelog.EntityChangeLoggableFieldsResolver;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;

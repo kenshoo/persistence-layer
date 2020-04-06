@@ -1,7 +1,8 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.changelog;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.internal.PostTransactionEntityIdExtractor;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 
 import java.util.Collection;

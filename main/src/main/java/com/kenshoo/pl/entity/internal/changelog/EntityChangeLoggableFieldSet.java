@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.changelog;
 
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
