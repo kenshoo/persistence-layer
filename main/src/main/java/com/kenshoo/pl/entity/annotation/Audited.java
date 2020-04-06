@@ -7,9 +7,9 @@ import java.lang.annotation.Target;
 
 /**
  * Whenever an entity or field has this annotation, it indicates that any changes to the entity / field
- * will be included in the changes published by the changelog output generator.
+ * will be published (by the publisher belonging to the PersistenceLayer instance)
  */
 @Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ChangesLogged {
+public @interface Audited {
 }

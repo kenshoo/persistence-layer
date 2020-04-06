@@ -3,8 +3,8 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.internal.changelog.EntityChangeLoggableFieldSet;
-import com.kenshoo.pl.entity.internal.changelog.EntityChangeLoggableFieldsResolver;
+import com.kenshoo.pl.entity.internal.audit.AuditedFieldSet;
+import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
@@ -31,7 +31,7 @@ public class ChangeFlowConfigTest {
     private final static Label EXCLUDABLE_LABEL_2 = new Label() {};
 
     @Mock
-    private EntityChangeLoggableFieldsResolver entityChangeLoggableFieldsResolver;
+    private AuditedFieldsResolver auditedFieldsResolver;
 
     @Test
     public void add_single_enricher_to_flow_config() {
@@ -176,32 +176,32 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_create_entity_change_record_generator_with_field_set_if_loggable_fields_defined() {
+    public void should_create_audit_record_generator_with_field_set_if_audited_fields_defined() {
 
-        final EntityChangeLoggableFieldSet<TestEntity> changeRecordFieldSet = new EntityChangeLoggableFieldSet<>(TestEntity.ID,
-                                                                                                                 ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2));
-        doReturn(Optional.of(changeRecordFieldSet)).when(entityChangeLoggableFieldsResolver).resolve(TestEntity.INSTANCE);
+        final AuditedFieldSet<TestEntity> auditedFieldSet = new AuditedFieldSet<>(TestEntity.ID,
+                                                                                  ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2));
+        doReturn(Optional.of(auditedFieldSet)).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
 
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       entityChangeLoggableFieldsResolver).build();
-        assertThat("Change record generator should exist",
-                   flowConfig.optionalChangeRecordGenerator().isPresent(), is(true));
+                                                                                       auditedFieldsResolver).build();
+        assertThat("Audit record generator should exist",
+                   flowConfig.optionalAuditRecordGenerator().isPresent(), is(true));
 
-        flowConfig.optionalChangeRecordGenerator().ifPresent(changeRecordGenerator ->
-            assertThat("Incorrect field set passed to change record generator: ",
-                       changeRecordGenerator.getFullLoggableFieldSet(), is(changeRecordFieldSet)
+        flowConfig.optionalAuditRecordGenerator().ifPresent(auditRecordGenerator ->
+            assertThat("Incorrect field set passed to audit generator: ",
+                       auditRecordGenerator.getCompleteFieldSet(), is(auditedFieldSet)
             )
         );
     }
 
     @Test
-    public void should_not_create_entity_change_record_generator_if_no_loggable_fields_defined() {
+    public void should_not_create_audit_record_generator_if_no_audited_fields_defined() {
 
-        doReturn(Optional.empty()).when(entityChangeLoggableFieldsResolver).resolve(TestEntity.INSTANCE);
+        doReturn(Optional.empty()).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
 
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       entityChangeLoggableFieldsResolver).build();
-        assertThat("Change record generator should not exist",
-                   flowConfig.optionalChangeRecordGenerator().isPresent(), is(false));
+                                                                                       auditedFieldsResolver).build();
+        assertThat("Audit record generator should not exist",
+                   flowConfig.optionalAuditRecordGenerator().isPresent(), is(false));
     }
 }

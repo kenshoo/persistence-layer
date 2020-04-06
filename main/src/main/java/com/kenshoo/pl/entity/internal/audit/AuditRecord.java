@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal.changelog;
+package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.EntityType;
@@ -10,20 +10,23 @@ import java.util.Collection;
 
 import static java.util.Collections.emptySet;
 
-public class EntityChangeRecord<E extends EntityType<E>> {
+public class AuditRecord<E extends EntityType<E>> {
     private final E entityType;
     private final Number entityId;
-    private final Collection<? extends EntityFieldChangeRecord<E>> fieldChanges;
     private final ChangeOperation operation;
+    private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
+    private final Collection<? extends AuditRecord<?>> childRecords;
 
-    public EntityChangeRecord(final E entityType,
-                              final Number entityId,
-                              final Collection<? extends EntityFieldChangeRecord<E>> fieldChanges,
-                              final ChangeOperation operation) {
+    public AuditRecord(final E entityType,
+                       final Number entityId,
+                       final ChangeOperation operation,
+                       final Collection<? extends FieldAuditRecord<E>> fieldRecords,
+                       final Collection<? extends AuditRecord<?>> childRecords) {
         this.entityType = entityType;
         this.entityId = entityId;
-        this.fieldChanges = fieldChanges;
         this.operation = operation;
+        this.fieldRecords = fieldRecords;
+        this.childRecords = childRecords;
     }
 
     public E getEntityType() {
@@ -34,12 +37,16 @@ public class EntityChangeRecord<E extends EntityType<E>> {
         return entityId;
     }
 
-    public Collection<? extends EntityFieldChangeRecord<E>> getFieldChanges() {
-        return fieldChanges;
-    }
-
     public ChangeOperation getOperation() {
         return operation;
+    }
+
+    public Collection<? extends FieldAuditRecord<E>> getFieldRecords() {
+        return fieldRecords;
+    }
+
+    public Collection<? extends AuditRecord<?>> getChildRecords() {
+        return childRecords;
     }
 
     @Override
@@ -48,13 +55,14 @@ public class EntityChangeRecord<E extends EntityType<E>> {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        EntityChangeRecord<?> that = (EntityChangeRecord<?>) o;
+        AuditRecord<?> that = (AuditRecord<?>) o;
 
         return new EqualsBuilder()
             .append(entityType, that.entityType)
             .append(entityId, that.entityId)
-            .append(fieldChanges, that.fieldChanges)
             .append(operation, that.operation)
+            .append(fieldRecords, that.fieldRecords)
+            .append(childRecords, that.childRecords)
             .isEquals();
     }
 
@@ -63,8 +71,9 @@ public class EntityChangeRecord<E extends EntityType<E>> {
         return new HashCodeBuilder(17, 37)
             .append(entityType)
             .append(entityId)
-            .append(fieldChanges)
             .append(operation)
+            .append(fieldRecords)
+            .append(childRecords)
             .toHashCode();
     }
 
@@ -73,8 +82,9 @@ public class EntityChangeRecord<E extends EntityType<E>> {
         return new ToStringBuilder(this)
             .append("entityType", entityType)
             .append("entityId", entityId)
-            .append("fieldChanges", fieldChanges)
             .append("operation", operation)
+            .append("fieldChanges", fieldRecords)
+            .append("childChanges", childRecords)
             .toString();
     }
 
@@ -82,8 +92,9 @@ public class EntityChangeRecord<E extends EntityType<E>> {
     public static class Builder<E extends EntityType<E>> {
         private E entityType;
         private Number entityId;
-        private Collection<? extends EntityFieldChangeRecord<E>> fieldChanges = emptySet();
         private ChangeOperation operation;
+        private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptySet();
+        private Collection<? extends AuditRecord<?>> childRecord = emptySet();
 
         public Builder<E> withEntityType(E entityType) {
             this.entityType = entityType;
@@ -95,22 +106,27 @@ public class EntityChangeRecord<E extends EntityType<E>> {
             return this;
         }
 
-        public Builder<E> withFieldChanges(Collection<? extends EntityFieldChangeRecord<E>> fieldChanges) {
-            this.fieldChanges = fieldChanges;
-            return this;
-        }
-
         public Builder<E> withOperation(ChangeOperation operation) {
             this.operation = operation;
             return this;
         }
 
-        public EntityChangeRecord<E> build() {
-            return new EntityChangeRecord<>(entityType,
-                                            entityId,
-                                            fieldChanges,
-                                            operation
-            );
+        public Builder<E> withFieldChanges(Collection<? extends FieldAuditRecord<E>> fieldChanges) {
+            this.fieldRecords = fieldChanges;
+            return this;
+        }
+
+        public Builder<E> withChildChanges(Collection<? extends AuditRecord<?>> childChanges) {
+            this.childRecord = childChanges;
+            return this;
+        }
+
+        public AuditRecord<E> build() {
+            return new AuditRecord<>(entityType,
+                                     entityId,
+                                     operation,
+                                     fieldRecords,
+                                     childRecord);
         }
     }
 }

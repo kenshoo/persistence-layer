@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal.changelog;
+package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.*;
@@ -14,69 +14,72 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
-public class EntityChangeRecordGenerator<E extends EntityType<E>> implements CurrentStateConsumer<E> {
+public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentStateConsumer<E> {
 
-    private final EntityChangeLoggableFieldsFilter<E> loggableFieldsFilter;
+    private final AuditedFieldsFilter<E> auditedFieldsFilter;
     private final PostTransactionEntityIdExtractor entityIdExtractor;
 
-    public EntityChangeRecordGenerator(final EntityChangeLoggableFieldSet<E> loggableFieldSet) {
-        this(new EntityChangeLoggableFieldsFilter<>(requireNonNull(loggableFieldSet, "A loggableFieldSet is required")),
+    public AuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet) {
+        this(new AuditedFieldsFilter<>(requireNonNull(auditedFieldSet, "An auditedFieldSet is required")),
              PostTransactionEntityIdExtractor.INSTANCE);
     }
 
     @VisibleForTesting
-    EntityChangeRecordGenerator(final EntityChangeLoggableFieldsFilter<E> loggableFieldsFilter,
-                                final PostTransactionEntityIdExtractor entityIdExtractor) {
-        this.loggableFieldsFilter = loggableFieldsFilter;
+    AuditRecordGenerator(final AuditedFieldsFilter<E> auditedFieldsFilter,
+                         final PostTransactionEntityIdExtractor entityIdExtractor) {
+        this.auditedFieldsFilter = auditedFieldsFilter;
         this.entityIdExtractor = entityIdExtractor;
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToUpdate,
                                                               final ChangeOperation changeOperation) {
-        return loggableFieldsFilter.filter(fieldsToUpdate)
-                                   .getAllFields()
-                                   .stream();
+        return auditedFieldsFilter.filter(fieldsToUpdate)
+                                  .getAllFields()
+                                  .stream();
     }
 
-    public EntityChangeRecord<E> generate(final EntityChange<E> entityChange, final Entity entity) {
+    public AuditRecord<E> generate(final EntityChange<E> entityChange,
+                                   final Entity entity,
+                                   final Collection<? extends AuditRecord<?>> childRecords) {
         requireNonNull(entityChange, "entityChange is required");
         requireNonNull(entity, "entity is required");
 
-        final EntityChangeRecord.Builder<E> entityChangeRecordBuilder = new EntityChangeRecord.Builder<E>()
+        final AuditRecord.Builder<E> entityChangeRecordBuilder = new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
             .withEntityId(extractEntityId(entityChange, entity))
             .withOperation(entityChange.getChangeOperation());
 
-        final Set<? extends EntityField<E, ?>> loggableAdditionalFields =
-            loggableFieldsFilter.filter(entityChange.getChangedFields().collect(toSet()))
-                                .getAdditionalFields();
+        final Set<? extends EntityField<E, ?>> auditedFields =
+            auditedFieldsFilter.filter(entityChange.getChangedFields().collect(toSet()))
+                               .getAuditedFields();
 
-        final Set<? extends EntityFieldChangeRecord<E>> fieldChangeRecords = buildFieldChangeRecords(entityChange,
-                                                                                                     entity,
-                                                                                                     loggableAdditionalFields);
-        return entityChangeRecordBuilder.withFieldChanges(fieldChangeRecords)
+        final Set<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(entityChange,
+                                                                                     entity,
+                                                                                     auditedFields);
+        return entityChangeRecordBuilder.withFieldChanges(fieldRecords)
+                                        .withChildChanges(childRecords)
                                         .build();
     }
 
     @VisibleForTesting
-    public EntityChangeLoggableFieldSet<E> getFullLoggableFieldSet() {
-        return loggableFieldsFilter.getCompleteLoggableFieldSet();
+    public AuditedFieldSet<E> getCompleteFieldSet() {
+        return auditedFieldsFilter.getCompleteFieldSet();
     }
 
-    private Set<EntityFieldChangeRecord<E>> buildFieldChangeRecords(final EntityChange<E> entityChange,
-                                                                    final Entity entity,
-                                                                    final Collection<? extends EntityField<E, ?>> fieldsToLog) {
+    private Set<FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
+                                                          final Entity entity,
+                                                          final Collection<? extends EntityField<E, ?>> fieldsToLog) {
         return fieldsToLog.stream()
                           .filter(fieldWasChanged(entityChange, entity))
                           .map(field -> buildFieldChangeRecord(entityChange, entity, field))
                           .collect(toSet());
     }
 
-    private EntityFieldChangeRecord<E> buildFieldChangeRecord(EntityChange<E> entityChange, Entity entity, EntityField<E, ?> field) {
-        return new EntityFieldChangeRecord<>(field,
-                                             entity.containsField(field) ? entity.get(field) : null,
-                                             entityChange.get(field));
+    private FieldAuditRecord<E> buildFieldChangeRecord(EntityChange<E> entityChange, Entity entity, EntityField<E, ?> field) {
+        return new FieldAuditRecord<>(field,
+                                      entity.containsField(field) ? entity.get(field) : null,
+                                      entityChange.get(field));
     }
 
     private Number extractEntityId(final EntityChange<E> entityChange,

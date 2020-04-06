@@ -7,9 +7,10 @@ import java.lang.annotation.Target;
 
 /**
  * Whenever a field has this annotation, it indicates that any changes to the field
- * will NOT be part of the changes published for the owning entity by the changelog output generator.
+ * will NOT be part of the records published for the owning entity
+ * (by the publisher associated with the PersistenceLayer instance).
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ChangesNotLogged {
+public @interface NotAudited {
 }

@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal.changelog;
+package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
@@ -15,28 +15,28 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 
-public class EntityChangeLoggableFieldSet<E extends EntityType<E>> {
+public class AuditedFieldSet<E extends EntityType<E>> {
 
     private final EntityField<E, ? extends Number> idField;
-    private final Set<? extends EntityField<E, ?>> additionalFields;
+    private final Set<? extends EntityField<E, ?>> auditedFields;
 
-    public EntityChangeLoggableFieldSet(final EntityField<E, ? extends Number> idField,
-                                        final Collection<? extends EntityField<E, ?>> additionalFields) {
+    public AuditedFieldSet(final EntityField<E, ? extends Number> idField,
+                           final Collection<? extends EntityField<E, ?>> auditedFields) {
         this.idField = requireNonNull(idField, "idField is required");
-        this.additionalFields = additionalFields == null ? emptySet() : ImmutableSet.copyOf(additionalFields);
+        this.auditedFields = auditedFields == null ? emptySet() : ImmutableSet.copyOf(auditedFields);
     }
 
     public EntityField<E, ? extends Number> getIdField() {
         return idField;
     }
 
-    public Set<? extends EntityField<E, ?>> getAdditionalFields() {
-        return additionalFields;
+    public Set<? extends EntityField<E, ?>> getAuditedFields() {
+        return auditedFields;
     }
 
     public Set<? extends EntityField<E, ?>> getAllFields() {
         return Stream.concat(Stream.of(idField),
-                             additionalFields.stream())
+                             auditedFields.stream())
                      .collect(toSet());
     }
 
@@ -50,11 +50,11 @@ public class EntityChangeLoggableFieldSet<E extends EntityType<E>> {
             return false;
         }
 
-        final EntityChangeLoggableFieldSet<?> that = (EntityChangeLoggableFieldSet<?>) o;
+        final AuditedFieldSet<?> that = (AuditedFieldSet<?>) o;
 
         return new EqualsBuilder()
             .append(idField, that.idField)
-            .append(additionalFields, that.additionalFields)
+            .append(auditedFields, that.auditedFields)
             .isEquals();
     }
 
@@ -62,7 +62,7 @@ public class EntityChangeLoggableFieldSet<E extends EntityType<E>> {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
             .append(idField)
-            .append(additionalFields)
+            .append(auditedFields)
             .toHashCode();
     }
 
@@ -70,7 +70,7 @@ public class EntityChangeLoggableFieldSet<E extends EntityType<E>> {
     public String toString() {
         return new ToStringBuilder(this)
             .append("idField", idField)
-            .append("additionalFields", additionalFields)
+            .append("additionalFields", auditedFields)
             .toString();
     }
 

@@ -4,8 +4,8 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
-import com.kenshoo.pl.entity.internal.changelog.EntityTreeChangeRecord;
-import com.kenshoo.pl.entity.internal.changelog.EntityTreeChangeRecordGenerator;
+import com.kenshoo.pl.entity.internal.audit.AuditRecord;
+import com.kenshoo.pl.entity.internal.audit.RecursiveAuditRecordGenerator;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -32,13 +32,13 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     private final DSLContext dslContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
     private DeletionCommandPopulator deletionCommandPopulator;
-    private final EntityTreeChangeRecordGenerator entityTreeChangeRecordGenerator;
+    private final RecursiveAuditRecordGenerator recursiveAuditRecordGenerator;
 
     public PersistenceLayer(DSLContext dslContext) {
         this.dslContext = dslContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
         this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext);
-        this.entityTreeChangeRecordGenerator = new EntityTreeChangeRecordGenerator();
+        this.recursiveAuditRecordGenerator = new RecursiveAuditRecordGenerator();
     }
 
     public <PK extends Identifier<ROOT>>
@@ -118,11 +118,11 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         if (!validCmds.isEmpty()) {
             flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
-        final Collection<? extends EntityTreeChangeRecord<ROOT>> changeRecords =
-            entityTreeChangeRecordGenerator.generateMany(flowConfig,
-                                                         validCmds,
-                                                         overridingCtx);
-        //changeLogPublisher.publish(changeRecords);
+        final Collection<? extends AuditRecord<ROOT>> auditRecords =
+            recursiveAuditRecordGenerator.generateMany(flowConfig,
+                                                       validCmds,
+                                                       overridingCtx);
+        //auditRecordPublisher.publish(auditRecords);
         return overridingCtx;
     }
 

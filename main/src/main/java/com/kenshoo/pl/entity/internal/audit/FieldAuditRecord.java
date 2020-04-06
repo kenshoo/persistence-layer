@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal.changelog;
+package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -6,14 +6,14 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class EntityFieldChangeRecord<E extends EntityType<E>> {
+public class FieldAuditRecord<E extends EntityType<E>> {
     private final EntityField<E, ?> field;
     private final Object oldValue;
     private final Object newValue;
 
-    public EntityFieldChangeRecord(final EntityField<E, ?> field,
-                                   final Object oldValue,
-                                   final Object newValue) {
+    public FieldAuditRecord(final EntityField<E, ?> field,
+                            final Object oldValue,
+                            final Object newValue) {
         this.field = field;
         this.oldValue = oldValue;
         this.newValue = newValue;
@@ -38,7 +38,7 @@ public class EntityFieldChangeRecord<E extends EntityType<E>> {
         if (o == null || getClass() != o.getClass()) return false;
 
         @SuppressWarnings("unchecked")
-        final EntityFieldChangeRecord<E> that = (EntityFieldChangeRecord<E>) o;
+        final FieldAuditRecord<E> that = (FieldAuditRecord<E>) o;
 
         return new EqualsBuilder()
             .append(field, that.field)
