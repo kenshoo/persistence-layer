@@ -40,6 +40,13 @@ public class AuditedFieldSet<E extends EntityType<E>> {
                      .collect(toSet());
     }
 
+    public AuditedFieldSet<E> intersectWith(final Collection<? extends EntityField<E, ?>> fields) {
+        return new AuditedFieldSet<>(idField,
+                                     fields.stream()
+                                           .filter(auditedFields::contains)
+                                           .collect(toSet()));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

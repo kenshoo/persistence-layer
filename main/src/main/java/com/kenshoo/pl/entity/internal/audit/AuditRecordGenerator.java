@@ -16,27 +16,27 @@ import static java.util.stream.Collectors.toSet;
 
 public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentStateConsumer<E> {
 
-    private final AuditedFieldsFilter<E> auditedFieldsFilter;
+    private final AuditedFieldSet<E> auditedFieldSet;
     private final PostTransactionEntityIdExtractor entityIdExtractor;
 
     public AuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet) {
-        this(new AuditedFieldsFilter<>(requireNonNull(auditedFieldSet, "An auditedFieldSet is required")),
+        this(auditedFieldSet,
              PostTransactionEntityIdExtractor.INSTANCE);
     }
 
     @VisibleForTesting
-    AuditRecordGenerator(final AuditedFieldsFilter<E> auditedFieldsFilter,
+    AuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet,
                          final PostTransactionEntityIdExtractor entityIdExtractor) {
-        this.auditedFieldsFilter = auditedFieldsFilter;
+        this.auditedFieldSet = requireNonNull(auditedFieldSet, "An audited field set is required");
         this.entityIdExtractor = entityIdExtractor;
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToUpdate,
                                                               final ChangeOperation changeOperation) {
-        return auditedFieldsFilter.filter(fieldsToUpdate)
-                                  .getAllFields()
-                                  .stream();
+        return auditedFieldSet.intersectWith(fieldsToUpdate)
+                              .getAllFields()
+                              .stream();
     }
 
     public AuditRecord<E> generate(final EntityChange<E> entityChange,
@@ -51,8 +51,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
             .withOperation(entityChange.getChangeOperation());
 
         final Set<? extends EntityField<E, ?>> auditedFields =
-            auditedFieldsFilter.filter(entityChange.getChangedFields().collect(toSet()))
-                               .getAuditedFields();
+            auditedFieldSet.intersectWith(entityChange.getChangedFields().collect(toSet()))
+                           .getAuditedFields();
 
         final Set<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(entityChange,
                                                                                      entity,
@@ -63,8 +63,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     @VisibleForTesting
-    public AuditedFieldSet<E> getCompleteFieldSet() {
-        return auditedFieldsFilter.getCompleteFieldSet();
+    public AuditedFieldSet<E> getAuditedFieldSet() {
+        return auditedFieldSet;
     }
 
     private Set<FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
@@ -82,11 +82,11 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                       entityChange.get(field));
     }
 
-    private Number extractEntityId(final EntityChange<E> entityChange,
+    private String extractEntityId(final EntityChange<E> entityChange,
                                    final Entity entity) {
-        return entityIdExtractor.extractEntityId(entityChange, entity)
+        return entityIdExtractor.extract(entityChange, entity)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
-                                                                                 "from either the EntityChange or the Entity, so the changelog cannot be generated."));
+                                                                                 "from either the EntityChange or the Entity, so the audit record cannot be generated."));
     }
 
     private Predicate<EntityField<E, ?>> fieldWasChanged(final EntityChange<E> entityChange,

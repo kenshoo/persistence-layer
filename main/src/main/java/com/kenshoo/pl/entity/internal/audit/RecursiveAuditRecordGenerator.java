@@ -19,7 +19,7 @@ public class RecursiveAuditRecordGenerator {
         final ChangeContext changeContext) {
 
         //noinspection RedundantTypeArguments
-        return flowConfig.optionalAuditRecordGenerator()
+        return flowConfig.auditRecordGenerator()
                          .map(auditRecordGenerator -> this.<E>generateMany(flowConfig,
                                                                            auditRecordGenerator,
                                                                            entityChanges,

@@ -9,6 +9,7 @@ import com.kenshoo.pl.entity.internal.audit.AuditRecordGenerator;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;
+import org.jooq.lambda.Seq;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,7 +17,6 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
@@ -71,7 +71,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         return retryer;
     }
 
-    public Optional<AuditRecordGenerator<E>> optionalAuditRecordGenerator() {
+    public Optional<AuditRecordGenerator<E>> auditRecordGenerator() {
         return Optional.ofNullable(auditRecordGenerator);
     }
 
@@ -88,13 +88,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     }
 
     public Stream<CurrentStateConsumer<E>> currentStateConsumers() {
-        return Stream.of(postFetchFilters,
-                         postSupplyFilters,
-                         postFetchCommandEnrichers,
-                         validators,
-                         outputGenerators,
-                         singletonList(auditRecordGenerator))
-                     .flatMap(List::stream);
+        return Seq.concat(postFetchFilters,
+                          postSupplyFilters,
+                          postFetchCommandEnrichers,
+                          validators,
+                          outputGenerators,
+                          Seq.of(auditRecordGenerator));
     }
 
     static <E extends EntityType<E>> Builder<E> builder(E entityType) {
@@ -142,7 +141,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-        private final AuditRecordGenerator<E> auditRecordGenerator;
+        private final AuditedFieldsResolver auditedFieldsResolver;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
@@ -153,9 +152,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         Builder(final E entityType,
                 final AuditedFieldsResolver auditedFieldsResolver) {
             this.entityType = entityType;
-            this.auditRecordGenerator = auditedFieldsResolver.resolve(entityType)
-                                                             .map(AuditRecordGenerator::new)
-                                                             .orElse(null);
+            this.auditedFieldsResolver = auditedFieldsResolver;
         }
 
         public Builder<E> with(FeatureSet features) {
@@ -280,6 +277,9 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             ImmutableList.Builder<ChangesValidator<E>> validatorList = ImmutableList.builder();
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
+            final AuditRecordGenerator<E> auditRecordGenerator = auditedFieldsResolver.resolve(entityType)
+                                                                                      .map(AuditRecordGenerator::new)
+                                                                                      .orElse(null);
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
                                           validatorList.build(),

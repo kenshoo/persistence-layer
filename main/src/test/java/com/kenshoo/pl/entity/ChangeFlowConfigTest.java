@@ -185,11 +185,11 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                                                        auditedFieldsResolver).build();
         assertThat("Audit record generator should exist",
-                   flowConfig.optionalAuditRecordGenerator().isPresent(), is(true));
+                   flowConfig.auditRecordGenerator().isPresent(), is(true));
 
-        flowConfig.optionalAuditRecordGenerator().ifPresent(auditRecordGenerator ->
+        flowConfig.auditRecordGenerator().ifPresent(auditRecordGenerator ->
             assertThat("Incorrect field set passed to audit generator: ",
-                       auditRecordGenerator.getCompleteFieldSet(), is(auditedFieldSet)
+                       auditRecordGenerator.getAuditedFieldSet(), is(auditedFieldSet)
             )
         );
     }
@@ -202,6 +202,6 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                                                        auditedFieldsResolver).build();
         assertThat("Audit record generator should not exist",
-                   flowConfig.optionalAuditRecordGenerator().isPresent(), is(false));
+                   flowConfig.auditRecordGenerator().isPresent(), is(false));
     }
 }
