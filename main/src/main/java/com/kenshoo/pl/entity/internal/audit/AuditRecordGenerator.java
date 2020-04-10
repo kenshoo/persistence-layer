@@ -52,7 +52,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final Set<? extends EntityField<E, ?>> auditedFields =
             auditedFieldSet.intersectWith(entityChange.getChangedFields().collect(toSet()))
-                           .getAuditedFields();
+                           .getDataFields();
 
         final Set<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(entityChange,
                                                                                      entity,

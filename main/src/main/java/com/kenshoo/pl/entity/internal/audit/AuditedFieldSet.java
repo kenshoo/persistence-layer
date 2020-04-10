@@ -18,32 +18,35 @@ import static java.util.stream.Collectors.toSet;
 public class AuditedFieldSet<E extends EntityType<E>> {
 
     private final EntityField<E, ? extends Number> idField;
-    private final Set<? extends EntityField<E, ?>> auditedFields;
+    private final Set<? extends EntityField<E, ?>> dataFields;
 
+    public AuditedFieldSet(final EntityField<E, ? extends Number> idField) {
+        this(idField, emptySet());
+    }
     public AuditedFieldSet(final EntityField<E, ? extends Number> idField,
-                           final Collection<? extends EntityField<E, ?>> auditedFields) {
+                           final Collection<? extends EntityField<E, ?>> dataFields) {
         this.idField = requireNonNull(idField, "idField is required");
-        this.auditedFields = auditedFields == null ? emptySet() : ImmutableSet.copyOf(auditedFields);
+        this.dataFields = dataFields == null ? emptySet() : ImmutableSet.copyOf(dataFields);
     }
 
     public EntityField<E, ? extends Number> getIdField() {
         return idField;
     }
 
-    public Set<? extends EntityField<E, ?>> getAuditedFields() {
-        return auditedFields;
+    public Set<? extends EntityField<E, ?>> getDataFields() {
+        return dataFields;
     }
 
     public Set<? extends EntityField<E, ?>> getAllFields() {
         return Stream.concat(Stream.of(idField),
-                             auditedFields.stream())
+                             dataFields.stream())
                      .collect(toSet());
     }
 
     public AuditedFieldSet<E> intersectWith(final Collection<? extends EntityField<E, ?>> fields) {
         return new AuditedFieldSet<>(idField,
                                      fields.stream()
-                                           .filter(auditedFields::contains)
+                                           .filter(dataFields::contains)
                                            .collect(toSet()));
     }
 
@@ -61,7 +64,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
 
         return new EqualsBuilder()
             .append(idField, that.idField)
-            .append(auditedFields, that.auditedFields)
+            .append(dataFields, that.dataFields)
             .isEquals();
     }
 
@@ -69,7 +72,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
             .append(idField)
-            .append(auditedFields)
+            .append(dataFields)
             .toHashCode();
     }
 
@@ -77,7 +80,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
     public String toString() {
         return new ToStringBuilder(this)
             .append("idField", idField)
-            .append("additionalFields", auditedFields)
+            .append("dataFields", dataFields)
             .toString();
     }
 
