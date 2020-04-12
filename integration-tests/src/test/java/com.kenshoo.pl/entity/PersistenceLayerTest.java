@@ -28,7 +28,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
+import static com.kenshoo.pl.entity.EntityForTest.*;
+import static com.kenshoo.pl.entity.Feature.*;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
@@ -77,8 +78,8 @@ public class PersistenceLayerTest {
             {ID_2, TestEnum.Bravo.name(), FIELD2_2_ORIGINAL_VALUE, new Timestamp(Instant.now().toEpochMilli()), "key2", "value2", PARENT_ID_2, COMPLEX_PARENT_ID_2_1, COMPLEX_PARENT_ID_2_2, IGNORABLE_2_ORIGINAL_VALUE},
     };
     private static final Object[][] SECONDARY_DATA = {
-            {ID_1, GOOGLE_URL},
-            {ID_2, DOODLE_URL},
+            {ID_1, GOOGLE_URL, ""},
+            {ID_2, DOODLE_URL, ""},
     };
     private static final Object[][] PARENT_DATA = {
             {PARENT_ID_1, "1000"},
@@ -170,7 +171,7 @@ public class PersistenceLayerTest {
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);
-        cmd.set(ChildForTest.FIELD, fromOldValue(EntityForTest.URL, parentUrl -> parentUrl));
+        cmd.set(ChildForTest.FIELD, fromOldValue(URL, parentUrl -> parentUrl));
 
         childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
 
@@ -184,7 +185,7 @@ public class PersistenceLayerTest {
         CreateEntityCommand<ChildForTest> cmd = new CreateEntityCommand<>(ChildForTest.INSTANCE);
         cmd.set(ChildForTest.ID, 1);
         cmd.set(ChildForTest.PARENT_ID, ID_1);
-        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, EntityForTest.URL, (v1, v2) -> v1.toString() + " " + v2));
+        cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, URL, (v1, v2) -> v1.toString() + " " + v2));
 
         childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
 
@@ -399,10 +400,10 @@ public class PersistenceLayerTest {
 
     @Test
     public void updateSecondaryTableWhenEmpty() {
-        ArrayList<UpdateTestCommand> commands = new ArrayList<>();
-
-        commands.add(createUpdateSecondaryCommand(ID_1, DOODLE_URL));
-        commands.add(createUpdateSecondaryCommand(ID_2, GOOGLE_URL));
+        List<UpdateTestCommand> commands = ImmutableList.of(
+                new UpdateTestCommand(ID_1).with(URL, DOODLE_URL),
+                new UpdateTestCommand(ID_2).with(URL, GOOGLE_URL)
+        );
 
         UpdateResult<EntityForTest, EntityForTest.Key> updateResult = persistenceLayer.update(commands, changeFlowConfig().build());
         AffectedRows tableStats = updateResult.getStats().getAffectedRowsOf(secondaryTable.getName());
@@ -422,17 +423,10 @@ public class PersistenceLayerTest {
         assertThat(result.get(1).value2(), is(GOOGLE_URL));
     }
 
-    private UpdateTestCommand createUpdateSecondaryCommand(int id, String url) {
-        UpdateTestCommand command = new UpdateTestCommand(id);
-        command.set(EntityForTest.URL, url);
-        return command;
-    }
-
     @Test
     public void updateSecondaryTableWhenDuplicateExist() {
         ArrayList<UpdateTestCommand> commands = new ArrayList<>();
-
-        commands.add(createUpdateSecondaryCommand(ID_1, DOODLE_URL));
+        commands.add(new UpdateTestCommand(ID_1).with(URL, DOODLE_URL));
 
         persistenceLayer.update(commands, changeFlowConfig().build());
 
@@ -445,6 +439,16 @@ public class PersistenceLayerTest {
 
         assertThat(result.get(0).value1(), is(ID_1));
         assertThat(result.get(0).value2(), is(DOODLE_URL));
+    }
+
+    @Test
+    public void update_secondary_table_without_changing_value_of_non_nullable_field() {
+        // This test used to fail because the Purger removed URL while URL is still required by MySQL when performing ON DUPLICATE UPDATE
+        // because it is not nullable.
+        UpdateTestCommand cmd = new UpdateTestCommand(ID_1).with(URL, GOOGLE_URL).with(URL_PARAM, "abc");
+        persistenceLayer.update(asList(cmd), changeFlowConfig().build());
+        Entity fromDB = plContext.select(URL_PARAM).from(INSTANCE).where(ID.eq(ID_1)).fetch().get(0);
+        assertThat(fromDB.get(URL_PARAM), is("abc"));
     }
 
     @Test
@@ -765,7 +769,7 @@ public class PersistenceLayerTest {
         command1.set(EntityForTest.FIELD1, TestEnum.Alpha);
         command2.set(EntityForTest.PARENT_ID, PARENT_ID_2);
         String entity2Url = "http://test";
-        command2.set(EntityForTest.URL, entity2Url);
+        command2.set(URL, entity2Url);
 
         ChangeFlowConfig<EntityForTest> flowConfig = changeFlowConfig()
                 .withValidator(new CannotCreateInParentValidator(FIELD2_INVALID_VALUE))
@@ -1182,7 +1186,7 @@ public class PersistenceLayerTest {
         public void generate(Collection<? extends EntityChange<EntityForTest>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
             ChangesContainer changesContainer = new ChangesContainer(EntityForTest.INSTANCE.onDuplicateKey());
             for (EntityChange<EntityForTest> entityChange : entityChanges) {
-                String url = changeContext.getEntity(entityChange).get(EntityForTest.URL);
+                String url = changeContext.getEntity(entityChange).get(URL);
                 AbstractRecordCommand update = changesContainer.getInsertOnDuplicateUpdate(EntityForTestSecondaryTable.INSTANCE, entityChange,
                         () -> new CreateRecordCommand(EntityForTestSecondaryTable.INSTANCE));
                 update.set(EntityForTestSecondaryTable.INSTANCE.id, changeContext.getEntity(entityChange).get(EntityForTest.ID));
@@ -1194,12 +1198,12 @@ public class PersistenceLayerTest {
 
         @Override
         public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTest.FIELD1, EntityForTest.URL);
+            return Stream.of(EntityForTest.FIELD1, URL);
         }
 
         @Override
         public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTest.FIELD1, EntityForTest.URL);
+            return Stream.of(EntityForTest.FIELD1, URL);
         }
     }
 
@@ -1275,11 +1279,21 @@ public class PersistenceLayerTest {
         public UpdateTestCommand(int id) {
             super(EntityForTest.INSTANCE, new EntityForTest.Key(id));
         }
+
+        public <T> UpdateTestCommand with(EntityField<EntityForTest, T> field, T value) {
+            this.set(field, value);
+            return this;
+        }
     }
 
     private static class CreateTestCommand extends CreateEntityCommand<EntityForTest> {
         public CreateTestCommand() {
             super(EntityForTest.INSTANCE);
+        }
+
+        public <T> CreateTestCommand with(EntityField<EntityForTest, T> field, T value) {
+            this.set(field, value);
+            return this;
         }
     }
 

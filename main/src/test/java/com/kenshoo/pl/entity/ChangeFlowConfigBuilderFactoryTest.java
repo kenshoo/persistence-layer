@@ -6,6 +6,7 @@ import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import org.jooq.Record;
 import org.jooq.Table;
 import org.jooq.TableField;
+import org.jooq.impl.SQLDataType;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,6 +55,7 @@ public class ChangeFlowConfigBuilderFactoryTest {
         when(mocked.getTable()).thenReturn(table);
         when(mocked.getName()).thenReturn(name);
         when(mocked.getType()).thenReturn(Integer.class);
+        when(mocked.getDataType()).thenReturn(SQLDataType.INTEGER);
         return mocked;
     }
 }

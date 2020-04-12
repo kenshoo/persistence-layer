@@ -23,7 +23,8 @@ public class ChangeFlowConfigBuilderFactory {
         builder.withFalseUpdatesPurger(new FalseUpdatesPurger.Builder<E>()
                 .setFieldUnsetter(ChangeEntityCommand::unset)
                 .setDeleteIfSetAloneFields(entityType.getFields().filter(annotatedWith(entityType, IgnoredIfSetAlone.class)))
-                .setFieldsToRetain(entityType.getFields().filter(annotatedWith(entityType, DontPurge.class)))
+                .addFieldsToRetain(entityType.getFields().filter(annotatedWith(entityType, DontPurge.class)))
+                .retainNonNullableFieldsOfSecondaryTables(entityType)
                 .build());
         builder.withRequiredRelationFields(entityType.getFields()
                 .filter(entityField -> {

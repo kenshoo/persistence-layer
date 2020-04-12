@@ -2,8 +2,11 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.kenshoo.jooq.AbstractDataTable;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import org.jooq.TableField;
+import org.jooq.impl.SQLDataType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,13 +125,33 @@ public class FalseUpdatesPurgerTest {
                 field2, "value"
         )));
 
-        purger().setFieldsToRetain(field1).build().enrich(asList(command1), UPDATE, changeContext);
+        purger().addFieldsToRetain(field1).build().enrich(asList(command1), UPDATE, changeContext);
 
         assertThat(command1.getChanges().map(c -> c.getField()).collect(toList()), contains(field1));
     }
 
+    @Test
+    public void retain_non_nullable_fields_of_secondary_tables() {
+        FalseUpdatesPurger<TestEntity> purger = purger().retainNonNullableFieldsOfSecondaryTables(TestEntity.INSTANCE).build();
+        assertThat(purger.getFieldsToRetain(), containsInAnyOrder(TestEntity.NON_NULLABLE_SECONDARY_TABLE_FIELD));
+    }
+
     private FalseUpdatesPurger.Builder<TestEntity> purger() {
-        return new FalseUpdatesPurger.Builder<>().setFieldUnsetter(ChangeEntityCommand::unset);
+        return new FalseUpdatesPurger.Builder<TestEntity>().setFieldUnsetter(ChangeEntityCommand::unset);
+    }
+
+    private static class PrimaryTable extends AbstractDataTable<PrimaryTable> {
+        public static PrimaryTable INSTANCE = new PrimaryTable();
+        public PrimaryTable() { super("primary"); }
+        public PrimaryTable as(String alias) { return this; }
+    }
+
+    private static class SecondaryTable extends AbstractDataTable<SecondaryTable> {
+        public static SecondaryTable INSTANCE = new SecondaryTable();
+        public SecondaryTable() { super("secondary"); }
+        public SecondaryTable as(String alias) { return this; }
+        public TableField nullable_secondary_field = createField("nullable_secondary_field", SQLDataType.INTEGER.nullable(true));
+        public TableField non_nullable_secondary_field = createField("no_nullable_secondary_field", SQLDataType.INTEGER.nullable(false));
     }
 
     private static class TestEntity extends AbstractEntityType<TestEntity> {
@@ -141,8 +164,11 @@ public class FalseUpdatesPurgerTest {
 
         @Override
         public DataTable getPrimaryTable() {
-            return null;
+            return PrimaryTable.INSTANCE;
         }
+
+        public static EntityField<TestEntity, Integer> NULLABLE_SECONDARY_TABLE_FIELD = INSTANCE.field(SecondaryTable.INSTANCE.nullable_secondary_field);
+        public static EntityField<TestEntity, Integer> NON_NULLABLE_SECONDARY_TABLE_FIELD = INSTANCE.field(SecondaryTable.INSTANCE.non_nullable_secondary_field);
     }
 
     private static class TestCommand extends CreateEntityCommand<TestEntity> {
