@@ -1,7 +1,5 @@
-package com.kenshoo.pl.entity.internal.audit;
+package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Collection;

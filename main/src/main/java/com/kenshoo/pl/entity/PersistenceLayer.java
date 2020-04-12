@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
-import com.kenshoo.pl.entity.internal.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.RecursiveAuditRecordGenerator;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
@@ -122,7 +121,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
             recursiveAuditRecordGenerator.generateMany(flowConfig,
                                                        validCmds,
                                                        overridingCtx);
-        //auditRecordPublisher.publish(auditRecords);
+        flowConfig.auditRecordPublisher().publish(auditRecords);
         return overridingCtx;
     }
 

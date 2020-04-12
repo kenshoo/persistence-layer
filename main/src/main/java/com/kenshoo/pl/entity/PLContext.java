@@ -1,6 +1,7 @@
 package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
+import com.kenshoo.pl.entity.spi.AuditRecordPublisher;
 import com.kenshoo.pl.entity.spi.PersistenceLayerRetryer;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
@@ -15,11 +16,16 @@ public class PLContext {
     final private DSLContext dslContext;
     final private PersistenceLayerRetryer retryer;
     final private Predicate<Feature> featurePredicate;
+    private final AuditRecordPublisher auditRecordPublisher;
 
-    private PLContext(DSLContext dslContext, PersistenceLayerRetryer retryer, Predicate<Feature> featurePredicate) {
+    private PLContext(final DSLContext dslContext,
+                      final PersistenceLayerRetryer retryer,
+                      final Predicate<Feature> featurePredicate,
+                      final AuditRecordPublisher auditRecordPublisher) {
         this.dslContext = dslContext;
         this.retryer = retryer;
         this.featurePredicate = featurePredicate;
+        this.auditRecordPublisher = auditRecordPublisher;
     }
 
     public DSLContext dslContext() {
@@ -32,6 +38,10 @@ public class PLContext {
 
     public PersistenceLayerRetryer persistenceLayerRetryer() {
         return  retryer;
+    }
+
+    public AuditRecordPublisher auditRecordPublisher() {
+        return auditRecordPublisher;
     }
 
     /**
@@ -53,6 +63,7 @@ public class PLContext {
         private DSLContext dslContext;
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
         private Predicate<Feature> featurePredicate = __ -> false;
+        private AuditRecordPublisher auditRecordPublisher;
 
         public Builder withFeaturePredicate(Predicate<Feature> featurePredicate) {
             this.featurePredicate = featurePredicate;
@@ -68,8 +79,16 @@ public class PLContext {
             return this;
         }
 
+        public Builder withAuditRecordPublisher(final AuditRecordPublisher auditRecordPublisher) {
+            this.auditRecordPublisher = auditRecordPublisher;
+            return this;
+        }
+
         public PLContext build() {
-            return new PLContext(dslContext, retryer, featurePredicate);
+            return new PLContext(dslContext,
+                                 retryer,
+                                 featurePredicate,
+                                 auditRecordPublisher);
         }
 
     }

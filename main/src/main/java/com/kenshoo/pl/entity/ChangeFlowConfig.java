@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toCollection;
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
@@ -36,6 +37,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
     private final AuditRecordGenerator<E> auditRecordGenerator;
+    private final AuditRecordPublisher auditRecordPublisher;
     private final FeatureSet features;
 
 
@@ -48,6 +50,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
                              PersistenceLayerRetryer retryer,
                              AuditRecordGenerator<E> auditRecordGenerator,
+                             AuditRecordPublisher auditRecordPublisher,
                              FeatureSet features) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
@@ -60,6 +63,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
         this.auditRecordGenerator = auditRecordGenerator;
+        this.auditRecordPublisher = requireNonNull(auditRecordPublisher, "An auditRecordPublisher must be defined");
         this.features = features;
     }
 
@@ -73,6 +77,10 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
     public Optional<AuditRecordGenerator<E>> auditRecordGenerator() {
         return Optional.ofNullable(auditRecordGenerator);
+    }
+
+    public AuditRecordPublisher auditRecordPublisher() {
+        return auditRecordPublisher;
     }
 
     public List<PostFetchCommandEnricher<E>> getPostFetchCommandEnrichers() {
@@ -142,10 +150,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
         private final AuditedFieldsResolver auditedFieldsResolver;
+        private AuditRecordPublisher auditRecordPublisher = AuditRecordPublisher.NO_OP;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
-            this(entityType, AuditedFieldsResolver.INSTANCE);
+            this(entityType,
+                 AuditedFieldsResolver.INSTANCE);
         }
 
         @VisibleForTesting
@@ -271,6 +281,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return this;
         }
 
+        public Builder<E> withAuditRecordPublisher(final AuditRecordPublisher auditRecordPublisher) {
+            this.auditRecordPublisher = auditRecordPublisher;
+            return this;
+        }
+
         public ChangeFlowConfig<E> build() {
             ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.builder();
             postFetchCommandEnrichers.forEach(excludableElement -> enrichers.add(excludableElement.element()));
@@ -289,6 +304,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                                           flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
                                           retryer,
                                           auditRecordGenerator,
+                                          auditRecordPublisher,
                                           features
             );
         }
