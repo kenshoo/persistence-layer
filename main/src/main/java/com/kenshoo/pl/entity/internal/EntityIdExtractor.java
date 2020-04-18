@@ -8,9 +8,9 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class PostTransactionEntityIdExtractor {
+public class EntityIdExtractor {
 
-    public static final PostTransactionEntityIdExtractor INSTANCE = new PostTransactionEntityIdExtractor();
+    public static final EntityIdExtractor INSTANCE = new EntityIdExtractor();
 
     public <E extends EntityType<E>> Optional<String> extract(final EntityChange<E> entityChange,
                                                               final Entity entity) {
@@ -57,7 +57,7 @@ public class PostTransactionEntityIdExtractor {
         return Optional.empty();
     }
 
-    private PostTransactionEntityIdExtractor() {
+    private EntityIdExtractor() {
         // singleton
     }
 }

@@ -63,7 +63,7 @@ public class PLContext {
         private DSLContext dslContext;
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
         private Predicate<Feature> featurePredicate = __ -> false;
-        private AuditRecordPublisher auditRecordPublisher;
+        private AuditRecordPublisher auditRecordPublisher = AuditRecordPublisher.NO_OP;
 
         public Builder withFeaturePredicate(Predicate<Feature> featurePredicate) {
             this.featurePredicate = featurePredicate;

@@ -6,14 +6,13 @@ import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jooq.lambda.Seq;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
 
 public class AuditedFieldSet<E extends EntityType<E>> {
 
@@ -24,7 +23,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         this(idField, emptySet());
     }
     public AuditedFieldSet(final EntityField<E, ? extends Number> idField,
-                           final Collection<? extends EntityField<E, ?>> dataFields) {
+                           final Iterable<? extends EntityField<E, ?>> dataFields) {
         this.idField = requireNonNull(idField, "idField is required");
         this.dataFields = dataFields == null ? emptySet() : ImmutableSet.copyOf(dataFields);
     }
@@ -37,17 +36,17 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         return dataFields;
     }
 
-    public Set<? extends EntityField<E, ?>> getAllFields() {
-        return Stream.concat(Stream.of(idField),
-                             dataFields.stream())
-                     .collect(toSet());
+    public boolean hasIdFieldOnly() {
+        return dataFields.isEmpty();
     }
 
-    public AuditedFieldSet<E> intersectWith(final Collection<? extends EntityField<E, ?>> fields) {
+    public Stream<? extends EntityField<E, ?>> getAllFields() {
+        return Stream.concat(Stream.of(idField), dataFields.stream());
+    }
+
+    public AuditedFieldSet<E> intersectWith(final Stream<? extends EntityField<E, ?>> fields) {
         return new AuditedFieldSet<>(idField,
-                                     fields.stream()
-                                           .filter(dataFields::contains)
-                                           .collect(toSet()));
+                                     Seq.seq(fields).filter(dataFields::contains));
     }
 
     @Override

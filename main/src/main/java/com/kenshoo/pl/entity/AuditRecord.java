@@ -9,18 +9,18 @@ import static java.util.Collections.emptySet;
 public class AuditRecord<E extends EntityType<E>> {
     private final E entityType;
     private final String entityId;
-    private final ChangeOperation operation;
+    private final ChangeOperation operator;
     private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
     private final Collection<? extends AuditRecord<?>> childRecords;
 
     public AuditRecord(final E entityType,
                        final String entityId,
-                       final ChangeOperation operation,
+                       final ChangeOperation operator,
                        final Collection<? extends FieldAuditRecord<E>> fieldRecords,
                        final Collection<? extends AuditRecord<?>> childRecords) {
         this.entityType = entityType;
         this.entityId = entityId;
-        this.operation = operation;
+        this.operator = operator;
         this.fieldRecords = fieldRecords;
         this.childRecords = childRecords;
     }
@@ -33,8 +33,8 @@ public class AuditRecord<E extends EntityType<E>> {
         return entityId;
     }
 
-    public ChangeOperation getOperation() {
-        return operation;
+    public ChangeOperation getOperator() {
+        return operator;
     }
 
     public Collection<? extends FieldAuditRecord<E>> getFieldRecords() {
@@ -50,9 +50,9 @@ public class AuditRecord<E extends EntityType<E>> {
         return new ToStringBuilder(this)
             .append("entityType", entityType)
             .append("entityId", entityId)
-            .append("operation", operation)
-            .append("fieldChanges", fieldRecords)
-            .append("childChanges", childRecords)
+            .append("operator", operator)
+            .append("fieldRecords", fieldRecords)
+            .append("childRecords", childRecords)
             .toString();
     }
 
@@ -60,9 +60,9 @@ public class AuditRecord<E extends EntityType<E>> {
     public static class Builder<E extends EntityType<E>> {
         private E entityType;
         private String entityId;
-        private ChangeOperation operation;
+        private ChangeOperation operator;
         private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptySet();
-        private Collection<? extends AuditRecord<?>> childRecord = emptySet();
+        private Collection<? extends AuditRecord<?>> childRecords = emptySet();
 
         public Builder<E> withEntityType(E entityType) {
             this.entityType = entityType;
@@ -74,27 +74,27 @@ public class AuditRecord<E extends EntityType<E>> {
             return this;
         }
 
-        public Builder<E> withOperation(ChangeOperation operation) {
-            this.operation = operation;
+        public Builder<E> withOperator(ChangeOperation operator) {
+            this.operator = operator;
             return this;
         }
 
-        public Builder<E> withFieldChanges(Collection<? extends FieldAuditRecord<E>> fieldChanges) {
-            this.fieldRecords = fieldChanges;
+        public Builder<E> withFieldRecords(Collection<? extends FieldAuditRecord<E>> fieldRecords) {
+            this.fieldRecords = fieldRecords;
             return this;
         }
 
-        public Builder<E> withChildChanges(Collection<? extends AuditRecord<?>> childChanges) {
-            this.childRecord = childChanges;
+        public Builder<E> withChildRecords(Collection<? extends AuditRecord<?>> childRecords) {
+            this.childRecords = childRecords;
             return this;
         }
 
         public AuditRecord<E> build() {
             return new AuditRecord<>(entityType,
                                      entityId,
-                                     operation,
+                                     operator,
                                      fieldRecords,
-                                     childRecord);
+                                     childRecords);
         }
     }
 }

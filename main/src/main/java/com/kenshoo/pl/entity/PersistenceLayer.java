@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
@@ -28,15 +29,19 @@ import static org.jooq.lambda.Seq.seq;
 
 public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
-    private final DSLContext dslContext;
+    private final PLContext plContext;
     private final FieldsToFetchBuilder<ROOT> fieldsToFetchBuilder;
     private DeletionCommandPopulator deletionCommandPopulator;
     private final RecursiveAuditRecordGenerator recursiveAuditRecordGenerator;
 
-    public PersistenceLayer(DSLContext dslContext) {
-        this.dslContext = dslContext;
+    public PersistenceLayer(final DSLContext dslContext) {
+        this(new PLContext.Builder(dslContext).build());
+    }
+
+    public PersistenceLayer(final PLContext plContext) {
+        this.plContext = plContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
-        this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext);
+        this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext());
         this.recursiveAuditRecordGenerator = new RecursiveAuditRecordGenerator();
     }
 
@@ -115,13 +120,13 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
         ChangeContext overridingCtx = context.isEnabled(AutoIncrementSupport) ? new OverridingContext(context) : context;
         if (!validCmds.isEmpty()) {
-            flowConfig.retryer().run((() -> dslContext.transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
+            flowConfig.retryer().run((() -> dslContext().transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
-        final Collection<? extends AuditRecord<ROOT>> auditRecords =
+        final Stream<? extends AuditRecord<ROOT>> auditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig,
-                                                       validCmds,
+                                                       validCmds.stream(),
                                                        overridingCtx);
-        flowConfig.auditRecordPublisher().publish(auditRecords);
+        plContext.auditRecordPublisher().publish(auditRecords);
         return overridingCtx;
     }
 
@@ -207,7 +212,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     }
 
     private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
-        return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext, features));
+        return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext(), features));
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> resolveSuppliersAndFilterErrors(Collection<C> commands, ChangeContext changeContext) {
@@ -286,5 +291,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         final Entity entity = Optional.ofNullable(changeContext.getEntity(cmd))
                                       .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
         cmd.set(idField, entity.get(idField));
+    }
+
+    private DSLContext dslContext() {
+        return plContext.dslContext();
     }
 }

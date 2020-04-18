@@ -52,8 +52,6 @@ public class ChangeFlowConfigBuilderFactory {
                 .map(tuple -> defaultFieldValueEnricher(tuple.v1, tuple.v2.value()))
                 .forEach(builder::withPostFetchCommandEnricher);
 
-        builder.withAuditRecordPublisher(plContext.auditRecordPublisher());
-
         return builder;
     }
 
