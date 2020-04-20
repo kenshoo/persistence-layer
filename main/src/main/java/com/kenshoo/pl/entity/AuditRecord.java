@@ -4,6 +4,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Collection;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
 public class AuditRecord<E extends EntityType<E>> {
@@ -13,7 +14,7 @@ public class AuditRecord<E extends EntityType<E>> {
     private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
     private final Collection<? extends AuditRecord<?>> childRecords;
 
-    public AuditRecord(final E entityType,
+    private AuditRecord(final E entityType,
                        final String entityId,
                        final ChangeOperation operator,
                        final Collection<? extends FieldAuditRecord<E>> fieldRecords,
@@ -45,6 +46,10 @@ public class AuditRecord<E extends EntityType<E>> {
         return childRecords;
     }
 
+    public boolean hasNoChanges() {
+        return fieldRecords.isEmpty() && childRecords.isEmpty();
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
@@ -56,13 +61,12 @@ public class AuditRecord<E extends EntityType<E>> {
             .toString();
     }
 
-
     public static class Builder<E extends EntityType<E>> {
         private E entityType;
         private String entityId;
         private ChangeOperation operator;
-        private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptySet();
-        private Collection<? extends AuditRecord<?>> childRecords = emptySet();
+        private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptyList();
+        private Collection<? extends AuditRecord<?>> childRecords = emptyList();
 
         public Builder<E> withEntityType(E entityType) {
             this.entityType = entityType;
@@ -80,12 +84,12 @@ public class AuditRecord<E extends EntityType<E>> {
         }
 
         public Builder<E> withFieldRecords(Collection<? extends FieldAuditRecord<E>> fieldRecords) {
-            this.fieldRecords = fieldRecords;
+            this.fieldRecords = fieldRecords == null ? emptyList() : fieldRecords;
             return this;
         }
 
         public Builder<E> withChildRecords(Collection<? extends AuditRecord<?>> childRecords) {
-            this.childRecords = childRecords;
+            this.childRecords = childRecords == null ? emptyList() : childRecords;
             return this;
         }
 

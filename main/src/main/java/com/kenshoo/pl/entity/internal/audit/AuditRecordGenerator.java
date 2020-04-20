@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -40,46 +41,24 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     public Optional<? extends AuditRecord<E>> generate(final EntityChange<E> entityChange,
                                                        final Entity entity,
                                                        final Collection<? extends AuditRecord<?>> childRecords) {
+        final AuditRecord<E> auditRecord = generateInner(entityChange,
+                                                         entity,
+                                                         childRecords);
+
+        if (entityChange.getChangeOperation() == UPDATE && auditRecord.hasNoChanges()) {
+            return Optional.empty();
+        }
+        return Optional.of(auditRecord);
+    }
+
+    private AuditRecord<E> generateInner(final EntityChange<E> entityChange,
+                                         final Entity entity,
+                                         final Collection<? extends AuditRecord<?>> childRecords) {
         requireNonNull(entityChange, "entityChange is required");
         requireNonNull(entity, "entity is required");
 
         final String entityId = extractEntityId(entityChange, entity);
 
-        if (auditedFieldSet.hasIdFieldOnly()) {
-            return generateForId(entityChange,
-                                 entity,
-                                 entityId,
-                                 childRecords);
-        }
-
-        return generateForIdAndDataFields(entityChange,
-                                          entity,
-                                          entityId,
-                                          childRecords);
-    }
-
-    private Optional<? extends AuditRecord<E>> generateForId(final EntityChange<E> entityChange,
-                                                             final Entity entity,
-                                                             final String entityId,
-                                                             final Collection<? extends AuditRecord<?>> childRecords) {
-        final boolean idStayedTheSame = fieldStayedTheSame(entityChange, entity, auditedFieldSet.getIdField());
-        if (idStayedTheSame && childRecords.isEmpty()) {
-            return Optional.empty();
-        }
-
-        final AuditRecord<E> auditRecord = new AuditRecord.Builder<E>()
-            .withEntityType(entityChange.getEntityType())
-            .withEntityId(entityId)
-            .withOperator(entityChange.getChangeOperation())
-            .withChildRecords(childRecords)
-            .build();
-        return Optional.of(auditRecord);
-    }
-
-    private Optional<? extends AuditRecord<E>> generateForIdAndDataFields(final EntityChange<E> entityChange,
-                                                                          final Entity entity,
-                                                                          final String entityId,
-                                                                          final Collection<? extends AuditRecord<?>> childRecords) {
         final Set<? extends EntityField<E, ?>> candidateDataFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
                                                                                     .getDataFields();
 
@@ -87,23 +66,13 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                                                             entity,
                                                                                             candidateDataFields);
 
-        if (fieldRecords.isEmpty() && childRecords.isEmpty()) {
-            return Optional.empty();
-        }
-
-        final AuditRecord<E> auditRecord = new AuditRecord.Builder<E>()
+        return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
             .withEntityId(entityId)
             .withOperator(entityChange.getChangeOperation())
             .withFieldRecords(fieldRecords)
             .withChildRecords(childRecords)
             .build();
-        return Optional.of(auditRecord);
-    }
-
-    @VisibleForTesting
-    public AuditedFieldSet<E> getAuditedFieldSet() {
-        return auditedFieldSet;
     }
 
     private Collection<? extends FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
@@ -146,5 +115,10 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                          final Entity entity,
                                          final EntityField<E, T> field) {
         return field.valuesEqual(entityChange.get(field), entity.get(field));
+    }
+
+    @VisibleForTesting
+    public AuditedFieldSet<E> getAuditedFieldSet() {
+        return auditedFieldSet;
     }
 }
