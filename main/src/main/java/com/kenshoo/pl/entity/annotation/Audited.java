@@ -1,4 +1,4 @@
-package com.kenshoo.pl.changelog.annotation;
+package com.kenshoo.pl.entity.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,9 +7,9 @@ import java.lang.annotation.Target;
 
 /**
  * Whenever an entity or field has this annotation, it indicates that any changes to the entity / field
- * will be included in the changes published by the changelog output generator.
+ * will be published (by the publisher belonging to the PersistenceLayer instance)
  */
 @Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ChangesLogged {
+public @interface Audited {
 }
