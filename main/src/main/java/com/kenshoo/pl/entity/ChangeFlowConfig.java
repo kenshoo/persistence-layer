@@ -93,8 +93,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                           postSupplyFilters,
                           postFetchCommandEnrichers,
                           validators,
-                          outputGenerators,
-                          Seq.of(auditRecordGenerator));
+                          outputGenerators)
+                  .concat(Optional.ofNullable(auditRecordGenerator));
     }
 
     static <E extends EntityType<E>> Builder<E> builder(E entityType) {
