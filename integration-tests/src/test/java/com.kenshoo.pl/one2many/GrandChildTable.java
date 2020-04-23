@@ -10,7 +10,7 @@ public class GrandChildTable extends AbstractDataTable<GrandChildTable> {
     public static final GrandChildTable INSTANCE = new GrandChildTable();
 
     private GrandChildTable() {
-        super("testGrandChildTable");
+        super("GrandChildTable");
     }
 
     public final TableField<Record, Integer> child_id = createPKAndFKField("child_id", SQLDataType.INTEGER, ChildTable.INSTANCE.id);
