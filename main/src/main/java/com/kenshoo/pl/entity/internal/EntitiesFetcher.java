@@ -68,11 +68,11 @@ public class EntitiesFetcher {
         }
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
-        final AliasedIdFields<E> aliasedIdFields = new AliasedIdFields(uniqueKey);
+        final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields(uniqueKey);
 
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedIdFields.getAliasedFields().values(), fieldsToFetch);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKeyFields.aliasedFields(), fieldsToFetch);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), aliasedIdFields, fieldsToFetch);
+            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKeyFields, fieldsToFetch);
         }
     }
 
@@ -97,9 +97,12 @@ public class EntitiesFetcher {
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
-            final AliasedIdFields<E> aliasedIdFields = new AliasedIdFields(foreignUniqueKey);
-            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedIdFields.getAliasedFields().values(), fieldsToFetch);
-            return fetchEntitiesMap(query, aliasedIdFields, fieldsToFetch);
+            Map<EntityField<E, ?>, Field<?>> fieldDBFieldMap = Seq.of(foreignUniqueKey.getFields())
+                    .toMap(field -> field, field -> foreignKeysTable.getTable().getField((field.getDbAdapter().getFirstTableField())));
+            final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields(fieldDBFieldMap);
+
+            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKeyFields.aliasedFields(), fieldsToFetch);
+            return fetchEntitiesMap(query, aliasedKeyFields, fieldsToFetch);
         }
     }
 
@@ -264,9 +267,9 @@ public class EntitiesFetcher {
         return joinCondition;
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedIdFields aliasedIdFields, final Collection<? extends EntityField<?, ?>> fields) {
+    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKeyFields aliasedKeyFields, final Collection<? extends EntityField<?, ?>> fields) {
         Map<Identifier<E>, Entity> entitiesMap = new HashMap<>();
-        query.fetchInto(record -> entitiesMap.put(createKey(record, aliasedIdFields), createEntity(record, fields)));
+        query.fetchInto(record -> entitiesMap.put(createKey(record, aliasedKeyFields), createEntity(record, fields)));
         return entitiesMap;
     }
 
@@ -279,15 +282,14 @@ public class EntitiesFetcher {
         return entity;
     }
 
-    private <E extends EntityType<E>> Identifier<E> createKey(Record record, AliasedIdFields<E> aliasedIdFields) {
-        FieldsValueMapImpl<E> key = new FieldsValueMapImpl<>();
-        aliasedIdFields.getAliasedFields().entrySet().forEach(entry-> setKeyField(key, entry.getKey(), record.getValue(entry.getValue())));
-        return new UniqueKey<>(aliasedIdFields.getAliasedFields().keySet()).createValue(key);
-    }
-
-    private <E extends EntityType<E>, T> void setKeyField(FieldsValueMapImpl<E> key, EntityField<E, T> field, Object value) {
-        T fieldValue = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(value));
-        key.set(field, fieldValue);
+    private <E extends EntityType<E>, T> Identifier<E> createKey(Record record, AliasedKeyFields<E> aliasedKeyFields) {
+        FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
+        aliasedKeyFields.keyFields().forEach(keyField -> {
+            EntityField<E, T> field = (EntityField<E, T>) keyField;
+            T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasedKeyFields.aliasOf(field))));
+            fieldsValueMap.set(field, value);
+        });
+        return new UniqueKey<E>(aliasedKeyFields.keyFields()).createValue(fieldsValueMap);
     }
 
     private <T> void fieldFromRecordToEntity(EntityImpl entity, EntityField<?, T> field, Iterator<Object> valuesIterator) {
