@@ -2,34 +2,22 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.jooq.AbstractDataTable;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
-import com.kenshoo.pl.entity.annotation.Required;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.one2many.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.TableField;
-import org.jooq.impl.SQLDataType;
 import org.junit.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
-import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.Feature.FetchMany;
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
-import static com.kenshoo.pl.entity.PLCondition.not;
-import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static com.kenshoo.pl.one2many.ChildEntity.*;
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -122,10 +110,10 @@ public class EntitiesFetcherByIdTest {
         Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
                 ID, FIELD_1);
 
-        List<Entity> entities = idEntityMap.get(parentId).get(ChildEntity.INSTANCE);
+        List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(INSTANCE);
 
-        assertThat(entityOfId(entities, ID, 1).get(FIELD_1), Is.is("child1"));
-        assertThat(entityOfId(entities, ID, 2).get(FIELD_1), Is.is("child2"));
+        assertThat(valuesOfId(manyValues, ID, 1).get(FIELD_1), Is.is("child1"));
+        assertThat(valuesOfId(manyValues, ID, 2).get(FIELD_1), Is.is("child2"));
     }
 
     /*
@@ -154,13 +142,13 @@ public class EntitiesFetcherByIdTest {
         Map<Identifier<GrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
                 OtherChildEntity.ID, OtherChildEntity.NAME);
 
-        List<Entity> entities = idEntityMap.get(grandChildId).get(OtherChildEntity.INSTANCE);
+        List<FieldsValueMap<OtherChildEntity>> manyValues = idEntityMap.get(grandChildId).getMany(OtherChildEntity.INSTANCE);
 
-        assertThat(entityOfId(entities, OtherChildEntity.ID, 1).get(OtherChildEntity.NAME), Is.is("otherChild1"));
-        assertThat(entityOfId(entities, OtherChildEntity.ID, 2).get(OtherChildEntity.NAME), Is.is("otherChild2"));
+        assertThat(valuesOfId(manyValues, OtherChildEntity.ID, 1).get(OtherChildEntity.NAME), Is.is("otherChild1"));
+        assertThat(valuesOfId(manyValues, OtherChildEntity.ID, 2).get(OtherChildEntity.NAME), Is.is("otherChild2"));
     }
 
-    private Entity entityOfId(List<Entity> entities, EntityField<?, ?> fieldId, Integer id) {
-        return entities.stream().filter(entity -> id.equals(entity.get(fieldId))).findFirst().get();
+    private <E extends EntityType<E>> FieldsValueMap<E> valuesOfId(List<FieldsValueMap<E>> manyValues, EntityField<E,?> fieldId, Integer id) {
+        return manyValues.stream().filter(fieldsValueMap -> id.equals(fieldsValueMap.get(fieldId))).findFirst().get();
     }
 }
