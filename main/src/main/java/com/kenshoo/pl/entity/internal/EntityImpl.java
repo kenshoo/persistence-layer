@@ -1,17 +1,16 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class EntityImpl implements Entity {
 
     private final Map<EntityField<?, ?>, Object> fields = new HashMap<>();
-    private final Map<EntityType, List<Entity>> subEntitiesByType = new HashMap<>();
+    private final Map<EntityType, FieldsValueMaps> manyByType = new HashMap<>();
 
     public boolean containsField(EntityField<?, ?> field) {
         return fields.containsKey(field);
@@ -28,15 +27,26 @@ public class EntityImpl implements Entity {
     }
 
     @Override
-    public List<Entity> get(EntityType type) {
-        return subEntitiesByType.get(type);
+    public <E extends EntityType<E>> List<FieldsValueMap<E>> getMany(E type) {
+        FieldsValueMaps<E> fieldsValueMaps = manyByType.get(type);
+        return fieldsValueMaps.fieldsValueMaps;
     }
 
     public <T> void set(EntityField<?, T> field, T value) {
         fields.put(field, value);
     }
 
-    public void add(EntityType entityType,  List<Entity> entities) {
-        subEntitiesByType.put(entityType, entities);
+    public <E extends EntityType<E>> void add(E entityType,  List<FieldsValueMap<E>> fieldsValueMaps) {
+        manyByType.put(entityType, new FieldsValueMaps<E>(fieldsValueMaps));
+    }
+
+
+
+    private class FieldsValueMaps<E extends EntityType<E>> {
+        private final List<FieldsValueMap<E>> fieldsValueMaps;
+
+        FieldsValueMaps(List<FieldsValueMap<E>> fieldsValueMaps) {
+            this.fieldsValueMaps = fieldsValueMaps;
+        }
     }
 }

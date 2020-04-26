@@ -1,8 +1,9 @@
 package com.kenshoo.pl.entity;
 
 import org.jooq.lambda.Seq;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import static java.util.Optional.ofNullable;
 
@@ -92,11 +93,6 @@ public class OverridingContext implements ChangeContext {
             return overriding.containsField(field)
                     ? overriding.get(field)
                     : original.get(field);
-        }
-
-        @Override
-        public List<Entity> get(EntityType type) {
-            return Collections.EMPTY_LIST;
         }
     }
 }

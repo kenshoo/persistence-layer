@@ -2,10 +2,6 @@ package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-
-import java.util.Collections;
-import java.util.List;
 
 public class EntityWithGeneratedId implements Entity {
 
@@ -30,11 +26,6 @@ public class EntityWithGeneratedId implements Entity {
         //noinspection unchecked
         return (T) idValue;
 
-    }
-
-    @Override
-    public List<Entity> get(EntityType type) {
-        return Collections.EMPTY_LIST;
     }
 
 }

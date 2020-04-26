@@ -10,7 +10,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -169,11 +168,6 @@ public class FalseUpdatesPurgerTest {
             @Override
             public <T> T get(EntityField<?, T> field) {
                 return (T)state.get(field);
-            }
-
-            @Override
-            public List<Entity> get(EntityType type) {
-                return Collections.EMPTY_LIST;
             }
 
         };
