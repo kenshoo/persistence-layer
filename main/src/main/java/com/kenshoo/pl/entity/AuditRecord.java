@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -66,6 +67,9 @@ public class AuditRecord<E extends EntityType<E>> {
      * @param maxDepth maximum depth of recursion, must be at least one (one means without child records).
      */
     public String toString(final int maxDepth) {
+        if (maxDepth <= 0) {
+            return StringUtils.EMPTY;
+        }
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
             .append("entityType", entityType.getName())
             .append("entityId", entityId)
