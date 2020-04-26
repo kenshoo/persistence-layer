@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Collections.emptyList;
 
 public interface Entity {
 
@@ -23,11 +23,11 @@ public interface Entity {
     <T> T get(EntityField<?, T> field);
 
     default <E extends EntityType<E>> List<FieldsValueMap<E>> getMany(E type) {
-        return Collections.emptyList();
+        return emptyList();
     }
 
     default <E extends EntityType<E>> List<FieldsValueMap<E>> finalChildrenState(EntityChange<E> entityChange, E type) {
-        return Collections.emptyList();
+        return emptyList();
     }
 
 }
