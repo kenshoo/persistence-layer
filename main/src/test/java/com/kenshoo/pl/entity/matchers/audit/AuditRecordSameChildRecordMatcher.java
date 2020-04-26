@@ -14,7 +14,7 @@ class AuditRecordSameChildRecordMatcher extends TypeSafeMatcher<AuditRecord<?>> 
 
     @Override
     protected boolean matchesSafely(final AuditRecord<?> actualAuditRecord) {
-        return actualAuditRecord.hasSameChildRecord(expectedChildRecord);
+        return actualAuditRecord.getChildRecords().contains(expectedChildRecord);
     }
 
     @Override

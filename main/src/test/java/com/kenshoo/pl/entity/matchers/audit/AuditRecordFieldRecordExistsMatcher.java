@@ -16,11 +16,17 @@ class AuditRecordFieldRecordExistsMatcher<E extends EntityType<E>> extends TypeS
 
     @Override
     protected boolean matchesSafely(final AuditRecord<E> actualAuditRecord) {
-        return actualAuditRecord.hasFieldRecordFor(expectedField);
+        return hasFieldRecordFor(actualAuditRecord, expectedField);
     }
 
     @Override
     public void describeTo(Description description) {
         description.appendText("an AuditRecord with a field record for " + expectedField);
+    }
+
+
+    private boolean hasFieldRecordFor(final AuditRecord<E> auditRecord, final EntityField<E, ?> field) {
+        return auditRecord.getFieldRecords().stream()
+                          .anyMatch(fieldRecord -> fieldRecord.getField().equals(field));
     }
 }

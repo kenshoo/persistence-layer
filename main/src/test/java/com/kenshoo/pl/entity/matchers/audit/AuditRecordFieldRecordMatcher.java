@@ -16,7 +16,7 @@ class AuditRecordFieldRecordMatcher<E extends EntityType<E>> extends TypeSafeMat
 
     @Override
     protected boolean matchesSafely(final AuditRecord<E> actualAuditRecord) {
-        return actualAuditRecord.hasFieldRecord(expectedFieldRecord);
+        return actualAuditRecord.getFieldRecords().contains(expectedFieldRecord);
     }
 
     @Override
