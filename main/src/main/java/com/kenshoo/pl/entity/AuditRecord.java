@@ -1,11 +1,13 @@
 package com.kenshoo.pl.entity;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Collection;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 public class AuditRecord<E extends EntityType<E>> {
     private final E entityType;
@@ -15,13 +17,13 @@ public class AuditRecord<E extends EntityType<E>> {
     private final Collection<? extends AuditRecord<?>> childRecords;
 
     private AuditRecord(final E entityType,
-                       final String entityId,
-                       final ChangeOperation operator,
-                       final Collection<? extends FieldAuditRecord<E>> fieldRecords,
-                       final Collection<? extends AuditRecord<?>> childRecords) {
-        this.entityType = entityType;
-        this.entityId = entityId;
-        this.operator = operator;
+                        final String entityId,
+                        final ChangeOperation operator,
+                        final Collection<? extends FieldAuditRecord<E>> fieldRecords,
+                        final Collection<? extends AuditRecord<?>> childRecords) {
+        this.entityType = requireNonNull(entityType, "entityType is required");
+        this.entityId = requireNonNull(entityId, "entityId is required");
+        this.operator = requireNonNull(operator, "operator is required");
         this.fieldRecords = fieldRecords;
         this.childRecords = childRecords;
     }
@@ -50,14 +52,33 @@ public class AuditRecord<E extends EntityType<E>> {
         return fieldRecords.isEmpty() && childRecords.isEmpty();
     }
 
+    /**
+     * Generates a deep string representation of the entire hierarchy of records.<br>
+     * WARNING: if there are many nested levels of child records, will have poor performance!
+     */
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-            .append("entityType", entityType)
+        return toString(Integer.MAX_VALUE);
+    }
+
+    /**
+     * Generates a deep string representation limited to the given number of nested levels.
+     * @param maxDepth maximum depth of recursion, must be at least one (one means without child records).
+     */
+    public String toString(final int maxDepth) {
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+            .append("entityType", entityType.getName())
             .append("entityId", entityId)
             .append("operator", operator)
             .append("fieldRecords", fieldRecords)
-            .append("childRecords", childRecords)
+            .append("childRecords", childRecordsToString(maxDepth))
+            .toString();
+    }
+
+    private String childRecordsToString(final int maxDepth) {
+        return childRecords.stream()
+            .map(childRecord -> childRecord.toString(maxDepth - 1))
+            .collect(toList())
             .toString();
     }
 

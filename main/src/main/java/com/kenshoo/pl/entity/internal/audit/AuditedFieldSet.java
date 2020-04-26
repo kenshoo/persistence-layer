@@ -36,10 +36,6 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         return dataFields;
     }
 
-    public boolean hasIdFieldOnly() {
-        return dataFields.isEmpty();
-    }
-
     public Stream<? extends EntityField<E, ?>> getAllFields() {
         return Stream.concat(Stream.of(idField), dataFields.stream());
     }

@@ -3,6 +3,9 @@ package com.kenshoo.pl.entity;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import static java.util.Objects.requireNonNull;
 
 public class FieldAuditRecord<E extends EntityType<E>> {
     private final EntityField<E, ?> field;
@@ -12,7 +15,7 @@ public class FieldAuditRecord<E extends EntityType<E>> {
     public FieldAuditRecord(final EntityField<E, ?> field,
                             final Object oldValue,
                             final Object newValue) {
-        this.field = field;
+        this.field = requireNonNull(field, "A field is required");
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
@@ -56,7 +59,7 @@ public class FieldAuditRecord<E extends EntityType<E>> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
             .append("fieldName", field)
             .append("oldValue", oldValue)
             .append("newValue", newValue)

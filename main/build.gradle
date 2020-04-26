@@ -19,6 +19,7 @@ dependencies {
     testCompile libraries.mockito
     testCompile libraries.shazamcrest
     testCompile libraries.hamcrest
+    testCompile libraries.hamcrestOptional
 }
 
 jar {
