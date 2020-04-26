@@ -26,6 +26,7 @@ hs_err_pid*
 *.lock
 .gradle
 out/
+build/
 project/
 *.iws
 *.ipr
