@@ -68,11 +68,10 @@ public class EntitiesFetcher {
         }
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
-        final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields(uniqueKey);
 
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKeyFields.aliasedFields(), fieldsToFetch);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), new AliasedKeyFields().aliasedFields(uniqueKey.getTableFields()), fieldsToFetch);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKeyFields, fieldsToFetch);
+            return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
         }
     }
 
@@ -97,12 +96,12 @@ public class EntitiesFetcher {
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
-            Map<EntityField<E, ?>, Field<?>> fieldDBFieldMap = Seq.of(foreignUniqueKey.getFields())
-                    .toMap(field -> field, field -> foreignKeysTable.getTable().getField((field.getDbAdapter().getFirstTableField())));
-            final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields(fieldDBFieldMap);
+            List<TableField<Record, ?>> keyFields = foreignUniqueKey.getTableFields().stream()
+                    .map(field -> foreignKeysTable.getTable().getField(field))
+                    .collect(toList());
 
-            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKeyFields.aliasedFields(), fieldsToFetch);
-            return fetchEntitiesMap(query, aliasedKeyFields, fieldsToFetch);
+            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), new AliasedKeyFields().aliasedFields(keyFields), fieldsToFetch);
+            return fetchEntitiesMap(query, foreignUniqueKey, fieldsToFetch);
         }
     }
 
@@ -145,10 +144,10 @@ public class EntitiesFetcher {
                 .collect(toList());
     }
 
-    private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<Field<?>> aliasedIdFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         return features.isEnabled(FindSecondaryTablesOfParents)
-                ? buildFetchQuery_NEW(startingTable, aliasedIdFields, fieldsToFetch)
-                : buildFetchQuery_DEPRECATED(startingTable, aliasedIdFields, fieldsToFetch);
+                ? buildFetchQuery_NEW(startingTable, aliasedKeyFields, fieldsToFetch)
+                : buildFetchQuery_DEPRECATED(startingTable, aliasedKeyFields, fieldsToFetch);
     }
 
     /*
@@ -158,7 +157,7 @@ public class EntitiesFetcher {
      the necessary joins are made and the participating tables are marked as already joined. The target table is removed
      from the set of tables to fetch. The traversal continues until there are tables in this set.
      */
-    private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> aliasedIdFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> targetPrimaryTables = fieldsToFetch.stream()
                                                    .map(field -> field.getEntityType().getPrimaryTable())
@@ -174,7 +173,7 @@ public class EntitiesFetcher {
                                                             .build())
                          .collect(toSet());
 
-        List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedIdFields)).toList();
+        List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedKeyFields)).toList();
 
         final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
@@ -267,9 +266,9 @@ public class EntitiesFetcher {
         return joinCondition;
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKeyFields aliasedKeyFields, final Collection<? extends EntityField<?, ?>> fields) {
+    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, UniqueKey<E> uniqueKey, final Collection<? extends EntityField<?, ?>> fields) {
         Map<Identifier<E>, Entity> entitiesMap = new HashMap<>();
-        query.fetchInto(record -> entitiesMap.put(createKey(record, aliasedKeyFields), createEntity(record, fields)));
+        query.fetchInto(record -> entitiesMap.put(createKey(record, uniqueKey), createEntity(record, fields)));
         return entitiesMap;
     }
 
@@ -282,14 +281,15 @@ public class EntitiesFetcher {
         return entity;
     }
 
-    private <E extends EntityType<E>, T> Identifier<E> createKey(Record record, AliasedKeyFields<E> aliasedKeyFields) {
-        FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
-        aliasedKeyFields.keyFields().forEach(keyField -> {
+    private <E extends EntityType<E>, T> Identifier<E> createKey(Record record, UniqueKey<E> uniqueKey) {
+        final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields<>();
+        final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
+        Seq.of(uniqueKey.getFields()).forEach(keyField -> {
             EntityField<E, T> field = (EntityField<E, T>) keyField;
             T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasedKeyFields.aliasOf(field))));
             fieldsValueMap.set(field, value);
         });
-        return new UniqueKey<E>(aliasedKeyFields.keyFields()).createValue(fieldsValueMap);
+        return uniqueKey.createValue(fieldsValueMap);
     }
 
     private <T> void fieldFromRecordToEntity(EntityImpl entity, EntityField<?, T> field, Iterator<Object> valuesIterator) {
@@ -319,12 +319,12 @@ public class EntitiesFetcher {
 
     // -------------------------- DEPRECATED CODE ---------------------//
 
-    private SelectJoinStep<Record> buildFetchQuery_DEPRECATED(DataTable startingTable, Collection<? extends Field<?>> aliasedIdFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    private SelectJoinStep<Record> buildFetchQuery_DEPRECATED(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> tablesToFetch = fieldsToFetch.stream()
                 .map(field -> field.getDbAdapter().getTable())
                 .collect(toSet());
-        List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedIdFields)).toList();
+        List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedKeyFields)).toList();
         SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
 
         // First, add left-joins for secondary tables of entity for the update flow. In create flow this loop won't find anything to join
