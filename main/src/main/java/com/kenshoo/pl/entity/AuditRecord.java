@@ -44,8 +44,21 @@ public class AuditRecord<E extends EntityType<E>> {
         return fieldRecords;
     }
 
+    public boolean hasFieldRecord(final FieldAuditRecord<E> fieldRecord) {
+        return fieldRecords.contains(fieldRecord);
+    }
+
+    public boolean hasFieldRecordFor(final EntityField<E, ?> field) {
+        return fieldRecords.stream()
+                           .anyMatch(fieldRecord -> fieldRecord.getField().equals(field));
+    }
+
     public Collection<? extends AuditRecord<?>> getChildRecords() {
         return childRecords;
+    }
+
+    public boolean hasSameChildRecord(final AuditRecord<?> childRecord) {
+        return childRecords.contains(childRecord);
     }
 
     public boolean hasNoChanges() {
