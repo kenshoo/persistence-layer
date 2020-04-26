@@ -1,19 +1,20 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.*;
-
-import java.util.Collections;
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FieldsValueMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-import static org.jooq.lambda.Seq.seq;
+import static java.util.Collections.emptyList;
+
 
 public class EntityImpl implements Entity {
 
     private final Map<EntityField<?, ?>, Object> fields = new HashMap<>();
-    private Map<EntityType, FieldsValueMaps> manyByType;
+    private Map<EntityType, List<FieldsValueMap>> manyByType;
 
     public boolean containsField(EntityField<?, ?> field) {
         return fields.containsKey(field);
@@ -31,33 +32,19 @@ public class EntityImpl implements Entity {
 
     @Override
     public <E extends EntityType<E>> List<FieldsValueMap<E>> getMany(E type) {
-        if (isNull(manyByType)) {
-            return Collections.emptyList();
-        }
-        FieldsValueMaps<E> fieldsValueMaps = manyByType.get(type);
-        return fieldsValueMaps.fieldsValueMaps;
+        return manyByType == null ? emptyList() : (List) manyByType.get(type);
     }
 
     public <T> void set(EntityField<?, T> field, T value) {
         fields.put(field, value);
     }
 
+    synchronized
     public <E extends EntityType<E>> void add(E entityType, List<FieldsValueMap<E>> fieldsValueMaps) {
-        if (isNull(manyByType)) {
+        if (manyByType == null) {
             manyByType = new HashMap<>();
         }
-        manyByType.put(entityType, new FieldsValueMaps<E>(fieldsValueMaps));
+        manyByType.put(entityType, (List) fieldsValueMaps);
     }
 
-    private boolean isNull(Map<EntityType, FieldsValueMaps> maps) {
-        return maps == null;
-    }
-
-    private class FieldsValueMaps<E extends EntityType<E>> {
-        private final List<FieldsValueMap<E>> fieldsValueMaps;
-
-        FieldsValueMaps(List<FieldsValueMap<E>> fieldsValueMaps) {
-            this.fieldsValueMaps = fieldsValueMaps;
-        }
-    }
 }
