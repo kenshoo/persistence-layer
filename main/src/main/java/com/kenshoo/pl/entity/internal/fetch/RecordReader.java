@@ -8,6 +8,8 @@ import org.jooq.Record;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static org.jooq.lambda.Seq.seq;
+
 public class RecordReader {
 
     public static <E extends EntityType<E>, T> Identifier<E> createKey(Record record, AliasedKey<E> aliasedKey) {
@@ -27,7 +29,13 @@ public class RecordReader {
             EntityField<E, T> field = (EntityField<E, T>) entityField;
             entity.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
         });
-
         return entity;
+    }
+
+    public static <E extends EntityType<E>> FieldsValueMap<E> createFieldsValueMap(Record record, final Collection<? extends EntityField<E, ?>> fields) {
+        FieldsValueMapImpl fieldsValueMap = new FieldsValueMapImpl();
+        Iterator<Object> valuesIterator = record.intoList().iterator();
+        seq(fields).forEach(field-> fieldsValueMap.set(field, field.getDbAdapter().getFromRecord(valuesIterator)));
+        return fieldsValueMap;
     }
 }

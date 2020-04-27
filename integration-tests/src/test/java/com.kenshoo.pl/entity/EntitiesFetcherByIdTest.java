@@ -9,19 +9,20 @@ import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.one2many.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static com.kenshoo.pl.entity.Feature.FetchMany;
-import static com.kenshoo.pl.one2many.ChildEntity.*;
-import static java.util.Comparator.comparing;
-import static org.hamcrest.Matchers.is;
+import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
+import static com.kenshoo.pl.one2many.ChildEntity.ID;
 import static org.junit.Assert.assertThat;
 
-@Ignore
 public class EntitiesFetcherByIdTest {
 
     private static final ParentTable parentTable = ParentTable.INSTANCE;
@@ -110,7 +111,7 @@ public class EntitiesFetcherByIdTest {
         Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
                 ID, FIELD_1);
 
-        List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(INSTANCE);
+        List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(ChildEntity.INSTANCE);
 
         assertThat(valuesOfId(manyValues, ID, 1).get(FIELD_1), Is.is("child1"));
         assertThat(valuesOfId(manyValues, ID, 2).get(FIELD_1), Is.is("child2"));

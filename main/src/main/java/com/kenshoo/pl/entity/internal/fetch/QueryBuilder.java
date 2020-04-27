@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity.internal.fetch;
 
+import com.google.common.collect.Sets;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValues;
 import com.kenshoo.jooq.QueryExtension;
@@ -8,12 +9,17 @@ import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
 import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jooq.lambda.Seq;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.function.Functions.not;
+
+import static java.util.stream.Collectors.toList;
+import static org.jooq.lambda.Seq.seq;
 
 public class QueryBuilder {
 
@@ -80,6 +86,30 @@ public class QueryBuilder {
         return joinCondition;
     }
 
+    public <E extends EntityType<E>> Result buildOneToOneQuery(List<TreeEdge> graph, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        Collection<? extends EntityField<?, ?>> requestedFields = seq(fieldsToFetch).filter(inTables(startingTable, graph)).collect(toList());
+        List<SelectField<?>> selectFields = dbFieldsOf(requestedFields).concat(aliasedKey.aliasedFields()).toList();
+
+        final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
+        final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
+
+        graph.forEach(edge -> joinTables(query, joinedTables, edge));
+
+        joinSecondaryTables(query, joinedTables, oneToOneSecondaryTablesOf(requestedFields));
+        return new Result(query, requestedFields);
+    }
+
+    public <E extends EntityType<E>> List<Result> buildManyToOneQueries(List<TreeEdge> graph, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        return seq(graph).map(edge -> {
+            final List<? extends EntityField<?, ?>> fields = seq(fieldsToFetch).filter(inTable(edge)).collect(toList());
+            final List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(aliasedKey.aliasedFields()).toList();
+
+            final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
+            joinTables(query, Sets.newHashSet(startingTable), edge);
+            return new Result(query, fields);
+        }).toList();
+    }
+
     private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
         EntityFieldDbAdapter<T> dbAdapter = field.getDbAdapter();
         List<Object> fieldValues = new ArrayList<>(identifiers.size());
@@ -88,6 +118,16 @@ public class QueryBuilder {
         }
         Optional<TableField<Record, ?>> tableField = dbAdapter.getTableFields().findFirst();
         conditions.add(new FieldAndValues<>((TableField<Record, Object>) tableField.get(), fieldValues));
+    }
+
+    private Set<OneToOneTableRelation> oneToOneSecondaryTablesOf(Collection<? extends EntityField<?,?>> fields) {
+        return fields.stream()
+                .filter(not(isOfPrimaryTable()))
+                .map(field -> com.kenshoo.pl.entity.internal.fetch.OneToOneTableRelation.builder()
+                        .secondary(field.getDbAdapter().getTable())
+                        .primary(field.getEntityType().getPrimaryTable())
+                        .build())
+                .collect(toSet());
     }
 
     private Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {
@@ -100,5 +140,42 @@ public class QueryBuilder {
 
     private Condition getJoinCondition(final OneToOneTableRelation relation) {
         return getJoinCondition(relation.getSecondary(), relation.getPrimary());
+    }
+
+    private Predicate<? super EntityField<?, ?>> inTables(DataTable startingTable, List<TreeEdge> edges) {
+        return field -> {
+            DataTable fieldTable = field.getEntityType().getPrimaryTable();
+            return fieldTable.equals(startingTable) || seq(edges).anyMatch(edge -> fieldTable.equals(edge.target.table));
+        };
+    }
+
+    private Predicate<? super EntityField<?, ?>> inTable(TreeEdge edge) {
+        return field -> field.getEntityType().getPrimaryTable().equals(edge.target.table);
+    }
+
+    private Seq<SelectField<?>> dbFieldsOf(Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        return seq(fieldsToFetch).flatMap(field -> field.getDbAdapter().getTableFields());
+    }
+
+    private Predicate<EntityField<?, ?>> isOfPrimaryTable() {
+        return field -> field.getDbAdapter().getTable().equals(field.getEntityType().getPrimaryTable());
+    }
+
+    class Result<E extends EntityType<E>> {
+        private final SelectJoinStep<Record> query;
+        private final Collection<? extends EntityField<E, ?>> fields;
+
+        public Result(SelectJoinStep<Record> query, Collection<? extends EntityField<E, ?>> fields) {
+            this.query = query;
+            this.fields = fields;
+        }
+
+        public SelectJoinStep<Record> getQuery() {
+            return query;
+        }
+
+        public Collection<? extends EntityField<E, ?>> getFields() {
+            return fields;
+        }
     }
 }
