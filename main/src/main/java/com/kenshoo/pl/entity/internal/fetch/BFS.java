@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.fetch;
 
 import com.google.common.collect.TreeTraverser;
 import org.jooq.lambda.Seq;

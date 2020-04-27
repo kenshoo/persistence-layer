@@ -14,16 +14,18 @@ import org.jooq.lambda.Seq;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
-import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.aliasOf;
 import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.aliasedFields;
+import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.getPrefixAlias;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.Validate.notEmpty;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.function.Functions.not;
 
 
 public class EntitiesFetcher {
@@ -155,14 +157,20 @@ public class EntitiesFetcher {
      from the set of tables to fetch. The traversal continues until there are tables in this set.
      */
     private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final MissingTablesQueryBuilder missingTablesQueryBuilder = new MissingTablesQueryBuilder();
+        final QueryBuilder queryBuilder = new QueryBuilder(dslContext);
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> targetPrimaryTables = fieldsToFetch.stream()
                 .map(field -> field.getEntityType().getPrimaryTable())
                 .filter(tb -> !tb.equals(startingTable))
                 .collect(toSet());
 
-        final Set<OneToOneTableRelation> targetOneToOneRelations = new OneToOneSecondaryTablesRelation().find(fieldsToFetch);
+        final Set<OneToOneTableRelation> targetOneToOneRelations = fieldsToFetch.stream()
+                .filter(not(isOfPrimaryTable()))
+                .map(field -> OneToOneTableRelation.builder()
+                        .secondary(field.getDbAdapter().getTable())
+                        .primary(field.getEntityType().getPrimaryTable())
+                        .build())
+                .collect(toSet());
 
         List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedKeyFields)).toList();
 
@@ -177,7 +185,7 @@ public class EntitiesFetcher {
 
                     if (edge != startingEdge && targetPrimaryTables.contains(table)) {
                         targetPrimaryTables.remove(table);
-                        missingTablesQueryBuilder.joinTables(query, joinedTables, edge);
+                        queryBuilder.joinTables(query, joinedTables, edge);
                     }
                 });
 
@@ -185,9 +193,13 @@ public class EntitiesFetcher {
             throw new IllegalStateException("Tables " + targetPrimaryTables + " could not be reached via joins");
         }
 
-        missingTablesQueryBuilder.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
+        queryBuilder.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
 
         return query;
+    }
+
+    private Predicate<EntityField<?, ?>> isOfPrimaryTable() {
+        return field -> field.getDbAdapter().getTable().equals(field.getEntityType().getPrimaryTable());
     }
 
     private Seq<TreeEdge> edgesComingOutOf(TreeEdge edge) {
@@ -195,8 +207,8 @@ public class EntitiesFetcher {
     }
 
     private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, UniqueKey<E> uniqueKey, final Collection<? extends EntityField<?, ?>> fields) {
-        final RecordBuilder recordBuilder = new RecordBuilder();
-        return query.fetchMap(record -> recordBuilder.createKey(record, uniqueKey), record -> recordBuilder.createEntity(record, fields));
+        final Reader reader = new Reader();
+        return query.fetchMap(record -> reader.createKey(record, uniqueKey, Optional.of(getPrefixAlias())), record -> reader.createEntity(record, fields));
     }
 
     private <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
@@ -227,7 +239,7 @@ public class EntitiesFetcher {
     // -------------------------- DEPRECATED CODE ---------------------//
 
     private SelectJoinStep<Record> buildFetchQuery_DEPRECATED(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final MissingTablesQueryBuilder missingTablesQueryBuilder = new MissingTablesQueryBuilder();
+        final QueryBuilder queryBuilder = new QueryBuilder(dslContext);
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> tablesToFetch = fieldsToFetch.stream()
                 .map(field -> field.getDbAdapter().getTable())
@@ -243,7 +255,7 @@ public class EntitiesFetcher {
                 tablesToFetchIterator.remove();
                 continue;
             }
-            Condition joinCondition = missingTablesQueryBuilder.getJoinCondition(table, startingTable);
+            Condition joinCondition = queryBuilder.getJoinCondition(table, startingTable);
             if (joinCondition == null) {
                 continue;
             }
@@ -284,7 +296,7 @@ public class EntitiesFetcher {
 
             // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
             // Using a stack for that
-            missingTablesQueryBuilder.joinTables(query, joinedTables, treeEdge);
+            queryBuilder.joinTables(query, joinedTables, treeEdge);
         }
         return query;
     }

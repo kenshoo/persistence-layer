@@ -1,7 +1,5 @@
 package com.kenshoo.pl.entity.internal.fetch;
 
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -18,7 +16,7 @@ public class AliasedKeyFields {
                 .map(field -> field.as(PREFIX + field.getName()))
                 .collect(Collectors.toList());
     }
-    public static <E extends EntityType<E>> String aliasOf(EntityField<E, ?> field) {
-        return PREFIX + field.getDbAdapter().getFirstTableField().getName();
+    public static String getPrefixAlias() {
+        return PREFIX;
     }
 }
