@@ -14,7 +14,7 @@ import static org.jooq.lambda.function.Functions.not;
 
 public class BFS {
 
-    static <Tree> Seq<Tree> visit(Tree root, Function<Tree, Iterable<Tree>> neighbours) {
+    public static <Tree> Seq<Tree> visit(Tree root, Function<Tree, Iterable<Tree>> neighbours) {
 
         TreeTraverser<Tree> visitor = new TreeTraverser<Tree>() {
 
