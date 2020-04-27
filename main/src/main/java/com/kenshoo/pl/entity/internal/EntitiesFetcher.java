@@ -8,7 +8,10 @@ import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.fetch.*;
+import com.kenshoo.pl.entity.internal.fetch.QueryBuilder;
+import com.kenshoo.pl.entity.internal.fetch.ToEdgesOf;
+import com.kenshoo.pl.entity.internal.fetch.TreeEdge;
+import com.kenshoo.pl.entity.internal.fetch.TreeNode;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
@@ -20,6 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
+import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.aliasOf;
+import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.aliasedFields;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -69,7 +74,7 @@ public class EntitiesFetcher {
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
 
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), new AliasedKeyFields().aliasedFields(uniqueKey.getTableFields()), fieldsToFetch);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedFields(uniqueKey.getTableFields()), fieldsToFetch);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
         }
@@ -100,7 +105,7 @@ public class EntitiesFetcher {
                     .map(field -> foreignKeysTable.getTable().getField(field))
                     .collect(toList());
 
-            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), new AliasedKeyFields().aliasedFields(keyFields), fieldsToFetch);
+            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedFields(keyFields), fieldsToFetch);
             return fetchEntitiesMap(query, foreignUniqueKey, fieldsToFetch);
         }
     }
@@ -282,11 +287,10 @@ public class EntitiesFetcher {
     }
 
     private <E extends EntityType<E>, T> Identifier<E> createKey(Record record, UniqueKey<E> uniqueKey) {
-        final AliasedKeyFields<E> aliasedKeyFields = new AliasedKeyFields<>();
         final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
         Seq.of(uniqueKey.getFields()).forEach(keyField -> {
             EntityField<E, T> field = (EntityField<E, T>) keyField;
-            T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasedKeyFields.aliasOf(field))));
+            T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasOf(field))));
             fieldsValueMap.set(field, value);
         });
         return uniqueKey.createValue(fieldsValueMap);
