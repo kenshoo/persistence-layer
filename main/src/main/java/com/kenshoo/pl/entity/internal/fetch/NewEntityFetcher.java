@@ -29,36 +29,27 @@ public class NewEntityFetcher {
         final EntityType<E> primaryType = uniqueKey.getEntityType();
         final AliasedKey<E> aliasedKey = new AliasedKey<E>(uniqueKey);
 
-        final FetchExecutionPlan.Result executionPlan = new FetchExecutionPlan().run(primaryType.getPrimaryTable(), fieldsToFetch);
+        final ExecutionPlan executionPlan = new ExecutionPlan(primaryType.getPrimaryTable(), fieldsToFetch);
 
-        final QueryBuilder.Result mainQueryBuilder = queryBuilder.buildOneToOneQuery(executionPlan.getOneToOneGraph(), primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
-        final Map<Identifier<E>, Entity> entities = createEntities(mainQueryBuilder, primaryType, ids, aliasedKey);
+        final Map<Identifier<E>, Entity> entities;
+        final QueryBuilder.Result mainQueryBuilder = queryBuilder.buildOneToOneQuery(executionPlan.getOneToOnePaths(), primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(mainQueryBuilder.getQuery(), primaryType.getPrimaryTable(), uniqueKey, ids)) {
+            entities =  fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, mainQueryBuilder.getFields());
+        }
 
-        final List<QueryBuilder.Result> subQueriesBuilder = queryBuilder.buildManyToOneQueries(executionPlan.getManyToOneGraph(), primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
+        final List<QueryBuilder.Result> subQueriesBuilder = queryBuilder.buildManyToOneQueries(executionPlan.getManyToOnePaths(), primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
         subQueriesBuilder.forEach(result -> {
-            Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap = createMultiValues(result.getQuery(), primaryType, result.getFields(), ids, aliasedKey);
-            multiValuesMap.forEach((id, multiValues) -> ((EntityImpl) entities.get(id)).add(entityTypeOf(result.getFields()), (List) multiValues));
+            try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(result.getQuery(), primaryType.getPrimaryTable(), uniqueKey, ids)) {
+                Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap =  fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, result.getFields());
+                multiValuesMap.forEach((id, multiValues) -> ((EntityImpl) entities.get(id)).add(entityTypeOf(result.getFields()), (List) multiValues));
+            }
         });
 
         return entities;
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> createEntities(QueryBuilder.Result queryBuilderResult, EntityType<E> EntityType, Collection<? extends Identifier<E>> ids, AliasedKey<E> aliasedKey) {
-        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(queryBuilderResult.getQuery(), EntityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, queryBuilderResult.getFields());
-        }
-    }
-
     private <E extends EntityType<E>> Map<Identifier<E>, EntityImpl> fetchEntitiesMap(SelectJoinStep<Record> query, AliasedKey<E> aliasedKey, Collection<? extends EntityField<E, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
-    }
-
-    private <E extends EntityType<E>> Map<Identifier<E>, List<FieldsValueMap<?>>> createMultiValues(SelectJoinStep<Record> primaryQuery, EntityType<E> primaryType, Collection<? extends EntityField<E, ?>> primaryFields, Collection<? extends Identifier<E>> ids, AliasedKey<E> aliasedKey) {
-        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(primaryQuery, primaryType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, primaryFields);
-        }
     }
 
     private <E extends EntityType<E>> Map<Identifier<E>, List<FieldsValueMap<?>>> fetchMultiValuesMap(ResultQuery<Record> query,AliasedKey<E> aliasedKey, Collection<? extends EntityField<E, ?>> fields) {

@@ -86,26 +86,26 @@ public class QueryBuilder {
         return joinCondition;
     }
 
-    public <E extends EntityType<E>> Result buildOneToOneQuery(List<TreeEdge> graph, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        Collection<? extends EntityField<?, ?>> requestedFields = seq(fieldsToFetch).filter(inTables(startingTable, graph)).collect(toList());
+    public <E extends EntityType<E>> Result buildOneToOneQuery(List<TreeEdge> paths, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        Collection<? extends EntityField<?, ?>> requestedFields = seq(fieldsToFetch).filter(inTables(startingTable, paths)).collect(toList());
         List<SelectField<?>> selectFields = dbFieldsOf(requestedFields).concat(aliasedKey.aliasedFields()).toList();
 
         final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
 
-        graph.forEach(edge -> joinTables(query, joinedTables, edge));
+        paths.forEach(edge -> joinTables(query, joinedTables, edge));
 
         joinSecondaryTables(query, joinedTables, oneToOneSecondaryTablesOf(requestedFields));
         return new Result(query, requestedFields);
     }
 
-    public <E extends EntityType<E>> List<Result> buildManyToOneQueries(List<TreeEdge> graph, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return seq(graph).map(edge -> {
-            final List<? extends EntityField<?, ?>> fields = seq(fieldsToFetch).filter(inTable(edge)).collect(toList());
+    public <E extends EntityType<E>> List<Result> buildManyToOneQueries(List<TreeEdge> paths, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        return seq(paths).map(path -> {
+            final List<? extends EntityField<?, ?>> fields = seq(fieldsToFetch).filter(inTable(path)).collect(toList());
             final List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(aliasedKey.aliasedFields()).toList();
 
             final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
-            joinTables(query, Sets.newHashSet(startingTable), edge);
+            joinTables(query, Sets.newHashSet(startingTable), path);
             return new Result(query, fields);
         }).toList();
     }
