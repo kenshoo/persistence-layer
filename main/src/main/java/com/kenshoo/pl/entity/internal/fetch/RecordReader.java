@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 
-public class Reader {
+public class RecordReader {
 
     public static <E extends EntityType<E>, T> Identifier<E> createKey(Record record, UniqueKey<E> uniqueKey, Optional<String> prefixAlias) {
         final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();

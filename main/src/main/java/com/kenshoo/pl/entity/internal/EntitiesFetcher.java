@@ -17,8 +17,8 @@ import java.util.*;
 import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
-import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.aliasedFields;
-import static com.kenshoo.pl.entity.internal.fetch.AliasedKeyFields.getPrefixAlias;
+import static com.kenshoo.pl.entity.internal.fetch.AliasedKey.aliasedFields;
+import static com.kenshoo.pl.entity.internal.fetch.AliasedKey.getPrefixAlias;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -32,15 +32,16 @@ public class EntitiesFetcher {
 
     private final DSLContext dslContext;
     private final FeatureSet features;
+    private final QueryBuilder queryBuilder;
 
     public EntitiesFetcher(DSLContext dslContext) {
-        this.dslContext = dslContext;
-        this.features = FeatureSet.EMPTY;
+        this(dslContext, FeatureSet.EMPTY);
     }
 
     public EntitiesFetcher(DSLContext dslContext, FeatureSet features) {
         this.dslContext = dslContext;
         this.features = features;
+        this.queryBuilder = new QueryBuilder(dslContext);
     }
 
     /**
@@ -69,7 +70,7 @@ public class EntitiesFetcher {
         final EntityType<E> entityType = uniqueKey.getEntityType();
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedFields(uniqueKey.getTableFields()), fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
         }
     }
@@ -157,7 +158,6 @@ public class EntitiesFetcher {
      from the set of tables to fetch. The traversal continues until there are tables in this set.
      */
     private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final QueryBuilder queryBuilder = new QueryBuilder(dslContext);
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> targetPrimaryTables = fieldsToFetch.stream()
                 .map(field -> field.getEntityType().getPrimaryTable())
@@ -207,8 +207,7 @@ public class EntitiesFetcher {
     }
 
     private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, UniqueKey<E> uniqueKey, final Collection<? extends EntityField<?, ?>> fields) {
-        final Reader reader = new Reader();
-        return query.fetchMap(record -> reader.createKey(record, uniqueKey, Optional.of(getPrefixAlias())), record -> reader.createEntity(record, fields));
+        return query.fetchMap(record -> RecordReader.createKey(record, uniqueKey, Optional.of(getPrefixAlias())), record -> RecordReader.createEntity(record, fields));
     }
 
     private <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
@@ -239,7 +238,6 @@ public class EntitiesFetcher {
     // -------------------------- DEPRECATED CODE ---------------------//
 
     private SelectJoinStep<Record> buildFetchQuery_DEPRECATED(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final QueryBuilder queryBuilder = new QueryBuilder(dslContext);
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> tablesToFetch = fieldsToFetch.stream()
                 .map(field -> field.getDbAdapter().getTable())

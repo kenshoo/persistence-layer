@@ -7,7 +7,7 @@ import org.jooq.TableField;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AliasedKeyFields {
+public class AliasedKey {
 
     private static final String PREFIX = "key_field_";
 
