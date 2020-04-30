@@ -51,31 +51,31 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             generateForDelete(changeContext, entityChanges);
         } else {
             final ChangesContainer primaryTableCommands =
-                generateForCreateOrUpdate(entityChanges,
-                                          this::isOfPrimaryTable,
-                                          operator,
-                                          changeContext);
+                    generateForCreateOrUpdate(entityChanges,
+                            this::isOfPrimaryTable,
+                            operator,
+                            changeContext);
 
             entityType.getPrimaryIdentityField().ifPresent(identityField -> {
-                    if (operator == CREATE) {
-                        populateGeneratedIdsToContext(identityField,
-                                                      entityChanges,
-                                                      changeContext,
-                                                      primaryTableCommands);
+                        if (operator == CREATE) {
+                            populateGeneratedIdsToContext(identityField,
+                                    entityChanges,
+                                    changeContext,
+                                    primaryTableCommands);
 
-                        new HierarchyKeyPopulator.Builder<E>()
-                                .with(changeContext.getHierarchy())
-                                .whereParentFieldsAre(autoInc())
-                                .gettingValues(fromContext(changeContext)).build()
-                                .populateKeysToChildren(entityChanges);
+                            new HierarchyKeyPopulator.Builder<E>()
+                                    .with(changeContext.getHierarchy())
+                                    .whereParentFieldsAre(autoInc())
+                                    .gettingValues(fromContext(changeContext)).build()
+                                    .populateKeysToChildren(entityChanges);
+                        }
                     }
-                }
             );
 
             generateForCreateOrUpdate(entityChanges,
-                                      not(this::isOfPrimaryTable),
-                                      operator,
-                                      changeContext);
+                    not(this::isOfPrimaryTable),
+                    operator,
+                    changeContext);
         }
 
         changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
@@ -106,9 +106,9 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                 .map(change -> ImmutablePair.of(change, changesContainer.getInsert(entityType.getPrimaryTable(), change)))
                 .filter(pair -> pair.getRight().isPresent())
                 .forEach(pair -> {
-                            final CreateRecordCommand cmd = pair.getRight().get();
-                            Object generatedValue = cmd.get(identityTableField);
-                            changeContext.addEntity(pair.getLeft(), new EntityWithGeneratedId(identityField, generatedValue));
+                    final CreateRecordCommand cmd = pair.getRight().get();
+                    Object generatedValue = cmd.get(identityTableField);
+                    changeContext.addEntity(pair.getLeft(), new EntityWithGeneratedId(identityField, generatedValue));
                 });
     }
 
@@ -257,28 +257,28 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                    final Iterable<? extends EntityChange<E>> entityChanges) {
         ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
         entityChanges.forEach( entityChange ->
-           changesContainer.getDelete(entityType.getPrimaryTable(),
-                                      entityChange,
-                                      () -> new DeleteRecordCommand(entityType.getPrimaryTable(),
-                                                                    getDatabaseId(entityChange))));
+                changesContainer.getDelete(entityType.getPrimaryTable(),
+                        entityChange,
+                        () -> new DeleteRecordCommand(entityType.getPrimaryTable(),
+                                getDatabaseId(entityChange))));
         changesContainer.commit(commandsExecutor, changeContext.getStats());
     }
 
     private ChangesContainer generateForCreateOrUpdate(final Iterable<? extends EntityChange<E>> entityChanges,
-                                           final Predicate<FieldChange<E, ?>> filter,
-                                           final ChangeOperation operator,
-                                           final ChangeContext changeContext) {
+                                                       final Predicate<FieldChange<E, ?>> filter,
+                                                       final ChangeOperation operator,
+                                                       final ChangeContext changeContext) {
 
         final ChangesContainer tableCommands = new ChangesContainer(entityType.onDuplicateKey());
 
         seq(entityChanges).forEach(cmd ->
-            cmd.getChanges()
-               .filter(filter)
-               .forEach(fieldChange -> translateChange(cmd,
-                                                       fieldChange,
-                                                       tableCommands,
-                                                       operator,
-                                                       changeContext)));
+                cmd.getChanges()
+                        .filter(filter)
+                        .forEach(fieldChange -> translateChange(cmd,
+                                fieldChange,
+                                tableCommands,
+                                operator,
+                                changeContext)));
 
         tableCommands.commit(commandsExecutor, changeContext.getStats());
         return tableCommands;

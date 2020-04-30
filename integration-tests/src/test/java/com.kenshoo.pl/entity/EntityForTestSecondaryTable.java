@@ -14,7 +14,8 @@ public class EntityForTestSecondaryTable extends AbstractDataTable<EntityForTest
 
     final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
     final TableField<Record, Integer> entityId = createFKField("entity_id", EntityForTestTable.INSTANCE.id);
-    final TableField<Record, String> url = createField("entity_url", SQLDataType.VARCHAR.length(100));
+    final TableField<Record, String> url = createField("entity_url", SQLDataType.VARCHAR.length(100).nullable(false));
+    final TableField<Record, String> url_param = createField("url_param", SQLDataType.VARCHAR.length(100));
 
     public EntityForTestSecondaryTable(String name) {
         super(name);

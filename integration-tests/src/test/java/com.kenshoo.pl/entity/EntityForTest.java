@@ -37,6 +37,7 @@ public class EntityForTest extends AbstractEntityType<EntityForTest> {
     @Immutable
     public static final EntityField<EntityForTest, String> IMMUTABLE_FIELD = INSTANCE.virtualField(VIRTUAL_FIELD, Function.identity(), new CommonTypesStringConverter<>(String.class), Objects::equals);
     public static final EntityField<EntityForTest, String> URL = INSTANCE.field(EntityForTestSecondaryTable.INSTANCE.url);
+    public static final EntityField<EntityForTest, String> URL_PARAM = INSTANCE.field(EntityForTestSecondaryTable.INSTANCE.url_param);
     @Required(RELATION)
     public static final EntityField<EntityForTest, Integer> PARENT_ID = INSTANCE.field(EntityForTestTable.INSTANCE.parent_id);
     @IgnoredIfSetAlone

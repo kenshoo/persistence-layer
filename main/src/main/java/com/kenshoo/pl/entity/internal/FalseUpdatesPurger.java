@@ -13,9 +13,11 @@ import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.Seq;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
@@ -89,34 +91,49 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     public static class Builder<E extends EntityType<E>> {
         private BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter;
         private Set<EntityField<E, ?>> deleteIfSetAloneFields = emptySet();
-        private Set<EntityField<E, ?>> fieldsToRetain = emptySet();
+        private Set<EntityField<E, ?>> fieldsToRetain = new HashSet<>();
 
-        public Builder setFieldUnsetter(BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter) {
+        public Builder<E> setFieldUnsetter(BiConsumer<ChangeEntityCommand<E>, EntityField<E, ?>> fieldUnsetter) {
             this.fieldUnsetter = fieldUnsetter;
             return this;
         }
 
-        public Builder setDeleteIfSetAloneFields(Stream<EntityField<E, ?>> deleteIfSetAloneFields) {
+        public Builder<E> setDeleteIfSetAloneFields(Stream<EntityField<E, ?>> deleteIfSetAloneFields) {
             this.deleteIfSetAloneFields = deleteIfSetAloneFields.collect(toSet());
             return this;
         }
 
-        public Builder setDeleteIfSetAloneFields(EntityField<E, ?>... deleteIfSetAloneFields) {
+        public Builder<E> setDeleteIfSetAloneFields(EntityField<E, ?>... deleteIfSetAloneFields) {
             return setDeleteIfSetAloneFields(Stream.of(deleteIfSetAloneFields));
         }
 
-        public Builder setFieldsToRetain(Stream<EntityField<E, ?>> fieldsToRetain) {
-            this.fieldsToRetain = fieldsToRetain.collect(toSet());
+        public Builder<E> addFieldsToRetain(Stream<EntityField<E, ?>> fieldsToRetain) {
+            fieldsToRetain.forEach(this.fieldsToRetain::add);
             return this;
         }
 
-        public Builder setFieldsToRetain(EntityField<E, ?>... fieldsToRetain) {
-            return setFieldsToRetain(Stream.of(fieldsToRetain));
+        public Builder<E> addFieldsToRetain(EntityField<E, ?>... fieldsToRetain) {
+            return addFieldsToRetain(Stream.of(fieldsToRetain));
+        }
+
+        public Builder<E> retainNonNullableFieldsOfSecondaryTables(E entityType) {
+            return addFieldsToRetain(entityType.getFields()
+                    .filter(belongingToSecondaryTable(entityType))
+                    .filter(f -> isNotNullable(f)));
+        }
+
+        private <E extends EntityType<E>> boolean isNotNullable(EntityField<E, ?> field) {
+            return !field.getDbAdapter().getTableFields().anyMatch(tableField -> tableField.getDataType().nullable());
+        }
+
+        private <E extends EntityType<E>> Predicate<EntityField<E, ?>> belongingToSecondaryTable(E entityType) {
+            return f -> f.getDbAdapter().getTable() != entityType.getPrimaryTable();
         }
 
         public FalseUpdatesPurger<E> build() {
             return new FalseUpdatesPurger<>(fieldUnsetter, deleteIfSetAloneFields, fieldsToRetain);
         }
+
     }
 
 }
