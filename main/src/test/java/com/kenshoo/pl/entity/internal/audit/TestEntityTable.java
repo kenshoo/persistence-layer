@@ -5,14 +5,14 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 
-class TestEntityTable extends AbstractDataTable<TestEntityTable> {
+public class TestEntityTable extends AbstractDataTable<TestEntityTable> {
 
-    static final TestEntityTable INSTANCE = new TestEntityTable("test_entity");
+    public static final TestEntityTable INSTANCE = new TestEntityTable("test_entity");
 
-    final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT.identity(true));
-    final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
-    final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
-    final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
+    public final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT.identity(true));
+    public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
 
     private TestEntityTable(final String name) {
         super(name);

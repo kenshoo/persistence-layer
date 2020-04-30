@@ -35,6 +35,10 @@ public class AuditRecordMatchers {
         return new AuditRecordFieldRecordExistsMatcher<>(expectedField);
     }
 
+    public static Matcher<AuditRecord<?>> hasNoFieldRecords() {
+        return new AuditRecordNoFieldRecordsMatcher();
+    }
+
     public static Matcher<AuditRecord<?>> hasSameChildRecord(final AuditRecord<?> expectedChildRecord) {
         return new AuditRecordSameChildRecordMatcher(expectedChildRecord);
     }
