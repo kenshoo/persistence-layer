@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity.internal.fetch;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -7,7 +7,7 @@ import org.jooq.Table;
 
 import static java.util.Objects.requireNonNull;
 
-class OneToOneTableRelation {
+public class OneToOneTableRelation {
     private final Table<Record> primary;
     private final Table<Record> secondary;
 
@@ -16,15 +16,15 @@ class OneToOneTableRelation {
         this.secondary = requireNonNull(secondary, "A secondary table must be specified");
     }
 
-    Table<Record> getPrimary() {
+    public Table<Record> getPrimary() {
         return primary;
     }
 
-    Table<Record> getSecondary() {
+    public Table<Record> getSecondary() {
         return secondary;
     }
 
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -37,34 +37,34 @@ class OneToOneTableRelation {
         OneToOneTableRelation that = (OneToOneTableRelation) o;
 
         return new EqualsBuilder()
-            .append(primary, that.primary)
-            .append(secondary, that.secondary)
-            .isEquals();
+                .append(primary, that.primary)
+                .append(secondary, that.secondary)
+                .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-            .append(primary)
-            .append(secondary)
-            .toHashCode();
+                .append(primary)
+                .append(secondary)
+                .toHashCode();
     }
 
-    static class Builder {
+    public static class Builder {
         private Table<Record> primary;
         private Table<Record> secondary;
 
-        Builder primary(Table<Record> primary) {
+        public Builder primary(Table<Record> primary) {
             this.primary = primary;
             return this;
         }
 
-        Builder secondary(Table<Record> secondary) {
+        public Builder secondary(Table<Record> secondary) {
             this.secondary = secondary;
             return this;
         }
 
-        OneToOneTableRelation build() {
+        public OneToOneTableRelation build() {
             return new OneToOneTableRelation(primary, secondary);
         }
     }
