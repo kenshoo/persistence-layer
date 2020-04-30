@@ -4,22 +4,20 @@ import com.google.common.collect.Iterators;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import org.jooq.Record;
-import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Optional;
 
 public class RecordReader {
 
-    public static <E extends EntityType<E>, T> Identifier<E> createKey(Record record, UniqueKey<E> uniqueKey, Optional<String> prefixAlias) {
+    public static <E extends EntityType<E>, T> Identifier<E> createKey(Record record, AliasedKey<E> aliasedKey) {
         final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
-        Seq.of(uniqueKey.getFields()).forEach(keyField -> {
-            EntityField<E, T> field = (EntityField<E, T>) keyField;
-            T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(prefixAlias.orElse("") + field.getDbAdapter().getFirstTableField().getName())));
+        aliasedKey.fields().forEach(aliasedField -> {
+            EntityField<E, T> field = (EntityField<E, T>) aliasedField.unAliased();
+            T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasedField.aliased().getName())));
             fieldsValueMap.set(field, value);
         });
-        return uniqueKey.createValue(fieldsValueMap);
+        return new UniqueKey<E>(aliasedKey.unAliasedFields()).createValue(fieldsValueMap);
     }
 
     public static <E extends EntityType<E>, T> EntityImpl createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {

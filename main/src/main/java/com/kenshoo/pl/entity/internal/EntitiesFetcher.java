@@ -17,8 +17,6 @@ import java.util.*;
 import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
-import static com.kenshoo.pl.entity.internal.fetch.AliasedKey.aliasedFields;
-import static com.kenshoo.pl.entity.internal.fetch.AliasedKey.getPrefixAlias;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -68,10 +66,10 @@ public class EntitiesFetcher {
         }
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
-
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedFields(uniqueKey.getTableFields()), fieldsToFetch);
+        final AliasedKey aliasedKey = new AliasedKey(uniqueKey);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsToFetch);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), uniqueKey, fieldsToFetch);
+            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsToFetch);
         }
     }
 
@@ -96,12 +94,9 @@ public class EntitiesFetcher {
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
-            List<TableField<Record, ?>> keyFields = foreignUniqueKey.getTableFields().stream()
-                    .map(field -> foreignKeysTable.getTable().getField(field))
-                    .collect(toList());
-
-            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedFields(keyFields), fieldsToFetch);
-            return fetchEntitiesMap(query, foreignUniqueKey, fieldsToFetch);
+            AliasedKey aliasedKey = new AliasedKey(foreignUniqueKey, foreignKeysTable);
+            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), fieldsToFetch);
+            return fetchEntitiesMap(query, aliasedKey, fieldsToFetch);
         }
     }
 
@@ -206,8 +201,8 @@ public class EntitiesFetcher {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, UniqueKey<E> uniqueKey, final Collection<? extends EntityField<?, ?>> fields) {
-        return query.fetchMap(record -> RecordReader.createKey(record, uniqueKey, Optional.of(getPrefixAlias())), record -> RecordReader.createEntity(record, fields));
+    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, final Collection<? extends EntityField<?, ?>> fields) {
+        return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 
     private <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
