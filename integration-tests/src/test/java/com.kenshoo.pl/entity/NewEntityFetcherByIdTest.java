@@ -6,6 +6,7 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
+import com.kenshoo.pl.entity.internal.fetch.NewEntityFetcher;
 import com.kenshoo.pl.one2many.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;
@@ -23,7 +24,7 @@ import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
 import static com.kenshoo.pl.one2many.ChildEntity.ID;
 import static org.junit.Assert.assertThat;
 
-public class EntitiesFetcherByIdTest {
+public class NewEntityFetcherByIdTest {
 
     private static final ParentTable parentTable = ParentTable.INSTANCE;
     private static final ChildTable childTable = ChildTable.INSTANCE;
@@ -39,11 +40,11 @@ public class EntitiesFetcherByIdTest {
 
     private DSLContext dslContext = TestJooqConfig.create();
 
-    private EntitiesFetcher entitiesFetcher;
+    private NewEntityFetcher entitiesFetcher;
 
     @Before
     public void setup() {
-        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet(FetchMany));
+        entitiesFetcher = new NewEntityFetcher(dslContext);
         staticDSLContext = dslContext;
         if (!tablesCreated) {
             ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));

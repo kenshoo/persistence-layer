@@ -87,7 +87,7 @@ public class QueryBuilder {
     }
 
     public <E extends EntityType<E>> Result buildOneToOneQuery(List<TreeEdge> paths, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        Collection<? extends EntityField<?, ?>> requestedFields = seq(fieldsToFetch).filter(inTables(startingTable, paths)).collect(toList());
+        List<? extends EntityField<?, ?>> requestedFields = seq(fieldsToFetch).filter(inTables(startingTable, paths)).collect(toList());
         List<SelectField<?>> selectFields = dbFieldsOf(requestedFields).concat(aliasedKey.aliasedFields()).toList();
 
         final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
@@ -99,15 +99,13 @@ public class QueryBuilder {
         return new Result(query, requestedFields);
     }
 
-    public <E extends EntityType<E>> List<Result> buildManyToOneQueries(List<TreeEdge> paths, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return seq(paths).map(path -> {
-            final List<? extends EntityField<?, ?>> fields = seq(fieldsToFetch).filter(inTable(path)).collect(toList());
-            final List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(aliasedKey.aliasedFields()).toList();
+    public <E extends EntityType<E>> Result buildManyToOneQuery(TreeEdge path, DataTable startingTable, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        final List<? extends EntityField<?, ?>> fields = seq(fieldsToFetch).filter(inTable(path)).collect(toList());
+        final List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(aliasedKey.aliasedFields()).toList();
 
-            final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
-            joinTables(query, Sets.newHashSet(startingTable), path);
-            return new Result(query, fields);
-        }).toList();
+        final SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
+        joinTables(query, Sets.newHashSet(startingTable), path);
+        return new Result(query, fields);
     }
 
     private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
@@ -163,9 +161,9 @@ public class QueryBuilder {
 
     class Result<E extends EntityType<E>> {
         private final SelectJoinStep<Record> query;
-        private final Collection<? extends EntityField<E, ?>> fields;
+        private final List<? extends EntityField<E, ?>> fields;
 
-        public Result(SelectJoinStep<Record> query, Collection<? extends EntityField<E, ?>> fields) {
+        public Result(SelectJoinStep<Record> query, List<? extends EntityField<E, ?>> fields) {
             this.query = query;
             this.fields = fields;
         }
@@ -174,7 +172,7 @@ public class QueryBuilder {
             return query;
         }
 
-        public Collection<? extends EntityField<E, ?>> getFields() {
+        public List<? extends EntityField<E, ?>> getFields() {
             return fields;
         }
     }

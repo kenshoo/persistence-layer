@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
@@ -25,7 +26,7 @@ import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
 
-public class EntitiesFetcher {
+public class EntitiesFetcher implements Fetcher {
 
     private final DSLContext dslContext;
     private final FeatureSet features;
@@ -41,10 +42,7 @@ public class EntitiesFetcher {
         this.queryBuilder = new QueryBuilder(dslContext);
     }
 
-    /**
-     * @deprecated replaced by {@link #fetchEntitiesByIds(Collection, EntityField[])} or {@link #fetchEntitiesByIds(Collection, Collection)}
-     */
-    @Deprecated
+    @Override
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
                                                                                     final UniqueKey<E> uniqueKey,
                                                                                     final Collection<? extends Identifier<E>> keys,
@@ -66,12 +64,15 @@ public class EntitiesFetcher {
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
         final AliasedKey aliasedKey = new AliasedKey(uniqueKey);
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsToFetch);
+        final List<? extends EntityField<?, ?>> requestedFields = Lists.newArrayList(fieldsToFetch);
+
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), requestedFields);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsToFetch);
+            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, requestedFields);
         }
     }
 
+    @Override
     public List<Entity> fetch(final EntityType<?> entityType,
                               final PLCondition plCondition,
                               final EntityField<?, ?>... fieldsToFetch) {
@@ -83,22 +84,26 @@ public class EntitiesFetcher {
         final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(),
-                                                             emptyList(),
-                                                             allFieldsToFetch);
+                emptyList(),
+                allFieldsToFetch);
         final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
 
         return query.where(completeJooqCondition)
-                    .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
+                .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
     }
 
+    @Override
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
-            AliasedKey aliasedKey = new AliasedKey(foreignUniqueKey, foreignKeysTable);
-            SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), fieldsToFetch);
-            return fetchEntitiesMap(query, aliasedKey, fieldsToFetch);
+            final List<? extends EntityField<?, ?>> requestedFields = Lists.newArrayList(fieldsToFetch);
+            final AliasedKey aliasedKey = new AliasedKey(foreignUniqueKey, foreignKeysTable);
+            final SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), requestedFields);
+
+            return fetchEntitiesMap(query, aliasedKey, requestedFields);
         }
     }
 
+    @Override
     public <E extends EntityType<E>, PE extends PartialEntity, ID extends Identifier<E>> Map<ID, PE> fetchPartialEntities(E entityType, Collection<ID> keys, final Class<PE> entityIface) {
         if (keys.isEmpty()) {
             return Collections.emptyMap();
@@ -113,6 +118,7 @@ public class EntitiesFetcher {
                 .collect(toMap(identity(), key -> (PE) Proxy.newProxyInstance(classLoader, interfaces, new PartialEntityInvocationHandler<>(entityMethodsMap, entityMap.get(key)))));
     }
 
+    @Override
     public <E extends EntityType<E>, PE extends PartialEntity> List<PE> fetchByCondition(E entityType, Condition condition, final Class<PE> entityIface) {
         final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
         final Collection<EntityField<E, ?>> fieldsToFetch = entityMethodsMap.values();
@@ -194,7 +200,7 @@ public class EntitiesFetcher {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, final Collection<? extends EntityField<?, ?>> fields) {
+    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<?, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 
