@@ -1,11 +1,13 @@
 package com.kenshoo.pl.entity.internal.fetch;
 
 import com.google.common.collect.Lists;
+import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import org.jooq.*;
+import org.jooq.lambda.Seq;
 
 import java.util.*;
 
@@ -26,22 +28,24 @@ public class NewEntityFetcher implements Fetcher {
         }
 
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
-        final EntityType<E> primaryType = uniqueKey.getEntityType();
+        final DataTable primaryTable = uniqueKey.getEntityType().getPrimaryTable();
         final AliasedKey<E> aliasedKey = new AliasedKey<E>(uniqueKey);
 
-        final ExecutionPlan executionPlan = new ExecutionPlan(primaryType.getPrimaryTable(), fieldsToFetch);
+        final ExecutionPlan executionPlan = new ExecutionPlan(primaryTable, fieldsToFetch);
 
         final Map<Identifier<E>, Entity> entities;
-        final QueryBuilder.Result mainQueryBuilder = queryBuilder.buildOneToOneQuery(executionPlan.getOneToOnePaths(), primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(mainQueryBuilder.getQuery(), primaryType.getPrimaryTable(), uniqueKey, ids)) {
-            entities = fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, mainQueryBuilder.getFields());
+
+        final ExecutionPlan.OneToOnePlan oneToOnePlan = executionPlan.getOneToOnePlan();
+        final SelectJoinStep<Record> mainQuery = queryBuilder.buildOneToOneQuery(oneToOnePlan.getPaths(), selectFieldsOf(oneToOnePlan.getFields(), aliasedKey), oneToOnePlan.getSecondaryTableRelations(), primaryTable);
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(mainQuery, primaryTable, uniqueKey, ids)) {
+            entities = fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, oneToOnePlan.getFields());
         }
 
-        executionPlan.getManyToOnePaths().forEach(path -> {
-            final QueryBuilder.Result subQueryBuilder = queryBuilder.buildManyToOneQuery(path, primaryType.getPrimaryTable(), aliasedKey, fieldsToFetch);
-            try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(subQueryBuilder.getQuery(), primaryType.getPrimaryTable(), uniqueKey, ids)) {
-                Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, subQueryBuilder.getFields());
-                multiValuesMap.forEach((id, multiValues) -> ((EntityImpl) entities.get(id)).add(entityTypeOf(subQueryBuilder.getFields()), (List) multiValues));
+        executionPlan.getManyToOnePlans().forEach(plan -> {
+            final SelectJoinStep<Record> subQuery = queryBuilder.buildManyToOneQuery(plan.getPath(), selectFieldsOf(plan.getFields(), aliasedKey), primaryTable);
+            try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(subQuery, primaryTable, uniqueKey, ids)) {
+                Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, plan.getFields());
+                multiValuesMap.forEach((id, multiValues) -> ((EntityImpl) entities.get(id)).add(entityTypeOf(plan.getFields()), (List) multiValues));
             }
         });
 
@@ -68,15 +72,23 @@ public class NewEntityFetcher implements Fetcher {
         throw new UnsupportedOperationException("NewEntityFetcher doesn't implement yet 'fetchByCondition' method...");
     }
 
+    private <E extends EntityType<E>> List<SelectField<?>> selectFieldsOf(List<? extends EntityField<?, ?>> fields, AliasedKey<E> aliasedKey) {
+        return dbFieldsOf(fields).concat(aliasedKey.aliasedFields()).toList();
+    }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, EntityImpl> fetchEntitiesMap(SelectJoinStep<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<E, ?>> fields) {
+    private Seq<SelectField<?>> dbFieldsOf(Collection<? extends EntityField<?, ?>> fields) {
+        return seq(fields).flatMap(field -> field.getDbAdapter().getTableFields());
+    }
+
+
+    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(SelectJoinStep<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<?, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, List<FieldsValueMap<?>>> fetchMultiValuesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<E, ?>> fields) {
-        final Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap = new HashMap<>();
+    private <MAIN extends EntityType<MAIN>, SUB extends EntityType<SUB>> Map<Identifier<MAIN>, List<FieldsValueMap<?>>> fetchMultiValuesMap(ResultQuery<Record> query, AliasedKey<MAIN> aliasedKey, List<? extends EntityField<SUB, ?>> fields) {
+        final Map<Identifier<MAIN>, List<FieldsValueMap<?>>> multiValuesMap = new HashMap<>();
         query.fetchInto(record -> {
-            Identifier<E> key = RecordReader.createKey(record, aliasedKey);
+            Identifier<MAIN> key = RecordReader.createKey(record, aliasedKey);
             multiValuesMap.computeIfAbsent(key, k -> Lists.newArrayList());
             multiValuesMap.get(key).add(RecordReader.createFieldsValueMap(record, fields));
         });

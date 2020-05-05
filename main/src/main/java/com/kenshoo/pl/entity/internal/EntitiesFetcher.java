@@ -64,11 +64,11 @@ public class EntitiesFetcher implements Fetcher {
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final EntityType<E> entityType = uniqueKey.getEntityType();
         final AliasedKey aliasedKey = new AliasedKey(uniqueKey);
-        final List<? extends EntityField<?, ?>> requestedFields = Lists.newArrayList(fieldsToFetch);
+        final List<? extends EntityField<?, ?>> fieldsAsList = fieldsAsList(fieldsToFetch);
 
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), requestedFields);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsAsList);
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
-            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, requestedFields);
+            return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsAsList);
         }
     }
 
@@ -95,11 +95,11 @@ public class EntitiesFetcher implements Fetcher {
     @Override
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
-            final List<? extends EntityField<?, ?>> requestedFields = Lists.newArrayList(fieldsToFetch);
+            final List<? extends EntityField<?, ?>> fieldsAsList = fieldsAsList(fieldsToFetch);
             final AliasedKey aliasedKey = new AliasedKey(foreignUniqueKey, foreignKeysTable);
-            final SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), requestedFields);
+            final SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), fieldsAsList);
 
-            return fetchEntitiesMap(query, aliasedKey, requestedFields);
+            return fetchEntitiesMap(query, aliasedKey, fieldsAsList);
         }
     }
 
@@ -250,5 +250,10 @@ public class EntitiesFetcher implements Fetcher {
     @SuppressWarnings("unchecked")
     private FieldAndValue<Object> asTypedFieldAndValue(final FieldAndValue<?> fv) {
         return (FieldAndValue<Object>)fv;
+    }
+
+    private List<? extends EntityField<?, ?>> fieldsAsList(Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+        return fieldsToFetch instanceof List
+                ? (List<? extends EntityField<?, ?>>) fieldsToFetch : Lists.newArrayList(fieldsToFetch);
     }
 }

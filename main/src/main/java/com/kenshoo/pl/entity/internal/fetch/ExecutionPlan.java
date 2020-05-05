@@ -3,76 +3,138 @@ package com.kenshoo.pl.entity.internal.fetch;
 import com.google.common.collect.Lists;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
 import org.jooq.lambda.Seq;
+import org.jooq.lambda.tuple.Tuple2;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.function.Functions.not;
 
 public class ExecutionPlan {
 
-    private final List<TreeEdge> oneToOnePaths;
-    private final List<TreeEdge> manyToOnePaths;
+    private OneToOnePlan oneToOnePlan;
+    private List<ManyToOnePlan> manyToOnePlans = Lists.newArrayList();
 
     public ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final Set<DataTable> targetTables = targetPrimaryTablesOf(fieldsToFetch, startingTable);
+        final Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsMap = targetTableToFieldsOf(fieldsToFetch, startingTable);
 
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
-        final List<TreeEdge> manyToOnePaths = Lists.newArrayList();
         final List<TreeEdge> oneToOnePaths = Lists.newArrayList();
+        final List<? extends EntityField<?, ?>> oneToOneFields = Lists.newArrayList();
 
         BFS.visit(startingEdge, this::edgesComingOutOf)
-                .limitUntil(__ -> targetTables.isEmpty())
+                .limitUntil(__ -> targetTableToFieldsMap.isEmpty())
                 .forEach(currentEdge -> {
                     final DataTable table = currentEdge.target.table;
 
-                    if (currentEdge != startingEdge && targetTables.contains(table)) {
-                        targetTables.remove(table);
+                    List fields = targetTableToFieldsMap.get(table);
+                    if (currentEdge != startingEdge && fields != null) {
+                        targetTableToFieldsMap.remove(table);
                         oneToOnePaths.add(currentEdge);
-                        manyToOnePaths.removeIf(edge -> edge.target.table == table);
+                        oneToOneFields.addAll(fields);
+                        this.manyToOnePlans.removeIf(plan -> plan.getPath().target.table == table);
                     }
-                    seq(targetTables).filter(referencing(table)).forEach(manyToOneTable -> {
+                    seq(targetTableToFieldsMap).filter(referencing(table)).forEach(manyToOneEntry -> {
                         final TreeEdge sourceEdge = currentEdge == startingEdge ? null : currentEdge;
-                        manyToOnePaths.add(new TreeEdge(new TreeNode(sourceEdge, table), manyToOneTable));
+                        this.manyToOnePlans.add(new ManyToOnePlan(new TreeEdge(new TreeNode(sourceEdge, table), manyToOneEntry.v1), manyToOneEntry.v2));
                     });
                 });
 
-        if (seq(targetTables).anyMatch(notIn(manyToOnePaths))) {
-            throw new IllegalStateException("Some tables " + targetTables + " could not be reached via joins");
+        if (seq(targetTableToFieldsMap.keySet()).anyMatch(notIn(this.manyToOnePlans))) {
+            throw new IllegalStateException("Some tables " + targetTableToFieldsMap + " could not be reached via joins");
         }
 
-        this.oneToOnePaths= oneToOnePaths;
-        this.manyToOnePaths= manyToOnePaths;
+        this.oneToOnePlan = new OneToOnePlan(oneToOnePaths, oneToOneFields, oneToOneSecondaryTablesOf(fieldsToFetch));
     }
 
-    public List<TreeEdge> getOneToOnePaths() {
-        return oneToOnePaths;
+    public OneToOnePlan getOneToOnePlan() {
+        return oneToOnePlan;
     }
 
-    public List<TreeEdge> getManyToOnePaths() {
-        return manyToOnePaths;
+    public List<ManyToOnePlan> getManyToOnePlans() {
+        return manyToOnePlans;
     }
 
-    private Set<DataTable> targetPrimaryTablesOf(Collection<? extends EntityField<?, ?>> fieldsToFetch, DataTable startingTable) {
-        return fieldsToFetch.stream()
-                .map(field -> field.getEntityType().getPrimaryTable())
-                .filter(tb -> !tb.equals(startingTable))
+
+    private Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsOf(Collection<? extends EntityField<?, ?>> fieldsToFetch, DataTable startingTable) {
+        return seq(fieldsToFetch)
+                .filter(field -> !field.getEntityType().getPrimaryTable().equals(startingTable))
+                .groupBy(this::tableOf);
+    }
+
+    private Set<OneToOneTableRelation> oneToOneSecondaryTablesOf(Collection<? extends EntityField<?, ?>> fields) {
+        return fields.stream()
+                .filter(not(isOfPrimaryTable()))
+                .map(field -> com.kenshoo.pl.entity.internal.fetch.OneToOneTableRelation.builder()
+                        .secondary(field.getDbAdapter().getTable())
+                        .primary(field.getEntityType().getPrimaryTable())
+                        .build())
                 .collect(toSet());
     }
 
-    private Predicate<? super DataTable> referencing(DataTable table) {
-        return targetTable -> targetTable.getReferencesTo(table).size() == 1;
+    private Predicate<EntityField<?, ?>> isOfPrimaryTable() {
+        return field -> field.getDbAdapter().getTable().equals(field.getEntityType().getPrimaryTable());
     }
 
-    private Predicate<? super DataTable> notIn(List<TreeEdge> manyToOnePaths) {
-        return table -> seq(manyToOnePaths).noneMatch(edge -> edge.target.table == table);
+    private DataTable tableOf(EntityField<?, ?> field) {
+        return field.getEntityType().getPrimaryTable();
+    }
+
+    private Predicate<? super Tuple2<DataTable, ? extends List<? extends EntityField<?, ?>>>> referencing(DataTable table) {
+        return entry -> entry.v1.getReferencesTo(table).size() == 1;
+    }
+
+    private Predicate<? super DataTable> notIn(List<ManyToOnePlan> manyToOnePlans) {
+        return table -> seq(manyToOnePlans).noneMatch(plan -> plan.getPath().target.table == table);
     }
 
     private Seq<TreeEdge> edgesComingOutOf(TreeEdge edge) {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
+    }
+
+    class ManyToOnePlan<E extends EntityType<E>> {
+        private final TreeEdge path;
+        private final List<? extends EntityField<E, ?>> fields;
+
+        public ManyToOnePlan(TreeEdge path, List<? extends EntityField<E, ?>> fields) {
+            this.path = path;
+            this.fields = fields;
+        }
+
+        public TreeEdge getPath() {
+            return path;
+        }
+
+        public List<? extends EntityField<E, ?>> getFields() {
+            return fields;
+        }
+    }
+
+    class OneToOnePlan<E extends EntityType<E>> {
+        private final List<TreeEdge> paths;
+        private final List<? extends EntityField<E, ?>> fields;
+        private final Set<OneToOneTableRelation> secondaryTableRelations;
+
+        public OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<E, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
+            this.paths = paths;
+            this.fields = fields;
+            this.secondaryTableRelations = secondaryTableRelations;
+        }
+
+        public List<TreeEdge> getPaths() {
+            return paths;
+        }
+
+        public List<? extends EntityField<E, ?>> getFields() {
+            return fields;
+        }
+
+        public Set<OneToOneTableRelation> getSecondaryTableRelations() {
+            return secondaryTableRelations;
+        }
     }
 }
