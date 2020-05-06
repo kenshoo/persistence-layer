@@ -43,6 +43,14 @@ public class AuditRecordMatchers {
         return new AuditRecordSameChildRecordMatcher(expectedChildRecord);
     }
 
+    public static <C extends EntityType<C>> Matcher<AuditRecord<?>> hasChildRecordThat(final Matcher<AuditRecord<C>> childRecordMatcher) {
+        return new AuditRecordHasChildRecordMatcher<>(childRecordMatcher);
+    }
+
+    public static Matcher<AuditRecord<?>> hasNoChildRecords() {
+        return new AuditRecordNoChildRecordsMatcher();
+    }
+
     private static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasFieldRecord(final FieldAuditRecord<E> expectedFieldRecord) {
         return new AuditRecordFieldRecordMatcher<>(expectedFieldRecord);
     }
