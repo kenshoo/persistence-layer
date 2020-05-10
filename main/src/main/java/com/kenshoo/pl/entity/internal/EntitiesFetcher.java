@@ -16,7 +16,6 @@ import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.function.Predicate;
 
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -139,12 +138,6 @@ public class EntitiesFetcher {
                 .collect(toList());
     }
 
-    private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return features.isEnabled(FindSecondaryTablesOfParents)
-                ? buildFetchQuery_NEW(startingTable, aliasedKeyFields, fieldsToFetch)
-                : buildFetchQuery_DEPRECATED(startingTable, aliasedKeyFields, fieldsToFetch);
-    }
-
     /*
      This method generates a query that joins the starting table with one or more foreign keys, with the tables
      necessary to get to all fieldsToFetch. This is done by traversing the tree that starts at the starting table and
@@ -152,7 +145,7 @@ public class EntitiesFetcher {
      the necessary joins are made and the participating tables are marked as already joined. The target table is removed
      from the set of tables to fetch. The traversal continues until there are tables in this set.
      */
-    private SelectJoinStep<Record> buildFetchQuery_NEW(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    private SelectJoinStep<Record> buildFetchQuery(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
         Set<DataTable> targetPrimaryTables = fieldsToFetch.stream()
                 .map(field -> field.getEntityType().getPrimaryTable())
@@ -228,70 +221,6 @@ public class EntitiesFetcher {
 
     private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
         field.getDbAdapter().getDbValues(key.get(field)).forEach(values::add);
-    }
-
-    // -------------------------- DEPRECATED CODE ---------------------//
-
-    private SelectJoinStep<Record> buildFetchQuery_DEPRECATED(DataTable startingTable, Collection<? extends Field<?>> aliasedKeyFields, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        // The set of tables to reach with joins. This set is mutable, the tables are removed from it as they are reached
-        Set<DataTable> tablesToFetch = fieldsToFetch.stream()
-                .map(field -> field.getDbAdapter().getTable())
-                .collect(toSet());
-        List<SelectField<?>> selectFields = dbFieldsOf(fieldsToFetch).concat(seq(aliasedKeyFields)).toList();
-        SelectJoinStep<Record> query = dslContext.select(selectFields).from(startingTable);
-
-        // First, add left-joins for secondary tables of entity for the update flow. In create flow this loop won't find anything to join
-        Iterator<DataTable> tablesToFetchIterator = tablesToFetch.iterator();
-        while (tablesToFetchIterator.hasNext()) {
-            DataTable table = tablesToFetchIterator.next();
-            if (table.equals(startingTable)) {
-                tablesToFetchIterator.remove();
-                continue;
-            }
-            Condition joinCondition = queryBuilder.getJoinCondition(table, startingTable);
-            if (joinCondition == null) {
-                continue;
-            }
-            query = query.leftOuterJoin(table).on(joinCondition);
-            tablesToFetchIterator.remove();
-        }
-
-        // The set of tables reached by BFS
-        Set<DataTable> tablesReached = Sets.newHashSet();
-        // The set of tables added to the resulting query
-        Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
-        // The queue of BFS
-        LinkedList<TreeEdge> edgesQueue = new LinkedList<>();
-        TreeNode root = new TreeNode(null, startingTable);
-        startingTable.getReferences().stream().map(new ToEdgesOf(root)).collect(toCollection(() -> edgesQueue));
-
-        while (!tablesToFetch.isEmpty()) {
-            TreeEdge treeEdge = edgesQueue.poll();
-            if (treeEdge == null) {
-                // The BFS queue is empty but there are still tables we didn't reach
-                throw new IllegalStateException("Table " + tablesToFetch.iterator().next() + " could not be reached via joins");
-            }
-            DataTable joinTarget = treeEdge.target.table;
-            if (tablesReached.contains(joinTarget)) {
-                // If we have already reached this table by a different path, ignore it
-                continue;
-            }
-            tablesReached.add(joinTarget);
-
-            // Feed the BFS queue for the next time
-            joinTarget.getReferences().stream().map(new ToEdgesOf(treeEdge.target)).collect(toCollection(() -> edgesQueue));
-
-            // If we reached a table we don't need for the fieldsToFetch, just continue
-            if (!tablesToFetch.contains(joinTarget)) {
-                continue;
-            }
-            tablesToFetch.remove(joinTarget);
-
-            // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
-            // Using a stack for that
-            queryBuilder.joinTables(query, joinedTables, treeEdge);
-        }
-        return query;
     }
 
     private Seq<SelectField<?>> dbFieldsOf(Collection<? extends EntityField<?, ?>> fieldsToFetch) {

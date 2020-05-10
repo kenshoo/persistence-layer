@@ -173,7 +173,7 @@ public class PersistenceLayerTest {
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromOldValue(URL, parentUrl -> parentUrl));
 
-        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
+        childPL().create(asList(cmd), childFlow());
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 
@@ -187,7 +187,7 @@ public class PersistenceLayerTest {
         cmd.set(ChildForTest.PARENT_ID, ID_1);
         cmd.set(ChildForTest.FIELD, fromValues(EntityForTest.FIELD1, URL, (v1, v2) -> v1.toString() + " " + v2));
 
-        childPL().create(asList(cmd), childFlow(FindSecondaryTablesOfParents));
+        childPL().create(asList(cmd), childFlow());
 
         Record childInDB = dslContext.selectFrom(ChildForTestTable.INSTANCE).where(ChildForTestTable.INSTANCE.id.eq(1)).fetchOne();
 

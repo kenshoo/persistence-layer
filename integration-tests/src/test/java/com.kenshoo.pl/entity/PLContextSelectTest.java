@@ -20,7 +20,6 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -44,7 +43,7 @@ public class PLContextSelectTest {
     @Before
     public void setup() {
         plContext = new PLContext.Builder(dslContext)
-            .withFeaturePredicate(FindSecondaryTablesOfParents::equals)
+            .withFeaturePredicate(always -> true)
             .build();
 
         staticDSLContext = dslContext;
