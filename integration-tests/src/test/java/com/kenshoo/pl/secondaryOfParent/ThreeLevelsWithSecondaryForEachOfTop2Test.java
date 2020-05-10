@@ -22,7 +22,6 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -104,7 +103,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
                   .set(Table0.INSTANCE.entity1_id, ENTITY_1_ID)
                   .execute();
 
-        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet(FindSecondaryTablesOfParents));
+        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet());
     }
 
     @After

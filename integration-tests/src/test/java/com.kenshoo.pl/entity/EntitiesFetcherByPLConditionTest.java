@@ -21,7 +21,6 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
-import static com.kenshoo.pl.entity.Feature.FindSecondaryTablesOfParents;
 import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
@@ -48,7 +47,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Before
     public void setup() {
-        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet(FindSecondaryTablesOfParents));
+        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet());
         staticDSLContext = dslContext;
         if (!tablesCreated) {
             ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
