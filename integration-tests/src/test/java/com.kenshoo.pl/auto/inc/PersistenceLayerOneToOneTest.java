@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.auto.inc.TestEntity.NAME;
 import static com.kenshoo.pl.auto.inc.TestEntity.SECOND_NAME;
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.equalTo;
@@ -41,7 +40,6 @@ public class PersistenceLayerOneToOneTest {
         final PLContext plContext = new PLContext.Builder(dslContext).build();
         flowConfig = ChangeFlowConfigBuilderFactory
                 .newInstance(plContext, TestEntity.INSTANCE)
-                .with(new FeatureSet(AutoIncrementSupport))
                 .build();
 
         Stream.of(PRIMARY_TABLE, SECONDARY_TABLE)

@@ -15,10 +15,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toCollection;
+
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
 
@@ -122,9 +121,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     }
 
     public Optional<EntityField<E, Object>> getPrimaryIdentityField() {
-        return features.isEnabled(AutoIncrementSupport)
-                ? getEntityType().getPrimaryIdentityField()
-                : Optional.empty();
+        return getEntityType().getPrimaryIdentityField();
     }
 
     public FeatureSet getFeatures() {
