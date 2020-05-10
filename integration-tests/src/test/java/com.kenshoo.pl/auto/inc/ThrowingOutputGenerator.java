@@ -2,9 +2,8 @@ package com.kenshoo.pl.auto.inc;
 
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
-
 import java.util.Collection;
-import java.util.stream.Stream;
+
 
 public class ThrowingOutputGenerator<E extends EntityType<E>> implements OutputGenerator<E> {
 
@@ -22,8 +21,5 @@ public class ThrowingOutputGenerator<E extends EntityType<E>> implements OutputG
         }
     }
 
-    @Override
-    public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
+
 }

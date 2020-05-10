@@ -35,41 +35,22 @@ public class DbCommandsOutputGeneratorTest {
     }
 
     @Test
-    public void required_entity_for_create_new_api() {
+    public void required_entity_for_create() {
         List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.requiredFields(Collections.emptyList(), ChangeOperation.CREATE).collect(Collectors.toList());
         assertThat(fields.size(), is(0));
     }
 
     @Test
-    public void required_entity_for_create_old_api() {
-        List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.getRequiredFields(Collections.emptyList(), ChangeOperation.CREATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(0));
-    }
-
-    @Test
-    public void required_entity_for_update_new_api() {
+    public void required_entity_for_update() {
         List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.requiredFields(ImmutableList.of(TestEntity.FIELD_1), ChangeOperation.UPDATE).collect(Collectors.toList());
         assertThat(fields.size(), is(0));
     }
 
     @Test
-    public void required_entity_for_update_old_api() {
-        List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.getRequiredFields(ImmutableList.of(cmd), ChangeOperation.UPDATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(0));
-    }
-
-    @Test
-    public void required_entity_for_secondary_table_update_new_api() {
+    public void required_entity_for_secondary_table_update() {
         List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.requiredFields(ImmutableList.of(TestEntity.SECONDARY_FIELD_1), ChangeOperation.UPDATE).collect(Collectors.toList());
         assertThat(fields.size(), is(1));
         assertThat(fields, containsInAnyOrder(TestEntity.ID));
     }
 
-    @Test
-    public void required_entity_for_secondary_table_update_old_api() {
-        when(cmd.getChangedFields()).thenReturn(Stream.of(TestEntity.SECONDARY_FIELD_1));
-        List<? extends EntityField<?, ?>> fields = dbCommandsOutputGenerator.getRequiredFields(ImmutableList.of(cmd), ChangeOperation.UPDATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(1));
-        assertThat(fields, containsInAnyOrder(TestEntity.ID));
-    }
 }

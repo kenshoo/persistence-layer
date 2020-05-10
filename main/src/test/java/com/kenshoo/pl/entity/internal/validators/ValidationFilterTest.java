@@ -38,7 +38,7 @@ public class ValidationFilterTest {
     }
 
     @Test
-    public void required_entity_for_create_new_api() {
+    public void required_entity_for_create() {
         doReturn(Stream.of(TestEntity.FIELD_1)).when(changesValidator).requiredFields(Collections.emptyList(), ChangeOperation.CREATE);
         List<? extends EntityField<?, ?>> fields = validationFilter.requiredFields(Collections.emptyList(), ChangeOperation.CREATE).collect(Collectors.toList());
         assertThat(fields.size(), is(1));
@@ -46,25 +46,9 @@ public class ValidationFilterTest {
     }
 
     @Test
-    public void required_entity_for_create_old_api() {
-        doReturn(Stream.of(TestEntity.FIELD_1)).when(changesValidator).getRequiredFields(Collections.emptyList(), ChangeOperation.CREATE);
-        List<? extends EntityField<?, ?>> fields = validationFilter.getRequiredFields(Collections.emptyList(), ChangeOperation.CREATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(1));
-        assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
-    }
-
-    @Test
-    public void required_entity_for_update_new_api() {
+    public void required_entity_for_update() {
         doReturn(Stream.of(TestEntity.FIELD_1)).when(changesValidator).requiredFields(Collections.emptyList(), ChangeOperation.UPDATE);
         List<? extends EntityField<?, ?>> fields = validationFilter.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(1));
-        assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
-    }
-
-    @Test
-    public void required_entity_for_update_old_api() {
-        doReturn(Stream.of(TestEntity.FIELD_1)).when(changesValidator).getRequiredFields(Collections.emptyList(), ChangeOperation.UPDATE);
-        List<? extends EntityField<?, ?>> fields = validationFilter.getRequiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
         assertThat(fields.size(), is(1));
         assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
     }

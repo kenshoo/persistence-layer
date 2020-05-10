@@ -16,7 +16,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Arrays.asList;
@@ -39,8 +38,6 @@ public class FalseUpdatesPurgerTest {
     private EntityField<TestEntity, Integer> field1;
     @Mock
     private EntityField<TestEntity, String> field2;
-    @Mock
-    private UpdateEntityCommand<TestEntity,?> cmd;
 
     @Before
     public void setup() {
@@ -53,14 +50,6 @@ public class FalseUpdatesPurgerTest {
         List<EntityField<?, ?>> fields = purger().build().requiredFields(ImmutableList.of(field1,field2), UPDATE).collect(toList());
         assertThat(fields, containsInAnyOrder(field1, field2));
     }
-
-    @Test
-    public void requiredFieldsForUpdateOldApi() {
-        when(cmd.getChangedFields()).thenReturn(Stream.of(field1, field2));
-        List<EntityField<?, ?>> fields = purger().build().getRequiredFields(ImmutableList.of(cmd), UPDATE).collect(toList());
-        assertThat(fields, containsInAnyOrder(field1, field2));
-    }
-
 
     @Test
     public void allFalseUpdates() {

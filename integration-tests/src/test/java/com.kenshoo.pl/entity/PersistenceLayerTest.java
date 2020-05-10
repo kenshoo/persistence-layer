@@ -553,11 +553,6 @@ public class PersistenceLayerTest {
             }
 
             @Override
-            public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation) {
-                return Stream.of(EntityForTestComplexKeyParent.FIELD1);
-            }
-
-            @Override
             public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
                 return Stream.of(EntityForTestComplexKeyParent.FIELD1);
             }
@@ -823,11 +818,6 @@ public class PersistenceLayerTest {
             @Override
             public void generate(Collection<? extends EntityChange<EntityForTest>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
                 entityChanges.forEach(entityChange -> entityChange.getChanges().forEach(fieldChange -> changedFields.put(entityChange, fieldChange.getField())));
-            }
-
-            @Override
-            public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
-                return Stream.empty();
             }
 
             @Override
@@ -1164,11 +1154,6 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTestParent.FIELD1);
-        }
-
-        @Override
         public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.of(EntityForTestParent.FIELD1);
         }
@@ -1197,11 +1182,6 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTest.FIELD1, URL);
-        }
-
-        @Override
         public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<EntityForTest, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
             return Stream.of(EntityForTest.FIELD1, URL);
         }
@@ -1226,11 +1206,6 @@ public class PersistenceLayerTest {
                 update.set(EntityForTestTable.INSTANCE.field2, Integer.valueOf(parentFieldValue));
             }
             changesContainer.commit(commandsExecutor, changeContext.getStats());
-        }
-
-        @Override
-        public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTestParent.FIELD1);
         }
 
         @Override
@@ -1262,11 +1237,6 @@ public class PersistenceLayerTest {
         @Override
         public SupportedChangeOperation getSupportedChangeOperation() {
             return SupportedChangeOperation.CREATE;
-        }
-
-        @Override
-        public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-            return Stream.empty();
         }
 
         @Override
@@ -1332,11 +1302,6 @@ public class PersistenceLayerTest {
             entityChanges.stream()
                     .filter(entityChange -> changeContext.getEntity(entityChange).get(EntityForTestParent.FIELD1).equals(Integer.toString(invalidParentValue)))
                     .forEach(entityChange -> changeContext.addValidationError(entityChange, new ValidationError(CANNOT_CREATE_IN_PARENT, EntityForTestParent.FIELD1)));
-        }
-
-        @Override
-        public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<EntityForTest>> commands, ChangeOperation changeOperation) {
-            return Stream.of(EntityForTestParent.FIELD1);
         }
 
         @Override

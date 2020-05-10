@@ -141,15 +141,6 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
-        Stream<EntityField<E, ?>> changeFeids = commands.stream().flatMap(ChangeEntityCommand::getChangedFields);
-        return changeFeids
-                .flatMap(field -> changesValidators.get(field).stream())
-                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
-                .flatMap(validator -> validator.getFieldsToFetch(changeOperation));
-    }
-
-    @Override
     public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return fieldsToUpdate.stream()
                 .flatMap(field -> changesValidators.get(field).stream())
