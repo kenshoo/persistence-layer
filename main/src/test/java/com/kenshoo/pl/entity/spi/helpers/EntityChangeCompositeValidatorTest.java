@@ -175,14 +175,5 @@ public class EntityChangeCompositeValidatorTest {
         assertThat(fields, containsInAnyOrder(TestEntity.ID));
     }
 
-    @Test
-    public void getRequiredFields_old_api() {
-        when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
-        when(requiredFieldValidator.fetchFields()).thenReturn(Stream.of(TestEntity.ID));
-        when(entityChange.getChangedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
-        validator.register(requiredFieldValidator);
-        List<? extends EntityField<?, ?>> fields = validator.getRequiredFields(ImmutableList.of(entityChange), ChangeOperation.CREATE).collect(Collectors.toList());
-        assertThat(fields.size(), is(1));
-        assertThat(fields, containsInAnyOrder(TestEntity.ID));
-    }
+
 }

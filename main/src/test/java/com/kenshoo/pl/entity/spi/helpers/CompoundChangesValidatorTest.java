@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -39,7 +40,7 @@ public class CompoundChangesValidatorTest {
     @Mock
     private EntityChange<TestEntity> entityChange;
 
-    private Collection<ChangeEntityCommand<TestEntity>> commands = Collections.emptyList();
+    private Collection<EntityField<TestEntity, ?>> changedFields = Collections.emptyList();
 
     private Collection<EntityChange<TestEntity>> entityChanges  = Collections.singletonList(entityChange);
 
@@ -50,24 +51,24 @@ public class CompoundChangesValidatorTest {
     public void setUp(){
         when(validator1.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_UPDATE_AND_DELETE);
         when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_UPDATE_AND_DELETE);
-        when(validator1.getRequiredFields(commands, ChangeOperation.CREATE)).thenAnswer(invocationOnMock -> Stream.of(field1));
-        when(validator2.getRequiredFields(commands, ChangeOperation.CREATE)).thenAnswer(invocationOnMock -> Stream.of(field2));
+        when(validator1.requiredFields(any(), eq(CREATE))).thenAnswer(invocationOnMock -> Stream.of(field1));
+        when(validator2.requiredFields(any(), eq(CREATE))).thenAnswer(invocationOnMock -> Stream.of(field2));
 
     }
 
     @Test
     public void testRequiredFieldsForOneValidator() {
         compoundChangesValidator.register(validator1);
-        Optional<EntityField<?, ?>> requiredField = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE).findFirst();
-        assertTrue(requiredField.isPresent());
-        assertEquals("Required field", requiredField.get(), field1);
+        Optional<? extends EntityField<?, ?>> requiredFields = compoundChangesValidator.requiredFields(changedFields, CREATE).findFirst();
+        assertTrue(requiredFields.isPresent());
+        assertEquals("Required field", requiredFields.get(), field1);
     }
 
     @Test
     public void testRequiredFieldsForOneValidatorNotFitOperation() {
         when(validator1.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.UPDATE);
         compoundChangesValidator.register(validator1);
-        Stream<EntityField<?, ?>> requiredFields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE);
+        Stream<? extends EntityField<?, ?>> requiredFields = compoundChangesValidator.requiredFields(changedFields, CREATE);
         assertEquals(0, requiredFields.count());
     }
 
@@ -75,7 +76,7 @@ public class CompoundChangesValidatorTest {
     public void testRequiredFieldsForMultipleValidators() {
         compoundChangesValidator.register(validator1);
         compoundChangesValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
+        Collection<EntityField<?, ?>> fields = compoundChangesValidator.requiredFields(changedFields, CREATE).collect(toSet());
         assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
     }
@@ -86,7 +87,7 @@ public class CompoundChangesValidatorTest {
         when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE);
         compoundChangesValidator.register(validator1);
         compoundChangesValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = compoundChangesValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
+        Collection<EntityField<?, ?>> fields = compoundChangesValidator.requiredFields(changedFields, CREATE).collect(toSet());
         assertFalse("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
     }
@@ -94,17 +95,17 @@ public class CompoundChangesValidatorTest {
     @Test
     public void testDelegateToOneValidator() {
         compoundChangesValidator.register(validator1);
-        compoundChangesValidator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(validator1, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        compoundChangesValidator.validate(entityChanges, CREATE, changeContext);
+        verify(validator1, times(1)).validate(entityChanges, CREATE, changeContext);
     }
 
     @Test
     public void testDelegateToMultipleValidators() {
         compoundChangesValidator.register(validator1);
         compoundChangesValidator.register(validator2);
-        compoundChangesValidator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(validator1, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(validator2, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        compoundChangesValidator.validate(entityChanges, CREATE, changeContext);
+        verify(validator1, times(1)).validate(entityChanges, CREATE, changeContext);
+        verify(validator2, times(1)).validate(entityChanges, CREATE, changeContext);
     }
 
     @Test
@@ -113,9 +114,9 @@ public class CompoundChangesValidatorTest {
         when(validator2.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.UPDATE);
         compoundChangesValidator.register(validator1);
         compoundChangesValidator.register(validator2);
-        compoundChangesValidator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(validator1, times(1)).validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(validator2, never()).validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        compoundChangesValidator.validate(entityChanges, CREATE, changeContext);
+        verify(validator1, times(1)).validate(entityChanges, CREATE, changeContext);
+        verify(validator2, never()).validate(entityChanges, CREATE, changeContext);
     }
 
 }

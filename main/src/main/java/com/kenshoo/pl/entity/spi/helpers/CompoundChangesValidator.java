@@ -30,13 +30,6 @@ public class CompoundChangesValidator<E extends EntityType<E>> implements Change
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
-        return changesValidators.stream()
-                .filter(CurrentStateConsumer.supporting(changeOperation))
-                .flatMap(changesValidator -> changesValidator.getRequiredFields(commands, changeOperation));
-    }
-
-    @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return changesValidators.stream()
                 .filter(CurrentStateConsumer.supporting(changeOperation))

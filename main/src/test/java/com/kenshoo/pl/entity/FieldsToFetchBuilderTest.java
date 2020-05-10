@@ -59,196 +59,14 @@ public class FieldsToFetchBuilderTest {
     }
 
     @Test
-    public void no_requested_entity_field_for_create() {
-        assertThat(calculateRequiredFields(createParent()), hasSize(0));
-    }
-
-    @Test
-    public void one_entity_field_requested_by_entity_for_update() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestEntity.FIELD_1))
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
-        ));
-    }
-
-
-    @Test
-    public void one_entity_field_requested_by_entity_for_upsert() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                upsertParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void one_external_field_requested_by_entity_for_update() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void one_external_field_requested_by_entity_for_create() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                createParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
-        ));
-    }
-
-
-    @Test
-    public void one_child_entity_field_requested_by_child_entity_for_update() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent()
-                        .withChild(
-                                updateChild().with(CHILD_FIELD_1, supplierRequiring(CHILD_FIELD_1))
-                        )
-                );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void one_entity_field_requested_by_child_entity_for_update() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent()
-                        .withChild(
-                                updateChild().with(CHILD_FIELD_1, supplierRequiring(TestEntity.FIELD_1))
-                        )
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(TestEntity.FIELD_1).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void when_updated_child_requires_external_field_then_query_for_root_for_both_CREATE_and_UPDATE() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent()
-                        .withChild(
-                                updateChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
-                        )
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(TestChildEntity.CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void when_created_child_requires_external_field_then_query_for_root_for_both_CREATE_and_UPDATE() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                createParent()
-                        .withChild(
-                                createChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
-                        )
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestParentEntity.SOME_FIELD).queryOn(TestEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build()
-        ));
-    }
-
-
-    @Test
-    public void when_updated_3rd_requesting_from_2nd_then_query_on_2nd_for_update() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                updateParent()
-                        .withChild(
-                            updateChild()
-                                    .withChild(
-                                            updateGrandChild().with(GRAND_CHILD_FIELD_1, supplierRequiring(CHILD_FIELD_1))
-                                    )
-                        )
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build(),
-                requested(TestChildEntity.ORDINAL).queryOn(TestChildEntity.INSTANCE).askedBy(TestChildEntity.INSTANCE).build(),
-                requested(TestGrandChildEntity.ID).queryOn(TestGrandChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build(),
-                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build(),
-                requested(TestGrandChildEntity.GRAND_CHILD_FIELD_1).queryOn(TestGrandChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void one_child_entity_field_requested_by_grand_child_entity_for_create() {
-
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(
-                createParent()
-                        .withChild(
-                                createChild()
-                                        .withChild(
-                                                createGrandChild().with(GRAND_CHILD_FIELD_1, supplierRequiring(CHILD_FIELD_1))
-                                        )
-                        )
-        );
-
-        assertThat(requests, containsInAnyOrder(
-                //
-                // why UPDATE if grand child is CREATE ?????????????????????????????????????????????????
-                //
-                requested(CHILD_FIELD_1).queryOn(TestChildEntity.INSTANCE).askedBy(TestGrandChildEntity.INSTANCE).build()
-        ));
-    }
-
-    @Test
-    public void no_requested_entity_field_for_update() {
-        Collection<FieldFetchRequest> requests = calculateRequiredFields(updateParent());
-
-        assertThat(requests, containsInAnyOrder(
-                requested(TestEntity.ID).queryOn(TestEntity.INSTANCE).askedBy(TestEntity.INSTANCE).build()
-        ));
-
-    }
-
-    @Test
     public void no_requested_entity_field_for_create_uf_on() {
-        assertThat(calculateRequiredFieldsWithUFON(createParent()), hasSize(0));
+        assertThat(calculateRequiredFields(createParent()), hasSize(0));
     }
 
     @Test
     public void one_entity_field_requested_by_entity_for_update_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestEntity.FIELD_1))
         );
 
@@ -262,7 +80,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_entity_field_requested_by_entity_for_upsert_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 upsertParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
@@ -276,7 +94,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_external_field_requested_by_entity_for_update_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
@@ -290,7 +108,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_external_field_requested_by_entity_for_create_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 createParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
         );
 
@@ -303,7 +121,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_child_entity_field_requested_by_child_entity_for_update_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent()
                         .withChild(
                                 updateChild().with(CHILD_FIELD_1, supplierRequiring(CHILD_FIELD_1))
@@ -320,7 +138,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_entity_field_requested_by_child_entity_for_update_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent()
                         .withChild(
                                 updateChild().with(CHILD_FIELD_1, supplierRequiring(TestEntity.FIELD_1))
@@ -338,7 +156,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void when_updated_child_requires_external_field_then_query_for_root_for_both_CREATE_and_UPDATE_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent()
                         .withChild(
                                 updateChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
@@ -356,7 +174,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void when_created_child_requires_external_field_then_query_for_root_for_both_CREATE_and_UPDATE_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 createParent()
                         .withChild(
                                 createChild().with(CHILD_FIELD_1, supplierRequiring(TestParentEntity.SOME_FIELD))
@@ -372,7 +190,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void when_updated_3rd_requesting_from_2nd_then_query_on_2nd_for_update_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent()
                         .withChild(
                                 updateChild()
@@ -394,7 +212,7 @@ public class FieldsToFetchBuilderTest {
     @Test
     public void one_child_entity_field_requested_by_grand_child_entity_for_create_uf_on() {
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 createParent()
                         .withChild(
                                 createChild()
@@ -418,7 +236,7 @@ public class FieldsToFetchBuilderTest {
         flowConfigBuiler.withPostFetchCommandEnricher(enricherForField(SupportedChangeOperation.CREATE, TestEntity.FIELD_2)).
                 withValidator(validatorRequiring(TestEntity.FIELD_2, TestParentEntity.SOME_FIELD));
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 createParent().with(TestEntity.FIELD_1, supplierRequiring(TestParentEntity.ID))
         );
 
@@ -434,7 +252,7 @@ public class FieldsToFetchBuilderTest {
         flowConfigBuiler.withPostFetchCommandEnricher(enricherForField(SupportedChangeOperation.UPDATE, TestEntity.FIELD_2)).
                             withValidator(validatorRequiring(TestEntity.FIELD_2, TestEntity.FIELD_3));
 
-        Collection<FieldFetchRequest> requests = calculateRequiredFieldsWithUFON(
+        Collection<FieldFetchRequest> requests = calculateRequiredFields(
                 updateParent().with(TestEntity.FIELD_1, supplierRequiring(TestEntity.FIELD_1))
         );
 
@@ -548,10 +366,6 @@ public class FieldsToFetchBuilderTest {
 
     private FieldFetchRequest.Builder requested(EntityField<?, ?> field) {
         return new FieldFetchRequest.Builder().field(field);
-    }
-
-    private Collection<FieldFetchRequest> calculateRequiredFieldsWithUFON(FluidPersistenceCmdBuilder<TestEntity> cmd) {
-        return new HashSet<>(fieldsToFetchBuilder.build(ImmutableList.of(cmd.get()), flowConfigBuiler.with(new FeatureSet(Feature.RequiredFieldsNewApi)).build()));
     }
 
     private Collection<FieldFetchRequest> calculateRequiredFields(FluidPersistenceCmdBuilder<TestEntity> cmd) {

@@ -17,10 +17,6 @@ public interface CurrentStateConsumer<E extends EntityType<E>> {
         return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
     }
 
-    default Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation) {
-        return Stream.empty();
-    }
-
     default Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return Stream.empty();
     }

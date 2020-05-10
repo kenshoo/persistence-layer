@@ -660,10 +660,6 @@ public class PersistenceLayerOneToManyTest {
 
     private PostFetchCommandEnricher<ChildEntity> enrichWithValueFrom(EntityField otherField, BiConsumer<ChangeEntityCommand<ChildEntity>, Object> enrichment) {
         return new PostFetchCommandEnricher<ChildEntity>() {
-            @Override
-            public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<ChildEntity>> changeEntityCommands, ChangeOperation changeOperation) {
-                return (Stream)Stream.of(otherField);
-            }
 
             @Override
             public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<ChildEntity, ?>> fieldsToUpdate, ChangeOperation changeOperation) {

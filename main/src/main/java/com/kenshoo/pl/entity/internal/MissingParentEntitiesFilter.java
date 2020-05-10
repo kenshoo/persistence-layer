@@ -39,11 +39,6 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        return Stream.of();
-    }
-
-    @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return Stream.of();
     }

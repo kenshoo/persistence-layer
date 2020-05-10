@@ -60,7 +60,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
                         .filter(supporting(operation));
 
         final Seq<EntityField<?, ?>> fields = Seq.concat(
-                flow.getFeatures().isEnabled(Feature.RequiredFieldsNewApi) ? fieldsConsumedBy(commands, operation, flow, currentStateConsumers) : fieldsConsumedByDeprecated(commands, operation, flow, currentStateConsumers),
+                fieldsConsumedBy(commands, operation, flow, currentStateConsumers),
                 fieldsRelatedByChildrenOf(commands, operation),
                 fieldsOfIdentifiersOf(commands, operation));
 
@@ -73,12 +73,6 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
                 return Seq.of(newRequest().field(field).queryOn(hierarchy.root()).askedBy(currentLevel).build());
             }
         });
-    }
-
-    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedByDeprecated(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {
-        return currentStateConsumers.flatMap(
-                consumer -> filterFieldsByOperator(flow, operation, consumer.getRequiredFields(commands, operation), consumer)
-        );
     }
 
     private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> fieldsConsumedBy(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation, ChangeFlowConfig<E> flow, Stream<CurrentStateConsumer<E>> currentStateConsumers) {

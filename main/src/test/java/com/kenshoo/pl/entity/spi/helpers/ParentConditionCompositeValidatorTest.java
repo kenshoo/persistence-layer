@@ -18,8 +18,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
-import java.util.Collections;
 
+import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,8 +31,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ParentConditionCompositeValidatorTest {
 
-    static final Integer ID1 = 1;
-    static final Integer ID2 = 2;
     static final Integer PARENT1 = 1;
     static final Integer PARENT2 = 2;
     static final Long PARENT3 = 3l;
@@ -65,7 +64,7 @@ public class ParentConditionCompositeValidatorTest {
 
     private Collection<EntityChange<TestEntity>> entityChanges;
 
-    private Collection<ChangeEntityCommand<TestEntity>> commands = Collections.emptyList();
+    private Collection<ChangeEntityCommand<TestEntity>> commands = emptyList();
 
     @InjectMocks
     ParentConditionCompositeValidator<TestEntity> parentConditionCompositeValidator;
@@ -86,27 +85,7 @@ public class ParentConditionCompositeValidatorTest {
     public void testRequiredFieldsForCreate() {
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
-        assertEquals("Required field size", fields.size(), 2);
-        assertTrue("Required field1", fields.contains(field1));
-        assertTrue("Required field2", fields.contains(field2));
-    }
-
-    @Test
-    public void testRequiredFieldsForUpdate_old_api() {
-        parentConditionCompositeValidator.register(validator1);
-        parentConditionCompositeValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.getRequiredFields(commands, ChangeOperation.UPDATE).collect(toSet());
-        assertEquals("Required field size", fields.size(), 2);
-        assertTrue("Required field1", fields.contains(field1));
-        assertTrue("Required field2", fields.contains(field2));
-    }
-
-    @Test
-    public void testRequiredFieldsForCreateAndUpdate_old_api() {
-        parentConditionCompositeValidator.register(validator1);
-        parentConditionCompositeValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.getRequiredFields(commands, ChangeOperation.CREATE).collect(toSet());
+        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(emptyList(), CREATE).collect(toSet());
         assertEquals("Required field size", fields.size(), 2);
         assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
@@ -116,7 +95,7 @@ public class ParentConditionCompositeValidatorTest {
     public void testRequiredFieldsForUpdate_new_api() {
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(toSet());
+        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(emptyList(), ChangeOperation.UPDATE).collect(toSet());
         assertEquals("Required field size", fields.size(), 2);
         assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));
@@ -126,7 +105,7 @@ public class ParentConditionCompositeValidatorTest {
     public void testRequiredFieldsForCreateAndUpdate_new_api() {
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.register(validator2);
-        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(Collections.emptyList(), ChangeOperation.CREATE).collect(toSet());
+        Collection<EntityField<?, ?>> fields = parentConditionCompositeValidator.requiredFields(emptyList(), CREATE).collect(toSet());
         assertEquals("Required field size", fields.size(), 2);
         assertTrue("Required field1", fields.contains(field1));
         assertTrue("Required field2", fields.contains(field2));

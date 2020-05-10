@@ -5,8 +5,6 @@ import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.*;
-import org.jooq.lambda.Seq;
-
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -68,11 +66,6 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
 
     private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
         currentStateConsumers.add(new CurrentStateConsumer<E>() {
-            @Override
-            public Stream<? extends EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-                return valueSupplier.fetchFields(changeOperation);
-            }
-
             @Override
             public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
                 return valueSupplier.fetchFields(changeOperation);

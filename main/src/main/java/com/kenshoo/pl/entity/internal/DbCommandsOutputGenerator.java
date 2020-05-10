@@ -143,20 +143,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     @Override
-    public Stream<EntityField<?, ?>> getRequiredFields(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, ChangeOperation changeOperation) {
-        // If update, find which secondary tables are affected.
-        // For those secondary tables take their foreign keys to primary, translate referenced fields of primary to EntityFields and add them to fields to fetch
-        if (changeOperation == ChangeOperation.UPDATE) {
-            DataTable primaryTable = entityType.getPrimaryTable();
-            if (isChangesInSecondaryTables(changeEntityCommands, primaryTable)) {
-                return getPrimaryKeyFields(entityType);
-            }
-        }
-
-        return Stream.empty();
-    }
-
-    @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         // If update, find which secondary tables are affected.
         // For those secondary tables take their foreign keys to primary, translate referenced fields of primary to EntityFields and add them to fields to fetch
@@ -168,12 +154,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         }
 
         return Stream.empty();
-    }
-
-    private boolean isChangesInSecondaryTables(Collection<? extends ChangeEntityCommand<E>> changeEntityCommands, DataTable primaryTable) {
-        return changeEntityCommands.stream()
-                .flatMap(ChangeEntityCommand::getChangedFields)
-                .anyMatch(field -> field.getDbAdapter().getTable() != primaryTable);
     }
 
     private boolean isFieldsInSecondaryTables(Collection<? extends EntityField<E, ?>> fieldsToUpdate, DataTable primaryTable) {
