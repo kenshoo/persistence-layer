@@ -18,7 +18,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
 import static org.jooq.lambda.Seq.seq;
@@ -36,15 +35,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     @Override
-    public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext context) {
-        if (context.isEnabled(AutoIncrementSupport)) {
-            generateWithAutoIncSupport(entityChanges, operator, context);
-        } else {
-            generateWithoutAutoIncSupport(entityChanges, operator, context);
-        }
-    }
-
-    private void generateWithAutoIncSupport(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
+    public void generate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation operator, ChangeContext changeContext) {
         Stopwatch stopwatch = Stopwatch.createStarted();
 
         if (operator == ChangeOperation.DELETE) {
@@ -78,21 +69,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                     changeContext);
         }
 
-        changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
-    }
-
-    @Deprecated
-    private void generateWithoutAutoIncSupport(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
-        ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
-        for (EntityChange<E> entityChange : entityChanges) {
-            if (changeOperation == ChangeOperation.DELETE) {
-                changesContainer.getDelete(entityType.getPrimaryTable(), entityChange, () -> new DeleteRecordCommand(entityType.getPrimaryTable(), getDatabaseId(entityChange)));
-            } else {
-                entityChange.getChanges().forEach(fieldChange -> translateChange(entityChange, fieldChange, changesContainer, changeOperation, changeContext));
-            }
-        }
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        changesContainer.commit(commandsExecutor, changeContext.getStats());
         changeContext.getStats().addUpdateTime(stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
@@ -223,7 +199,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private DatabaseId foreignKeyValues(EntityChange<E> cmd, ChangeOperation changeOperation, ChangeContext context, DataTable childTable) {
         ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(((ChangeEntityCommand) cmd).getEntityType().getPrimaryTable());
         Collection<EntityField<E, ?>> parentFields = entityType(cmd).findFields(foreignKey.getKey().getFields());
-        boolean hasIdentity = context.isEnabled(AutoIncrementSupport) && entityType.getPrimaryIdentityField().isPresent();
+        boolean hasIdentity = entityType.getPrimaryIdentityField().isPresent();
         Object[] values = changeOperation == CREATE && !hasIdentity ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
         if (foreignKey.getFields().size() != values.length) {
             throw new IllegalStateException("Foreign key from " + childTable.getName() + " doesn't have the same number of fields as " + foreignKey);

@@ -20,7 +20,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -118,7 +117,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
-        ChangeContext overridingCtx = context.isEnabled(AutoIncrementSupport) ? new OverridingContext(context) : context;
+        ChangeContext overridingCtx = new OverridingContext(context);
         if (!validCmds.isEmpty()) {
             flowConfig.retryer().run((() -> dslContext().transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
@@ -152,27 +151,17 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     }
 
     private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, List<? extends ChangeEntityCommand<E>> commands) {
-        if (context.isEnabled(AutoIncrementSupport)) {
-            new Builder<E>()
-                    .with(context.getHierarchy())
-                    .whereParentFieldsAre(notAutoInc())
-                    .gettingValues(fromCommands()).build()
-                    .populateKeysToChildren(only(commands, withOperator(CREATE)));
+        new Builder<E>()
+                .with(context.getHierarchy())
+                .whereParentFieldsAre(notAutoInc())
+                .gettingValues(fromCommands()).build()
+                .populateKeysToChildren(only(commands, withOperator(CREATE)));
 
-            new Builder<E>()
-                    .with(context.getHierarchy())
-                    .whereParentFieldsAre(anyField())
-                    .gettingValues(fromContext(context)).build()
-                    .populateKeysToChildren(only(commands, withOperator(UPDATE)));
-        } else {
-            new Builder<E>()
-                    .with(context.getHierarchy())
-                    .whereParentFieldsAre(anyField())
-                    .gettingValues((fields, cmd) -> CREATE == cmd.getChangeOperation() ? EntityDbUtil.getFieldValues(fields, cmd) : EntityDbUtil.getFieldValues(fields, context.getEntity(cmd)))
-                    .build()
-                    .populateKeysToChildren(commands);
-        }
-
+        new Builder<E>()
+                .with(context.getHierarchy())
+                .whereParentFieldsAre(anyField())
+                .gettingValues(fromContext(context)).build()
+                .populateKeysToChildren(only(commands, withOperator(UPDATE)));
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowRecursive(List<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {

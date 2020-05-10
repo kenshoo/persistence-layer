@@ -16,7 +16,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
 
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -158,9 +157,7 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig.Builder<TestEntityAutoInc> flowBuilder =
             ChangeFlowConfig.builder(TestEntityAutoInc.INSTANCE);
 
-        final ChangeFlowConfig<TestEntityAutoInc> flow = flowBuilder
-                .with(new FeatureSet(AutoIncrementSupport))
-                .build();
+        final ChangeFlowConfig<TestEntityAutoInc> flow = flowBuilder.build();
 
         assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.of(TestEntityAutoInc.ID)));
     }

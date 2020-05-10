@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.Feature.AutoIncrementSupport;
 import static com.kenshoo.matcher.AllItemsAreDifferent.allItemsAreDifferent;
 import static org.hamcrest.core.Is.is;
 import static org.jooq.lambda.Seq.seq;
@@ -45,11 +44,11 @@ public class PersistenceLayerOneToManyTest {
 
         flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE)
                 .withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .with(new FeatureSet(AutoIncrementSupport));
+                .with(new FeatureSet());
 
         flowOfParentWithRequiredRelation = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntityWithRequiredRelation.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .with(new FeatureSet(AutoIncrementSupport));
+                .with(new FeatureSet());
 
         persistenceLayer = new PersistenceLayer<>(jooq);
 
