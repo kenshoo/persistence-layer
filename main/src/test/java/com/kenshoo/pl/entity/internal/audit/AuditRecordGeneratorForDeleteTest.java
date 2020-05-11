@@ -6,6 +6,7 @@ import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -33,55 +34,55 @@ public class AuditRecordGeneratorForDeleteTest {
     private static final String STRING_ID = String.valueOf(ID);
 
     @Mock
-    private AuditedFieldSet<TestAuditedEntityType> completeFieldSet;
+    private AuditedFieldSet<AuditedType> completeFieldSet;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
     @InjectMocks
-    private AuditRecordGenerator<TestAuditedEntityType> auditRecordGenerator;
+    private AuditRecordGenerator<AuditedType> auditRecordGenerator;
 
     @Test
     public void generate_WithIdOnly_ShouldGenerateFixedData() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, DELETE);
+        final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
 
         final EntityImpl entity = new EntityImpl();
-        entity.set(TestAuditedEntityType.NAME, "oldName");
-        entity.set(TestAuditedEntityType.DESC, "oldDesc");
+        entity.set(AuditedType.NAME, "oldName");
+        entity.set(AuditedType.DESC, "oldDesc");
 
-        when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(new AuditedFieldSet<>(TestAuditedEntityType.ID));
+        when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(new AuditedFieldSet<>(AuditedType.ID));
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(DELETE))));
     }
 
     @Test
     public void generate_WithIdAndChildRecords_ShouldGenerateFixedDataAndChildRecords() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, DELETE)
-            .with(TestAuditedEntityType.NAME, "name");
-        final Set<? extends EntityField<TestAuditedEntityType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
+        final AuditedCommand cmd = new AuditedCommand(ID, DELETE)
+            .with(AuditedType.NAME, "name");
+        final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID, singleton(TestAuditedEntityType.NAME));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID, singleton(AuditedType.NAME));
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, childRecords);
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(DELETE),
                                       hasSameChildRecord(childRecords.get(0)),

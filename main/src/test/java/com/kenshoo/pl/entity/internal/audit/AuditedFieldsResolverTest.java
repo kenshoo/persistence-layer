@@ -5,6 +5,7 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.annotation.Audited;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.junit.Test;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
@@ -17,34 +18,34 @@ public class AuditedFieldsResolverTest {
 
     @Test
     public void resolve_WhenEntityTypeIsAudited_AndHasId_ShouldReturnAllFields() {
-        final AuditedFieldSet<TestAuditedEntityType> expectedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC,
-                                                  TestAuditedEntityType.DESC2));
+        final AuditedFieldSet<AuditedType> expectedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC,
+                                                  AuditedType.DESC2));
 
-        assertThat(RESOLVER.resolve(TestAuditedEntityType.INSTANCE),
+        assertThat(RESOLVER.resolve(AuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
     @Test
     public void resolve_WhenEntityTypeIsNotAudited_AndHasId_AndAuditedFields_ShouldReturnIdAndAuditedFields() {
-        final AuditedFieldSet<TestEntityWithAuditedFieldsType> expectedFieldSet =
-            new AuditedFieldSet<>(TestEntityWithAuditedFieldsType.ID,
-                                  ImmutableSet.of(TestEntityWithAuditedFieldsType.NAME,
-                                                  TestEntityWithAuditedFieldsType.DESC));
+        final AuditedFieldSet<InclusiveAuditedType> expectedFieldSet =
+            new AuditedFieldSet<>(InclusiveAuditedType.ID,
+                                  ImmutableSet.of(InclusiveAuditedType.NAME,
+                                                  InclusiveAuditedType.DESC));
 
-        assertThat(RESOLVER.resolve(TestEntityWithAuditedFieldsType.INSTANCE),
+        assertThat(RESOLVER.resolve(InclusiveAuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
     @Test
     public void resolve_WhenEntityTypeIsAudited_AndHasId_AndHasNotAuditedFields_ShouldReturnIdAndOtherFields() {
-        final AuditedFieldSet<TestAuditedEntityWithNotAuditedFieldsType> expectedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityWithNotAuditedFieldsType.ID,
-                                  ImmutableSet.of(TestAuditedEntityWithNotAuditedFieldsType.NAME));
+        final AuditedFieldSet<ExclusiveAuditedType> expectedFieldSet =
+            new AuditedFieldSet<>(ExclusiveAuditedType.ID,
+                                  ImmutableSet.of(ExclusiveAuditedType.NAME));
 
-        assertThat(RESOLVER.resolve(TestAuditedEntityWithNotAuditedFieldsType.INSTANCE),
+        assertThat(RESOLVER.resolve(ExclusiveAuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
@@ -55,7 +56,7 @@ public class AuditedFieldsResolverTest {
 
     @Test
     public void resolve_WhenEntityTypeIsNotAudited_AndHasId_ShouldReturnEmpty() {
-        assertThat(RESOLVER.resolve(TestEntityType.INSTANCE), isEmpty());
+        assertThat(RESOLVER.resolve(NotAuditedType.INSTANCE), isEmpty());
     }
 
     @Test
@@ -64,11 +65,11 @@ public class AuditedFieldsResolverTest {
     }
 
     @Audited
-    public static class TestAuditedEntityWithoutIdType extends AbstractTestEntityType<TestAuditedEntityWithoutIdType> {
+    public static class TestAuditedEntityWithoutIdType extends AbstractType<TestAuditedEntityWithoutIdType> {
 
         public static final TestAuditedEntityWithoutIdType INSTANCE = new TestAuditedEntityWithoutIdType();
 
-        public static final EntityField<TestAuditedEntityWithoutIdType, String> NAME = INSTANCE.field(TestEntityTable.INSTANCE.name);
+        public static final EntityField<TestAuditedEntityWithoutIdType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
 
         private TestAuditedEntityWithoutIdType() {
             super("TestAuditedEntityWithoutId");
@@ -79,11 +80,11 @@ public class AuditedFieldsResolverTest {
 
         public static final TestEntityWithoutIdType INSTANCE = new TestEntityWithoutIdType();
 
-        public static final EntityField<TestEntityWithoutIdType, String> NAME = INSTANCE.field(TestEntityTable.INSTANCE.name);
+        public static final EntityField<TestEntityWithoutIdType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
 
         @Override
         public DataTable getPrimaryTable() {
-            return TestEntityTable.INSTANCE;
+            return MainTable.INSTANCE;
         }
 
         private TestEntityWithoutIdType() {

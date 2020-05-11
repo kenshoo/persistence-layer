@@ -3,9 +3,16 @@ package com.kenshoo.pl.audit;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.audit.commands.UpdateAuditedCommand;
+import com.kenshoo.pl.audit.commands.UpdateAuditedWithoutDataFieldsCommand;
+import com.kenshoo.pl.audit.commands.UpdateInclusiveAuditedCommand;
+import com.kenshoo.pl.audit.commands.UpdateNotAuditedCommand;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.audit.TestEntityTable;
-import com.kenshoo.pl.entity.internal.audit.*;
+import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithoutDataFieldsType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.InclusiveAuditedType;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -30,15 +37,15 @@ public class AuditForUpdateOneLevelTest {
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<TestAuditedEntityType> auditedEntityConfig;
-    private ChangeFlowConfig<TestEntityWithAuditedFieldsType> entityWithAuditedFieldsConfig;
-    private ChangeFlowConfig<TestAuditedEntityWithoutDataFieldsType> auditedEntityWithoutDataFieldsConfig;
-    private ChangeFlowConfig<TestEntityType> notAuditedEntityConfig;
+    private ChangeFlowConfig<AuditedType> auditedConfig;
+    private ChangeFlowConfig<InclusiveAuditedType> inclusiveAuditedConfig;
+    private ChangeFlowConfig<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsConfig;
+    private ChangeFlowConfig<NotAuditedType> notAuditedConfig;
 
-    private PersistenceLayer<TestAuditedEntityType> auditedEntityPL;
-    private PersistenceLayer<TestEntityWithAuditedFieldsType> entityWithAuditedFieldsPL;
-    private PersistenceLayer<TestAuditedEntityWithoutDataFieldsType> auditedEntityWithoutDataFieldsPL;
-    private PersistenceLayer<TestEntityType> notAuditedEntityPL;
+    private PersistenceLayer<AuditedType> auditedPL;
+    private PersistenceLayer<InclusiveAuditedType> inclusiveAuditedPL;
+    private PersistenceLayer<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsPL;
+    private PersistenceLayer<NotAuditedType> notAuditedPL;
 
     @Before
     public void setUp() {
@@ -49,88 +56,88 @@ public class AuditForUpdateOneLevelTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedEntityConfig = flowConfig(TestAuditedEntityType.INSTANCE);
-        entityWithAuditedFieldsConfig = flowConfig(TestEntityWithAuditedFieldsType.INSTANCE);
-        auditedEntityWithoutDataFieldsConfig = flowConfig(TestAuditedEntityWithoutDataFieldsType.INSTANCE);
-        notAuditedEntityConfig = flowConfig(TestEntityType.INSTANCE);
+        auditedConfig = flowConfig(AuditedType.INSTANCE);
+        inclusiveAuditedConfig = flowConfig(InclusiveAuditedType.INSTANCE);
+        auditedWithoutDataFieldsConfig = flowConfig(AuditedWithoutDataFieldsType.INSTANCE);
+        notAuditedConfig = flowConfig(NotAuditedType.INSTANCE);
 
-        auditedEntityPL = persistenceLayer();
-        entityWithAuditedFieldsPL = persistenceLayer();
-        auditedEntityWithoutDataFieldsPL = persistenceLayer();
-        notAuditedEntityPL = persistenceLayer();
+        auditedPL = persistenceLayer();
+        inclusiveAuditedPL = persistenceLayer();
+        auditedWithoutDataFieldsPL = persistenceLayer();
+        notAuditedPL = persistenceLayer();
 
-        Stream.of(TestEntityTable.INSTANCE)
+        Stream.of(MainTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(TestEntityTable.INSTANCE)
-                  .set(TestEntityTable.INSTANCE.id, ID_1)
-                  .set(TestEntityTable.INSTANCE.name, "nameA")
-                  .set(TestEntityTable.INSTANCE.desc, "descA")
-                  .set(TestEntityTable.INSTANCE.desc2, "desc2A")
+        dslContext.insertInto(MainTable.INSTANCE)
+                  .set(MainTable.INSTANCE.id, ID_1)
+                  .set(MainTable.INSTANCE.name, "nameA")
+                  .set(MainTable.INSTANCE.desc, "descA")
+                  .set(MainTable.INSTANCE.desc2, "desc2A")
                   .execute();
-        dslContext.insertInto(TestEntityTable.INSTANCE)
-                  .set(TestEntityTable.INSTANCE.id, ID_2)
-                  .set(TestEntityTable.INSTANCE.name, "nameB")
-                  .set(TestEntityTable.INSTANCE.desc, "descB")
-                  .set(TestEntityTable.INSTANCE.desc2, "desc2B")
+        dslContext.insertInto(MainTable.INSTANCE)
+                  .set(MainTable.INSTANCE.id, ID_2)
+                  .set(MainTable.INSTANCE.name, "nameB")
+                  .set(MainTable.INSTANCE.desc, "descB")
+                  .set(MainTable.INSTANCE.desc2, "desc2B")
                   .execute();
     }
 
     @After
     public void tearDown() {
-        Stream.of(TestEntityTable.INSTANCE)
+        Stream.of(MainTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 
     @Test
     public void oneAuditedEntity_AllFieldsChanged_ShouldCreateFieldRecordsForAll() {
-        auditedEntityPL.update(singletonList(new UpdateTestAuditedEntityCommand(ID_1)
-                                                 .with(TestAuditedEntityType.NAME, "newNameA")
-                                                 .with(TestAuditedEntityType.DESC, "newDescA")
-                                                 .with(TestAuditedEntityType.DESC2, "newDesc2A")),
-                               auditedEntityConfig);
+        auditedPL.update(singletonList(new UpdateAuditedCommand(ID_1)
+                                                 .with(AuditedType.NAME, "newNameA")
+                                                 .with(AuditedType.DESC, "newDescA")
+                                                 .with(AuditedType.DESC2, "newDesc2A")),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestAuditedEntityType.NAME, "nameA", "newNameA"),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC, "descA", "newDescA"),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC2, "desc2A", "newDesc2A")));
+                                      hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
+                                      hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
+                                      hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
     }
 
     @Test
     public void oneAuditedEntity_AllFieldsInCmd_SomeFieldsChanged_ShouldCreateFieldRecordsForChangedOnly() {
-        auditedEntityPL.update(singletonList(new UpdateTestAuditedEntityCommand(ID_1)
-                                                 .with(TestAuditedEntityType.NAME, "newNameA")
-                                                 .with(TestAuditedEntityType.DESC, "newDescA")
-                                                 .with(TestAuditedEntityType.DESC2, "desc2A")),
-                               auditedEntityConfig);
+        auditedPL.update(singletonList(new UpdateAuditedCommand(ID_1)
+                                                 .with(AuditedType.NAME, "newNameA")
+                                                 .with(AuditedType.DESC, "newDescA")
+                                                 .with(AuditedType.DESC2, "desc2A")),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestAuditedEntityType.NAME, "nameA", "newNameA"),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC, "descA", "newDescA"),
-                                      not(hasFieldRecordFor(TestAuditedEntityType.DESC2))));
+                                      hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
+                                      hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
+                                      not(hasFieldRecordFor(AuditedType.DESC2))));
     }
 
     @Test
     public void oneAuditedEntity_AllFieldsInCmd_NoFieldsChanged_ShouldReturnEmpty() {
-        auditedEntityPL.update(singletonList(new UpdateTestAuditedEntityCommand(ID_1)
-                                                 .with(TestAuditedEntityType.NAME, "nameA")
-                                                 .with(TestAuditedEntityType.DESC, "descA")
-                                                 .with(TestAuditedEntityType.DESC2, "desc2A")),
-                               auditedEntityConfig);
+        auditedPL.update(singletonList(new UpdateAuditedCommand(ID_1)
+                                                 .with(AuditedType.NAME, "nameA")
+                                                 .with(AuditedType.DESC, "descA")
+                                                 .with(AuditedType.DESC2, "desc2A")),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -139,28 +146,28 @@ public class AuditForUpdateOneLevelTest {
 
     @Test
     public void oneAuditedEntity_SomeFieldsInCmd_AllThoseChanged_ShouldCreateFieldRecordsForThem() {
-        auditedEntityPL.update(singletonList(new UpdateTestAuditedEntityCommand(ID_1)
-                                                 .with(TestAuditedEntityType.NAME, "newNameA")
-                                                 .with(TestAuditedEntityType.DESC, "newDescA")),
-                               auditedEntityConfig);
+        auditedPL.update(singletonList(new UpdateAuditedCommand(ID_1)
+                                                 .with(AuditedType.NAME, "newNameA")
+                                                 .with(AuditedType.DESC, "newDescA")),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestAuditedEntityType.NAME, "nameA", "newNameA"),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC, "descA", "newDescA"),
-                                      not(hasFieldRecordFor(TestAuditedEntityType.DESC2))));
+                                      hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
+                                      hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
+                                      not(hasFieldRecordFor(AuditedType.DESC2))));
     }
 
     @Test
     public void oneAuditedEntity_DoesntExist_ShouldReturnEmpty() {
-        auditedEntityPL.update(singletonList(new UpdateTestAuditedEntityCommand(INVALID_ID)),
-                               auditedEntityConfig);
+        auditedPL.update(singletonList(new UpdateAuditedCommand(INVALID_ID)),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -169,105 +176,105 @@ public class AuditForUpdateOneLevelTest {
 
     @Test
     public void twoAuditedEntities_AllFieldsChanged_ShouldCreateFieldRecordsForAll() {
-        final List<UpdateTestAuditedEntityCommand> cmds =
-            ImmutableList.of(new UpdateTestAuditedEntityCommand(ID_1)
-                                 .with(TestAuditedEntityType.NAME, "newNameA")
-                                 .with(TestAuditedEntityType.DESC, "newDescA")
-                                 .with(TestAuditedEntityType.DESC2, "newDesc2A"),
-                             new UpdateTestAuditedEntityCommand(ID_2)
-                                 .with(TestAuditedEntityType.NAME, "newNameB")
-                                 .with(TestAuditedEntityType.DESC, "newDescB")
-                                 .with(TestAuditedEntityType.DESC2, "newDesc2B"));
+        final List<UpdateAuditedCommand> cmds =
+            ImmutableList.of(new UpdateAuditedCommand(ID_1)
+                                 .with(AuditedType.NAME, "newNameA")
+                                 .with(AuditedType.DESC, "newDescA")
+                                 .with(AuditedType.DESC2, "newDesc2A"),
+                             new UpdateAuditedCommand(ID_2)
+                                 .with(AuditedType.NAME, "newNameB")
+                                 .with(AuditedType.DESC, "newDescB")
+                                 .with(AuditedType.DESC2, "newDesc2B"));
 
-        auditedEntityPL.update(cmds, auditedEntityConfig);
+        auditedPL.update(cmds, auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE),
-                                       hasChangedFieldRecord(TestAuditedEntityType.NAME, "nameA", "newNameA"),
-                                       hasChangedFieldRecord(TestAuditedEntityType.DESC, "descA", "newDescA"),
-                                       hasChangedFieldRecord(TestAuditedEntityType.DESC2, "desc2A", "newDesc2A")));
+                                       hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
+                                       hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
+                                       hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(UPDATE),
-                                       hasChangedFieldRecord(TestAuditedEntityType.NAME, "nameB", "newNameB"),
-                                       hasChangedFieldRecord(TestAuditedEntityType.DESC, "descB", "newDescB"),
-                                       hasChangedFieldRecord(TestAuditedEntityType.DESC2, "desc2B", "newDesc2B")));
+                                       hasChangedFieldRecord(AuditedType.NAME, "nameB", "newNameB"),
+                                       hasChangedFieldRecord(AuditedType.DESC, "descB", "newDescB"),
+                                       hasChangedFieldRecord(AuditedType.DESC2, "desc2B", "newDesc2B")));
     }
 
     @Test
     public void twoAuditedEntities_OnlyOneExists_ShouldCreateOnlyOneRecord() {
-        final List<UpdateTestAuditedEntityCommand> cmds =
-            ImmutableList.of(new UpdateTestAuditedEntityCommand(ID_1)
-                                 .with(TestAuditedEntityType.NAME, "newNameA"),
-                             new UpdateTestAuditedEntityCommand(INVALID_ID)
-                                 .with(TestAuditedEntityType.NAME, "newNameB"));
+        final List<UpdateAuditedCommand> cmds =
+            ImmutableList.of(new UpdateAuditedCommand(ID_1)
+                                 .with(AuditedType.NAME, "newNameA"),
+                             new UpdateAuditedCommand(INVALID_ID)
+                                 .with(AuditedType.NAME, "newNameB"));
 
-        auditedEntityPL.update(cmds, auditedEntityConfig);
+        auditedPL.update(cmds, auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE)));
     }
 
     @Test
-    public void oneEntityWithAuditedFields_AllFieldsChanged_ShouldCreateFieldRecordsForAuditedOnly() {
-        entityWithAuditedFieldsPL.update(singletonList(new UpdateTestEntityWithAuditedFieldsCommand(ID_1)
-                                                 .with(TestEntityWithAuditedFieldsType.NAME, "newNameA")
-                                                 .with(TestEntityWithAuditedFieldsType.DESC, "newDescA")
-                                                 .with(TestEntityWithAuditedFieldsType.DESC2, "newDesc2A")),
-                               entityWithAuditedFieldsConfig);
+    public void oneInclusiveAuditedEntity_AllFieldsChanged_ShouldCreateFieldRecordsForAuditedOnly() {
+        inclusiveAuditedPL.update(singletonList(new UpdateInclusiveAuditedCommand(ID_1)
+                                                 .with(InclusiveAuditedType.NAME, "newNameA")
+                                                 .with(InclusiveAuditedType.DESC, "newDescA")
+                                                 .with(InclusiveAuditedType.DESC2, "newDesc2A")),
+                                  inclusiveAuditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestEntityWithAuditedFieldsType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestEntityWithAuditedFieldsType.INSTANCE),
+        final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestEntityWithAuditedFieldsType.NAME, "nameA", "newNameA"),
-                                      hasChangedFieldRecord(TestEntityWithAuditedFieldsType.DESC, "descA", "newDescA"),
-                                      not(hasFieldRecordFor(TestEntityWithAuditedFieldsType.DESC2))));
+                                      hasChangedFieldRecord(InclusiveAuditedType.NAME, "nameA", "newNameA"),
+                                      hasChangedFieldRecord(InclusiveAuditedType.DESC, "descA", "newDescA"),
+                                      not(hasFieldRecordFor(InclusiveAuditedType.DESC2))));
     }
 
     @Test
-    public void oneEntityWithAuditedFields_PartiallyIntersectCmd_FieldsChanged_ShouldCreateFieldRecordsForIntersectionOnly() {
-        entityWithAuditedFieldsPL.update(singletonList(new UpdateTestEntityWithAuditedFieldsCommand(ID_1)
-                                                           .with(TestEntityWithAuditedFieldsType.DESC, "newDescA")),
-                                         entityWithAuditedFieldsConfig);
+    public void oneInclusiveAuditedEntity_PartiallyIntersectCmd_FieldsChanged_ShouldCreateFieldRecordsForIntersectionOnly() {
+        inclusiveAuditedPL.update(singletonList(new UpdateInclusiveAuditedCommand(ID_1)
+                                                           .with(InclusiveAuditedType.DESC, "newDescA")),
+                                  inclusiveAuditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestEntityWithAuditedFieldsType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestEntityWithAuditedFieldsType.INSTANCE),
+        final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasFieldRecordFor(TestEntityWithAuditedFieldsType.NAME)),
-                                      hasChangedFieldRecord(TestEntityWithAuditedFieldsType.DESC, "descA", "newDescA"),
-                                      not(hasFieldRecordFor(TestEntityWithAuditedFieldsType.DESC2))));
+                                      not(hasFieldRecordFor(InclusiveAuditedType.NAME)),
+                                      hasChangedFieldRecord(InclusiveAuditedType.DESC, "descA", "newDescA"),
+                                      not(hasFieldRecordFor(InclusiveAuditedType.DESC2))));
     }
 
     @Test
     public void oneAuditedEntityWithoutDataFields_Exists_ShouldReturnEmpty() {
-        auditedEntityWithoutDataFieldsPL.update(singletonList(new UpdateTestAuditedEntityWithoutDataFieldsCommand(ID_1)),
-                                                auditedEntityWithoutDataFieldsConfig);
+        auditedWithoutDataFieldsPL.update(singletonList(new UpdateAuditedWithoutDataFieldsCommand(ID_1)),
+                                          auditedWithoutDataFieldsConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -276,9 +283,9 @@ public class AuditForUpdateOneLevelTest {
 
     @Test
     public void oneNotAuditedEntity_FieldsChanged_ShouldReturnEmpty() {
-        notAuditedEntityPL.update(singletonList(new UpdateTestEntityCommand(ID_1)
-                                                    .with(TestEntityType.NAME, "newNameA")),
-                                  notAuditedEntityConfig);
+        notAuditedPL.update(singletonList(new UpdateNotAuditedCommand(ID_1)
+                                                    .with(NotAuditedType.NAME, "newNameA")),
+                            notAuditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 

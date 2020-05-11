@@ -6,6 +6,7 @@ import com.kenshoo.pl.entity.AuditRecord;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -34,79 +35,79 @@ public class AuditRecordGeneratorForCreateTest {
     private static final String STRING_ID = String.valueOf(ID);
 
     @Mock
-    private AuditedFieldSet<TestAuditedEntityType> completeFieldSet;
+    private AuditedFieldSet<AuditedType> completeFieldSet;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
     @InjectMocks
-    private AuditRecordGenerator<TestAuditedEntityType> auditRecordGenerator;
+    private AuditRecordGenerator<AuditedType> auditRecordGenerator;
 
     @Test
     public void generate_WithIdOnly_ShouldGenerateFixedData() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, CREATE);
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet = new AuditedFieldSet<>(TestAuditedEntityType.ID);
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID);
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(CREATE))));
     }
 
     @Test
     public void generate_WithIdAndDataFieldsOnly_ShouldGenerateFixedDataAndFieldRecords() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, CREATE)
-            .with(TestAuditedEntityType.NAME, "name")
-            .with(TestAuditedEntityType.DESC, "desc");
-        final Set<? extends EntityField<TestAuditedEntityType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
+            .with(AuditedType.NAME, "name")
+            .with(AuditedType.DESC, "desc");
+        final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet = new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                                                                                          ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                                                                                          TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID,
+                                                                                                ImmutableSet.of(AuditedType.NAME,
+                                                                                                                AuditedType.DESC));
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(TestAuditedEntityType.NAME, "name"),
-                                      hasCreatedFieldRecord(TestAuditedEntityType.DESC, "desc"))));
+                                      hasCreatedFieldRecord(AuditedType.NAME, "name"),
+                                      hasCreatedFieldRecord(AuditedType.DESC, "desc"))));
     }
 
     @Test
     public void generate_WithIdAndChildRecordsOnly_ShouldGenerateFixedDataAndChildRecords() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, CREATE);
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet = new AuditedFieldSet<>(TestAuditedEntityType.ID);
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID);
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, childRecords);
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(CREATE),
                                       hasSameChildRecord(childRecords.get(0)),
@@ -115,32 +116,32 @@ public class AuditRecordGeneratorForCreateTest {
 
     @Test
     public void generate_WithEverything_ShouldGenerateEverything() {
-        final TestAuditedEntityCommand cmd = new TestAuditedEntityCommand(ID, CREATE)
-            .with(TestAuditedEntityType.NAME, "name")
-            .with(TestAuditedEntityType.DESC, "desc");
-        final Set<? extends EntityField<TestAuditedEntityType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
+            .with(AuditedType.NAME, "name")
+            .with(AuditedType.DESC, "desc");
+        final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet = new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                                                                                          ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                                                                                          TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID,
+                                                                                                ImmutableSet.of(AuditedType.NAME,
+                                                                                                                AuditedType.DESC));
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
-        final Optional<? extends AuditRecord<TestAuditedEntityType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, childRecords);
 
         //noinspection unchecked
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(STRING_ID),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(TestAuditedEntityType.NAME, "name"),
-                                      hasCreatedFieldRecord(TestAuditedEntityType.DESC, "desc"),
+                                      hasCreatedFieldRecord(AuditedType.NAME, "name"),
+                                      hasCreatedFieldRecord(AuditedType.DESC, "desc"),
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
     }

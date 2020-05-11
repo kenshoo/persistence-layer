@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -23,23 +24,23 @@ import static org.mockito.Mockito.when;
 public class AuditRecordGeneratorRequiredFieldsTest {
 
     @Mock
-    private AuditedFieldSet<TestAuditedEntityType> completeFieldSet;
+    private AuditedFieldSet<AuditedType> completeFieldSet;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
     @InjectMocks
-    private AuditRecordGenerator<TestAuditedEntityType> auditRecordGenerator;
+    private AuditRecordGenerator<AuditedType> auditRecordGenerator;
 
     @Test
     public void requiredFields_ShouldReturnResultOfIntersection() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> fieldsToUpdate = ImmutableSet.of(TestAuditedEntityType.ID,
-                                                                                                           TestAuditedEntityType.NAME,
-                                                                                                           TestAuditedEntityType.DESC);
+        final Collection<? extends EntityField<AuditedType, ?>> fieldsToUpdate = ImmutableSet.of(AuditedType.ID,
+                                                                                                 AuditedType.NAME,
+                                                                                                 AuditedType.DESC);
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME, TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME, AuditedType.DESC));
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(fieldsToUpdate))).thenReturn(expectedIntersectionFieldSet);
 
