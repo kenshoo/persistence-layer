@@ -1,7 +1,10 @@
 package com.kenshoo.pl.auto.inc;
 
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.AbstractEntityType;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.SingleUniqueKeyValue;
+import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.annotation.Id;
 
 

@@ -5,8 +5,6 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 
-import java.sql.Timestamp;
-
 public class ChildForTestTable extends AbstractDataTable<ChildForTestTable> {
 
     public static final ChildForTestTable INSTANCE = new ChildForTestTable("ChildForTest");

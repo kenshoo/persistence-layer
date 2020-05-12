@@ -1,7 +1,9 @@
 package com.kenshoo.pl.one2many;
 
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.AbstractEntityType;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.SupportedChangeOperation;
 
 
 public class OtherChildEntity extends AbstractEntityType<OtherChildEntity> {

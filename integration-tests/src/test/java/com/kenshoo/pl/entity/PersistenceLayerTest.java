@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.EntityForTest.*;
-import static com.kenshoo.pl.entity.Feature.*;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;

@@ -17,8 +17,6 @@ import java.util.Set;
 
 import static com.kenshoo.pl.entity.Feature.FetchMany;
 import static com.kenshoo.pl.one2many.ChildEntity.*;
-import static java.util.Comparator.comparing;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @Ignore
