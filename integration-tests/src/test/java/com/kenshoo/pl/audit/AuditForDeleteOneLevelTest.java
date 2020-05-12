@@ -3,11 +3,14 @@ package com.kenshoo.pl.audit;
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.audit.commands.DeleteAuditedCommand;
+import com.kenshoo.pl.audit.commands.DeleteAuditedWithoutDataFieldsCommand;
+import com.kenshoo.pl.audit.commands.DeleteNotAuditedCommand;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.audit.TestAuditedEntityType;
-import com.kenshoo.pl.entity.internal.audit.TestAuditedEntityWithoutDataFieldsType;
-import com.kenshoo.pl.entity.internal.audit.TestEntityTable;
-import com.kenshoo.pl.entity.internal.audit.TestEntityType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithoutDataFieldsType;
+import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedType;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -32,13 +35,13 @@ public class AuditForDeleteOneLevelTest {
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<TestAuditedEntityType> auditedEntityConfig;
-    private ChangeFlowConfig<TestAuditedEntityWithoutDataFieldsType> auditedEntityWithoutDataFieldsConfig;
-    private ChangeFlowConfig<TestEntityType> notAuditedEntityConfig;
+    private ChangeFlowConfig<AuditedType> auditedConfig;
+    private ChangeFlowConfig<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsConfig;
+    private ChangeFlowConfig<NotAuditedType> notAuditedConfig;
 
-    private PersistenceLayer<TestAuditedEntityType> auditedEntityPL;
-    private PersistenceLayer<TestAuditedEntityWithoutDataFieldsType> auditedEntityWithoutDataFieldsPL;
-    private PersistenceLayer<TestEntityType> notAuditedEntityPL;
+    private PersistenceLayer<AuditedType> auditedPL;
+    private PersistenceLayer<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsPL;
+    private PersistenceLayer<NotAuditedType> notAuditedPL;
 
     @Before
     public void setUp() {
@@ -49,52 +52,52 @@ public class AuditForDeleteOneLevelTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedEntityConfig = flowConfig(TestAuditedEntityType.INSTANCE);
-        auditedEntityWithoutDataFieldsConfig = flowConfig(TestAuditedEntityWithoutDataFieldsType.INSTANCE);
-        notAuditedEntityConfig = flowConfig(TestEntityType.INSTANCE);
+        auditedConfig = flowConfig(AuditedType.INSTANCE);
+        auditedWithoutDataFieldsConfig = flowConfig(AuditedWithoutDataFieldsType.INSTANCE);
+        notAuditedConfig = flowConfig(NotAuditedType.INSTANCE);
 
-        auditedEntityPL = persistenceLayer();
-        auditedEntityWithoutDataFieldsPL = persistenceLayer();
-        notAuditedEntityPL = persistenceLayer();
+        auditedPL = persistenceLayer();
+        auditedWithoutDataFieldsPL = persistenceLayer();
+        notAuditedPL = persistenceLayer();
 
-        Stream.of(TestEntityTable.INSTANCE)
+        Stream.of(MainTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(TestEntityTable.INSTANCE)
-                  .set(TestEntityTable.INSTANCE.id, ID_1)
-                  .set(TestEntityTable.INSTANCE.name, "name")
+        dslContext.insertInto(MainTable.INSTANCE)
+                  .set(MainTable.INSTANCE.id, ID_1)
+                  .set(MainTable.INSTANCE.name, "name")
                   .execute();
-        dslContext.insertInto(TestEntityTable.INSTANCE)
-                  .set(TestEntityTable.INSTANCE.id, ID_2)
-                  .set(TestEntityTable.INSTANCE.name, "name2")
+        dslContext.insertInto(MainTable.INSTANCE)
+                  .set(MainTable.INSTANCE.id, ID_2)
+                  .set(MainTable.INSTANCE.name, "name2")
                   .execute();
     }
 
     @After
     public void tearDown() {
-        Stream.of(TestEntityTable.INSTANCE)
+        Stream.of(MainTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 
     @Test
     public void oneAuditedEntity_Exists_ShouldCreateRecordWithFixedData() {
-        auditedEntityPL.delete(singletonList(new DeleteTestAuditedEntityCommand(ID_1)),
-                               auditedEntityConfig);
+        auditedPL.delete(singletonList(new DeleteAuditedCommand(ID_1)),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(DELETE)));
     }
 
     @Test
     public void oneAuditedEntity_DoesntExist_ShouldReturnEmpty() {
-        auditedEntityPL.delete(singletonList(new DeleteTestAuditedEntityCommand(INVALID_ID)),
-                               auditedEntityConfig);
+        auditedPL.delete(singletonList(new DeleteAuditedCommand(INVALID_ID)),
+                         auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -103,66 +106,66 @@ public class AuditForDeleteOneLevelTest {
 
     @Test
     public void twoAuditedEntities_BothExist_ShouldCreateTwoRecordsWithFixedData() {
-        final List<DeleteTestAuditedEntityCommand> cmds =
-            ImmutableList.of(new DeleteTestAuditedEntityCommand(ID_1),
-                             new DeleteTestAuditedEntityCommand(ID_2));
+        final List<DeleteAuditedCommand> cmds =
+            ImmutableList.of(new DeleteAuditedCommand(ID_1),
+                             new DeleteAuditedCommand(ID_2));
 
-        auditedEntityPL.delete(cmds, auditedEntityConfig);
+        auditedPL.delete(cmds, auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(DELETE)));
     }
 
     @Test
     public void twoAuditedEntities_OnlyOneExists_ShouldCreateOnlyOneRecord() {
-        final List<DeleteTestAuditedEntityCommand> cmds =
-            ImmutableList.of(new DeleteTestAuditedEntityCommand(ID_1),
-                             new DeleteTestAuditedEntityCommand(INVALID_ID));
+        final List<DeleteAuditedCommand> cmds =
+            ImmutableList.of(new DeleteAuditedCommand(ID_1),
+                             new DeleteAuditedCommand(INVALID_ID));
 
-        auditedEntityPL.delete(cmds, auditedEntityConfig);
+        auditedPL.delete(cmds, auditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
     }
 
     @Test
     public void oneAuditedEntityWithoutDataFields_Exists_ShouldCreateRecordWithFixedData() {
-        auditedEntityWithoutDataFieldsPL.delete(singletonList(new DeleteTestAuditedEntityWithoutDataFieldsCommand(ID_1)),
-                                                auditedEntityWithoutDataFieldsConfig);
+        auditedWithoutDataFieldsPL.delete(singletonList(new DeleteAuditedWithoutDataFieldsCommand(ID_1)),
+                                          auditedWithoutDataFieldsConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityWithoutDataFieldsType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityWithoutDataFieldsType.INSTANCE),
+        final AuditRecord<AuditedWithoutDataFieldsType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedWithoutDataFieldsType.INSTANCE),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(DELETE)));
     }
 
     @Test
     public void oneNotAuditedEntity_Exists_ShouldReturnEmpty() {
-        notAuditedEntityPL.delete(singletonList(new DeleteTestEntityCommand(ID_1)),
-                                                notAuditedEntityConfig);
+        notAuditedPL.delete(singletonList(new DeleteNotAuditedCommand(ID_1)),
+                            notAuditedConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 

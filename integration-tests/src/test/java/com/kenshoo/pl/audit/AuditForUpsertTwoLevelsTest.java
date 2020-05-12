@@ -4,10 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.audit.commands.*;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.audit.TestChildEntityTable;
-import com.kenshoo.pl.entity.internal.audit.TestEntityTable;
-import com.kenshoo.pl.entity.internal.audit.*;
+import com.kenshoo.pl.entity.internal.audit.ChildTable;
+import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -58,8 +59,8 @@ public class AuditForUpsertTwoLevelsTest {
     private static final String NEW_CHILD_DESC_21 = "newChildDesc21";
     private static final String CHILD_DESC_22 = "childDesc22";
 
-    private static final TestEntityTable parent_table = TestEntityTable.INSTANCE;
-    private static final TestChildEntityTable child_table = TestChildEntityTable.INSTANCE;
+    private static final MainTable parent_table = MainTable.INSTANCE;
+    private static final ChildTable child_table = ChildTable.INSTANCE;
 
     private static final List<? extends DataTable> ALL_TABLES = ImmutableList.of(parent_table, child_table);
 
@@ -67,8 +68,8 @@ public class AuditForUpsertTwoLevelsTest {
     private DSLContext dslContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private PersistenceLayer<TestAuditedEntityType> auditedEntityPL;
-    private PersistenceLayer<TestEntityType> notAuditedEntityPL;
+    private PersistenceLayer<AuditedType> auditedParentPL;
+    private PersistenceLayer<NotAuditedType> notAuditedParentPL;
 
     @Before
     public void setUp() {
@@ -79,8 +80,8 @@ public class AuditForUpsertTwoLevelsTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedEntityPL = persistenceLayer();
-        notAuditedEntityPL = persistenceLayer();
+        auditedParentPL = persistenceLayer();
+        notAuditedParentPL = persistenceLayer();
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
@@ -106,16 +107,16 @@ public class AuditForUpsertTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_OneAuditedChild_BothNew_ShouldGenerateCreateRecordsForBoth() {
-        final UpsertTestAuditedChild1EntityCommand childCmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(NEW_PARENT_NAME_1)
+        final UpsertAuditedChild1Command childCmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(NEW_PARENT_NAME_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final long parentId = fetchNewParent1IdByName();
         final long childId = fetchChildIdByName(NEW_CHILD_NAME_11);
@@ -124,67 +125,67 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(parentId)),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(TestAuditedEntityType.NAME, NEW_PARENT_NAME_1)));
+                                      hasCreatedFieldRecord(AuditedType.NAME, NEW_PARENT_NAME_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_11))));
+                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_BothChanged_ShouldGenerateUpdateRecordsForBoth() {
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestAuditedEntityCommand parentCmd =
-            new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-                .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedCommand parentCmd =
+            new UpsertAuditedCommand(PARENT_NAME_1)
+                .with(AuditedType.DESC, NEW_PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+                                      hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(TestAuditedChild1EntityType.DESC,
+                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
                                                                                CHILD_DESC_11,
                                                                                NEW_CHILD_DESC_11))));
     }
 
     @Test
     public void oneAuditedParent_TwoAuditedChildren_AllNew_ShouldGenerateCreateRecordsForBothChildren() {
-        final UpsertTestAuditedChild1EntityCommand child11Cmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
-        final UpsertTestAuditedChild1EntityCommand child12Cmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_12);
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(NEW_PARENT_NAME_1)
+        final UpsertAuditedChild1Command child11Cmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
+        final UpsertAuditedChild1Command child12Cmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_12);
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(NEW_PARENT_NAME_1)
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final long child11Id = fetchChildIdByName(NEW_CHILD_NAME_11);
         final long child12Id = fetchChildIdByName(NEW_CHILD_NAME_12);
@@ -193,79 +194,79 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(child11Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(child12Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_12))));
+                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_12))));
     }
 
     @Test
     public void oneAuditedParent_TwoAuditedChildren_AllChanged_ShouldGenerateUpdateRecordsForBothChildren() {
-        final UpsertTestAuditedChild1EntityCommand child11Cmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestAuditedChild1EntityCommand child12Cmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_12)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_12);
+        final UpsertAuditedChild1Command child11Cmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedChild1Command child12Cmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_12)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_12);
 
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-            .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
+            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(TestAuditedChild1EntityType.DESC,
+                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
                                                                                CHILD_DESC_11,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(TestAuditedChild1EntityType.DESC,
+                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
                                                                                CHILD_DESC_12,
                                                                                NEW_CHILD_DESC_12))));
     }
 
     @Test
     public void oneChangedAuditedParent_OneNewAuditedChild_OneChangedAuditedChild_ShouldGenerateCreateAndUpdateRecordsForChildren() {
-        final UpsertTestAuditedChild1EntityCommand child11Cmd =
-            new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestAuditedChild1EntityCommand child12Cmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_12)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_12);
+        final UpsertAuditedChild1Command child11Cmd =
+            new UpsertAuditedChild1Command(NEW_CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedChild1Command child12Cmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_12)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_12);
 
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-            .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
+            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final long newChildId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
@@ -273,36 +274,36 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(newChildId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.DESC,
+                                                         hasCreatedFieldRecord(AuditedChild1Type.DESC,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(TestAuditedChild1EntityType.DESC,
+                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
                                                                                CHILD_DESC_12,
                                                                                NEW_CHILD_DESC_12))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_AllNew_ShouldGenerateCreateRecordForAuditedChildOnly() {
-        final UpsertTestAuditedChild1EntityCommand auditedChildCmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
-        final UpsertTestChildEntityCommand notAuditedChildCmd = new UpsertTestChildEntityCommand(NEW_CHILD_NAME_12);
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(NEW_PARENT_NAME_1)
+        final UpsertAuditedChild1Command auditedChildCmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
+        final UpsertNotAuditedChildCommand notAuditedChildCmd = new UpsertNotAuditedChildCommand(NEW_CHILD_NAME_12);
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(NEW_PARENT_NAME_1)
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(TestChildEntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final long auditedChildId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
@@ -310,92 +311,92 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(auditedChildId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(TestChildEntityType.INSTANCE))));
+                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_AllChanged_ShouldGenerateUpdateRecordForAuditedChildOnly() {
-        final UpsertTestAuditedChild1EntityCommand auditedChildCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestChildEntityCommand notAuditedChildCmd =
-            new UpsertTestChildEntityCommand(CHILD_NAME_12)
-                .with(TestChildEntityType.DESC, NEW_CHILD_DESC_12);
+        final UpsertAuditedChild1Command auditedChildCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertNotAuditedChildCommand notAuditedChildCmd =
+            new UpsertNotAuditedChildCommand(CHILD_NAME_12)
+                .with(NotAuditedChildType.DESC, NEW_CHILD_DESC_12);
 
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-            .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
+            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(TestChildEntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
-        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(TestChildEntityType.INSTANCE))));
+        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_BothChanged_WithDeletionOfOthers_ShouldCreateDeletionRecordForOtherChild() {
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
 
-        final UpsertTestAuditedEntityCommand cmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
+        final UpsertAuditedCommand cmd = new UpsertAuditedCommand(PARENT_NAME_1)
             .with(childCmd)
-            .with(new DeletionOfOther<>(TestAuditedChild1EntityType.INSTANCE));
+            .with(new DeletionOfOther<>(AuditedChild1Type.INSTANCE));
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(cmd), flowConfig);
+        auditedParentPL.upsert(singletonList(cmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
 
     @Test
     public void oneChangedAuditedParent_OneNewAuditedChild_ShouldGenerateUpdateForParentAndCreateForChild() {
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
 
-        final UpsertTestAuditedEntityCommand cmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-            .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedCommand cmd = new UpsertAuditedCommand(PARENT_NAME_1)
+            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(cmd), flowConfig);
+        auditedParentPL.upsert(singletonList(cmd), flowConfig);
 
         final long childId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
@@ -403,31 +404,31 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(TestAuditedEntityType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
+                                      hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_11))));
+                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
     }
 
     @Test
     public void oneNotAuditedParent_OneAuditedChild_AllNew_ShouldReturnEmpty() {
-        final UpsertTestAuditedChild1EntityCommand auditedChildCmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
-        final UpsertTestEntityCommand parentCmd = new UpsertTestEntityCommand(NEW_PARENT_NAME_1)
+        final UpsertAuditedChild1Command auditedChildCmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
+        final UpsertNotAuditedCommand parentCmd = new UpsertNotAuditedCommand(NEW_PARENT_NAME_1)
             .with(auditedChildCmd);
 
-        final ChangeFlowConfig<TestEntityType> flowConfig =
-            flowConfigBuilder(TestEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<NotAuditedType> flowConfig =
+            flowConfigBuilder(NotAuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        notAuditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -436,20 +437,20 @@ public class AuditForUpsertTwoLevelsTest {
 
     @Test
     public void oneNotAuditedParent_OneAuditedChild_BothChanged_ShouldReturnEmpty() {
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
 
-        final UpsertTestEntityCommand parentCmd = new UpsertTestEntityCommand(PARENT_NAME_1)
-            .with(TestEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertNotAuditedCommand parentCmd = new UpsertNotAuditedCommand(PARENT_NAME_1)
+            .with(NotAuditedType.DESC, NEW_PARENT_DESC_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<TestEntityType> flowConfig =
-            flowConfigBuilder(TestEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<NotAuditedType> flowConfig =
+            flowConfigBuilder(NotAuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        notAuditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -458,60 +459,60 @@ public class AuditForUpsertTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_OneNotAuditedChild_BothChanged_ShouldGenerateUpdateRecordForParentOnly() {
-        final UpsertTestChildEntityCommand childCmd =
-            new UpsertTestChildEntityCommand(CHILD_NAME_11)
-                .with(TestChildEntityType.DESC, NEW_CHILD_DESC_11);
+        final UpsertNotAuditedChildCommand childCmd =
+            new UpsertNotAuditedChildCommand(CHILD_NAME_11)
+                .with(NotAuditedChildType.DESC, NEW_CHILD_DESC_11);
 
-        final UpsertTestAuditedEntityCommand parentCmd = new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-            .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
+            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestChildEntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasChildRecordThat(hasEntityType(TestChildEntityType.INSTANCE)))));
+                                      not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE)))));
     }
 
     @Test
     public void oneAuditedParentUnchanged_OneAuditedChildChanged_ShouldGenerateUpdateRecordForParentAndChild() {
 
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestAuditedEntityCommand parentCmd =
-            new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-                .with(TestAuditedEntityType.DESC, PARENT_DESC_1)
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedCommand parentCmd =
+            new UpsertAuditedCommand(PARENT_NAME_1)
+                .with(AuditedType.DESC, PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
     }
@@ -519,49 +520,49 @@ public class AuditForUpsertTwoLevelsTest {
     @Test
     public void oneAuditedParentChanged_OneAuditedChildUnchanged_ShouldGenerateUpdateRecordForParentOnly() {
 
-        final UpsertTestAuditedChild1EntityCommand childCmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, CHILD_DESC_11);
-        final UpsertTestAuditedEntityCommand parentCmd =
-            new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-                .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final UpsertAuditedChild1Command childCmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, CHILD_DESC_11);
+        final UpsertAuditedCommand parentCmd =
+            new UpsertAuditedCommand(PARENT_NAME_1)
+                .with(AuditedType.DESC, NEW_PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(singletonList(parentCmd), flowConfig);
+        auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<TestAuditedEntityType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(TestAuditedEntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasChildRecordThat(hasEntityType(TestAuditedChild1EntityType.INSTANCE)))));
+                                      not(hasChildRecordThat(hasEntityType(AuditedChild1Type.INSTANCE)))));
     }
 
     @Test
     public void twoAuditedParents_OneAuditedChildEach_AllNew_ShouldCreateChildRecordsForBoth() {
-        final UpsertTestAuditedChild1EntityCommand child1Cmd = new UpsertTestAuditedChild1EntityCommand(NEW_CHILD_NAME_11);
-        final UpsertTestAuditedChild2EntityCommand child2Cmd = new UpsertTestAuditedChild2EntityCommand(NEW_CHILD_NAME_21);
+        final UpsertAuditedChild1Command child1Cmd = new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
+        final UpsertAuditedChild2Command child2Cmd = new UpsertAuditedChild2Command(NEW_CHILD_NAME_21);
 
-        final UpsertTestAuditedEntityCommand parent1Cmd = new UpsertTestAuditedEntityCommand(NEW_PARENT_NAME_1)
+        final UpsertAuditedCommand parent1Cmd = new UpsertAuditedCommand(NEW_PARENT_NAME_1)
             .with(child1Cmd);
-        final UpsertTestAuditedEntityCommand parent2Cmd = new UpsertTestAuditedEntityCommand(NEW_PARENT_NAME_2)
+        final UpsertAuditedCommand parent2Cmd = new UpsertAuditedCommand(NEW_PARENT_NAME_2)
             .with(child2Cmd);
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild2EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(ImmutableList.of(parent1Cmd, parent2Cmd), flowConfig);
+        auditedParentPL.upsert(ImmutableList.of(parent1Cmd, parent2Cmd), flowConfig);
 
         final long child1Id = fetchChildIdByName(NEW_CHILD_NAME_11);
         final long child2Id = fetchChildIdByName(NEW_CHILD_NAME_21);
@@ -570,56 +571,56 @@ public class AuditForUpsertTwoLevelsTest {
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        final AuditRecord<TestAuditedEntityType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
 
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                           hasEntityId(String.valueOf(child1Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(TestAuditedChild1EntityType.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild2EntityType.INSTANCE),
+                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
                                                           hasEntityId(String.valueOf(child2Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(TestAuditedChild2EntityType.NAME, NEW_CHILD_NAME_21))));
+                                                          hasCreatedFieldRecord(AuditedChild2Type.NAME, NEW_CHILD_NAME_21))));
     }
 
     @Test
     public void twoAuditedParents_OneAuditedChildEach_AllChanged_ShouldGenerateUpdateRecordsForBothChildren() {
-        final UpsertTestAuditedChild1EntityCommand child1Cmd =
-            new UpsertTestAuditedChild1EntityCommand(CHILD_NAME_11)
-                .with(TestAuditedChild1EntityType.DESC, NEW_CHILD_DESC_11);
-        final UpsertTestAuditedChild2EntityCommand child2Cmd =
-            new UpsertTestAuditedChild2EntityCommand(CHILD_NAME_21)
-                .with(TestAuditedChild2EntityType.DESC, NEW_CHILD_DESC_21);
+        final UpsertAuditedChild1Command child1Cmd =
+            new UpsertAuditedChild1Command(CHILD_NAME_11)
+                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+        final UpsertAuditedChild2Command child2Cmd =
+            new UpsertAuditedChild2Command(CHILD_NAME_21)
+                .with(AuditedChild2Type.DESC, NEW_CHILD_DESC_21);
 
-        final List<UpsertTestAuditedEntityCommand> cmds =
-            ImmutableList.of(new UpsertTestAuditedEntityCommand(PARENT_NAME_1)
-                                 .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_1)
+        final List<UpsertAuditedCommand> cmds =
+            ImmutableList.of(new UpsertAuditedCommand(PARENT_NAME_1)
+                                 .with(AuditedType.DESC, NEW_PARENT_DESC_1)
                                  .with(child1Cmd),
-                             new UpsertTestAuditedEntityCommand(PARENT_NAME_2)
-                                 .with(TestAuditedEntityType.DESC, NEW_PARENT_DESC_2)
+                             new UpsertAuditedCommand(PARENT_NAME_2)
+                                 .with(AuditedType.DESC, NEW_PARENT_DESC_2)
                                  .with(child2Cmd));
 
-        final ChangeFlowConfig<TestAuditedEntityType> flowConfig =
-            flowConfigBuilder(TestAuditedEntityType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild1EntityType.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(TestAuditedChild2EntityType.INSTANCE))
+        final ChangeFlowConfig<AuditedType> flowConfig =
+            flowConfigBuilder(AuditedType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
                 .build();
 
-        auditedEntityPL.upsert(cmds, flowConfig);
+        auditedParentPL.upsert(cmds, flowConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild1EntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(UPDATE))));
 
-        final AuditRecord<TestAuditedEntityType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(TestAuditedChild2EntityType.INSTANCE),
+        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(UPDATE))));
     }

@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -18,43 +19,43 @@ public class AuditedFieldSetTest {
 
     @Test
     public void getAllFields_IdOnly() {
-        final AuditedFieldSet<TestAuditedEntityType> auditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID);
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID);
 
-        final Set<EntityField<TestAuditedEntityType, ?>> expectedAllFields = singleton(TestAuditedEntityType.ID);
+        final Set<EntityField<AuditedType, ?>> expectedAllFields = singleton(AuditedType.ID);
 
         assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
     public void getAllFields_IdAndDataFields() {
-        final AuditedFieldSet<TestAuditedEntityType> auditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC));
 
-        final Set<EntityField<TestAuditedEntityType, ?>> expectedAllFields =
-            ImmutableSet.of(TestAuditedEntityType.ID,
-                            TestAuditedEntityType.NAME,
-                            TestAuditedEntityType.DESC);
+        final Set<EntityField<AuditedType, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.ID,
+                            AuditedType.NAME,
+                            AuditedType.DESC);
 
         assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
     public void intersectWith_WhenOthersAreExactlyIdAndAuditedFields_ShouldReturnIdAndAuditedFields() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.ID,
-                                                                                                        TestAuditedEntityType.NAME,
-                                                                                                        TestAuditedEntityType.DESC,
-                                                                                                        TestAuditedEntityType.DESC2);
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.ID,
+                                                                                              AuditedType.NAME,
+                                                                                              AuditedType.DESC,
+                                                                                              AuditedType.DESC2);
 
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC,
-                                                  TestAuditedEntityType.DESC2));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC,
+                                                  AuditedType.DESC2));
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(initialAuditedFieldSet));
@@ -62,17 +63,17 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenOthersAreExactlyAuditedFields_ShouldReturnIdAndAuditedFields() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                                                                        TestAuditedEntityType.DESC,
-                                                                                                        TestAuditedEntityType.DESC2);
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC,
-                                                  TestAuditedEntityType.DESC2));
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME,
+                                                                                              AuditedType.DESC,
+                                                                                              AuditedType.DESC2);
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC,
+                                                  AuditedType.DESC2));
 
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(initialAuditedFieldSet));
@@ -80,17 +81,17 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenOthersContainIdAndAuditedFields_ShouldReturnIdAndAuditedFields() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.ID,
-                                                                                                        TestAuditedEntityType.NAME,
-                                                                                                        TestAuditedEntityType.DESC,
-                                                                                                        TestAuditedEntityType.DESC2);
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.ID,
+                                                                                              AuditedType.NAME,
+                                                                                              AuditedType.DESC,
+                                                                                              AuditedType.DESC2);
 
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC));
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(initialAuditedFieldSet));
@@ -98,20 +99,20 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenAuditedSetContainsOthers_AndIdInOthers_ShouldReturnOthers() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.ID,
-                                                                                                        TestAuditedEntityType.NAME);
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.ID,
+                                                                                              AuditedType.NAME);
 
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC,
-                                                  TestAuditedEntityType.DESC2));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC,
+                                                  AuditedType.DESC2));
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME));
+        final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME));
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(expectedIntersectedAuditedFieldSet));
@@ -119,19 +120,19 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenAuditedSetContainsOthers_AndIdNotInOthers_ShouldReturnIdAndOthers() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.NAME);
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME);
 
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC,
-                                                  TestAuditedEntityType.DESC2));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC,
+                                                  AuditedType.DESC2));
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME));
+        final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME));
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(expectedIntersectedAuditedFieldSet));
@@ -139,19 +140,19 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenAuditedSetPartiallyIntersectsOthers_ShouldReturnIdAndIntersection() {
-        final Collection<? extends EntityField<TestAuditedEntityType, ?>> otherFields = ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                                                                        TestAuditedEntityType.DESC);
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME,
+                                                                                              AuditedType.DESC);
 
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC2));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC2));
 
-        final AuditedFieldSet<TestAuditedEntityType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME));
+        final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME));
 
-        final AuditedFieldSet<TestAuditedEntityType> actualIntersectedAuditedFieldSet =
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
 
         assertThat(actualIntersectedAuditedFieldSet, is(expectedIntersectedAuditedFieldSet));
@@ -159,13 +160,13 @@ public class AuditedFieldSetTest {
 
     @Test
     public void intersectWith_WhenOthersAreEmpty_ShouldReturnId() {
-        final AuditedFieldSet<TestAuditedEntityType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(TestAuditedEntityType.ID,
-                                  ImmutableSet.of(TestAuditedEntityType.NAME,
-                                                  TestAuditedEntityType.DESC));
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            new AuditedFieldSet<>(AuditedType.ID,
+                                  ImmutableSet.of(AuditedType.NAME,
+                                                  AuditedType.DESC));
 
 
         assertThat(initialAuditedFieldSet.intersectWith(Stream.empty()),
-                   is(new AuditedFieldSet<>(TestAuditedEntityType.ID, emptySet())));
+                   is(new AuditedFieldSet<>(AuditedType.ID, emptySet())));
     }
 }
