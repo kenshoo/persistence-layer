@@ -6,7 +6,6 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.entity.internal.fetch.EntityFetcher;
 import com.kenshoo.pl.one2many.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;

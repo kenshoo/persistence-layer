@@ -1,13 +1,20 @@
 package com.kenshoo.pl.entity.internal.fetch;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.Identifier;
 import com.kenshoo.pl.entity.UniqueKey;
-import com.kenshoo.pl.entity.*;
-import org.jooq.*;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.SelectField;
+import org.jooq.SelectJoinStep;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class QueryBuilder<E extends EntityType<E>> {
 
@@ -41,7 +48,7 @@ public class QueryBuilder<E extends EntityType<E>> {
     }
 
     public QueryBuilder<E> innerJoin(TreeEdge path) {
-        this.paths = List.of(path);
+        this.paths = Lists.newArrayList(path);
         return this;
     }
 

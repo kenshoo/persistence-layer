@@ -200,7 +200,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
     }
 
-    private EntitiesToContextFetcher fetcher(FeatureSet features) {
+    private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
         return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext(), features));
     }
 

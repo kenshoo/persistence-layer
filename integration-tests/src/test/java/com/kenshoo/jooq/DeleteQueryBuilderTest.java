@@ -13,13 +13,13 @@ import org.junit.Before;
 import org.junit.Test;
 import java.util.List;
 
-import static com.kenshoo.jooq.DeleteQueryBuilderHelperTest.TestTable.TABLE;
+import static com.kenshoo.jooq.DeleteQueryBuilderTest.TestTable.TABLE;
 import static com.kenshoo.jooq.QueryExtension.JOIN_TEMP_TABLE_LIMIT;
 import static org.hamcrest.Matchers.is;
 import static org.jooq.lambda.Seq.range;
 import static org.junit.Assert.assertThat;
 
-public class DeleteQueryBuilderHelperTest {
+public class DeleteQueryBuilderTest {
 
     private DSLContext dslContext = TestJooqConfig.create();
 

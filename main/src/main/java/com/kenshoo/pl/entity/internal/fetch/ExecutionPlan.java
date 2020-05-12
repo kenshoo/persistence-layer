@@ -25,7 +25,7 @@ public class ExecutionPlan {
 
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
         final List<TreeEdge> oneToOnePaths = Lists.newArrayList();
-        final List<? extends EntityField<?, ?>> oneToOneFields = Lists.newArrayList();
+        final List<? extends EntityField<?, ?>> oneToOneFields = Lists.newArrayList(fieldsToFetch);
 
         BFS.visit(startingEdge, this::edgesComingOutOf)
                 .limitUntil(__ -> targetTableToFieldsMap.isEmpty())
@@ -36,12 +36,13 @@ public class ExecutionPlan {
                     if (currentEdge != startingEdge && fields != null) {
                         targetTableToFieldsMap.remove(table);
                         oneToOnePaths.add(currentEdge);
-                        oneToOneFields.addAll(fields);
                         this.manyToOnePlans.removeIf(plan -> plan.getPath().target.table == table);
                     }
                     seq(targetTableToFieldsMap).filter(referencing(table)).forEach(manyToOneEntry -> {
                         final TreeEdge sourceEdge = currentEdge == startingEdge ? null : currentEdge;
-                        this.manyToOnePlans.add(new ManyToOnePlan(new TreeEdge(new TreeNode(sourceEdge, table), manyToOneEntry.v1), manyToOneEntry.v2));
+                        List manyToOneFields = manyToOneEntry.v2;
+                        oneToOneFields.removeAll(manyToOneFields);
+                        populateManyToOnePlans(sourceEdge, table,  manyToOneEntry.v1, manyToOneFields);
                     });
                 });
 
@@ -89,7 +90,7 @@ public class ExecutionPlan {
         return entry -> entry.v1.getReferencesTo(table).size() == 1;
     }
 
-    private Predicate<? super DataTable> notIn(List<ManyToOnePlan> manyToOnePlans) {
+    private Predicate<? super DataTable> notIn(List<ManyToOnePlan<?>> manyToOnePlans) {
         return table -> seq(manyToOnePlans).noneMatch(plan -> plan.getPath().target.table == table);
     }
 
@@ -97,11 +98,15 @@ public class ExecutionPlan {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
     }
 
-    public static class ManyToOnePlan<SUB extends EntityType<SUB>> {
-        private final TreeEdge path;
-        private final List<? extends EntityField<SUB, ?>> fields;
+    private <E extends EntityType<E>>  void populateManyToOnePlans(TreeEdge sourceEdge, DataTable targetTable, DataTable manyToOneTable , List<? extends EntityField<E, ?>> fields) {
+        this.manyToOnePlans.add(new ManyToOnePlan<>(new TreeEdge(new TreeNode(sourceEdge, targetTable), manyToOneTable), fields));
+    }
 
-        ManyToOnePlan(TreeEdge path, List<? extends EntityField<SUB, ?>> fields) {
+    public static class ManyToOnePlan<E extends EntityType<E>> {
+        private final TreeEdge path;
+        private final List<? extends EntityField<E, ?>> fields;
+
+        ManyToOnePlan(TreeEdge path, List<? extends EntityField<E, ?>> fields) {
             this.path = path;
             this.fields = fields;
         }
@@ -110,7 +115,7 @@ public class ExecutionPlan {
             return path;
         }
 
-        public List<? extends EntityField<SUB, ?>> getFields() {
+        public List<? extends EntityField<E, ?>> getFields() {
             return fields;
         }
     }
@@ -120,7 +125,7 @@ public class ExecutionPlan {
         private final List<? extends EntityField<?, ?>> fields;
         private final Set<OneToOneTableRelation> secondaryTableRelations;
 
-        public OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<?, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
+        OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<?, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
             this.paths = paths;
             this.fields = fields;
             this.secondaryTableRelations = secondaryTableRelations;

@@ -15,25 +15,34 @@ public class RecordReader {
 
     public static <E extends EntityType<E>> Identifier<E> createKey(Record record, AliasedKey<E> aliasedKey) {
         final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
-        aliasedKey.fields().forEach(aliasedField -> {
-            EntityField field = aliasedField.unAliased();
-            Object value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasedField.aliased().getName())));
-            fieldsValueMap.set(field, value);
-        });
+        aliasedKey.fields().forEach(aliasedField -> populateMap(aliasedField.unAliased(), aliasedField.aliased().getName(), record, fieldsValueMap));
         return new UniqueKey<>(aliasedKey.unAliasedFields()).createValue(fieldsValueMap);
     }
 
     public static EntityImpl createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
         EntityImpl entity = new EntityImpl();
         Iterator<Object> valuesIterator = record.intoList().iterator();
-        fields.forEach(entityField -> entity.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator)));
+        fields.forEach(field -> populateEntity(field, valuesIterator, entity));
         return entity;
     }
 
     public static <E extends EntityType<E>> FieldsValueMap<E> createFieldsValueMap(Record record, List<? extends EntityField<E, ?>> fields) {
         FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
         Iterator<Object> valuesIterator = record.intoList().iterator();
-        seq(fields).forEach(field -> fieldsValueMap.set(field, field.getDbAdapter().getFromRecord(valuesIterator)));
+        seq(fields).forEach(field -> populateMap(field, valuesIterator, fieldsValueMap));
         return fieldsValueMap;
+    }
+
+    private static <E extends EntityType<E>, T> void populateMap(EntityField<E, T> field, String aliasName, Record record, FieldsValueMapImpl<E> fieldsValueMap) {
+        T value = field.getDbAdapter().getFromRecord(Iterators.singletonIterator(record.getValue(aliasName)));
+        fieldsValueMap.set(field, value);
+    }
+
+    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, EntityImpl entity) {
+        entity.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator));
+    }
+
+    private static <E extends EntityType<E>, T> void populateMap(EntityField<E, T> field, Iterator<Object> valuesIterator, FieldsValueMapImpl<E> fieldsValueMap) {
+        fieldsValueMap.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
     }
 }
