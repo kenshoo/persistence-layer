@@ -14,12 +14,12 @@ import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
-public class ExecutionPlan {
+class ExecutionPlan {
 
     private OneToOnePlan oneToOnePlan;
     private List<ManyToOnePlan> manyToOnePlans = Lists.newArrayList();
 
-    public ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         final Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsMap = targetTableToFieldsOf(fieldsToFetch, startingTable);
 
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
@@ -100,40 +100,40 @@ public class ExecutionPlan {
         private final TreeEdge path;
         private final List<? extends EntityField<E, ?>> fields;
 
-        public ManyToOnePlan(TreeEdge path, List<? extends EntityField<E, ?>> fields) {
+        ManyToOnePlan(TreeEdge path, List<? extends EntityField<E, ?>> fields) {
             this.path = path;
             this.fields = fields;
         }
 
-        public TreeEdge getPath() {
+        TreeEdge getPath() {
             return path;
         }
 
-        public List<? extends EntityField<E, ?>> getFields() {
+        List<? extends EntityField<E, ?>> getFields() {
             return fields;
         }
     }
 
-    class OneToOnePlan<E extends EntityType<E>> {
+    class OneToOnePlan {
         private final List<TreeEdge> paths;
-        private final List<? extends EntityField<E, ?>> fields;
+        private final List<? extends EntityField<?, ?>> fields;
         private final Set<OneToOneTableRelation> secondaryTableRelations;
 
-        public OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<E, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
+        OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<?, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
             this.paths = paths;
             this.fields = fields;
             this.secondaryTableRelations = secondaryTableRelations;
         }
 
-        public List<TreeEdge> getPaths() {
+        List<TreeEdge> getPaths() {
             return paths;
         }
 
-        public List<? extends EntityField<E, ?>> getFields() {
+        List<? extends EntityField<?, ?>> getFields() {
             return fields;
         }
 
-        public Set<OneToOneTableRelation> getSecondaryTableRelations() {
+        Set<OneToOneTableRelation> getSecondaryTableRelations() {
             return secondaryTableRelations;
         }
     }

@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Sets;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.fetch.Fetcher;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,9 +20,9 @@ import static org.jooq.lambda.Seq.seq;
 
 public class EntitiesToContextFetcher {
 
-    private final Fetcher entitiesFetcher;
+    private final EntitiesFetcher entitiesFetcher;
 
-    public EntitiesToContextFetcher(Fetcher entitiesFetcher) {
+    public EntitiesToContextFetcher(EntitiesFetcher entitiesFetcher) {
         this.entitiesFetcher = entitiesFetcher;
     }
 

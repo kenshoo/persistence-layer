@@ -42,7 +42,7 @@ public class QueryBuilder {
         return SelectQueryExtender.of(dslContext, query, conditions);
     }
 
-    public void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
+    void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
         // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
         // Using a stack for that
         LinkedList<TreeEdge> joins = new LinkedList<>();
@@ -60,13 +60,13 @@ public class QueryBuilder {
         }
     }
 
-    public void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
+    void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
         targetOneToOneRelations.stream()
                 .filter(not(secondaryTableIn(alreadyJoinedTables)))
                 .forEach(addLeftJoinTo(query));
     }
 
-    public Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
+    private Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
         List<ForeignKey<Record, Record>> foreignKeys = toTable.getReferencesTo(fromTable);
         if (foreignKeys.isEmpty()) {
             foreignKeys = fromTable.getReferencesTo(toTable);
@@ -86,7 +86,7 @@ public class QueryBuilder {
         return joinCondition;
     }
 
-    public SelectJoinStep<Record> buildOneToOneQuery(List<TreeEdge> paths, List<SelectField<?>> selectedFields, Set<OneToOneTableRelation> oneToOneTableRelations, DataTable startingTable) {
+    SelectJoinStep<Record> buildOneToOneQuery(List<TreeEdge> paths, List<SelectField<?>> selectedFields, Set<OneToOneTableRelation> oneToOneTableRelations, DataTable startingTable) {
         final SelectJoinStep<Record> query = dslContext.select(selectedFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
 
@@ -95,7 +95,7 @@ public class QueryBuilder {
         return query;
     }
 
-    public SelectJoinStep<Record> buildManyToOneQuery(TreeEdge path, List<SelectField<?>> selectedFields, DataTable startingTable) {
+    SelectJoinStep<Record> buildManyToOneQuery(TreeEdge path, List<SelectField<?>> selectedFields, DataTable startingTable) {
         final SelectJoinStep<Record> query = dslContext.select(selectedFields).from(startingTable);
         joinTables(query, Sets.newHashSet(startingTable), path);
         return query;

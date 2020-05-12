@@ -5,8 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.internal.audit.RecursiveAuditRecordGenerator;
-import com.kenshoo.pl.entity.internal.fetch.Fetcher;
-import com.kenshoo.pl.entity.internal.fetch.NewEntityFetcher;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
@@ -22,7 +20,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
-import static com.kenshoo.pl.entity.Feature.FetchMany;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -203,9 +200,8 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
     }
 
-    private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
-        Fetcher fetcher = features.isEnabled(FetchMany) ? new NewEntityFetcher(dslContext()) : new EntitiesFetcher(dslContext(), features);
-        return new EntitiesToContextFetcher(fetcher);
+    private EntitiesToContextFetcher fetcher(FeatureSet features) {
+        return new EntitiesToContextFetcher(new EntitiesFetcher(dslContext(), features));
     }
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> resolveSuppliersAndFilterErrors(Collection<C> commands, ChangeContext changeContext) {

@@ -3,6 +3,8 @@ package com.kenshoo.jooq;
 import org.jooq.Record;
 import org.jooq.TableField;
 
+import java.util.Arrays;
+
 public class FieldAndValue<T> {
 
     private final TableField<Record, T> field;

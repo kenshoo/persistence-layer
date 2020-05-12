@@ -13,15 +13,14 @@ import java.util.*;
 
 import static org.jooq.lambda.Seq.seq;
 
-public class NewEntityFetcher implements Fetcher {
+public class EntityFetcher {
 
     private final QueryBuilder queryBuilder;
 
-    public NewEntityFetcher(DSLContext dslContext) {
+    public EntityFetcher(DSLContext dslContext) {
         this.queryBuilder = new QueryBuilder(dslContext);
     }
 
-    @Override
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids, final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         if (ids.isEmpty()) {
             return Collections.emptyMap();
@@ -29,15 +28,15 @@ public class NewEntityFetcher implements Fetcher {
 
         final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final DataTable primaryTable = uniqueKey.getEntityType().getPrimaryTable();
-        final AliasedKey<E> aliasedKey = new AliasedKey<E>(uniqueKey);
+        final AliasedKey<E> aliasedKey = new AliasedKey<>(uniqueKey);
 
         final ExecutionPlan executionPlan = new ExecutionPlan(primaryTable, fieldsToFetch);
 
         final Map<Identifier<E>, Entity> entities;
 
         final ExecutionPlan.OneToOnePlan oneToOnePlan = executionPlan.getOneToOnePlan();
-        final SelectJoinStep<Record> mainQuery = queryBuilder.buildOneToOneQuery(oneToOnePlan.getPaths(), selectFieldsOf(oneToOnePlan.getFields(), aliasedKey), oneToOnePlan.getSecondaryTableRelations(), primaryTable);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(mainQuery, primaryTable, uniqueKey, ids)) {
+        final SelectJoinStep mainQuery = queryBuilder.buildOneToOneQuery(oneToOnePlan.getPaths(), selectFieldsOf(oneToOnePlan.getFields(), aliasedKey), oneToOnePlan.getSecondaryTableRelations(), primaryTable);
+        try (QueryExtension<SelectJoinStep> queryExtender = queryBuilder.addIdsCondition(mainQuery, primaryTable, uniqueKey, ids)) {
             entities = fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, oneToOnePlan.getFields());
         }
 
@@ -52,27 +51,7 @@ public class NewEntityFetcher implements Fetcher {
         return entities;
     }
 
-    @Override
-    public List<Entity> fetch(EntityType<?> entityType, PLCondition plCondition, EntityField<?, ?>... fieldsToFetch) {
-        throw new UnsupportedOperationException("NewEntityFetcher doesn't implement yet 'fetch' method...");
-    }
-
-    @Override
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
-        throw new UnsupportedOperationException("NewEntityFetcher doesn't implement yet 'fetchEntitiesByForeignKeys' method...");
-    }
-
-    @Override
-    public <E extends EntityType<E>, PE extends PartialEntity, ID extends Identifier<E>> Map<ID, PE> fetchPartialEntities(E entityType, Collection<ID> keys, Class<PE> entityIface) {
-        throw new UnsupportedOperationException("NewEntityFetcher doesn't implement yet 'fetchPartialEntities' method...");
-    }
-
-    @Override
-    public <E extends EntityType<E>, PE extends PartialEntity> List<PE> fetchByCondition(E entityType, Condition condition, Class<PE> entityIface) {
-        throw new UnsupportedOperationException("NewEntityFetcher doesn't implement yet 'fetchByCondition' method...");
-    }
-
-    private <E extends EntityType<E>> List<SelectField<?>> selectFieldsOf(List<? extends EntityField<?, ?>> fields, AliasedKey<E> aliasedKey) {
+    private <E extends EntityType<E>> List<SelectField<?>> selectFieldsOf(Collection<? extends EntityField<?, ?>> fields, AliasedKey<E> aliasedKey) {
         return dbFieldsOf(fields).concat(aliasedKey.aliasedFields()).toList();
     }
 
@@ -95,8 +74,8 @@ public class NewEntityFetcher implements Fetcher {
         return multiValuesMap;
     }
 
-    private <E extends EntityType<E>> E entityTypeOf(Collection<? extends EntityField<E, ?>> fields) {
-        return (E) seq(fields).findFirst().get().getEntityType();
+    private <E extends EntityType<E>> EntityType<E> entityTypeOf(Collection<? extends EntityField<E, ?>> fields) {
+        return seq(fields).findFirst().get().getEntityType();
     }
 
 }
