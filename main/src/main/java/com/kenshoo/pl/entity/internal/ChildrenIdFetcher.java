@@ -4,7 +4,7 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.fetch.QueryBuilder;
+import com.kenshoo.pl.entity.internal.fetch.QueryBuilderHelper;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
@@ -47,7 +47,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
                 .join(parentType.getPrimaryTable())
                 .on(everyFieldOf(keyToParent));
 
-        final QueryExtension<SelectFinalStep<Record>> queryExtender = new QueryBuilder(jooq).addIdsCondition(query, childTable, parentKey, parentIds);
+        final QueryExtension<SelectFinalStep<Record>> queryExtender = new QueryBuilderHelper(jooq).addIdsCondition(query, childTable, parentKey, parentIds);
         final ResultQuery<Record> finalQuery = queryExtender.getQuery();
         return finalQuery.stream()
                 .map(record -> readIdentifiers(record, parentKey, childKey, childFK))

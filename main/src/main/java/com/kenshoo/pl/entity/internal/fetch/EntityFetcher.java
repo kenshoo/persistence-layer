@@ -15,10 +15,10 @@ import static org.jooq.lambda.Seq.seq;
 
 public class EntityFetcher {
 
-    private final QueryBuilder queryBuilder;
+    private final DSLContext dslContext;
 
     public EntityFetcher(DSLContext dslContext) {
-        this.queryBuilder = new QueryBuilder(dslContext);
+        this.dslContext = dslContext;
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids, final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
@@ -35,14 +35,21 @@ public class EntityFetcher {
         final Map<Identifier<E>, Entity> entities;
 
         final ExecutionPlan.OneToOnePlan oneToOnePlan = executionPlan.getOneToOnePlan();
-        final SelectJoinStep mainQuery = queryBuilder.buildOneToOneQuery(oneToOnePlan.getPaths(), selectFieldsOf(oneToOnePlan.getFields(), aliasedKey), oneToOnePlan.getSecondaryTableRelations(), primaryTable);
-        try (QueryExtension<SelectJoinStep> queryExtender = queryBuilder.addIdsCondition(mainQuery, primaryTable, uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep> queryExtender = new QueryBuilder<E>(dslContext).selecting(selectFieldsOf(oneToOnePlan.getFields(), aliasedKey))
+                .from(primaryTable)
+                .innerJoin(oneToOnePlan.getPaths())
+                .leftJoin(oneToOnePlan.getSecondaryTableRelations())
+                .whereIdsIn(ids)
+                .build()) {
             entities = fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, oneToOnePlan.getFields());
         }
 
         executionPlan.getManyToOnePlans().forEach(plan -> {
-            final SelectJoinStep<Record> subQuery = queryBuilder.buildManyToOneQuery(plan.getPath(), selectFieldsOf(plan.getFields(), aliasedKey), primaryTable);
-            try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(subQuery, primaryTable, uniqueKey, ids)) {
+            try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder<E>(dslContext).selecting(selectFieldsOf(plan.getFields(), aliasedKey))
+                    .from(primaryTable)
+                    .innerJoin(plan.getPath())
+                    .whereIdsIn(ids)
+                    .build()) {
                 Map<Identifier<E>, List<FieldsValueMap<?>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, plan.getFields());
                 multiValuesMap.forEach((id, multiValues) -> ((EntityImpl) entities.get(id)).add(entityTypeOf(plan.getFields()), (List) multiValues));
             }

@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal.fetch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
@@ -11,7 +10,6 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.PartialEntityInvocationHandler;
-import com.kenshoo.pl.entity.internal.fetch.*;
 import org.jooq.*;
 import org.jooq.lambda.Seq;
 
@@ -33,11 +31,11 @@ public class OldEntityFetcher {
 
     private final DSLContext dslContext;
 
-    private final QueryBuilder queryBuilder;
+    private final QueryBuilderHelper queryBuilderHelper;
 
     public OldEntityFetcher(DSLContext dslContext) {
         this.dslContext = dslContext;
-        this.queryBuilder = new QueryBuilder(dslContext);
+        this.queryBuilderHelper = new QueryBuilderHelper(dslContext);
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
@@ -63,7 +61,7 @@ public class OldEntityFetcher {
         final AliasedKey<E> aliasedKey = new AliasedKey<>(uniqueKey);
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilderHelper.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsToFetch);
         }
     }
@@ -170,7 +168,7 @@ public class OldEntityFetcher {
 
                     if (edge != startingEdge && targetPrimaryTables.contains(table)) {
                         targetPrimaryTables.remove(table);
-                        queryBuilder.joinTables(query, joinedTables, edge);
+                        queryBuilderHelper.joinTables(query, joinedTables, edge);
                     }
                 });
 
@@ -178,7 +176,7 @@ public class OldEntityFetcher {
             throw new IllegalStateException("Tables " + targetPrimaryTables + " could not be reached via joins");
         }
 
-        queryBuilder.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
+        queryBuilderHelper.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
 
         return query;
     }
