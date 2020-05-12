@@ -14,12 +14,13 @@ import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
 import static org.jooq.lambda.function.Functions.not;
 
-class ExecutionPlan {
+public class ExecutionPlan {
 
     private OneToOnePlan oneToOnePlan;
-    private List<ManyToOnePlan> manyToOnePlans = Lists.newArrayList();
+    private List<ManyToOnePlan<?>> manyToOnePlans = Lists.newArrayList();
 
-    ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+
+    public ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         final Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsMap = targetTableToFieldsOf(fieldsToFetch, startingTable);
 
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
@@ -55,7 +56,7 @@ class ExecutionPlan {
         return oneToOnePlan;
     }
 
-    public List<ManyToOnePlan> getManyToOnePlans() {
+    public List<ManyToOnePlan<?>> getManyToOnePlans() {
         return manyToOnePlans;
     }
 
@@ -96,44 +97,44 @@ class ExecutionPlan {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
     }
 
-    class ManyToOnePlan<E extends EntityType<E>> {
+    public static class ManyToOnePlan<SUB extends EntityType<SUB>> {
         private final TreeEdge path;
-        private final List<? extends EntityField<E, ?>> fields;
+        private final List<? extends EntityField<SUB, ?>> fields;
 
-        ManyToOnePlan(TreeEdge path, List<? extends EntityField<E, ?>> fields) {
+        ManyToOnePlan(TreeEdge path, List<? extends EntityField<SUB, ?>> fields) {
             this.path = path;
             this.fields = fields;
         }
 
-        TreeEdge getPath() {
+        public TreeEdge getPath() {
             return path;
         }
 
-        List<? extends EntityField<E, ?>> getFields() {
+        public List<? extends EntityField<SUB, ?>> getFields() {
             return fields;
         }
     }
 
-    class OneToOnePlan {
+    public static class OneToOnePlan {
         private final List<TreeEdge> paths;
         private final List<? extends EntityField<?, ?>> fields;
         private final Set<OneToOneTableRelation> secondaryTableRelations;
 
-        OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<?, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
+        public OneToOnePlan(List<TreeEdge> paths, List<? extends EntityField<?, ?>> fields, Set<OneToOneTableRelation> secondaryTableRelations) {
             this.paths = paths;
             this.fields = fields;
             this.secondaryTableRelations = secondaryTableRelations;
         }
 
-        List<TreeEdge> getPaths() {
+        public List<TreeEdge> getPaths() {
             return paths;
         }
 
-        List<? extends EntityField<?, ?>> getFields() {
+        public List<? extends EntityField<?, ?>> getFields() {
             return fields;
         }
 
-        Set<OneToOneTableRelation> getSecondaryTableRelations() {
+        public Set<OneToOneTableRelation> getSecondaryTableRelations() {
             return secondaryTableRelations;
         }
     }

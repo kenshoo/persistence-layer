@@ -9,7 +9,7 @@ import org.jooq.*;
 
 import java.util.*;
 
-class QueryBuilder<E extends EntityType<E>> {
+public class QueryBuilder<E extends EntityType<E>> {
 
     private DSLContext dslContext;
     private QueryBuilderHelper queryBuilderHelper;
@@ -20,42 +20,42 @@ class QueryBuilder<E extends EntityType<E>> {
     private Collection<? extends Identifier<E>> ids;
 
 
-    QueryBuilder(DSLContext dslContext) {
+    public QueryBuilder(DSLContext dslContext) {
         this.dslContext = dslContext;
         this.queryBuilderHelper = new QueryBuilderHelper(dslContext);
     }
 
-    QueryBuilder selecting(List<SelectField<?>> selectedFields) {
+    public QueryBuilder<E> selecting(List<SelectField<?>> selectedFields) {
         this.selectedFields = selectedFields;
         return this;
     }
 
-    QueryBuilder from(DataTable primaryTable) {
+    public QueryBuilder<E> from(DataTable primaryTable) {
         this.startingTable = primaryTable;
         return this;
     }
 
-    QueryBuilder innerJoin(List<TreeEdge> paths) {
+    public QueryBuilder<E> innerJoin(List<TreeEdge> paths) {
         this.paths = paths;
         return this;
     }
 
-    QueryBuilder innerJoin(TreeEdge path) {
+    public QueryBuilder<E> innerJoin(TreeEdge path) {
         this.paths = List.of(path);
         return this;
     }
 
-    QueryBuilder leftJoin(Set<OneToOneTableRelation> oneToOneTableRelations) {
+    public QueryBuilder<E> leftJoin(Set<OneToOneTableRelation> oneToOneTableRelations) {
         this.oneToOneTableRelations = oneToOneTableRelations;
         return this;
     }
 
-    QueryBuilder whereIdsIn(Collection<? extends Identifier<E>> ids) {
+    public QueryBuilder<E> whereIdsIn(Collection<? extends Identifier<E>> ids) {
         this.ids = ids;
         return this;
     }
 
-    QueryExtension<SelectJoinStep> build() {
+    public QueryExtension<SelectJoinStep<Record>> build() {
         final SelectJoinStep<Record> query = dslContext.select(selectedFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
         paths.forEach(edge -> queryBuilderHelper.joinTables(query, joinedTables, edge));
