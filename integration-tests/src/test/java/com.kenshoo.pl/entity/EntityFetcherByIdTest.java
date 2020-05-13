@@ -20,18 +20,21 @@ import java.util.Set;
 
 import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
 import static com.kenshoo.pl.one2many.ChildEntity.ID;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertThat;
 
 public class EntityFetcherByIdTest {
 
     private static final ParentTable parentTable = ParentTable.INSTANCE;
     private static final ChildTable childTable = ChildTable.INSTANCE;
-    private static final GrandChildTable grandChildTable = GrandChildTable.INSTANCE;
     private static final OtherChildTable otherChildTable = OtherChildTable.INSTANCE;
+    private static final GrandChildTable grandChildTable = GrandChildTable.INSTANCE;
+    private static final OtherGrandChildTable otherGrandChildTable = OtherGrandChildTable.INSTANCE;
     private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(parentTable,
             childTable,
+            otherChildTable,
             grandChildTable,
-            otherChildTable);
+            otherGrandChildTable);
 
     private static DSLContext staticDSLContext;
     private static boolean tablesCreated;
@@ -62,6 +65,14 @@ public class EntityFetcherByIdTest {
                 .values(4, 2, 4, "child4")
                 .execute();
 
+        dslContext.insertInto(otherChildTable)
+                .columns(otherChildTable.id, otherChildTable.parent_id, otherChildTable.name)
+                .values(1, 1, "otherChild1")
+                .values(2, 1, "otherChild2")
+                .values(3, 2, "otherChild3")
+                .values(4, 2, "otherChild4")
+                .execute();
+
         dslContext.insertInto(grandChildTable)
                 .columns(grandChildTable.child_id, grandChildTable.color)
                 .values(1, "color1")
@@ -70,12 +81,14 @@ public class EntityFetcherByIdTest {
                 .values(4, "color4")
                 .execute();
 
-        dslContext.insertInto(otherChildTable)
-                .columns(otherChildTable.id, otherChildTable.parent_id, otherChildTable.name)
-                .values(1, 1, "otherChild1")
-                .values(2, 1, "otherChild2")
-                .values(3, 2, "otherChild3")
-                .values(4, 2, "otherChild4")
+        dslContext.insertInto(otherGrandChildTable)
+                .columns(otherGrandChildTable.parent_id, otherGrandChildTable.child_id, otherGrandChildTable.name)
+                .values(1, 1, "otherGrandChild1")
+                .values(1, 1, "otherGrandChild2")
+                .values(1, 2, "otherGrandChild1")
+                .values(1, 2, "otherGrandChild2")
+                .values(2, 3, "otherGrandChild1")
+                .values(2, 4, "otherGrandChild1")
                 .execute();
     }
 
@@ -105,12 +118,12 @@ public class EntityFetcherByIdTest {
     @Test
     public void when_fetching_field_of_manyToOne_relation_to_current_id_then_return_many_entities_as_expected() {
 
-        Identifier<ParentEntity> parentId = new ParentEntity.Key(1);
+        final Identifier<ParentEntity> parentId = new ParentEntity.Key(1);
 
-        Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
+        final Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
                 ID, FIELD_1);
 
-        List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(ChildEntity.INSTANCE);
+        final List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(ChildEntity.INSTANCE);
 
         assertThat(valuesOfId(manyValues, ID, 1).get(FIELD_1), Is.is("child1"));
         assertThat(valuesOfId(manyValues, ID, 2).get(FIELD_1), Is.is("child2"));
@@ -137,15 +150,45 @@ public class EntityFetcherByIdTest {
     @Test
     public void when_fetching_field_of_manyToOne_relation_to_parentId_then_return_many_entities_as_expected() {
 
-        Identifier<GrandChildEntity> grandChildId = new GrandChildEntity.Color("color1");
+        final Identifier<GrandChildEntity> grandChildId = new GrandChildEntity.Color("color1");
 
-        Map<Identifier<GrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
+        final Map<Identifier<GrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
                 OtherChildEntity.ID, OtherChildEntity.NAME);
 
-        List<FieldsValueMap<OtherChildEntity>> manyValues = idEntityMap.get(grandChildId).getMany(OtherChildEntity.INSTANCE);
+        final List<FieldsValueMap<OtherChildEntity>> manyValues = idEntityMap.get(grandChildId).getMany(OtherChildEntity.INSTANCE);
 
         assertThat(valuesOfId(manyValues, OtherChildEntity.ID, 1).get(OtherChildEntity.NAME), Is.is("otherChild1"));
         assertThat(valuesOfId(manyValues, OtherChildEntity.ID, 2).get(OtherChildEntity.NAME), Is.is("otherChild2"));
+    }
+
+    /*
+     * requested single child for otherGrandChild (and not fetch a many for parent)
+     *                   -----------------------------
+     *                  |           parent           |
+     *                  -----------------------------
+     *                     /|\ (1)          /|\ (1)
+     *                     |                |
+     *                    |  (n)           |
+     *         ------------------         |
+     *        |      child      |        |
+     *        ------------------        |
+     *                   /|\ (1)       |
+     *                   |            |
+     *                  |  (n)       |  (n)
+     *            -------------------------------
+     *           |        otherGrandChild       |
+     *           -------------------------------
+     */
+    @Test
+    public void dont_fetch_as_a_secondary_table_of_your_parent_if_you_can_fetch_it_directly_from_another_parent() {
+
+        final Identifier<OtherGrandChildEntity> grandChildId = new OtherGrandChildEntity.ChildIdAndName(1, "otherGrandChild1");
+        final Map<Identifier<OtherGrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId), ChildEntity.ID);
+
+        final Entity entity = idEntityMap.get(grandChildId);
+
+        assertThat(entity.get(ChildEntity.ID), Is.is(1));
+        assertThat(entity.getMany(ChildEntity.INSTANCE), empty());
     }
 
     private <E extends EntityType<E>> FieldsValueMap<E> valuesOfId(List<FieldsValueMap<E>> manyValues, EntityField<E,?> fieldId, Integer id) {
