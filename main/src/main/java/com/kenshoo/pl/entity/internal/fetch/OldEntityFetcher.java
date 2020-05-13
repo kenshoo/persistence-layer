@@ -31,11 +31,11 @@ public class OldEntityFetcher {
 
     private final DSLContext dslContext;
 
-    private final QueryBuilderHelper queryBuilderHelper;
+    private final QueryBuilder queryBuilder;
 
     public OldEntityFetcher(DSLContext dslContext) {
         this.dslContext = dslContext;
-        this.queryBuilderHelper = new QueryBuilderHelper(dslContext);
+        this.queryBuilder = new QueryBuilder(dslContext);
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
@@ -61,7 +61,7 @@ public class OldEntityFetcher {
         final AliasedKey<E> aliasedKey = new AliasedKey<>(uniqueKey);
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilderHelper.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsToFetch);
         }
     }
@@ -168,7 +168,7 @@ public class OldEntityFetcher {
 
                     if (edge != startingEdge && targetPrimaryTables.contains(table)) {
                         targetPrimaryTables.remove(table);
-                        queryBuilderHelper.joinTables(query, joinedTables, edge);
+                        queryBuilder.joinTables(query, joinedTables, edge);
                     }
                 });
 
@@ -176,7 +176,7 @@ public class OldEntityFetcher {
             throw new IllegalStateException("Tables " + targetPrimaryTables + " could not be reached via joins");
         }
 
-        queryBuilderHelper.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
+        queryBuilder.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
 
         return query;
     }
