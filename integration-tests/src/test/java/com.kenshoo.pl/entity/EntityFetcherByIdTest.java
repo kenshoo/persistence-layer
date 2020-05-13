@@ -21,7 +21,6 @@ import java.util.Set;
 import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
 import static com.kenshoo.pl.one2many.ChildEntity.ID;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
 public class EntityFetcherByIdTest {
@@ -181,7 +180,7 @@ public class EntityFetcherByIdTest {
      *           -------------------------------
      */
     @Test
-    public void when_fetching_field_with_relation_to_one_and_many_then_returns_the_field_just_for_the_entity() {
+    public void dont_fetch_as_a_secondary_table_of_your_parent_if_you_can_fetch_it_directly_from_another_parent() {
 
         final Identifier<OtherGrandChildEntity> grandChildId = new OtherGrandChildEntity.ChildIdAndName(1, "otherGrandChild1");
         final Map<Identifier<OtherGrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId), ChildEntity.ID);
