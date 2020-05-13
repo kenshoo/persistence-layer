@@ -1,11 +1,13 @@
 package com.kenshoo.pl.entity.internal.fetch;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValues;
 import com.kenshoo.jooq.QueryExtension;
 import com.kenshoo.jooq.SelectQueryExtender;
-import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.UniqueKey;
 import org.jooq.*;
 import org.jooq.impl.DSL;
 
@@ -15,12 +17,59 @@ import java.util.function.Predicate;
 
 import static org.jooq.lambda.function.Functions.not;
 
-public class QueryBuilder {
+public class QueryBuilder<E extends EntityType<E>> {
 
-    private final DSLContext dslContext;
+    private DSLContext dslContext;
+    private List<SelectField<?>> selectedFields;
+    private DataTable startingTable;
+    private List<TreeEdge> paths;
+    private Set<OneToOneTableRelation> oneToOneTableRelations;
+    private Collection<? extends Identifier<E>> ids;
+
 
     public QueryBuilder(DSLContext dslContext) {
         this.dslContext = dslContext;
+    }
+
+    public QueryBuilder<E> selecting(List<SelectField<?>> selectedFields) {
+        this.selectedFields = selectedFields;
+        return this;
+    }
+
+    public QueryBuilder<E> from(DataTable primaryTable) {
+        this.startingTable = primaryTable;
+        return this;
+    }
+
+    public QueryBuilder<E> innerJoin(List<TreeEdge> paths) {
+        this.paths = paths;
+        return this;
+    }
+
+    public QueryBuilder<E> innerJoin(TreeEdge path) {
+        this.paths = Lists.newArrayList(path);
+        return this;
+    }
+
+    public QueryBuilder<E> leftJoin(Set<OneToOneTableRelation> oneToOneTableRelations) {
+        this.oneToOneTableRelations = oneToOneTableRelations;
+        return this;
+    }
+
+    public QueryBuilder<E> whereIdsIn(Collection<? extends Identifier<E>> ids) {
+        this.ids = ids;
+        return this;
+    }
+
+    public QueryExtension<SelectJoinStep<Record>> build() {
+        final SelectJoinStep<Record> query = dslContext.select(selectedFields).from(startingTable);
+        final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
+        paths.forEach(edge -> joinTables(query, joinedTables, edge));
+        if (oneToOneTableRelations != null) {
+            joinSecondaryTables(query, joinedTables, oneToOneTableRelations);
+        }
+        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+        return addIdsCondition(query, startingTable, uniqueKey, ids);
     }
 
     public <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> addIdsCondition(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
@@ -36,7 +85,7 @@ public class QueryBuilder {
         return SelectQueryExtender.of(dslContext, query, conditions);
     }
 
-    public void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
+    void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
         // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
         // Using a stack for that
         LinkedList<TreeEdge> joins = new LinkedList<>();
@@ -54,13 +103,13 @@ public class QueryBuilder {
         }
     }
 
-    public void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
+    void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
         targetOneToOneRelations.stream()
                 .filter(not(secondaryTableIn(alreadyJoinedTables)))
                 .forEach(addLeftJoinTo(query));
     }
 
-    public Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
+    private Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
         List<ForeignKey<Record, Record>> foreignKeys = toTable.getReferencesTo(fromTable);
         if (foreignKeys.isEmpty()) {
             foreignKeys = fromTable.getReferencesTo(toTable);
