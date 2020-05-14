@@ -1,21 +1,9 @@
 package com.kenshoo.pl.entity;
 
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.entity.annotation.DefaultValue;
 import com.kenshoo.pl.entity.annotation.Id;
-import com.kenshoo.pl.entity.annotation.Immutable;
 import com.kenshoo.pl.entity.annotation.Required;
-import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
-import com.kenshoo.pl.entity.converters.TimestampValueConverter;
-import org.jooq.Record;
-import org.jooq.TableField;
 import org.junit.Ignore;
-
-import java.time.Instant;
-import java.util.Iterator;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 

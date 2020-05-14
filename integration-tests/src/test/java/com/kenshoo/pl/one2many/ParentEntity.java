@@ -1,11 +1,7 @@
 package com.kenshoo.pl.one2many;
 
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.entity.AbstractEntityType;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SingleUniqueKey;
-import com.kenshoo.pl.entity.SingleUniqueKeyValue;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.annotation.Id;
 
 

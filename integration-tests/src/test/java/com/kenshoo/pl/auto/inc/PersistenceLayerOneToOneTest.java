@@ -39,8 +39,8 @@ public class PersistenceLayerOneToOneTest {
         persistenceLayer = new PersistenceLayer<>(dslContext);
         final PLContext plContext = new PLContext.Builder(dslContext).build();
         flowConfig = ChangeFlowConfigBuilderFactory
-                .newInstance(plContext, TestEntity.INSTANCE)
-                .build();
+            .newInstance(plContext, TestEntity.INSTANCE)
+            .build();
 
         Stream.of(PRIMARY_TABLE, SECONDARY_TABLE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
@@ -60,7 +60,7 @@ public class PersistenceLayerOneToOneTest {
                                                                    .collect(toList());
 
         final CreateResult<TestEntity, TestEntity.Key> creationResult = persistenceLayer.create(createCommands,
-                flowConfig,
+                                                                                                flowConfig,
                                                                                                 TestEntity.Key.DEFINITION);
 
         final List<Integer> expectedReturnedIds = dslContext.select(PRIMARY_TABLE.id)
@@ -89,7 +89,7 @@ public class PersistenceLayerOneToOneTest {
                                                                              .with(SECOND_NAME, secondName);
 
         persistenceLayer.create(ImmutableList.of(createCommand),
-                flowConfig,
+                                flowConfig,
                                 TestEntity.Key.DEFINITION);
 
         final int primaryId = dslContext.select(PRIMARY_TABLE.id)

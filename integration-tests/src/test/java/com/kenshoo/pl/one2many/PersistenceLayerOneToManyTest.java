@@ -7,13 +7,7 @@ import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.FluidPersistenceCmdBuilder;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
-import com.kenshoo.pl.entity.spi.ChangeValidator;
-import com.kenshoo.pl.entity.spi.FieldComplexValidator;
-import com.kenshoo.pl.entity.spi.FieldValidator;
-import com.kenshoo.pl.entity.spi.FieldValueSupplier;
-import com.kenshoo.pl.entity.spi.NotSuppliedException;
-import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
-import com.kenshoo.pl.entity.spi.ValidationException;
+import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -24,6 +18,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -39,16 +34,12 @@ import static com.kenshoo.pl.one2many.ChildEntity.ORDINAL;
 import static com.kenshoo.pl.one2many.ParentEntity.ID_IN_TARGET;
 import static com.kenshoo.pl.one2many.ParentEntity.NAME;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.jooq.lambda.Seq.seq;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class PersistenceLayerOneToManyTest {
 
