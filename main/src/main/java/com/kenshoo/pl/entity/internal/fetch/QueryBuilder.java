@@ -2,10 +2,8 @@ package com.kenshoo.pl.entity.internal.fetch;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.kenshoo.jooq.DataTable;
-import com.kenshoo.jooq.FieldAndValues;
-import com.kenshoo.jooq.QueryExtension;
-import com.kenshoo.jooq.SelectQueryExtender;
+import com.kenshoo.jooq.*;
+import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.UniqueKey;
 import org.jooq.*;
@@ -68,8 +66,20 @@ public class QueryBuilder<E extends EntityType<E>> {
         if (oneToOneTableRelations != null) {
             joinSecondaryTables(query, joinedTables, oneToOneTableRelations);
         }
-        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
-        return addIdsCondition(query, startingTable, uniqueKey, ids);
+        if (ids != null) {
+            final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+            return addIdsCondition(query, startingTable, uniqueKey, ids);
+        }
+        return new QueryExtension<>() {
+            @Override
+            public SelectJoinStep<Record> getQuery() {
+                return query;
+            }
+
+            @Override
+            public void close() {
+            }
+        };
     }
 
     public <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> addIdsCondition(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
@@ -83,6 +93,23 @@ public class QueryBuilder<E extends EntityType<E>> {
             conditions.add(new FieldAndValues<>((Field<Object>) fieldAndValue.getField(), Arrays.asList(values)));
         });
         return SelectQueryExtender.of(dslContext, query, conditions);
+    }
+
+    public <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
+        ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
+        foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
+
+        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
+                    for (Identifier<E> key : keys) {
+                        EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
+                        List<Object> values = new ArrayList<>();
+                        for (EntityField<E, ?> field : keyFields) {
+                            addToValues(key, field, values);
+                        }
+                        batchBindStep.bind(values.toArray());
+                    }
+                }
+        );
     }
 
     void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
@@ -137,6 +164,10 @@ public class QueryBuilder<E extends EntityType<E>> {
         }
         Optional<TableField<Record, ?>> tableField = dbAdapter.getTableFields().findFirst();
         conditions.add(new FieldAndValues<>((TableField<Record, Object>) tableField.get(), fieldValues));
+    }
+
+    private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
+        field.getDbAdapter().getDbValues(key.get(field)).forEach(values::add);
     }
 
     private Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {

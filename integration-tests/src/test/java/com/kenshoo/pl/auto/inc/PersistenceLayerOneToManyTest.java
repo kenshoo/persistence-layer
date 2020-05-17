@@ -47,11 +47,12 @@ public class PersistenceLayerOneToManyTest {
 
         flow = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntity.INSTANCE)
                 .withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
+                .with(new FeatureSet(Feature.FetchMany))
                 .with(new FeatureSet());
 
         flowOfParentWithRequiredRelation = ChangeFlowConfigBuilderFactory.newInstance(plContext, ParentEntityWithRequiredRelation.INSTANCE).
                 withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE))
-                .with(new FeatureSet());
+                .with(new FeatureSet(Feature.FetchMany));
 
         persistenceLayer = new PersistenceLayer<>(jooq);
 

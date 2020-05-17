@@ -86,7 +86,7 @@ public class OldEntityFetcher {
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
-        try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
+        try (final TempTableResource<ImpersonatorTable> foreignKeysTable = this.queryBuilder.createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
             final AliasedKey<E> aliasedKey = new AliasedKey<>(foreignUniqueKey, foreignKeysTable);
             final SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), fieldsToFetch);
 
@@ -193,29 +193,8 @@ public class OldEntityFetcher {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 
-    private <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
-        ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
-        foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
-
-        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
-                    for (Identifier<E> key : keys) {
-                        EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
-                        List<Object> values = new ArrayList<>();
-                        for (EntityField<E, ?> field : keyFields) {
-                            addToValues(key, field, values);
-                        }
-                        batchBindStep.bind(values.toArray());
-                    }
-                }
-        );
-    }
-
     private <T> void fieldFromRecordToEntity(EntityImpl entity, EntityField<?, T> field, Iterator<Object> valuesIterator) {
         entity.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
-    }
-
-    private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
-        field.getDbAdapter().getDbValues(key.get(field)).forEach(values::add);
     }
 
     private Seq<SelectField<?>> dbFieldsOf(Collection<? extends EntityField<?, ?>> fieldsToFetch) {
