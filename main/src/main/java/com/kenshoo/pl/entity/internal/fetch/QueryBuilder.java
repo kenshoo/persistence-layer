@@ -70,7 +70,7 @@ public class QueryBuilder<E extends EntityType<E>> {
             final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
             return addIdsCondition(query, startingTable, uniqueKey, ids);
         }
-        return new QueryExtension<>() {
+        return new QueryExtension<SelectJoinStep<Record>>() {
             @Override
             public SelectJoinStep<Record> getQuery() {
                 return query;
@@ -82,7 +82,7 @@ public class QueryBuilder<E extends EntityType<E>> {
         };
     }
 
-    public <E extends EntityType<E>, Q extends SelectFinalStep> QueryExtension<Q> addIdsCondition(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
+    public <Q extends SelectFinalStep> QueryExtension<Q> addIdsCondition(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
         List<FieldAndValues<?>> conditions = new ArrayList<>();
         for (EntityField<E, ?> field : uniqueKey.getFields()) {
             addToConditions(field, identifiers, conditions);
@@ -95,24 +95,7 @@ public class QueryBuilder<E extends EntityType<E>> {
         return SelectQueryExtender.of(dslContext, query, conditions);
     }
 
-    public <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
-        ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
-        foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
-
-        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
-                    for (Identifier<E> key : keys) {
-                        EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
-                        List<Object> values = new ArrayList<>();
-                        for (EntityField<E, ?> field : keyFields) {
-                            addToValues(key, field, values);
-                        }
-                        batchBindStep.bind(values.toArray());
-                    }
-                }
-        );
-    }
-
-    void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
+    static void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
         // The joins must be composed in the order of traversal, so we have to "unwind" the path traveled from the root
         // Using a stack for that
         LinkedList<TreeEdge> joins = new LinkedList<>();
@@ -130,13 +113,13 @@ public class QueryBuilder<E extends EntityType<E>> {
         }
     }
 
-    void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
+    static void joinSecondaryTables(SelectJoinStep<Record> query, Set<? extends Table<Record>> alreadyJoinedTables, Set<OneToOneTableRelation> targetOneToOneRelations) {
         targetOneToOneRelations.stream()
                 .filter(not(secondaryTableIn(alreadyJoinedTables)))
                 .forEach(addLeftJoinTo(query));
     }
 
-    private Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
+    private static Condition getJoinCondition(Table<Record> fromTable, Table<Record> toTable) {
         List<ForeignKey<Record, Record>> foreignKeys = toTable.getReferencesTo(fromTable);
         if (foreignKeys.isEmpty()) {
             foreignKeys = fromTable.getReferencesTo(toTable);
@@ -156,7 +139,7 @@ public class QueryBuilder<E extends EntityType<E>> {
         return joinCondition;
     }
 
-    private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
+    private <T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
         EntityFieldDbAdapter<T> dbAdapter = field.getDbAdapter();
         List<Object> fieldValues = new ArrayList<>(identifiers.size());
         for (Identifier<E> identifier : identifiers) {
@@ -166,19 +149,15 @@ public class QueryBuilder<E extends EntityType<E>> {
         conditions.add(new FieldAndValues<>((TableField<Record, Object>) tableField.get(), fieldValues));
     }
 
-    private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
-        field.getDbAdapter().getDbValues(key.get(field)).forEach(values::add);
-    }
-
-    private Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {
+    private static Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {
         return relation -> joinedTables.contains(relation.getSecondary());
     }
 
-    private Consumer<OneToOneTableRelation> addLeftJoinTo(SelectJoinStep<Record> query) {
+    private static Consumer<OneToOneTableRelation> addLeftJoinTo(SelectJoinStep<Record> query) {
         return relation -> query.leftOuterJoin(relation.getSecondary()).on(getJoinCondition(relation));
     }
 
-    private Condition getJoinCondition(final OneToOneTableRelation relation) {
+    private static Condition getJoinCondition(final OneToOneTableRelation relation) {
         return getJoinCondition(relation.getSecondary(), relation.getPrimary());
     }
 }

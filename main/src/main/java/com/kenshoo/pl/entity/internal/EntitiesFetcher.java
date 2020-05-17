@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
+import com.kenshoo.jooq.TempTableHelper;
 import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
@@ -75,7 +76,7 @@ public class EntitiesFetcher {
             return oldEntityFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, keys, fieldsToFetch);
         }
 
-        try (final TempTableResource<ImpersonatorTable> foreignKeysTable = new QueryBuilder<E>(dslContext).createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
+        try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
             final AliasedKey<E> aliasedKey = new AliasedKey<>(foreignUniqueKey, foreignKeysTable);
             final DataTable startingTable = foreignKeysTable.getTable();
 
@@ -149,6 +150,27 @@ public class EntitiesFetcher {
             multiValuesMap.get(key).add(RecordReader.createFieldsValueMap(record, fields));
         });
         return multiValuesMap;
+    }
+
+    public <E extends EntityType<E>> TempTableResource<ImpersonatorTable> createForeignKeysTable(final DataTable primaryTable, final UniqueKey<E> foreignUniqueKey, final Collection<? extends Identifier<E>> keys) {
+        ImpersonatorTable impersonatorTable = new ImpersonatorTable(primaryTable);
+        foreignUniqueKey.getTableFields().forEach(impersonatorTable::createField);
+
+        return TempTableHelper.tempInMemoryTable(dslContext, impersonatorTable, batchBindStep -> {
+                    for (Identifier<E> key : keys) {
+                        EntityField<E, ?>[] keyFields = foreignUniqueKey.getFields();
+                        List<Object> values = new ArrayList<>();
+                        for (EntityField<E, ?> field : keyFields) {
+                            addToValues(key, field, values);
+                        }
+                        batchBindStep.bind(values.toArray());
+                    }
+                }
+        );
+    }
+
+    private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
+        field.getDbAdapter().getDbValues(key.get(field)).forEach(values::add);
     }
 
     private <E extends EntityType<E>> List<SelectField<?>> selectFieldsOf(Collection<? extends EntityField<?, ?>> fields, AliasedKey<E> aliasedKey) {
