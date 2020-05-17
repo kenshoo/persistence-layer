@@ -21,33 +21,33 @@ public class ExecutionPlan {
 
 
     public ExecutionPlan(DataTable startingTable, Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        final Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsMap = targetTableToFieldsOf(fieldsToFetch, startingTable);
+        final Map<DataTable, ? extends List<? extends EntityField<?, ?>>> remainingPrimaryTables = targetTableToFieldsOf(fieldsToFetch, startingTable);
 
         final TreeEdge startingEdge = new TreeEdge(null, startingTable);
         final List<TreeEdge> oneToOnePaths = Lists.newArrayList();
         final List<? extends EntityField<?, ?>> oneToOneFields = Lists.newArrayList(fieldsToFetch);
 
         BFS.visit(startingEdge, this::edgesComingOutOf)
-                .limitUntil(__ -> targetTableToFieldsMap.isEmpty())
+                .limitUntil(__ -> remainingPrimaryTables.isEmpty())
                 .forEach(currentEdge -> {
                     final DataTable table = currentEdge.target.table;
 
-                    List fields = targetTableToFieldsMap.get(table);
+                    List fields = remainingPrimaryTables.get(table);
                     if (currentEdge != startingEdge && fields != null) {
-                        targetTableToFieldsMap.remove(table);
+                        remainingPrimaryTables.remove(table);
                         oneToOnePaths.add(currentEdge);
                         this.manyToOnePlans.removeIf(plan -> plan.getPath().target.table == table);
                     }
-                    seq(targetTableToFieldsMap).filter(referencing(table)).forEach(manyToOneEntry -> {
+                    seq(remainingPrimaryTables).filter(referencing(table)).forEach(manyToOneEntry -> {
                         final TreeEdge sourceEdge = currentEdge == startingEdge ? null : currentEdge;
-                        List manyToOneFields = manyToOneEntry.v2;
+                        List<? extends EntityField<?, ?>> manyToOneFields = manyToOneEntry.v2;
                         oneToOneFields.removeAll(manyToOneFields);
-                        populateManyToOnePlans(sourceEdge, table,  manyToOneEntry.v1, manyToOneFields);
+                        populateManyToOnePlans(sourceEdge, table,  manyToOneEntry.v1, (List)manyToOneFields);
                     });
                 });
 
-        if (seq(targetTableToFieldsMap.keySet()).anyMatch(notIn(this.manyToOnePlans))) {
-            throw new IllegalStateException("Some tables " + targetTableToFieldsMap + " could not be reached via joins");
+        if (seq(remainingPrimaryTables.keySet()).anyMatch(notIn(this.manyToOnePlans))) {
+            throw new IllegalStateException("Some tables " + remainingPrimaryTables + " could not be reached via joins");
         }
 
         this.oneToOnePlan = new OneToOnePlan(oneToOnePaths, oneToOneFields, oneToOneSecondaryTablesOf(fieldsToFetch));
@@ -65,7 +65,7 @@ public class ExecutionPlan {
     private Map<DataTable, ? extends List<? extends EntityField<?, ?>>> targetTableToFieldsOf(Collection<? extends EntityField<?, ?>> fieldsToFetch, DataTable startingTable) {
         return seq(fieldsToFetch)
                 .filter(field -> !field.getEntityType().getPrimaryTable().equals(startingTable))
-                .groupBy(this::tableOf);
+                .groupBy(this::parimaryTableOf);
     }
 
     private Set<OneToOneTableRelation> oneToOneSecondaryTablesOf(Collection<? extends EntityField<?, ?>> fields) {
@@ -82,7 +82,7 @@ public class ExecutionPlan {
         return field -> field.getDbAdapter().getTable().equals(field.getEntityType().getPrimaryTable());
     }
 
-    private DataTable tableOf(EntityField<?, ?> field) {
+    private DataTable parimaryTableOf(EntityField<?, ?> field) {
         return field.getEntityType().getPrimaryTable();
     }
 
