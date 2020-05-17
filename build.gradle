@@ -7,9 +7,28 @@ allprojects {
     apply plugin: 'maven'
     apply plugin: 'project-report'
     apply plugin: "idea"
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            name "anodot-maven-repo-release"
+            url 'https://bitbucket.org/anodotengineering/anodot-maven-repo-release/raw/master'
+        }
+    }
+    buildscript {
+        repositories {
+            mavenLocal()
+            mavenCentral()
+        }
+    }
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    apply from: "${rootProject.projectDir}/dependencies.gradle"
 }
 
-apply from:"${rootProject.projectDir}/dependencies.gradle"
 
 dependencies {
     compile project(':main')
