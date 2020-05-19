@@ -48,7 +48,7 @@ public class AuditedFieldsResolver {
                                                                            final boolean entityTypeAudited,
                                                                            final EntityField<E, ? extends Number> idField) {
         if (entityTypeAudited) {
-            return Optional.of(new AuditedFieldSet<>(idField));
+            return Optional.of(AuditedFieldSet.builder(idField).build());
         }
         return noFieldsToAudit(entityType);
     }
@@ -66,7 +66,9 @@ public class AuditedFieldsResolver {
         if (auditedDataFields.isEmpty()) {
             return noFieldsToAudit(entityType);
         }
-        return Optional.of(new AuditedFieldSet<>(idField, auditedDataFields));
+        return Optional.of(AuditedFieldSet.builder(idField)
+                                          .withDataFields(auditedDataFields)
+                                          .build());
     }
 
     private <E extends EntityType<E>> boolean isFieldAudited(final EntityType<E> entityType,

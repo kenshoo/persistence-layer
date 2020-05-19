@@ -17,12 +17,13 @@ public class AuditedFieldsResolverTest {
     private static final AuditedFieldsResolver RESOLVER = AuditedFieldsResolver.INSTANCE;
 
     @Test
-    public void resolve_WhenEntityTypeIsAudited_AndHasId_ShouldReturnAllFields() {
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_ShouldReturnIdAndDataFields() {
         final AuditedFieldSet<AuditedType> expectedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC,
+                                                           AuditedType.DESC2))
+                           .build();
 
         assertThat(RESOLVER.resolve(AuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
@@ -31,9 +32,10 @@ public class AuditedFieldsResolverTest {
     @Test
     public void resolve_WhenEntityTypeIsNotAudited_AndHasId_AndAuditedFields_ShouldReturnIdAndAuditedFields() {
         final AuditedFieldSet<InclusiveAuditedType> expectedFieldSet =
-            new AuditedFieldSet<>(InclusiveAuditedType.ID,
-                                  ImmutableSet.of(InclusiveAuditedType.NAME,
-                                                  InclusiveAuditedType.DESC));
+            AuditedFieldSet.builder(InclusiveAuditedType.ID)
+                           .withDataFields(ImmutableSet.of(InclusiveAuditedType.NAME,
+                                                           InclusiveAuditedType.DESC))
+                           .build();
 
         assertThat(RESOLVER.resolve(InclusiveAuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
@@ -42,8 +44,9 @@ public class AuditedFieldsResolverTest {
     @Test
     public void resolve_WhenEntityTypeIsAudited_AndHasId_AndHasNotAuditedFields_ShouldReturnIdAndOtherFields() {
         final AuditedFieldSet<ExclusiveAuditedType> expectedFieldSet =
-            new AuditedFieldSet<>(ExclusiveAuditedType.ID,
-                                  ImmutableSet.of(ExclusiveAuditedType.NAME));
+            AuditedFieldSet.builder(ExclusiveAuditedType.ID)
+                           .withDataFields(ImmutableSet.of(ExclusiveAuditedType.NAME))
+                           .build();
 
         assertThat(RESOLVER.resolve(ExclusiveAuditedType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));

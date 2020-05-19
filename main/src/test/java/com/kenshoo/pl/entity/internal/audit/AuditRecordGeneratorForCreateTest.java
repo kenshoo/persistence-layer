@@ -49,7 +49,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID);
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -72,9 +72,10 @@ public class AuditRecordGeneratorForCreateTest {
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID,
-                                                                                                ImmutableSet.of(AuditedType.NAME,
-                                                                                                                AuditedType.DESC));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -96,7 +97,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID);
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -123,9 +124,10 @@ public class AuditRecordGeneratorForCreateTest {
 
         final Entity entity = Entity.EMPTY;
 
-        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = new AuditedFieldSet<>(AuditedType.ID,
-                                                                                                ImmutableSet.of(AuditedType.NAME,
-                                                                                                                AuditedType.DESC));
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);

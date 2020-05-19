@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.annotation;
 
-import com.kenshoo.pl.entity.AuditContext;
-import com.kenshoo.pl.entity.AuditContext.EmptyAuditContext;
+import com.kenshoo.pl.entity.AncestorFieldsProvider;
+import com.kenshoo.pl.entity.AncestorFieldsProvider.EmptyAncestorFieldsProvider;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,8 +17,8 @@ import java.lang.annotation.Target;
 public @interface Audited {
 
     /**
-     * A context which provides additional data that should be added to an {@link com.kenshoo.pl.entity.AuditRecord}.<br>
+     * A provider for additional fields from ancestor entities that should be added to an {@link com.kenshoo.pl.entity.AuditRecord}.<br>
      * This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
      */
-    Class<? extends AuditContext> context() default EmptyAuditContext.class;
+    Class<? extends AncestorFieldsProvider> ancestorFieldsProvider() default EmptyAncestorFieldsProvider.class;
 }

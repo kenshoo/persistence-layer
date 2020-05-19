@@ -39,8 +39,9 @@ public class AuditRecordGeneratorRequiredFieldsTest {
                                                                                                  AuditedType.DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME, AuditedType.DESC));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(fieldsToUpdate))).thenReturn(expectedIntersectionFieldSet);
 
