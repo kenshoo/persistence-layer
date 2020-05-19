@@ -1,5 +1,8 @@
 package com.kenshoo.pl.entity.annotation;
 
+import com.kenshoo.pl.entity.AuditContext;
+import com.kenshoo.pl.entity.AuditContext.EmptyAuditContext;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,4 +15,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Audited {
+
+    /**
+     * A context which provides additional data that should be added to an {@link com.kenshoo.pl.entity.AuditRecord}.<br>
+     * This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
+     */
+    Class<? extends AuditContext> context() default EmptyAuditContext.class;
 }
