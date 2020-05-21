@@ -1,6 +1,6 @@
-package com.kenshoo.pl.entity.spi;
+package com.kenshoo.pl.entity.spi.audit;
 
-import com.kenshoo.pl.entity.AuditRecord;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 
 import java.util.stream.Stream;
 

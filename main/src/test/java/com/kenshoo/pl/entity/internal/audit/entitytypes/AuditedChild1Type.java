@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity.internal.audit.entitytypes;
 
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.annotation.Audited;
 import com.kenshoo.pl.entity.annotation.Id;
+import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.ChildTable;
 
 @Audited

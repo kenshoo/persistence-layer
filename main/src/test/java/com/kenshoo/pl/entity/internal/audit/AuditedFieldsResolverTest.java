@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.annotation.Audited;
+import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.junit.Test;
 

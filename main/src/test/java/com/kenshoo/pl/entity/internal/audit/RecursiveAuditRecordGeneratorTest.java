@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.junit.Test;
 import org.junit.runner.RunWith;

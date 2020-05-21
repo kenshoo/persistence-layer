@@ -1,9 +1,9 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.AuditRecord;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;

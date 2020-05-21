@@ -2,6 +2,8 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.audit.AuditRecord;
+import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 

@@ -2,8 +2,8 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.annotation.Audited;
-import com.kenshoo.pl.entity.annotation.NotAudited;
+import com.kenshoo.pl.entity.annotation.audit.Audited;
+import com.kenshoo.pl.entity.annotation.audit.NotAudited;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

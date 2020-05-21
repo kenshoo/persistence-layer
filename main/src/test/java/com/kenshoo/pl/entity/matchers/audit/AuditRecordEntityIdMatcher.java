@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
-import com.kenshoo.pl.entity.AuditRecord;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
