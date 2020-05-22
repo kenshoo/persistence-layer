@@ -1,9 +1,9 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.AuditRecord;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
@@ -50,7 +50,7 @@ public class AuditRecordGeneratorForDeleteTest {
         entity.set(AuditedType.NAME, "oldName");
         entity.set(AuditedType.DESC, "oldDesc");
 
-        when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(new AuditedFieldSet<>(AuditedType.ID));
+        when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(AuditedFieldSet.builder(AuditedType.ID).build());
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
@@ -71,7 +71,9 @@ public class AuditRecordGeneratorForDeleteTest {
         final Entity entity = Entity.EMPTY;
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID, singleton(AuditedType.NAME));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(singleton(AuditedType.NAME))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);

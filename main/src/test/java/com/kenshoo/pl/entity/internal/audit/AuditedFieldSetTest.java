@@ -3,13 +3,14 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptySet;
+import static com.kenshoo.pl.entity.internal.audit.AuditedFieldSet.builder;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.CoreMatchers.is;
@@ -20,9 +21,24 @@ public class AuditedFieldSetTest {
     @Test
     public void getAllFields_IdOnly() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID);
+            builder(AuditedType.ID).build();
 
-        final Set<EntityField<AuditedType, ?>> expectedAllFields = singleton(AuditedType.ID);
+        final Set<EntityField<?, ?>> expectedAllFields = singleton(AuditedType.ID);
+
+        assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
+    }
+
+    @Test
+    public void getAllFields_IdAndAncestorFields() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .build();
+
+        final Set<EntityField<?, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.ID,
+                            NotAuditedAncestorType.NAME,
+                            NotAuditedAncestorType.DESC);
 
         assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
     }
@@ -30,12 +46,30 @@ public class AuditedFieldSetTest {
     @Test
     public void getAllFields_IdAndDataFields() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                .build();
 
-        final Set<EntityField<AuditedType, ?>> expectedAllFields =
+        final Set<EntityField<?, ?>> expectedAllFields =
             ImmutableSet.of(AuditedType.ID,
+                            AuditedType.NAME,
+                            AuditedType.DESC);
+
+        assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
+    }
+
+    @Test
+    public void getAllFields_IdAndAncestorAndDataFields() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                .build();
+
+        final Set<EntityField<?, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.ID,
+                            NotAuditedAncestorType.NAME,
+                            NotAuditedAncestorType.DESC,
                             AuditedType.NAME,
                             AuditedType.DESC);
 
@@ -50,10 +84,11 @@ public class AuditedFieldSetTest {
                                                                                               AuditedType.DESC2);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC,
+                                                AuditedType.DESC2))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -67,11 +102,11 @@ public class AuditedFieldSetTest {
                                                                                               AuditedType.DESC,
                                                                                               AuditedType.DESC2);
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
-
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC,
+                                                AuditedType.DESC2))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -87,9 +122,10 @@ public class AuditedFieldSetTest {
                                                                                               AuditedType.DESC2);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -103,14 +139,16 @@ public class AuditedFieldSetTest {
                                                                                               AuditedType.NAME);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC,
+                                                AuditedType.DESC2))
+                .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -123,14 +161,42 @@ public class AuditedFieldSetTest {
         final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC,
+                                                AuditedType.DESC2))
+                .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .build();
+
+        final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
+            initialAuditedFieldSet.intersectWith(otherFields.stream());
+
+        assertThat(actualIntersectedAuditedFieldSet, is(expectedIntersectedAuditedFieldSet));
+    }
+
+    @Test
+    public void intersectWith_WhenAuditedSetContainsOthersAndAncestorFields_AndIdNotInOthers_ShouldReturnIdAndAncestorFieldsAndOthers() {
+        final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME);
+
+        final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
+            builder(AuditedType.ID)
+                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                    NotAuditedAncestorType.DESC))
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC,
+                                                AuditedType.DESC2))
+                .build();
+
+        final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
+            builder(AuditedType.ID)
+                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                    NotAuditedAncestorType.DESC))
+                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -144,13 +210,15 @@ public class AuditedFieldSetTest {
                                                                                               AuditedType.DESC);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC2));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC2))
+                .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME));
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
             initialAuditedFieldSet.intersectWith(otherFields.stream());
@@ -161,12 +229,12 @@ public class AuditedFieldSetTest {
     @Test
     public void intersectWith_WhenOthersAreEmpty_ShouldReturnId() {
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
-
+            builder(AuditedType.ID)
+                .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                AuditedType.DESC))
+                .build();
 
         assertThat(initialAuditedFieldSet.intersectWith(Stream.empty()),
-                   is(new AuditedFieldSet<>(AuditedType.ID, emptySet())));
+                   is(builder(AuditedType.ID).build()));
     }
 }

@@ -1,5 +1,7 @@
 package com.kenshoo.pl.entity;
 
+import com.kenshoo.pl.entity.audit.AuditRecord;
+import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;

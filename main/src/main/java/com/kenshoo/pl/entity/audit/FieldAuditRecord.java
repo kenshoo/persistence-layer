@@ -1,5 +1,7 @@
-package com.kenshoo.pl.entity;
+package com.kenshoo.pl.entity.audit;
 
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;

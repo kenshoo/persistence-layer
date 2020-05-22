@@ -2,8 +2,8 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.AuditRecord;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.EntityImpl;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
@@ -52,7 +52,7 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.ID, ID);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID);
+            AuditedFieldSet.builder(AuditedType.ID).build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -75,8 +75,9 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC, "oldDesc");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME, AuditedType.DESC));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -106,10 +107,11 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC2, "desc2");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC,
+                                                           AuditedType.DESC2))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -137,10 +139,11 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC2, "desc2");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC,
-                                                  AuditedType.DESC2));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC,
+                                                           AuditedType.DESC2))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -165,9 +168,10 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC2, "desc2");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -195,9 +199,10 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC2, "desc2");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -225,9 +230,10 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.DESC2, "desc2");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  ImmutableSet.of(AuditedType.NAME,
-                                                  AuditedType.DESC));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                           AuditedType.DESC))
+                           .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -250,7 +256,8 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.NAME, "oldDesc");
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
-        when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(new AuditedFieldSet<>(AuditedType.ID));
+        when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields)))
+            .thenReturn(AuditedFieldSet.builder(AuditedType.ID).build());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, emptyList());
@@ -267,8 +274,9 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.NAME, null);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  singleton(AuditedType.NAME));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(singleton(AuditedType.NAME))
+                           .build();
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
         when(completeFieldSet.intersectWith(eqStreamAsSet(singleton(AuditedType.NAME)))).thenReturn(expectedIntersectionFieldSet);
@@ -289,8 +297,9 @@ public class AuditRecordGeneratorForUpdateTest {
         entity.set(AuditedType.NAME, "oldName");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
-            new AuditedFieldSet<>(AuditedType.ID,
-                                  singleton(AuditedType.NAME));
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withDataFields(singleton(AuditedType.NAME))
+                           .build();
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
         when(completeFieldSet.intersectWith(eqStreamAsSet(singleton(AuditedType.NAME)))).thenReturn(expectedIntersectionFieldSet);
@@ -315,9 +324,10 @@ public class AuditRecordGeneratorForUpdateTest {
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields)))
-            .thenReturn(new AuditedFieldSet<>(AuditedType.ID,
-                                              ImmutableSet.of(AuditedType.NAME,
-                                                              AuditedType.DESC)));
+            .thenReturn(AuditedFieldSet.builder(AuditedType.ID)
+                                       .withDataFields(ImmutableSet.of(AuditedType.NAME,
+                                                                       AuditedType.DESC))
+                                       .build());
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
@@ -344,7 +354,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet())))
-            .thenReturn(new AuditedFieldSet<>(AuditedType.ID));
+            .thenReturn(AuditedFieldSet.builder(AuditedType.ID).build());
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 

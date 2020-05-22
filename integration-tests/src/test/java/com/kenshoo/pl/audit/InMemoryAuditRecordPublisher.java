@@ -1,7 +1,7 @@
 package com.kenshoo.pl.audit;
 
-import com.kenshoo.pl.entity.AuditRecord;
-import com.kenshoo.pl.entity.spi.AuditRecordPublisher;
+import com.kenshoo.pl.entity.audit.AuditRecord;
+import com.kenshoo.pl.entity.spi.audit.AuditRecordPublisher;
 
 import java.util.ArrayList;
 import java.util.List;

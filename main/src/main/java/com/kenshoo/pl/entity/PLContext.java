@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.entity.spi.AuditRecordPublisher;
 import com.kenshoo.pl.entity.spi.PersistenceLayerRetryer;
+import com.kenshoo.pl.entity.spi.audit.AuditRecordPublisher;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 

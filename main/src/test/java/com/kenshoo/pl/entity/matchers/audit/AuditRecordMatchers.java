@@ -1,6 +1,10 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.audit.AuditRecord;
+import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import org.hamcrest.Matcher;
 
 public class AuditRecordMatchers {

@@ -3,9 +3,9 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldSet;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
-import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.junit.Assert;
@@ -175,8 +175,9 @@ public class ChangeFlowConfigTest {
     @Test
     public void should_create_audit_record_generator_with_field_set_if_audited_fields_defined() {
 
-        final AuditedFieldSet<TestEntity> auditedFieldSet = new AuditedFieldSet<>(TestEntity.ID,
-                                                                                  ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2));
+        final AuditedFieldSet<TestEntity> auditedFieldSet = AuditedFieldSet.builder(TestEntity.ID)
+                                                                           .withDataFields(ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2))
+                                                                           .build();
         doReturn(Optional.of(auditedFieldSet)).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
 
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,

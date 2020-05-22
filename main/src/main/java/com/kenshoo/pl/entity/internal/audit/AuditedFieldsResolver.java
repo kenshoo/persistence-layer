@@ -2,8 +2,8 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.annotation.Audited;
-import com.kenshoo.pl.entity.annotation.NotAudited;
+import com.kenshoo.pl.entity.annotation.audit.Audited;
+import com.kenshoo.pl.entity.annotation.audit.NotAudited;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class AuditedFieldsResolver {
                                                                            final boolean entityTypeAudited,
                                                                            final EntityField<E, ? extends Number> idField) {
         if (entityTypeAudited) {
-            return Optional.of(new AuditedFieldSet<>(idField));
+            return Optional.of(AuditedFieldSet.builder(idField).build());
         }
         return noFieldsToAudit(entityType);
     }
@@ -66,7 +66,9 @@ public class AuditedFieldsResolver {
         if (auditedDataFields.isEmpty()) {
             return noFieldsToAudit(entityType);
         }
-        return Optional.of(new AuditedFieldSet<>(idField, auditedDataFields));
+        return Optional.of(AuditedFieldSet.builder(idField)
+                                          .withDataFields(auditedDataFields)
+                                          .build());
     }
 
     private <E extends EntityType<E>> boolean isFieldAudited(final EntityType<E> entityType,
