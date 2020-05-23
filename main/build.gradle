@@ -53,7 +53,8 @@ artifacts {
 
 uploadArchives {
 
-def password = project.hasProperty('password') ? "$password" : ''
+    def username = project.hasProperty('ossrhUsername') ? "$ossrhUsername" : ''
+    def password = project.hasProperty('ossrhPassword') ? "$ossrhPassword" : ''
 
     repositories {
         mavenDeployer {
@@ -61,11 +62,11 @@ def password = project.hasProperty('password') ? "$password" : ''
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                authentication(userName: "galkoren", password: password)
+                authentication(userName: username, password: password)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                authentication(userName: "galkoren", password: password)
+                authentication(userName: username, password: password)
             }
 
             pom.project {
