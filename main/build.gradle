@@ -33,8 +33,9 @@ jar {
 
 signing {
     required { gradle.taskGraph.hasTask("uploadArchives") }
-    def signingKey = project.hasProperty('signingKey') ? "$signingKey" : ''
+    def signingKeyFile = project.hasProperty('signingKeyFile') ? "$signingKeyFile" : ''
     def signingKeyPassword = project.hasProperty('signingKeyPassword') ? "$signingKeyPassword" : ''
+    def signingKey = new File(signingKeyFile).text
     useInMemoryPgpKeys(signingKey, signingKeyPassword)
     sign configurations.archives
 }
