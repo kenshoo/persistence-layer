@@ -1,8 +1,8 @@
 def BUILD_NUMBER = project.hasProperty('BUILD_NUMBER') ? "$BUILD_NUMBER" : 'undef'
 version = "0.1.$BUILD_NUMBER-jooq-$jooq_version"
 group = 'com.kenshoo'
-sonatypeUser = "$ossrhUsername"
-sonatypePassword = "$ossrhPassword"
+def sonatypeUser = "$ossrhUsername"
+def sonatypePassword = "$ossrhPassword"
 
 def JAR_BASE_NAME = 'persistence-layer'
 
