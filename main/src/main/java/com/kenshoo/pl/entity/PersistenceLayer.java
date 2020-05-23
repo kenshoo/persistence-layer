@@ -154,7 +154,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         flow.childFlows().forEach(childFlow -> prepareChildFlowRecursive(validChanges, childFlow, context));
     }
 
-    private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, List<? extends ChangeEntityCommand<E>> commands) {
+    private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, Collection<? extends ChangeEntityCommand<E>> commands) {
         new Builder<E>()
                 .with(context.getHierarchy())
                 .whereParentFieldsAre(notAutoInc())
@@ -243,7 +243,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         return filters.stream().filter(CurrentStateConsumer.supporting(changeOperation)).collect(toList());
     }
 
-    private <E extends EntityType<E>, T extends EntityChange<E>> Collection<T> filterCommands(Collection<T> changes, List<ChangesFilter<E>> changesFilters, ChangeOperation changeOperation, ChangeContext changeContext) {
+    private <E extends EntityType<E>, T extends ChangeEntityCommand<E>> Collection<T> filterCommands(Collection<T> changes, List<ChangesFilter<E>> changesFilters, ChangeOperation changeOperation, ChangeContext changeContext) {
         Collection<T> filteredChanges = ImmutableList.copyOf(changes);
         for (ChangesFilter<E> changesFilter : changesFilters) {
             filteredChanges = Lists.newArrayList(changesFilter.filter(filteredChanges, changeOperation, changeContext));
@@ -251,7 +251,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         return filteredChanges;
     }
 
-    private <E extends EntityType<E>> Collection<EntityChange<E>> validateChanges(Collection<? extends EntityChange<E>> changes, ChangesFilter<E> validationFilter, ChangeOperation changeOperation, ChangeContext changeContext) {
+    private <E extends EntityType<E>> Collection<EntityChange<E>> validateChanges(Collection<? extends ChangeEntityCommand<E>> changes, ChangesFilter<E> validationFilter, ChangeOperation changeOperation, ChangeContext changeContext) {
         return Lists.newArrayList(validationFilter.filter(changes, changeOperation, changeContext));
     }
 

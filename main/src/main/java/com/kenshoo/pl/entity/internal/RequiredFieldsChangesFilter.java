@@ -2,18 +2,11 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements ChangesFilter<E> {
@@ -25,14 +18,16 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
-    public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
-        return Collections2.filter(changes, change -> Iterables.all(requiredFields, entityField -> {
+    public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
+        Predicate<EntityField<E, ?>> isReferringToParentCommand = IsFieldReferringToParentCommand.of(changes);
+        return Collections2.filter(changes, change -> requiredFields.stream().allMatch(entityField -> {
             boolean fieldSpecified = change.isFieldChanged(entityField) && change.get(entityField) != null;
-            if (!fieldSpecified) {
+            boolean isValid = fieldSpecified || isReferringToParentCommand.test(entityField);
+            if (!isValid) {
                 changeContext.addValidationError(change,
                         new ValidationError(Errors.FIELD_IS_REQUIRED, entityField, ImmutableMap.of("field", entityField.toString())));
             }
-            return fieldSpecified;
+            return isValid;
         }));
     }
 

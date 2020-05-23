@@ -3,18 +3,14 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.collect.Sets;
 import com.kenshoo.pl.entity.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.UniqueKeyValue.concat;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -108,7 +104,7 @@ public class EntitiesToContextFetcher {
 
     private <E extends EntityType<E>> void fetchEntitiesByForeignKeys(Collection<? extends ChangeEntityCommand<E>> commands, Set<EntityField<?, ?>> fieldsToFetch, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
         E entityType = flowConfig.getEntityType();
-        Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields());
+        Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields()).filter(not(IsFieldReferringToParentCommand.of(commands))).collect(toList());
         if (foreignKeys.isEmpty()) {
             EntityImpl sharedEntity = new EntityImpl();
             commands.forEach(cmd -> changeContext.addEntity(cmd, sharedEntity));

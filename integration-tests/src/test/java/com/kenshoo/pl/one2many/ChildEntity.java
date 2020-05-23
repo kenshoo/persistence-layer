@@ -2,6 +2,9 @@ package com.kenshoo.pl.one2many;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.annotation.Required;
+
+import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 
 
 public class ChildEntity extends AbstractEntityType<ChildEntity> {
@@ -14,6 +17,7 @@ public class ChildEntity extends AbstractEntityType<ChildEntity> {
 
     public static final EntityField<ChildEntity, String> FIELD_1 = INSTANCE.field(ChildTable.INSTANCE.field1);
 
+    @Required(RELATION)
     public static final EntityField<ChildEntity, Integer> PARENT_ID = INSTANCE.field(ChildTable.INSTANCE.parent_id);
 
     private ChildEntity() {

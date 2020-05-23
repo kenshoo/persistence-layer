@@ -23,7 +23,7 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
-    public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
+    public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
         if (foreignKeys.isEmpty()) {
             return changes;
         }
