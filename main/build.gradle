@@ -1,8 +1,6 @@
 def BUILD_NUMBER = project.hasProperty('BUILD_NUMBER') ? "$BUILD_NUMBER" : 'undef'
 version = "0.1.$BUILD_NUMBER-jooq-$jooq_version"
 group = 'com.kenshoo'
-def sonatypeUser = "$ossrhUsername"
-def sonatypePassword = "$ossrhPassword"
 
 def JAR_BASE_NAME = 'persistence-layer'
 
@@ -55,17 +53,19 @@ artifacts {
 
 uploadArchives {
 
+def password = project.hasProperty('password') ? "$password" : ''
+
     repositories {
         mavenDeployer {
 
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                authentication(userName: sonatypeUser, password: sonatypePassword)
+                authentication(userName: "galkoren", password: password)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                authentication(userName: sonatypeUser, password: sonatypePassword)
+                authentication(userName: "galkoren", password: password)
             }
 
             pom.project {
