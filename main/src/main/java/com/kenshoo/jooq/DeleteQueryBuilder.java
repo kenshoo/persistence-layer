@@ -13,7 +13,7 @@ import java.util.Collection;
  * The simplest case is deleting by a list of IDs in which case it could be expressed with a simple IN. However in
  * terms of performance (and logs) it's better to do a join with a temporary table populated with those IDs instead.
  * This class does it automatically.
- * <p/>
+ *
  * <b>The returned object is a resource and it is crucial to place it inside try/finally block so it could be closed</b>
  */
 public class DeleteQueryBuilder {

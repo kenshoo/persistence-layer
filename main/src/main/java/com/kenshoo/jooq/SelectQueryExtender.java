@@ -20,7 +20,7 @@ import static java.util.stream.Collectors.toList;
  * terms of performance (and logs) it's better to do a join with a temporary table populated with those IDs instead.
  * This class does it automatically. In the more complicated case where the lookup is done by two fields (e.g. profile/affcode),
  * it is impossible to express it with an IN condition and a temp table has to be used in this case.
- * <p/>
+ *
  * Example of simple usage:
  * <pre>
  * AdCriterias ac = AdCriterias.TABLE;
