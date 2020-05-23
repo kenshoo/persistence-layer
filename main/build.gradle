@@ -30,18 +30,30 @@ jar {
     baseName = JAR_BASE_NAME
 }
 
+signing {
+    required { gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
 uploadArchives {
-    def username = project.hasProperty("ossrhUsername") ? $ossrhUsername : "undef_user"
-    def password = project.hasProperty("ossrhPassword") ? $ossrhPassword : "undef_password"
+
     repositories {
         mavenDeployer {
 
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                authentication(userName: username, password: password)
+                authentication(userName: $ossrhUsername, password: $ossrhPassword)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                authentication(userName: username, password: password)
+                authentication(userName: $ossrhUsername, password: $ossrhPassword)
             }
 
             pom.project {

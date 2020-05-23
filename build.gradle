@@ -7,6 +7,7 @@ allprojects {
     apply plugin: 'maven'
     apply plugin: 'project-report'
     apply plugin: "idea"
+    apply plugin: "signing"
 
     repositories {
         mavenLocal()
