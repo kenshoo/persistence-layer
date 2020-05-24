@@ -61,12 +61,12 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final String entityId = extractEntityId(entityChange, entity);
 
-        final Set<? extends EntityField<E, ?>> candidateDataFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
-                                                                                    .getDataFields();
+        final Set<? extends EntityField<E, ?>> candidateOnChangeFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
+                                                                                        .getOnChangeFields();
 
         final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(entityChange,
                                                                                             entity,
-                                                                                            candidateDataFields);
+                                                                                            candidateOnChangeFields);
 
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
@@ -79,11 +79,11 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
     private Collection<? extends FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
                                                                            final Entity entity,
-                                                                           final Collection<? extends EntityField<E, ?>> candidateFields) {
-        return candidateFields.stream()
-                              .filter(field -> fieldWasChanged(entityChange, entity, field))
-                              .map(field -> buildFieldChangeRecord(entityChange, entity, field))
-                              .collect(toList());
+                                                                           final Collection<? extends EntityField<E, ?>> candidateOnChangeFields) {
+        return candidateOnChangeFields.stream()
+                                      .filter(field -> fieldWasChanged(entityChange, entity, field))
+                                      .map(field -> buildFieldChangeRecord(entityChange, entity, field))
+                                      .collect(toList());
     }
 
     private FieldAuditRecord<E> buildFieldChangeRecord(final EntityChange<E> entityChange,

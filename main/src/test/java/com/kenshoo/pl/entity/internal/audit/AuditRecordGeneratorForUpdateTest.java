@@ -64,7 +64,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_AllIntersect_AllChanged_ShouldGenerateFixedDataAndFieldRecordsForAll() {
+    public void generate_WithOnChangeFields_AllIntersect_AllChanged_ShouldGenerateMandatoryDataAndFieldRecordsForAll() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "newDesc");
@@ -76,7 +76,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -94,7 +94,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_AllIntersect_SomeChanged_ShouldGenerateFieldRecordsForChanged() {
+    public void generate_WithOnChangeFields_AllIntersect_SomeChanged_ShouldGenerateFieldRecordsForChanged() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "newDesc")
@@ -108,9 +108,9 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC,
-                                                           AuditedType.DESC2))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC,
+                                                               AuditedType.DESC2))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -126,7 +126,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_AllIntersect_NoneChanged_ShouldReturnEmpty() {
+    public void generate_WithOnChangeFields_AllIntersect_NoneChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "name")
             .with(AuditedType.DESC, "desc")
@@ -140,9 +140,9 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC,
-                                                           AuditedType.DESC2))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC,
+                                                               AuditedType.DESC2))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -155,7 +155,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_SomeIntersect_AllChanged_ShouldGenerateRecordsForIntersectedOnly() {
+    public void generate_WithOnChangeFields_SomeIntersect_AllChanged_ShouldGenerateRecordsForIntersectedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "newDesc")
@@ -169,8 +169,8 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -186,7 +186,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_SomeIntersect_SomeChanged_ShouldGenerateRecordsForIntersectedAndChangedOnly() {
+    public void generate_WithOnChangeFields_SomeIntersect_SomeChanged_ShouldGenerateRecordsForIntersectedAndChangedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "desc")
@@ -200,8 +200,8 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -217,7 +217,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_SomeIntersect_NoneChanged_ShouldReturnEmpty() {
+    public void generate_WithOnChangeFields_SomeIntersect_NoneChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "name")
             .with(AuditedType.DESC, "desc")
@@ -231,8 +231,8 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -245,7 +245,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_NoneIntersect_AllChanged_ShouldReturnEmpty() {
+    public void generate_WithOnChangeFields_NoneIntersect_AllChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "newDesc");
@@ -275,7 +275,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(singleton(AuditedType.NAME))
+                           .withOnChangeFields(singleton(AuditedType.NAME))
                            .build();
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -298,7 +298,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(singleton(AuditedType.NAME))
+                           .withOnChangeFields(singleton(AuditedType.NAME))
                            .build();
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
@@ -312,7 +312,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithDataFields_AllIntersected_AllChanged_AndChildRecords_ShouldGenerateEverything() {
+    public void generate_WitOnChangeFields_AllIntersected_AllChanged_AndChildRecords_ShouldGenerateEverything() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName")
             .with(AuditedType.DESC, "newDesc");
@@ -325,8 +325,8 @@ public class AuditRecordGeneratorForUpdateTest {
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields)))
             .thenReturn(AuditedFieldSet.builder(AuditedType.ID)
-                                       .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                                       AuditedType.DESC))
+                                       .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                                           AuditedType.DESC))
                                        .build());
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
@@ -346,7 +346,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithIdAndChildRecordsOnly_ShouldGenerateFixedDataAndChildRecords() {
+    public void generate_WithIdAndChildRecordsOnly_ShouldGenerateMandatoryDataAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
         final EntityImpl entity = new EntityImpl();

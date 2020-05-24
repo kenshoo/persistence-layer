@@ -43,7 +43,7 @@ public class AuditRecordGeneratorForDeleteTest {
     private AuditRecordGenerator<AuditedType> auditRecordGenerator;
 
     @Test
-    public void generate_WithIdOnly_ShouldGenerateFixedData() {
+    public void generate_WithIdOnly_ShouldGenerateMandatoryData() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
 
         final EntityImpl entity = new EntityImpl();
@@ -63,7 +63,7 @@ public class AuditRecordGeneratorForDeleteTest {
     }
 
     @Test
-    public void generate_WithIdAndChildRecords_ShouldGenerateFixedDataAndChildRecords() {
+    public void generate_WithIdAndChildRecords_ShouldGenerateMandatoryDataAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE)
             .with(AuditedType.NAME, "name");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
@@ -72,7 +72,7 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(singleton(AuditedType.NAME))
+                           .withOnChangeFields(singleton(AuditedType.NAME))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);

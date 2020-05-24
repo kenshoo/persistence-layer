@@ -44,7 +44,7 @@ public class AuditRecordGeneratorForCreateTest {
     private AuditRecordGenerator<AuditedType> auditRecordGenerator;
 
     @Test
-    public void generate_WithIdOnly_ShouldGenerateFixedData() {
+    public void generate_WithIdOnly_ShouldGenerateMandatoryData() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
         final Entity entity = Entity.EMPTY;
@@ -64,7 +64,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithIdAndDataFieldsOnly_ShouldGenerateFixedDataAndFieldRecords() {
+    public void generate_WithIdAndOnChangeFieldsOnly_ShouldGenerateMandatoryDataAndFieldRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, "name")
             .with(AuditedType.DESC, "desc");
@@ -74,7 +74,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
@@ -92,7 +92,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithIdAndChildRecordsOnly_ShouldGenerateFixedDataAndChildRecords() {
+    public void generate_WithIdAndChildRecordsOnly_ShouldGenerateMandatoryDataAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
         final Entity entity = Entity.EMPTY;
@@ -126,7 +126,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);

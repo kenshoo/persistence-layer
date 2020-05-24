@@ -29,10 +29,10 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllFields_IdAndAncestorFields() {
+    public void getAllFields_IdAndAlwaysFields() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -44,10 +44,10 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllFields_IdAndDataFields() {
+    public void getAllFields_IdAndOnChangeFields() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -59,11 +59,11 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllFields_IdAndAncestorAndDataFields() {
+    public void getAllFields_IdAndAlwaysAndOnChangeFields() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
-                .withDataFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -77,7 +77,7 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void intersectWith_WhenOthersAreExactlyIdAndAuditedFields_ShouldReturnIdAndAuditedFields() {
+    public void intersectWith_WhenOthersAreExactlyIdAndOnChangeFields_ShouldReturnIdAndOnChangeFields() {
         final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.ID,
                                                                                               AuditedType.NAME,
                                                                                               AuditedType.DESC,
@@ -85,9 +85,9 @@ public class AuditedFieldSetTest {
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC,
-                                                AuditedType.DESC2))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -97,15 +97,15 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void intersectWith_WhenOthersAreExactlyAuditedFields_ShouldReturnIdAndAuditedFields() {
+    public void intersectWith_WhenOthersAreExactlyOnChangeFields_ShouldReturnIdAndOnChangeFields() {
         final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME,
                                                                                               AuditedType.DESC,
                                                                                               AuditedType.DESC2);
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC,
-                                                AuditedType.DESC2))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -115,7 +115,7 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void intersectWith_WhenOthersContainIdAndAuditedFields_ShouldReturnIdAndAuditedFields() {
+    public void intersectWith_WhenOthersContainIdAndOnChangeFields_ShouldReturnIdAndOnChangeFields() {
         final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.ID,
                                                                                               AuditedType.NAME,
                                                                                               AuditedType.DESC,
@@ -123,8 +123,8 @@ public class AuditedFieldSetTest {
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -140,14 +140,14 @@ public class AuditedFieldSetTest {
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC,
-                                                AuditedType.DESC2))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -162,14 +162,14 @@ public class AuditedFieldSetTest {
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC,
-                                                AuditedType.DESC2))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -179,23 +179,23 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void intersectWith_WhenAuditedSetContainsOthersAndAncestorFields_AndIdNotInOthers_ShouldReturnIdAndAncestorFieldsAndOthers() {
+    public void intersectWith_WhenAuditedSetContainsOthersAndAlwaysFields_AndIdNotInOthers_ShouldReturnIdAndAlwaysFieldsAndOthers() {
         final Collection<? extends EntityField<AuditedType, ?>> otherFields = ImmutableSet.of(AuditedType.NAME);
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
-                                                    NotAuditedAncestorType.DESC))
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC,
-                                                AuditedType.DESC2))
+                .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                  NotAuditedAncestorType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
             builder(AuditedType.ID)
-                .withAncestorFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
-                                                    NotAuditedAncestorType.DESC))
-                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                  NotAuditedAncestorType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -211,13 +211,13 @@ public class AuditedFieldSetTest {
 
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC2))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC2))
                 .build();
 
         final AuditedFieldSet<AuditedType> expectedIntersectedAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME))
                 .build();
 
         final AuditedFieldSet<AuditedType> actualIntersectedAuditedFieldSet =
@@ -230,8 +230,8 @@ public class AuditedFieldSetTest {
     public void intersectWith_WhenOthersAreEmpty_ShouldReturnId() {
         final AuditedFieldSet<AuditedType> initialAuditedFieldSet =
             builder(AuditedType.ID)
-                .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                AuditedType.DESC))
+                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                    AuditedType.DESC))
                 .build();
 
         assertThat(initialAuditedFieldSet.intersectWith(Stream.empty()),
