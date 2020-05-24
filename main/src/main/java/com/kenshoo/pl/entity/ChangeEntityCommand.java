@@ -200,7 +200,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     public void updateOperator(ChangeOperation changeOperation) {
     }
 
-    public ChangeEntityCommand getParent() {
+    public ChangeEntityCommand<?> getParent() {
         return parent;
     }
 

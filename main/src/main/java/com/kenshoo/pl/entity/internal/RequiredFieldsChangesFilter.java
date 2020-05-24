@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+
 public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements ChangesFilter<E> {
 
     private final Set<EntityField<E, ?>> requiredFields;
@@ -20,7 +22,7 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
     @Override
     public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
         Predicate<EntityField<E, ?>> isReferringToParentCommand = IsFieldReferringToParentCommand.of(changes);
-        return Collections2.filter(changes, change -> requiredFields.stream().allMatch(entityField -> {
+        return changes.stream().filter(change -> requiredFields.stream().allMatch(entityField -> {
             boolean fieldSpecified = change.isFieldChanged(entityField) && change.get(entityField) != null;
             boolean isValid = fieldSpecified || isReferringToParentCommand.test(entityField);
             if (!isValid) {
@@ -28,7 +30,7 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
                         new ValidationError(Errors.FIELD_IS_REQUIRED, entityField, ImmutableMap.of("field", entityField.toString())));
             }
             return isValid;
-        }));
+        })).collect(toList());
     }
 
     @Override

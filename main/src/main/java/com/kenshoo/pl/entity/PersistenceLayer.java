@@ -4,10 +4,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.ChangesFilter;
-import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.entity.internal.EntitiesToContextFetcher;
-import com.kenshoo.pl.entity.internal.RequiredFieldsCommandsFilter;
+import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.internal.audit.RecursiveAuditRecordGenerator;
 import com.kenshoo.pl.entity.internal.validators.ValidationFilter;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
@@ -226,7 +223,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
 
     private <E extends EntityType<E>, C extends ChangeEntityCommand<E>> Collection<C> filterCommands(Collection<C> commands, ChangeFlowConfig<E> flowConfig, ChangeOperation changeOperation, ChangeContext changeContext) {
         if(changeOperation == CREATE) {
-            return Lists.newArrayList(new RequiredFieldsCommandsFilter<>(flowConfig.getRequiredRelationFields()).filter(commands, changeContext));
+            return Lists.newArrayList(new RequiredFieldsChangesFilter<>(flowConfig.getRequiredRelationFields()).filter(commands, changeOperation, changeContext));
         } else {
             return commands;
         }
