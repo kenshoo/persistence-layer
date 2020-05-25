@@ -16,12 +16,12 @@ PL was designed to be fast for bulk operations and do every SQL operation in bul
 ## Compatibility
 * Java 8 or greater
 * MySQL Database
-* Each PL release version specifis the JOOQ version it was built with. E.g. release "0.1.40-jooq-3.10.4" was built with JOOQ 3.10.4. If you need a very specific JOOQ version, we can add it to our build process.
+* Each PL release version specifies the JOOQ version it was built with. E.g. release "0.1.40-jooq-3.10.4" was built with JOOQ 3.10.4. If you need a very specific JOOQ version, we can add it to our build process.
 
 ## Code Samples
 
 ### Retrieve auto generated ID
-After defining and wirnig the required infra (as described in the Book below), you can execute PL commands as follows:
+After defining and wirinig the required infra (as described in the Book below), you can execute PL commands as follows:
 ```java
 var cmd = new CreateCampaignCommand();
 
@@ -103,7 +103,7 @@ There are multiple features in this examples:
 * ID field cannot be changed by an UPDATE command.
 * BUDGET field must be provided upon creation.
 * ACCOUNT_ID must be provided upon creation and the referenced Account entity must exist in DB.
-* BIDDING_STRATEGY is a field from another JOOQ table (usages of the campaign entity should not care about it). This requires that the "secondary" table referring the campaing table by a one-to-one relation.
+* BIDDING_STRATEGY is a field from another JOOQ table (usages of the campaign entity should not care about it). This requires that the "secondary" table refer to the campaing table by a one-to-one relation.
 
 ## The Book
 
