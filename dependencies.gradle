@@ -20,10 +20,6 @@ project.ext.libraries = [
         apacheCommons3: 'org.apache.commons:commons-lang3:3.4',
         mysqlConnector: 'mysql:mysql-connector-java:5.1.35',
 
-        javaxValidation      : "javax.validation:validation-api:1.1.0.Final",
-        jackson_annotations  : "com.fasterxml.jackson.core:jackson-annotations:$jackson_version",
-        jackson_databind     : "com.fasterxml.jackson.core:jackson-databind:$jackson_version",
-        jackson_json_provider: "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:$jackson_version",
         guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
 
         dockerTest           : 'com.kenshoo:docker-test:4.5.+'
