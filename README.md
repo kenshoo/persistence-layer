@@ -12,6 +12,20 @@ PL is a Java mutation layer for business entites where you can define a flow to 
 The flow can contain enrichments and validations.
 PL was designed to be fast for bulk operations and do every SQL operation in bulks, including fetching of all fields required by the flow.
 
+## How fast is it
+
+At Kenshoo, after migrating our heavy bulk operations to PL, we got performance boost of factor of 2 up to 50.
+
+## Why is it faster
+
+Persisting in bulks is always faster than persiting one entity at a time within a loop.  
+So first of all, working in bulks with Hibernate is kind of a hidden feature. It exists, but few developers are aware of it.  
+PL interface, on the other hand, only accepts collection of commands to encourage you working effectively.  
+But lets suppose you are a "performance driven" developer and you do know how to pre-fetch a bulk of entites using Hibernate and now you want to validate the changes and persist them.  
+Each validator may require a different set of fields to fetch.  
+**Hibernate could be either eager or lazy. Neither of them is good.** Being eager may fetch too much, but being lazy is much worse as it shall query the DB multiple times within the loop.  
+PL precalculates the fields required by the flow componets and fetch exactly what is needed in a single query.  
+It also precalculates which validators are really required by your commands and there are more optimizations along the way. Oh, and it does not use reflection.
 
 ## Compatibility
 * Java 8 or greater
@@ -69,7 +83,7 @@ class CampaignBudgetValidator implements FieldValidator<Campaign, Integer> {
     }
 }
 ```
-See the book for more details:
+See the wiki for more details:
 * How to add validators to the flow.
 * How to define more complex validators.
 
