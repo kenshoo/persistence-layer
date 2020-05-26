@@ -14,7 +14,7 @@ PL was designed to be fast for bulk operations and do every SQL operation in bul
 
 ## How fast is it
 
-At Kenshoo, after migrating our heavy bulk operations to PL, we got performance boost of factor of 2 up to 50.
+At Kenshoo, after migrating our heavy bulk operations to PL, we got a performance boost factor of 2 up to 50.
 
 ## Why is it faster
 
