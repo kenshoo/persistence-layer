@@ -12,10 +12,6 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven {
-            name "anodot-maven-repo-release"
-            url 'https://bitbucket.org/anodotengineering/anodot-maven-repo-release/raw/master'
-        }
     }
     buildscript {
         repositories {
