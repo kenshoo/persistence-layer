@@ -54,11 +54,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                     changeContext,
                                     primaryTableCommands);
 
+                            //noinspection unchecked
                             new HierarchyKeyPopulator.Builder<E>()
                                     .with(changeContext.getHierarchy())
                                     .whereParentFieldsAre(autoInc())
                                     .gettingValues(fromContext(changeContext)).build()
-                                    .populateKeysToChildren(entityChanges);
+                                    .populateKeysToChildren((Collection<? extends ChangeEntityCommand<E>>)entityChanges);
                         }
                     }
             );

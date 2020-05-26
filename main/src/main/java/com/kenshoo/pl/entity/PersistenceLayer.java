@@ -255,7 +255,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         return Lists.newArrayList(validationFilter.filter(changes, changeOperation, changeContext));
     }
 
-    private <E extends EntityType<E>> void generateOutputRecursive(ChangeFlowConfig<E> flowConfig, Collection<? extends EntityChange<E>> commands, ChangeContext context) {
+    private <E extends EntityType<E>> void generateOutputRecursive(ChangeFlowConfig<E> flowConfig, Collection<? extends ChangeEntityCommand<E>> commands, ChangeContext context) {
         for (OutputGenerator<E> outputGenerator : flowConfig.getOutputGenerators()) {
             Seq.of(DELETE, UPDATE, CREATE)
                     .filter(CurrentStateConsumer.supporting(outputGenerator))
@@ -268,7 +268,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         flowConfig.childFlows().forEach(childFlow -> generateOutputChildFlowRecursive(commands, childFlow, context));
     }
 
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void generateOutputChildFlowRecursive(Collection<? extends EntityChange<PARENT>> entityChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void generateOutputChildFlowRecursive(Collection<? extends ChangeEntityCommand<PARENT>> entityChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
         generateOutputRecursive(childFlow, entityChanges.stream().flatMap(parent -> parent.getChildren(childFlow.getEntityType())).collect(toList()), context);
     }
 
