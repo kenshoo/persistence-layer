@@ -30,11 +30,11 @@ public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E>
     /**
      * @return of stream of sub changes of the entity
      */
-    Stream<ChangeEntityCommand<? extends EntityType>> getChildren();
+    Stream<? extends EntityChange<? extends EntityType>> getChildren();
     /**
      * @return of stream of sub changes of the entity by child type
      */
-    <CHILD extends EntityType<CHILD>> Stream<ChangeEntityCommand<CHILD>> getChildren(CHILD type);
+    <CHILD extends EntityType<CHILD>> Stream<? extends EntityChange<CHILD>> getChildren(CHILD type);
     /**
      * @return the parent identifier of the entity
      */

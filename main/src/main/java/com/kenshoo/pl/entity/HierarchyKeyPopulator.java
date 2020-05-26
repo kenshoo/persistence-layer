@@ -29,7 +29,7 @@ public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
         return (fields, cmd) -> EntityDbUtil.getFieldValues(fields, cmd);
     }
 
-    public void populateKeysToChildren(Collection<? extends EntityChange<PARENT>> parents) {
+    public void populateKeysToChildren(Collection<? extends ChangeEntityCommand<PARENT>> parents) {
 
         if (parents.isEmpty()) {
             return;
@@ -40,13 +40,13 @@ public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
     }
 
     @SuppressWarnings("unchecked")
-    private Consumer<EntityType> populateKeysToChildrenOfSpecificTypeConsumer(Collection<? extends EntityChange<PARENT>> parents) {
+    private Consumer<EntityType> populateKeysToChildrenOfSpecificTypeConsumer(Collection<? extends ChangeEntityCommand<PARENT>> parents) {
         return childType -> populateKeysToChildrenOfSpecificType(parents, childType);
     }
 
     private <CHILD extends EntityType<CHILD>>
     void populateKeysToChildrenOfSpecificType(
-            Collection<? extends EntityChange<PARENT>> parents,
+            Collection<? extends ChangeEntityCommand<PARENT>> parents,
             CHILD childType) {
 
         final EntityType.ForeignKey<CHILD, PARENT> childToParentFields = childType.getKeyTo(entityType(parents)).filterByTo(keyFilter);
