@@ -4,8 +4,6 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.annotation.audit.NotAudited;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -15,8 +13,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class AuditedFieldsResolver {
-
-    private static final Logger logger = LoggerFactory.getLogger(AuditedFieldsResolver.class);
 
     public static final AuditedFieldsResolver INSTANCE = new AuditedFieldsResolver();
 
@@ -50,7 +46,7 @@ public class AuditedFieldsResolver {
         if (entityTypeAudited) {
             return Optional.of(AuditedFieldSet.builder(idField).build());
         }
-        return noFieldsToAudit(entityType);
+        return Optional.empty();
     }
 
     private <E extends EntityType<E>> Optional<AuditedFieldSet<E>> resolve(final EntityType<E> entityType,
@@ -64,7 +60,7 @@ public class AuditedFieldsResolver {
                                                       field))
                       .collect(toList());
         if (auditedDataFields.isEmpty()) {
-            return noFieldsToAudit(entityType);
+            return Optional.empty();
         }
         return Optional.of(AuditedFieldSet.builder(idField)
                                           .withDataFields(auditedDataFields)
@@ -78,12 +74,6 @@ public class AuditedFieldsResolver {
             return !isAnnotatedWith(entityType, NotAudited.class, field);
         }
         return isAnnotatedWith(entityType, Audited.class, field);
-    }
-
-    private <E extends EntityType<E>> Optional<AuditedFieldSet<E>> noFieldsToAudit(final EntityType<E> entityType) {
-        logger.warn("Cannot audit entity type {} because no fields are marked for auditing and/or @Id annotation is missing",
-                    entityType);
-        return Optional.empty();
     }
 
     private AuditedFieldsResolver() {
