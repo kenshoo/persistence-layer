@@ -29,8 +29,12 @@ It also precalculates which validators are really required by your commands and 
 
 ## Compatibility
 * Java 8 or greater
-* MySQL Database
-* Each PL release version specifies the JOOQ version it was built with. E.g. release "0.1.40-jooq-3.10.4" was built with JOOQ 3.10.4. If you need a very specific JOOQ version, we can add it to our build process.
+* MySQL Database (5.6 or greater)
+* PL depends on [JOOQ](https://www.jooq.org). Each PL release version specifies the JOOQ version it was built with. E.g. release "0.1.40-jooq-3.10.4" was built with JOOQ 3.10.4. If you need a very specific JOOQ version, we can add it to our build process.
+
+## [Try it Online](https://repl.it/@GalKoren2/PersistenceLayer#Main.java)
+
+The above link is a **repl.it** online project where you can edit and execute code samples by only using your browser.
 
 ## Code Samples
 
@@ -39,9 +43,9 @@ After defining and wiring the required infra (as described in the Book below), y
 ```java
 var cmd = new CreateCampaignCommand();
 
-cmd.set(Campaign.NAME         , "bla bla");
-cmd.set(Campaign.DAILY_BUDGET , 150);
-cmd.set(Campaign.STATUS       , Status.ToPause);
+cmd.set(Campaign.NAME, "bla bla");
+cmd.set(Campaign.DAILY_BUDGET, 150);
+cmd.set(Campaign.STATUS, Status.ToPause);
 
 var results = campaignPersistence.update(asList(cmd));
 var ids = seq(results).map(r -> r.getIdentifier().get(Campaign.ID)).toList();
@@ -119,11 +123,9 @@ There are multiple features in this examples:
 * ACCOUNT_ID must be provided upon creation and the referenced Account entity must exist in DB.
 * BIDDING_STRATEGY is a field from another JOOQ table (usages of the campaign entity should not care about it). This requires that the "secondary" table refer to the campaign table by a one-to-one relation.
 
-## The Book
+## [The Wiki](https://github.com/kenshoo/persistence-layer/wiki)
 
-The book is work in progress so it only convers the basic features. Until it is finished, advanced features can be found in the tests (PersitenceLayerTest and PersistenceLayerOneToManyTest) in this repo.
-
-* [Persistence Layer for Smarties](https://docs.google.com/document/d/e/2PACX-1vRLFhNPYwOhqYsm9cTL6UDGCwexuscKrVVuLhdZLrbaGsCB3QG5NY28zyh1uO8QzBhe3XItwc24iSCE/pub#h.g4yh5us7ub8z)
+There you can find a full tutorial with theory and examples.
 
 ## Download
 
