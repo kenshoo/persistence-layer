@@ -137,7 +137,7 @@ public class PLContextSelectTest {
         final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(PLCondition.TrueCondition)
-                .fetch(ImmutableList.of(uniqueKey.createValue(1)));
+                .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
         assertThat("Incorrect number of entities fetched: ",
                 entities.size(), is(1));
 

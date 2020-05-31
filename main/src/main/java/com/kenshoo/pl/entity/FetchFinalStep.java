@@ -17,5 +17,5 @@ public interface FetchFinalStep {
      * @param keys the keys to fetch
      * @return the result entities
      */
-    List<Entity> fetch(Collection<? extends Identifier<?>> keys);
+    List<Entity> fetchByKeys(Collection<? extends Identifier<?>> keys);
 }

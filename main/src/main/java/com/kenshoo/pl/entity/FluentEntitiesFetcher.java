@@ -38,7 +38,7 @@ class FluentEntitiesFetcher implements FetchFromStep, FetchWhereStep, FetchFinal
         return entitiesFetcher.fetch(entityType, condition, fieldsToFetch);
     }
 
-    public List<Entity> fetch(Collection<? extends Identifier<?>> keys) {
+    public List<Entity> fetchByKeys(Collection<? extends Identifier<?>> keys) {
         return entitiesFetcher.fetch(entityType, keys, condition, fieldsToFetch);
     }
 }
