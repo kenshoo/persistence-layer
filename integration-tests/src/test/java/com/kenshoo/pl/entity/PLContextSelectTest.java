@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.AbstractDataTable;
 import com.kenshoo.jooq.DataTable;
@@ -128,6 +129,23 @@ public class PLContextSelectTest {
                                   fieldValue(TestParentEntityType.FIELD1, "ParentAlpha"),
                                   fieldValue(TestParentEntityType.SECONDARY_FIELD1, "ParentSecondaryAlpha")));
     }
+
+    @Test
+    public void selectFromSingleEntityByKeys() {
+        final SingleUniqueKey<TestEntityType, Integer> uniqueKey = new SingleUniqueKey<>(TestEntityType.ID);
+
+        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+                .from(TestEntityType.INSTANCE)
+                .where(PLCondition.TrueCondition)
+                .fetch(ImmutableList.of(uniqueKey.createValue(1)));
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
+    }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void selectWithoutFieldsShouldThrowException() {

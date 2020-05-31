@@ -671,9 +671,7 @@ public class PersistenceLayerTest {
         Instant expectedCreationDate = Instant.now();
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
-        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByKeys(EntityForTest.INSTANCE,
-                                                                                               EntityForTest.Key.DEFINITION,
-                                                                                               singleton(new EntityForTest.Key(newId)),
+        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByIds(singleton(new EntityForTest.Key(newId)),
                                                                                                singleton(EntityForTest.CREATION_DATE));
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);

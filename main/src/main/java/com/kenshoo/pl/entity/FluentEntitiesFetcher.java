@@ -2,7 +2,11 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -11,7 +15,8 @@ class FluentEntitiesFetcher implements FetchFromStep, FetchWhereStep, FetchFinal
     private final EntitiesFetcher entitiesFetcher;
     private final EntityField<?, ?>[] fieldsToFetch;
     private EntityType<?> entityType;
-    private PLCondition condition;
+    private PLCondition condition = PLCondition.TrueCondition;
+
 
     FluentEntitiesFetcher(final EntitiesFetcher entitiesFetcher,
                           final EntityField<?, ?>... fieldsToFetch) {
@@ -30,8 +35,10 @@ class FluentEntitiesFetcher implements FetchFromStep, FetchWhereStep, FetchFinal
     }
 
     public List<Entity> fetch() {
-        return entitiesFetcher.fetch(entityType,
-                                     condition,
-                                     fieldsToFetch);
+        return entitiesFetcher.fetch(entityType, condition, fieldsToFetch);
+    }
+
+    public List<Entity> fetch(Collection<? extends Identifier<?>> keys) {
+        return entitiesFetcher.fetch(entityType, keys, condition, fieldsToFetch);
     }
 }

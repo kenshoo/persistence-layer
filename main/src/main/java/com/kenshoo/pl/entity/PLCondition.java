@@ -6,12 +6,16 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jooq.Condition;
+import org.jooq.impl.DSL;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
 public class PLCondition {
+
+    public static PLCondition TrueCondition = new PLCondition(DSL.trueCondition());
 
     private final Condition jooqCondition;
     private final Set<? extends EntityField<?, ?>> fields;

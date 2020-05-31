@@ -36,14 +36,6 @@ public class EntitiesFetcher {
         this.oldEntityFetcher = new OldEntityFetcher(dslContext);
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
-                                                                                    final UniqueKey<E> uniqueKey,
-                                                                                    final Collection<? extends Identifier<E>> keys,
-                                                                                    final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return fetchEntitiesByIds(keys, fieldsToFetch);
-
-    }
-
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
                                                                                    final EntityField<?, ?>... fieldsToFetchArgs) {
         return fetchEntitiesByIds(ids, ImmutableList.copyOf(fieldsToFetchArgs));
@@ -69,6 +61,13 @@ public class EntitiesFetcher {
                               final PLCondition plCondition,
                               final EntityField<?, ?>... fieldsToFetch) {
         return oldEntityFetcher.fetch(entityType, plCondition, fieldsToFetch);
+    }
+
+    public List<Entity> fetch(final EntityType<?> entityType,
+                              final Collection<? extends Identifier<?>> ids,
+                              final PLCondition plCondition,
+                              final EntityField<?, ?>... fieldsToFetch) {
+        return oldEntityFetcher.fetch(entityType, ids, plCondition, fieldsToFetch);
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
