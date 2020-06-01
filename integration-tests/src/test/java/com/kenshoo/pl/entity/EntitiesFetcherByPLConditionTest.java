@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.AbstractDataTable;
 import com.kenshoo.jooq.DataTable;
@@ -25,8 +26,7 @@ import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class EntitiesFetcherByPLConditionTest {
@@ -359,6 +359,44 @@ public class EntitiesFetcherByPLConditionTest {
                    hasFieldValues(fieldValue(TestEntityType.FIELD1, "Bravo")));
         assertThat(sortedEntities.get(1),
                    hasFieldValues(fieldValue(TestEntityType.FIELD1, "Delta")));
+    }
+
+
+    @Test
+    public void fetchByUniqueKeys() {
+        final PairUniqueKey<TestEntityType, Integer, Integer> uniqueKey= new PairUniqueKey<>(TestEntityType.ID, TestEntityType.TYPE);
+
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
+                PLCondition.TrueCondition,
+                TestEntityType.TYPE, TestEntityType.FIELD1);
+
+        final List<Entity> sortedEntities = entities.stream()
+                .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
+                .collect(toList());
+
+        assertThat(sortedEntities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.FIELD1, "Alpha")));
+        assertThat(sortedEntities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void fetchByUniqueKeysAndCondition() {
+        final PairUniqueKey<TestEntityType, Integer, Integer> uniqueKey= new PairUniqueKey<>(TestEntityType.ID, TestEntityType.TYPE);
+
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
+                not(TestEntityType.ID.eq(1)),
+                TestEntityType.ID, TestEntityType.TYPE, TestEntityType.FIELD1);
+
+        final List<Entity> sortedEntities = entities.stream()
+                .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
+                .collect(toList());
+
+        assertThat(sortedEntities.size(), is(1));
+        assertThat(sortedEntities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2), fieldValue(TestEntityType.FIELD1, "Bravo")));
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {

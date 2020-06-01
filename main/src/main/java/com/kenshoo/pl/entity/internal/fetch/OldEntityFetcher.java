@@ -35,13 +35,6 @@ public class OldEntityFetcher {
         this.dslContext = dslContext;
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByKeys(final E entityType,
-                                                                                    final UniqueKey<E> uniqueKey,
-                                                                                    final Collection<? extends Identifier<E>> keys,
-                                                                                    final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        return fetchEntitiesByIds(keys, fieldsToFetch);
-
-    }
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
                                                                                    final EntityField<?, ?>... fieldsToFetchArgs) {
@@ -73,14 +66,39 @@ public class OldEntityFetcher {
         final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
         final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
 
-        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(),
-                emptyList(),
-                allFieldsToFetch);
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), emptyList(), allFieldsToFetch);
         final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
 
         return query.where(completeJooqCondition)
                 .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
     }
+
+    public List<Entity> fetch(final EntityType<?> entityType,
+                              final Collection<? extends Identifier<?>> ids,
+                              final PLCondition plCondition,
+                              final EntityField<?, ?>... fieldsToFetch) {
+        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
+        requireNonNull(plCondition, "A condition must be provided");
+
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        final UniqueKey<?> uniqueKey = ids.iterator().next().getUniqueKey();
+        final AliasedKey<?> aliasedKey = new AliasedKey<>(uniqueKey);
+
+        final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
+        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
+
+        final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), allFieldsToFetch);
+        final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
+
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+            return queryExtender.getQuery().where(completeJooqCondition)
+                    .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
+        }
+    }
+
 
     public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
