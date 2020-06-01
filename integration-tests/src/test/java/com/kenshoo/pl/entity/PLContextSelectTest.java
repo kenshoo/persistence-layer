@@ -146,6 +146,25 @@ public class PLContextSelectTest {
                         fieldValue(TestEntityType.FIELD1, "Alpha")));
     }
 
+    @Test
+    public void selectFromSingleEntityByParentKeys() {
+        final SingleUniqueKey<TestParentEntityType, Integer> uniqueKey = new SingleUniqueKey<>(TestParentEntityType.ID);
+
+        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+                .from(TestEntityType.INSTANCE)
+                .where(PLCondition.TrueCondition)
+                .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void selectWithoutFieldsShouldThrowException() {
