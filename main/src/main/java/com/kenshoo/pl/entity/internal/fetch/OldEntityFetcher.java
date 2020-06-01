@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -88,7 +89,8 @@ public class OldEntityFetcher {
         final AliasedKey<?> aliasedKey = new AliasedKey<>(uniqueKey);
 
         final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
-        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
+        final Set<EntityField<?, ?>> conditions = Stream.concat(plCondition.getFields().stream(), Arrays.stream(uniqueKey.getFields())).collect(toSet());
+        final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, conditions);
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), allFieldsToFetch);
         final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
