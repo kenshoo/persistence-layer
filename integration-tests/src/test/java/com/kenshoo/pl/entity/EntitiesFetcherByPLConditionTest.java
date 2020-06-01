@@ -26,8 +26,7 @@ import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class EntitiesFetcherByPLConditionTest {
@@ -389,14 +388,15 @@ public class EntitiesFetcherByPLConditionTest {
         final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
                 not(TestEntityType.ID.eq(1)),
-                TestEntityType.TYPE, TestEntityType.FIELD1);
+                TestEntityType.ID, TestEntityType.TYPE, TestEntityType.FIELD1);
 
         final List<Entity> sortedEntities = entities.stream()
                 .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
                 .collect(toList());
 
+        assertThat(sortedEntities.size(), is(1));
         assertThat(sortedEntities.get(0),
-                hasFieldValues(fieldValue(TestEntityType.FIELD1, "Bravo")));
+                hasFieldValues(fieldValue(TestEntityType.ID, 2), fieldValue(TestEntityType.FIELD1, "Bravo")));
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {
