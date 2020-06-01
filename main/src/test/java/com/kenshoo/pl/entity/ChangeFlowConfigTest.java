@@ -176,7 +176,7 @@ public class ChangeFlowConfigTest {
     public void should_create_audit_record_generator_with_field_set_if_audited_fields_defined() {
 
         final AuditedFieldSet<TestEntity> auditedFieldSet = AuditedFieldSet.builder(TestEntity.ID)
-                                                                           .withDataFields(ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2))
+                                                                           .withOnChangeFields(ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2))
                                                                            .build();
         doReturn(Optional.of(auditedFieldSet)).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
 

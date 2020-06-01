@@ -17,12 +17,12 @@ public class AuditedFieldsResolverTest {
     private static final AuditedFieldsResolver RESOLVER = AuditedFieldsResolver.INSTANCE;
 
     @Test
-    public void resolve_WhenEntityTypeIsAudited_AndHasId_ShouldReturnIdAndDataFields() {
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndOtherFields_ShouldReturnIdAndOnChangeFields() {
         final AuditedFieldSet<AuditedType> expectedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withDataFields(ImmutableSet.of(AuditedType.NAME,
-                                                           AuditedType.DESC,
-                                                           AuditedType.DESC2))
+                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
+                                                               AuditedType.DESC,
+                                                               AuditedType.DESC2))
                            .build();
 
         assertThat(RESOLVER.resolve(AuditedType.INSTANCE),
@@ -30,11 +30,39 @@ public class AuditedFieldsResolverTest {
     }
 
     @Test
-    public void resolve_WhenEntityTypeIsNotAudited_AndHasId_AndAuditedFields_ShouldReturnIdAndAuditedFields() {
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndAlwaysFields_AndOtherFields_ShouldReturnEverything() {
+        final AuditedFieldSet<AuditedWithAncestorAuditedFieldsType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithAncestorAuditedFieldsType.ID)
+                           .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                             NotAuditedAncestorType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedWithAncestorAuditedFieldsType.NAME,
+                                                               AuditedWithAncestorAuditedFieldsType.DESC,
+                                                               AuditedWithAncestorAuditedFieldsType.DESC2))
+                           .build();
+
+        assertThat(RESOLVER.resolve(AuditedWithAncestorAuditedFieldsType.INSTANCE),
+                   isPresentAndIs(expectedFieldSet));
+    }
+
+    @Test
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndOtherFields_AndInvalidFieldsProvider_ShouldReturnIdAndOnChangeFields() {
+        final AuditedFieldSet<AuditedWithInvalidFieldsProviderType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithInvalidFieldsProviderType.ID)
+                           .withOnChangeFields(ImmutableSet.of(AuditedWithInvalidFieldsProviderType.NAME,
+                                                               AuditedWithInvalidFieldsProviderType.DESC,
+                                                               AuditedWithInvalidFieldsProviderType.DESC2))
+                           .build();
+
+        assertThat(RESOLVER.resolve(AuditedWithInvalidFieldsProviderType.INSTANCE),
+                   isPresentAndIs(expectedFieldSet));
+    }
+
+    @Test
+    public void resolve_WhenEntityTypeIsNotAudited_AndHasId_AndAuditedFields_ShouldReturnIdAndOnChangeFields() {
         final AuditedFieldSet<InclusiveAuditedType> expectedFieldSet =
             AuditedFieldSet.builder(InclusiveAuditedType.ID)
-                           .withDataFields(ImmutableSet.of(InclusiveAuditedType.NAME,
-                                                           InclusiveAuditedType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(InclusiveAuditedType.NAME,
+                                                               InclusiveAuditedType.DESC))
                            .build();
 
         assertThat(RESOLVER.resolve(InclusiveAuditedType.INSTANCE),
@@ -42,10 +70,10 @@ public class AuditedFieldsResolverTest {
     }
 
     @Test
-    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndHasNotAuditedFields_ShouldReturnIdAndOtherFields() {
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndHasNotAuditedFields_ShouldReturnIdAndOnChangeFields() {
         final AuditedFieldSet<ExclusiveAuditedType> expectedFieldSet =
             AuditedFieldSet.builder(ExclusiveAuditedType.ID)
-                           .withDataFields(ImmutableSet.of(ExclusiveAuditedType.NAME))
+                           .withOnChangeFields(ImmutableSet.of(ExclusiveAuditedType.NAME))
                            .build();
 
         assertThat(RESOLVER.resolve(ExclusiveAuditedType.INSTANCE),

@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity.annotation.audit;
 
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.spi.audit.AncestorFieldsProvider;
-import com.kenshoo.pl.entity.spi.audit.AncestorFieldsProvider.EmptyAncestorFieldsProvider;
+import com.kenshoo.pl.entity.spi.audit.AlwaysAuditedFieldsProvider;
+import com.kenshoo.pl.entity.spi.audit.AlwaysAuditedFieldsProvider.EmptyAlwaysAuditedFieldsProvider;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,8 +18,10 @@ import java.lang.annotation.Target;
 public @interface Audited {
 
     /**
-     * A provider for additional fields from ancestor entities that should be added to an {@link AuditRecord}.<br>
+     * @return the provider class of additional fields that should always be added to {@link AuditRecord}s of the annotated entity type,
+     * with their current values.<br>
      * This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
+     * @see AlwaysAuditedFieldsProvider
      */
-    Class<? extends AncestorFieldsProvider> ancestorFieldsProvider() default EmptyAncestorFieldsProvider.class;
+    Class<? extends AlwaysAuditedFieldsProvider> alwaysAuditedFieldsProvider() default EmptyAlwaysAuditedFieldsProvider.class;
 }
