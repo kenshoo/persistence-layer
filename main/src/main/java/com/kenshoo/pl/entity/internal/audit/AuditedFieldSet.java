@@ -19,15 +19,15 @@ public class AuditedFieldSet<E extends EntityType<E>> {
 
     private final EntityField<E, ? extends Number> idField;
     // Fields included always in the audit record with their current values (not necessarily from current entityType)
-    private final Set<? extends EntityField<?, ?>> alwaysFields;
+    private final Set<? extends EntityField<?, ?>> mandatoryFields;
     // Fields included in the audit record only when changed, with their old and new values (current entityType only)
     private final Set<? extends EntityField<E, ?>> onChangeFields;
 
     private AuditedFieldSet(final EntityField<E, ? extends Number> idField,
-                            final Set<? extends EntityField<?, ?>> alwaysFields,
+                            final Set<? extends EntityField<?, ?>> mandatoryFields,
                             final Set<? extends EntityField<E, ?>> onChangeFields) {
         this.idField = idField;
-        this.alwaysFields = alwaysFields;
+        this.mandatoryFields = mandatoryFields;
         this.onChangeFields = onChangeFields;
     }
 
@@ -35,8 +35,8 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         return idField;
     }
 
-    public Set<? extends EntityField<?, ?>> getAlwaysFields() {
-        return alwaysFields;
+    public Set<? extends EntityField<?, ?>> getMandatoryFields() {
+        return mandatoryFields;
     }
 
     public Set<? extends EntityField<E, ?>> getOnChangeFields() {
@@ -45,14 +45,14 @@ public class AuditedFieldSet<E extends EntityType<E>> {
 
     public Stream<? extends EntityField<?, ?>> getAllFields() {
         return Stream.of(singleton(idField),
-                         alwaysFields,
+                         mandatoryFields,
                          onChangeFields)
                      .flatMap(Set::stream);
     }
 
     public AuditedFieldSet<E> intersectWith(final Stream<? extends EntityField<E, ?>> fields) {
         return builder(idField)
-            .withAlwaysFields(alwaysFields)
+            .withMandatoryFields(mandatoryFields)
             .withOnChangeFields(Seq.seq(fields).filter(onChangeFields::contains))
             .build();
     }
@@ -63,15 +63,20 @@ public class AuditedFieldSet<E extends EntityType<E>> {
 
     public static class Builder<E extends EntityType<E>> {
         private final EntityField<E, ? extends Number> idField;
-        private Set<? extends EntityField<?, ?>> alwaysFields = emptySet();
+        private Set<? extends EntityField<?, ?>> mandatoryFields = emptySet();
         private Set<? extends EntityField<E, ?>> onChangeFields = emptySet();
 
         public Builder(EntityField<E, ? extends Number> idField) {
             this.idField = requireNonNull(idField, "idField is required");
         }
 
-        public Builder<E> withAlwaysFields(final Iterable<? extends EntityField<?, ?>> alwaysFields) {
-            this.alwaysFields = alwaysFields == null ? emptySet() : ImmutableSet.copyOf(alwaysFields);
+        public Builder<E> withMandatoryFields(final EntityField<?, ?>... mandatoryFields) {
+            this.mandatoryFields = mandatoryFields == null ? emptySet() : ImmutableSet.copyOf(mandatoryFields);
+            return this;
+        }
+
+        public Builder<E> withMandatoryFields(final Iterable<? extends EntityField<?, ?>> mandatoryFields) {
+            this.mandatoryFields = mandatoryFields == null ? emptySet() : ImmutableSet.copyOf(mandatoryFields);
             return this;
         }
 
@@ -81,7 +86,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         }
 
         public AuditedFieldSet<E> build() {
-            return new AuditedFieldSet<>(idField, alwaysFields, onChangeFields);
+            return new AuditedFieldSet<>(idField, mandatoryFields, onChangeFields);
         }
     }
 
@@ -99,7 +104,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
 
         return new EqualsBuilder()
             .append(idField, that.idField)
-            .append(alwaysFields, that.alwaysFields)
+            .append(mandatoryFields, that.mandatoryFields)
             .append(onChangeFields, that.onChangeFields)
             .isEquals();
     }
@@ -108,7 +113,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
             .append(idField)
-            .append(alwaysFields)
+            .append(mandatoryFields)
             .append(onChangeFields)
             .toHashCode();
     }
@@ -117,7 +122,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
     public String toString() {
         return new ToStringBuilder(this)
             .append("idField", idField)
-            .append("alwaysFields", alwaysFields)
+            .append("mandatoryFields", mandatoryFields)
             .append("onChangeFields", onChangeFields)
             .toString();
     }
