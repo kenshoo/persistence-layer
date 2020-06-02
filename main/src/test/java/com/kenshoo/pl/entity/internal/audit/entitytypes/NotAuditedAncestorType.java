@@ -1,10 +1,12 @@
 package com.kenshoo.pl.entity.internal.audit.entitytypes;
 
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
 
-public class NotAuditedAncestorType extends AbstractType<NotAuditedAncestorType> {
+public class NotAuditedAncestorType extends AbstractEntityType<NotAuditedAncestorType> {
 
     public static final NotAuditedAncestorType INSTANCE = new NotAuditedAncestorType();
 
@@ -15,5 +17,10 @@ public class NotAuditedAncestorType extends AbstractType<NotAuditedAncestorType>
 
     private NotAuditedAncestorType() {
         super("NotAuditedAncestor");
+    }
+
+    @Override
+    public DataTable getPrimaryTable() {
+        return AncestorTable.INSTANCE;
     }
 }

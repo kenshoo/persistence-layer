@@ -21,6 +21,10 @@ public class AuditRecordMatchers {
         return new AuditRecordOperatorMatcher(expectedOperator);
     }
 
+    public static Matcher<AuditRecord<?>> hasMandatoryFieldValue(final EntityField<?, ?> field, final Object value) {
+        return new AuditRecordMandatoryFieldValueMatcher(field, value);
+    }
+
     public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasCreatedFieldRecord(final EntityField<E, ?> field, final Object value) {
         return hasFieldRecord(new FieldAuditRecord<>(field, null, value));
     }

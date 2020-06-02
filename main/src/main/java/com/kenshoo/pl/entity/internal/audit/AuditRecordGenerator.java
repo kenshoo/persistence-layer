@@ -6,15 +6,20 @@ import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentStateConsumer<E> {
 
@@ -61,6 +66,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final String entityId = extractEntityId(entityChange, entity);
 
+        final Map<? extends EntityField<?, ?>, ?> mandatoryFieldValues = generateMandatoryFieldValues(entity);
+
         final Set<? extends EntityField<E, ?>> candidateOnChangeFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
                                                                                         .getOnChangeFields();
 
@@ -71,6 +78,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
             .withEntityId(entityId)
+            .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())
             .withFieldRecords(fieldRecords)
             .withChildRecords(childRecords)
@@ -90,7 +98,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                        final Entity entity,
                                                        final EntityField<E, ?> field) {
         return new FieldAuditRecord<>(field,
-                                      entity.containsField(field) ? entity.get(field) : null,
+                                      extractEntityValue(entity, field),
                                       entityChange.get(field));
     }
 
@@ -99,6 +107,17 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
         return entityIdExtractor.extract(entityChange, entity)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
                                                                                  "from either the EntityChange or the Entity, so the audit record cannot be generated."));
+    }
+
+    private Map<? extends EntityField<?, ?>, ?> generateMandatoryFieldValues(final Entity entity) {
+        return auditedFieldSet.getMandatoryFields().stream()
+                              .map(field -> ImmutablePair.of(field, extractEntityValue(entity, field)))
+                              .filter(entry -> nonNull(entry.getValue()))
+                              .collect(toMap(Entry::getKey, Entry::getValue));
+    }
+
+    private Object extractEntityValue(Entity entity, EntityField<?, ?> field) {
+        return entity.containsField(field) ? entity.get(field) : null;
     }
 
     private boolean fieldWasChanged(final EntityChange<E> entityChange,
