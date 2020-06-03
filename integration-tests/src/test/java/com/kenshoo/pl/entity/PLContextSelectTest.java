@@ -136,7 +136,7 @@ public class PLContextSelectTest {
 
         final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
-                .where(PLCondition.TrueCondition)
+                .where(PLCondition.trueCondition())
                 .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
         assertThat("Incorrect number of entities fetched: ",
                 entities.size(), is(1));
@@ -152,7 +152,7 @@ public class PLContextSelectTest {
 
         final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
-                .where(PLCondition.TrueCondition)
+                .where(PLCondition.trueCondition())
                 .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
         assertThat("Incorrect number of entities fetched: ",
                 entities.size(), is(2));
@@ -165,6 +165,56 @@ public class PLContextSelectTest {
                         fieldValue(TestEntityType.FIELD1, "Bravo")));
     }
 
+    @Test
+    public void selectFromSingleEntityInClause() {
+        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+                .from(TestEntityType.INSTANCE)
+                .where(TestEntityType.FIELD1.in("Alpha", "Bravo"))
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void selectFromSingleEntityInAndEqClause() {
+        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+                .from(TestEntityType.INSTANCE)
+                .where(TestEntityType.FIELD1.in("Alpha", "Bravo").and(TestEntityType.ID.eq(2)))
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void selectFromChildAndParentInClause() {
+        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
+                .from(TestEntityType.INSTANCE)
+                .where(TestEntityType.FIELD1.in("Alpha", "Bravo"))
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha"),
+                        fieldValue(TestParentEntityType.FIELD1, "ParentAlpha")));
+
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo"),
+                        fieldValue(TestParentEntityType.FIELD1, "ParentAlpha")));
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void selectWithoutFieldsShouldThrowException() {
