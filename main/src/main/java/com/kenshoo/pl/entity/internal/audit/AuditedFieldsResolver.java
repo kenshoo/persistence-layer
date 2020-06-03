@@ -4,7 +4,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.annotation.audit.NotAudited;
-import com.kenshoo.pl.entity.spi.audit.AlwaysAuditedFieldsProvider;
+import com.kenshoo.pl.entity.spi.audit.MandatoryFieldsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,35 +35,35 @@ public class AuditedFieldsResolver {
                                                                            final EntityField<E, ? extends Number> idField) {
         final boolean entityTypeAudited = entityType.getClass().isAnnotationPresent(Audited.class);
 
-        final Collection<? extends EntityField<?, ?>> alwaysFields = resolveAlwaysFields(entityType);
+        final Collection<? extends EntityField<?, ?>> mandatoryFields = resolveMandatoryFields(entityType);
         final Collection<? extends EntityField<E, ?>> onChangeFields = resolveOnChangeFields(entityType,
                                                                                              idField,
                                                                                              entityTypeAudited);
 
         if (hasFieldsToAudit(entityTypeAudited, onChangeFields)) {
             return Optional.of(AuditedFieldSet.builder(idField)
-                                              .withAlwaysFields(alwaysFields)
+                                              .withMandatoryFields(mandatoryFields)
                                               .withOnChangeFields(onChangeFields)
                                               .build());
         }
         return Optional.empty();
     }
 
-    private Collection<? extends EntityField<?, ?>> resolveAlwaysFields(final EntityType<?> entityType) {
+    private Collection<? extends EntityField<?, ?>> resolveMandatoryFields(final EntityType<?> entityType) {
         return Optional.ofNullable(entityType.getClass().getAnnotation(Audited.class))
-                       .map(Audited::alwaysAuditedFieldsProvider)
-                       .flatMap(this::createAlwaysAuditedFieldsProvider)
-                       .map(AlwaysAuditedFieldsProvider::getFields)
+                       .map(Audited::mandatoryFieldsProvider)
+                       .flatMap(this::createMandatoryFieldsProvider)
+                       .map(MandatoryFieldsProvider::getFields)
                        .map(fields -> fields.collect(toList()))
                        .orElse(emptyList());
         }
 
-    private Optional<AlwaysAuditedFieldsProvider> createAlwaysAuditedFieldsProvider(final Class<? extends AlwaysAuditedFieldsProvider> alwaysAuditedFieldsProviderClass) {
+    private Optional<MandatoryFieldsProvider> createMandatoryFieldsProvider(final Class<? extends MandatoryFieldsProvider> mandatoryFieldsProviderClass) {
         try {
-            return Optional.of(alwaysAuditedFieldsProviderClass.getDeclaredConstructor().newInstance());
+            return Optional.of(mandatoryFieldsProviderClass.getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to create an instance of type {} - either it doesn't have a no-arg constructor, or the constructor is not public. The corresponding fields will not be included in the audit records.",
-                         alwaysAuditedFieldsProviderClass,
+                         mandatoryFieldsProviderClass,
                          e);
             return Optional.empty();
         }

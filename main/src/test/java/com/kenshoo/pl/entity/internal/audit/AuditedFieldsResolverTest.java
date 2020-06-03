@@ -30,30 +30,30 @@ public class AuditedFieldsResolverTest {
     }
 
     @Test
-    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndAlwaysFields_AndOtherFields_ShouldReturnEverything() {
-        final AuditedFieldSet<AuditedWithAncestorAuditedFieldsType> expectedFieldSet =
-            AuditedFieldSet.builder(AuditedWithAncestorAuditedFieldsType.ID)
-                           .withAlwaysFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
-                                                             NotAuditedAncestorType.DESC))
-                           .withOnChangeFields(ImmutableSet.of(AuditedWithAncestorAuditedFieldsType.NAME,
-                                                               AuditedWithAncestorAuditedFieldsType.DESC,
-                                                               AuditedWithAncestorAuditedFieldsType.DESC2))
+    public void resolve_WhenEntityTypeIsAudited_AndHasId_AndMandatoryFields_AndOtherFields_ShouldReturnEverything() {
+        final AuditedFieldSet<AuditedWithAncestorMandatoryType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithAncestorMandatoryType.ID)
+                           .withMandatoryFields(ImmutableSet.of(NotAuditedAncestorType.NAME,
+                                                                NotAuditedAncestorType.DESC))
+                           .withOnChangeFields(ImmutableSet.of(AuditedWithAncestorMandatoryType.NAME,
+                                                               AuditedWithAncestorMandatoryType.DESC,
+                                                               AuditedWithAncestorMandatoryType.DESC2))
                            .build();
 
-        assertThat(RESOLVER.resolve(AuditedWithAncestorAuditedFieldsType.INSTANCE),
+        assertThat(RESOLVER.resolve(AuditedWithAncestorMandatoryType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
     @Test
     public void resolve_WhenEntityTypeIsAudited_AndHasId_AndOtherFields_AndInvalidFieldsProvider_ShouldReturnIdAndOnChangeFields() {
-        final AuditedFieldSet<AuditedWithInvalidFieldsProviderType> expectedFieldSet =
-            AuditedFieldSet.builder(AuditedWithInvalidFieldsProviderType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedWithInvalidFieldsProviderType.NAME,
-                                                               AuditedWithInvalidFieldsProviderType.DESC,
-                                                               AuditedWithInvalidFieldsProviderType.DESC2))
+        final AuditedFieldSet<AuditedWithInvalidMandatoryType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithInvalidMandatoryType.ID)
+                           .withOnChangeFields(ImmutableSet.of(AuditedWithInvalidMandatoryType.NAME,
+                                                               AuditedWithInvalidMandatoryType.DESC,
+                                                               AuditedWithInvalidMandatoryType.DESC2))
                            .build();
 
-        assertThat(RESOLVER.resolve(AuditedWithInvalidFieldsProviderType.INSTANCE),
+        assertThat(RESOLVER.resolve(AuditedWithInvalidMandatoryType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
