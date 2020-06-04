@@ -368,7 +368,7 @@ public class EntitiesFetcherByPLConditionTest {
 
         final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
-                PLCondition.TrueCondition,
+                PLCondition.trueCondition(),
                 TestEntityType.TYPE, TestEntityType.FIELD1);
 
         final List<Entity> sortedEntities = entities.stream()
@@ -397,6 +397,70 @@ public class EntitiesFetcherByPLConditionTest {
         assertThat(sortedEntities.size(), is(1));
         assertThat(sortedEntities.get(0),
                 hasFieldValues(fieldValue(TestEntityType.ID, 2), fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void fetchByInConditionForStringFieldWhereTwoMatchesAndFieldOfConditionRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                TestEntityType.FIELD1.in("Alpha", "Bravo"),
+                TestEntityType.ID, TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
+
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void fetchByInConditionForIntFieldWhereTwoMatchesAndFieldOfConditionRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                TestEntityType.TYPE.in(2, 3),
+                TestEntityType.ID, TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Charlie")));
+
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 3),
+                        fieldValue(TestEntityType.FIELD1, "Delta")));
+    }
+
+    @Test
+    public void fetchByNotInConditionForIntFieldWhereTwoMatchesAndFieldOfConditionRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                PLCondition.not(TestEntityType.TYPE.in(2, 3)),
+                TestEntityType.ID, TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
+
+        assertThat(entities.get(1),
+                hasFieldValues(fieldValue(TestEntityType.ID, 2),
+                        fieldValue(TestEntityType.FIELD1, "Bravo")));
+    }
+
+    @Test
+    public void fetchByInConditionForStringFieldWhereNotAllMatchesAndFieldOfConditionRequested() {
+        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+                TestEntityType.FIELD1.in("Alpha", "NotExist"),
+                TestEntityType.ID, TestEntityType.FIELD1);
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestEntityType.ID, 1),
+                        fieldValue(TestEntityType.FIELD1, "Alpha")));
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {

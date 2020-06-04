@@ -15,7 +15,7 @@ class FluentEntitiesFetcher implements FetchFromStep, FetchWhereStep, FetchFinal
     private final EntitiesFetcher entitiesFetcher;
     private final EntityField<?, ?>[] fieldsToFetch;
     private EntityType<?> entityType;
-    private PLCondition condition = PLCondition.TrueCondition;
+    private PLCondition condition = PLCondition.trueCondition();
 
 
     FluentEntitiesFetcher(final EntitiesFetcher entitiesFetcher,

@@ -15,8 +15,6 @@ import static java.util.Objects.requireNonNull;
 
 public class PLCondition {
 
-    public static PLCondition TrueCondition = new PLCondition(DSL.trueCondition());
-
     private final Condition jooqCondition;
     private final Set<? extends EntityField<?, ?>> fields;
 
@@ -53,6 +51,10 @@ public class PLCondition {
         requireNonNull(condition, "a condition must be provided");
         return new PLCondition(condition.jooqCondition.not(),
                                condition.fields);
+    }
+
+    public static PLCondition trueCondition() {
+        return  new PLCondition(DSL.trueCondition());
     }
 
     @Override
