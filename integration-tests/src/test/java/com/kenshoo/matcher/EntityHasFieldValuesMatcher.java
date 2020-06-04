@@ -3,6 +3,7 @@ package com.kenshoo.matcher;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldValue;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -42,12 +43,12 @@ public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<Entity> {
     }
 
     private String validateField(final Entity actualEntity, final EntityFieldValue fieldValue) {
-        if (!actualEntity.containsField(fieldValue.entityField)) {
-            return "\t\tMissing expected field '" + fieldValue.entityFieldName() + "'";
+        if (!actualEntity.containsField(fieldValue.getField())) {
+            return "\t\tMissing expected field '" + fieldValue.getFieldName() + "'";
         }
-        final Object actualValue = actualEntity.get(fieldValue.entityField);
-        if (!Objects.equals(actualValue, fieldValue.value)) {
-            return "\t\tIncorrect value for field " + fieldValue.entityFieldName() + ": '" + actualValue + "'";
+        final Object actualValue = actualEntity.get(fieldValue.getField());
+        if (!Objects.equals(actualValue, fieldValue.getValue())) {
+            return "\t\tIncorrect value for field " + fieldValue.getFieldName() + ": '" + actualValue + "'";
         }
         return StringUtils.EMPTY;
     }
@@ -58,24 +59,5 @@ public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<Entity> {
 
     public static EntityFieldValue fieldValue(final EntityField<?, ?> entityField, final Object value) {
         return new EntityFieldValue(entityField, value);
-    }
-
-    public static class EntityFieldValue {
-        private final EntityField<?, ?> entityField;
-        private final Object value;
-
-        private EntityFieldValue(final EntityField<?, ?> entityField, final Object value) {
-            this.entityField = entityField;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return entityFieldName() + "=" + value;
-        }
-
-        private String entityFieldName() {
-            return entityField.getEntityType().getName() + "." + entityField;
-        }
     }
 }

@@ -23,8 +23,8 @@ class AuditRecordMandatoryFieldValueMatcher extends TypeSafeMatcher<AuditRecord<
             return false;
         }
         return actualRecord.getMandatoryFieldValues().stream()
-                           .filter(entry -> expectedField.equals(entry.getKey()))
-                           .anyMatch(entry -> expectedValue.equals(entry.getValue()));
+                           .filter(fieldValue -> expectedField.equals(fieldValue.getField()))
+                           .anyMatch(fieldValue -> expectedValue.equals(fieldValue.getValue()));
     }
 
     @Override

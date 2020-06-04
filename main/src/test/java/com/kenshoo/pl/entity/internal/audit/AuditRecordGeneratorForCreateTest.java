@@ -97,6 +97,31 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
+    public void generate_WithMandatoryFieldsHavingNullValues_ShouldNotGenerateMandatoryFields() {
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
+
+        final EntityImpl entity = new EntityImpl();
+        entity.set(NotAuditedAncestorType.NAME, null);
+        entity.set(NotAuditedAncestorType.DESC, null);
+
+        final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .build();
+
+        when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
+        //noinspection ResultOfMethodCallIgnored
+        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)).when(completeFieldSet).getMandatoryFields();
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, entity, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(hasNoMandatoryFieldValues()));
+    }
+
+    @Test
     public void generate_WithOnChangeFieldsOnly_ShouldGenerateBasicDataAndFieldRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, "name")
@@ -168,7 +193,6 @@ public class AuditRecordGeneratorForCreateTest {
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, entity, childRecords);
 
-        //noinspection unchecked
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
