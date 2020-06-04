@@ -1,8 +1,7 @@
 package com.kenshoo.pl.entity.annotation.audit;
 
-import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.spi.audit.MandatoryFieldsProvider;
-import com.kenshoo.pl.entity.spi.audit.MandatoryFieldsProvider.EmptyMandatoryFieldsProvider;
+import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
+import com.kenshoo.pl.entity.spi.audit.AuditExtensions.EmptyAuditExtensions;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,10 +17,9 @@ import java.lang.annotation.Target;
 public @interface Audited {
 
     /**
-     * @return the provider class of additional fields that should always be added to {@link AuditRecord}s of the annotated entity type,
-     * with their current values.<br>
+     * @return extensions to the basic audit data that will be generated for the annotated entity type.<br>
      * This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
-     * @see MandatoryFieldsProvider
+     * @see AuditExtensions
      */
-    Class<? extends MandatoryFieldsProvider> mandatoryFieldsProvider() default EmptyMandatoryFieldsProvider.class;
+    Class<? extends AuditExtensions> extensions() default EmptyAuditExtensions.class;
 }

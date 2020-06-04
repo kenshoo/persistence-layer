@@ -6,9 +6,9 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
-import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.InvalidMandatoryFieldsProvider;
+import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.InvalidAuditExtensions;
 
-@Audited(mandatoryFieldsProvider = InvalidMandatoryFieldsProvider.class)
+@Audited(extensions = InvalidAuditExtensions.class)
 public class AuditedWithInvalidMandatoryType extends AbstractEntityType<AuditedWithInvalidMandatoryType> {
 
     public static final AuditedWithInvalidMandatoryType INSTANCE = new AuditedWithInvalidMandatoryType();

@@ -9,11 +9,11 @@ import com.kenshoo.pl.entity.annotation.Required;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.annotation.audit.NotAudited;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
-import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorMandatoryFieldsProvider;
+import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorAuditExtensions;
 
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 
-@Audited(mandatoryFieldsProvider = AncestorMandatoryFieldsProvider.class)
+@Audited(extensions = AncestorAuditExtensions.class)
 public class AuditedWithAncestorMandatoryType extends AbstractEntityType<AuditedWithAncestorMandatoryType> {
 
     public static final AuditedWithAncestorMandatoryType INSTANCE = new AuditedWithAncestorMandatoryType();
