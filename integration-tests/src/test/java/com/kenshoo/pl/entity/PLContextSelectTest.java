@@ -21,6 +21,7 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
+import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -94,6 +95,17 @@ public class PLContextSelectTest {
         assertThat(entities.get(0),
                    hasFieldValues(fieldValue(TestEntityType.ID, 1),
                                   fieldValue(TestEntityType.FIELD1, "Alpha")));
+    }
+
+    @Test
+    public void selectIsNull() {
+        final List<Entity> entities = plContext.select(TestParentEntityType.FIELD1)
+                .from(TestParentEntityType.INSTANCE)
+                .where(TestParentEntityType.FIELD2.isNull())
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(2));
+
     }
 
     @Test
@@ -250,6 +262,7 @@ public class PLContextSelectTest {
 
         private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, String> field2 = createField("field2", SQLDataType.VARCHAR.length(50));
 
         public TestParentTable(String name) {
             super(name);
@@ -311,6 +324,7 @@ public class PLContextSelectTest {
 
         public static final EntityField<TestParentEntityType, Integer> ID = INSTANCE.field(parent_table.id);
         public static final EntityField<TestParentEntityType, String> FIELD1 = INSTANCE.field(parent_table.field1);
+        public static final EntityField<TestParentEntityType, String> FIELD2 = INSTANCE.field(parent_table.field2);
         public static final EntityField<TestParentEntityType, String> SECONDARY_FIELD1 = INSTANCE.field(parent_sec_table.field1);
 
         private TestParentEntityType() {

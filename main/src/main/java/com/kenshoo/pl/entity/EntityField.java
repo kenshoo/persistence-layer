@@ -43,4 +43,13 @@ public interface EntityField<E extends EntityType<E>, T> {
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
         return new PLCondition(tableField.in(tableValues), this);
     }
+
+    default PLCondition isNull() {
+        if (isVirtual()) {
+            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
+        }
+        @SuppressWarnings("unchecked")
+        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
+        return new PLCondition(tableField.isNull(), this);
+    }
 }
