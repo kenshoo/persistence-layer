@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -61,6 +62,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final String entityId = extractEntityId(entityChange, entity);
 
+        final Collection<? extends EntityFieldValue> mandatoryFieldValues = generateMandatoryFieldValues(entity);
+
         final Set<? extends EntityField<E, ?>> candidateOnChangeFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
                                                                                         .getOnChangeFields();
 
@@ -71,6 +74,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
             .withEntityId(entityId)
+            .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())
             .withFieldRecords(fieldRecords)
             .withChildRecords(childRecords)
@@ -90,7 +94,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                        final Entity entity,
                                                        final EntityField<E, ?> field) {
         return new FieldAuditRecord<>(field,
-                                      entity.containsField(field) ? entity.get(field) : null,
+                                      extractEntityValue(entity, field),
                                       entityChange.get(field));
     }
 
@@ -99,6 +103,17 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
         return entityIdExtractor.extract(entityChange, entity)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
                                                                                  "from either the EntityChange or the Entity, so the audit record cannot be generated."));
+    }
+
+    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final Entity entity) {
+        return auditedFieldSet.getMandatoryFields().stream()
+                              .map(field -> new EntityFieldValue(field, extractEntityValue(entity, field)))
+                              .filter(fieldValue -> nonNull(fieldValue.getValue()))
+                              .collect(toList());
+    }
+
+    private Object extractEntityValue(Entity entity, EntityField<?, ?> field) {
+        return entity.containsField(field) ? entity.get(field) : null;
     }
 
     private boolean fieldWasChanged(final EntityChange<E> entityChange,

@@ -1,6 +1,7 @@
 package com.kenshoo.pl.entity.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.EntityFieldValue;
 import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -15,17 +16,20 @@ import static java.util.stream.Collectors.toList;
 public class AuditRecord<E extends EntityType<E>> {
     private final E entityType;
     private final String entityId;
+    private final Collection<? extends EntityFieldValue> mandatoryFieldValues;
     private final ChangeOperation operator;
     private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
     private final Collection<? extends AuditRecord<?>> childRecords;
 
     private AuditRecord(final E entityType,
                         final String entityId,
+                        final Collection<? extends EntityFieldValue> mandatoryFieldValues,
                         final ChangeOperation operator,
                         final Collection<? extends FieldAuditRecord<E>> fieldRecords,
                         final Collection<? extends AuditRecord<?>> childRecords) {
         this.entityType = requireNonNull(entityType, "entityType is required");
         this.entityId = requireNonNull(entityId, "entityId is required");
+        this.mandatoryFieldValues = mandatoryFieldValues;
         this.operator = requireNonNull(operator, "operator is required");
         this.fieldRecords = fieldRecords;
         this.childRecords = childRecords;
@@ -37,6 +41,10 @@ public class AuditRecord<E extends EntityType<E>> {
 
     public String getEntityId() {
         return entityId;
+    }
+
+    public Collection<? extends EntityFieldValue> getMandatoryFieldValues() {
+        return mandatoryFieldValues;
     }
 
     public ChangeOperation getOperator() {
@@ -75,6 +83,7 @@ public class AuditRecord<E extends EntityType<E>> {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
             .append("entityType", entityType.getName())
             .append("entityId", entityId)
+            .append("mandatoryFieldValues", mandatoryFieldValues)
             .append("operator", operator)
             .append("fieldRecords", fieldRecords)
             .append("childRecords", childRecordsToString(maxDepth))
@@ -91,6 +100,7 @@ public class AuditRecord<E extends EntityType<E>> {
     public static class Builder<E extends EntityType<E>> {
         private E entityType;
         private String entityId;
+        private Collection<? extends EntityFieldValue> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
         private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptyList();
         private Collection<? extends AuditRecord<?>> childRecords = emptyList();
@@ -110,6 +120,11 @@ public class AuditRecord<E extends EntityType<E>> {
             return this;
         }
 
+        public Builder<E> withMandatoryFieldValues(final Collection<? extends EntityFieldValue> fieldValues) {
+            this.mandatoryFieldValues = fieldValues == null ? emptyList() : fieldValues;
+            return this;
+        }
+
         public Builder<E> withFieldRecords(Collection<? extends FieldAuditRecord<E>> fieldRecords) {
             this.fieldRecords = fieldRecords == null ? emptyList() : fieldRecords;
             return this;
@@ -123,6 +138,7 @@ public class AuditRecord<E extends EntityType<E>> {
         public AuditRecord<E> build() {
             return new AuditRecord<>(entityType,
                                      entityId,
+                                     mandatoryFieldValues,
                                      operator,
                                      fieldRecords,
                                      childRecords);
