@@ -18,8 +18,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
-import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
+import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.hasMandatoryFieldValue;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.allOf;
@@ -36,6 +35,9 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     private static final long ANCESTOR_ID = 11L;
     private static final String ANCESTOR_NAME = "ancestorName";
     private static final String ANCESTOR_DESC = "ancestorDesc";
+
+    private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
+    private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
 
     private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainWithAncestorTable.INSTANCE,
                                                                        AncestorTable.INSTANCE);
@@ -83,7 +85,7 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
 
     @Test
     public void oneEntity_WithEntityLevelMandatoryFields_ShouldCreateRecordWithMandatoryFields() {
-        auditedWithAncestorMandatoryPL.delete(singletonList(new DeleteAuditedWithAncestorMandatoryCommand(ID)),
+        auditedWithAncestorMandatoryPL.delete(singletonList(deleteCommand()),
                                               auditedWithAncestorMandatoryConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -91,12 +93,12 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
-        //noinspection unchecked
-        assertThat(auditRecord, allOf(hasEntityType(AuditedWithAncestorMandatoryType.INSTANCE),
-                                      hasEntityId(String.valueOf(ID)),
-                                      hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                                      hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
-                                      hasOperator(DELETE)));
+        assertThat(auditRecord, allOf(hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
+                                      hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC)));
+    }
+
+    private DeleteAuditedWithAncestorMandatoryCommand deleteCommand() {
+        return new DeleteAuditedWithAncestorMandatoryCommand(ID);
     }
 
     private <E extends EntityType<E>> ChangeFlowConfig<E> flowConfig(final E entityType) {

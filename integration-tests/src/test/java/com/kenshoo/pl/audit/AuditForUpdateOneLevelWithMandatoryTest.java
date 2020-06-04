@@ -18,8 +18,8 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
-import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
+import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.hasChangedFieldRecord;
+import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.hasMandatoryFieldValue;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.*;
@@ -36,11 +36,20 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
     private static final String ANCESTOR_NAME = "ancestorName";
     private static final String ANCESTOR_DESC = "ancestorDesc";
 
-    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainWithAncestorTable.INSTANCE,
-                                                                       AncestorTable.INSTANCE);
     public static final String NEW_NAME = "newName";
     public static final String NEW_DESC = "newDesc";
     public static final String NEW_DESC2 = "newDesc2";
+
+    private static final EntityField<AuditedWithAncestorMandatoryType, Long> ANCESTOR_FK_FIELD = AuditedWithAncestorMandatoryType.ANCESTOR_ID;
+    private static final EntityField<AuditedWithAncestorMandatoryType, String> NAME_FIELD = AuditedWithAncestorMandatoryType.NAME;
+    private static final EntityField<AuditedWithAncestorMandatoryType, String> DESC_FIELD = AuditedWithAncestorMandatoryType.DESC;
+    private static final EntityField<AuditedWithAncestorMandatoryType, String> DESC2_FIELD = AuditedWithAncestorMandatoryType.DESC2;
+
+    private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
+    private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
+
+    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainWithAncestorTable.INSTANCE,
+                                                                       AncestorTable.INSTANCE);
 
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
@@ -86,10 +95,10 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
 
     @Test
     public void oneEntity_WithEntityLevelMandatoryFields_AndAllFieldsChanged_ShouldCreateMandatoryFields_AndFieldRecordsForAll() {
-        auditedWithAncestorMandatoryPL.update(singletonList(new UpdateAuditedWithAncestorMandatoryCommand(ID)
-                                                                .with(AuditedWithAncestorMandatoryType.NAME, NEW_NAME)
-                                                                .with(AuditedWithAncestorMandatoryType.DESC, NEW_DESC)
-                                                                .with(AuditedWithAncestorMandatoryType.DESC2, NEW_DESC2)),
+        auditedWithAncestorMandatoryPL.update(singletonList(updateCommand()
+                                                                .with(NAME_FIELD, NEW_NAME)
+                                                                .with(DESC_FIELD, NEW_DESC)
+                                                                .with(DESC2_FIELD, NEW_DESC2)),
                                               auditedWithAncestorMandatoryConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -97,22 +106,22 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
-        //noinspection unchecked
-        assertThat(auditRecord, allOf(hasEntityType(AuditedWithAncestorMandatoryType.INSTANCE),
-                                      hasEntityId(String.valueOf(ID)),
-                                      hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                                      hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
-                                      hasOperator(UPDATE),
-                                      hasChangedFieldRecord(AuditedWithAncestorMandatoryType.NAME, NAME, NEW_NAME),
-                                      hasChangedFieldRecord(AuditedWithAncestorMandatoryType.DESC, DESC, NEW_DESC),
-                                      hasChangedFieldRecord(AuditedWithAncestorMandatoryType.DESC2, DESC2, NEW_DESC2)));
+        assertThat(auditRecord, allOf(hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
+                                      hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC),
+                                      hasChangedFieldRecord(NAME_FIELD, NAME, NEW_NAME),
+                                      hasChangedFieldRecord(DESC_FIELD, DESC, NEW_DESC),
+                                      hasChangedFieldRecord(DESC2_FIELD, DESC2, NEW_DESC2)));
+    }
+
+    private UpdateAuditedWithAncestorMandatoryCommand updateCommand() {
+        return new UpdateAuditedWithAncestorMandatoryCommand(ID);
     }
 
 
     @Test
     public void auditedEntity_WithEntityLevelMandatoryFields_AndNoFieldsInCmd_ShouldReturnEmpty() {
-        auditedWithAncestorMandatoryPL.update(singletonList(new UpdateAuditedWithAncestorMandatoryCommand(ID)
-                                                                .with(AuditedWithAncestorMandatoryType.ANCESTOR_ID, ANCESTOR_ID)),
+        auditedWithAncestorMandatoryPL.update(singletonList(updateCommand()
+                                                                .with(ANCESTOR_FK_FIELD, ANCESTOR_ID)),
                                               auditedWithAncestorMandatoryConfig);
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
