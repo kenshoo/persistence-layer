@@ -4,7 +4,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.annotation.audit.NotAudited;
-import com.kenshoo.pl.entity.spi.audit.MandatoryFieldsProvider;
+import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,19 +51,19 @@ public class AuditedFieldsResolver {
 
     private Collection<? extends EntityField<?, ?>> resolveMandatoryFields(final EntityType<?> entityType) {
         return Optional.ofNullable(entityType.getClass().getAnnotation(Audited.class))
-                       .map(Audited::mandatoryFieldsProvider)
-                       .flatMap(this::createMandatoryFieldsProvider)
-                       .map(MandatoryFieldsProvider::getFields)
+                       .map(Audited::extensions)
+                       .flatMap(this::createExtensions)
+                       .map(AuditExtensions::externalMandatoryFields)
                        .map(fields -> fields.collect(toList()))
                        .orElse(emptyList());
         }
 
-    private Optional<MandatoryFieldsProvider> createMandatoryFieldsProvider(final Class<? extends MandatoryFieldsProvider> mandatoryFieldsProviderClass) {
+    private Optional<AuditExtensions> createExtensions(final Class<? extends AuditExtensions> extensionsClass) {
         try {
-            return Optional.of(mandatoryFieldsProviderClass.getDeclaredConstructor().newInstance());
+            return Optional.of(extensionsClass.getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to create an instance of type {} - either it doesn't have a no-arg constructor, or the constructor is not public. The corresponding fields will not be included in the audit records.",
-                         mandatoryFieldsProviderClass,
+                         extensionsClass,
                          e);
             return Optional.empty();
         }
