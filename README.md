@@ -39,7 +39,7 @@ The above link is a **repl.it** online project where you can edit and execute co
 ## Code Samples
 
 ### Retrieve auto generated ID
-After defining and wiring the required infra (as described in the [wiki](wiki/Setting-up-an-Entity-Persistence)), you can execute PL commands as follows:
+After defining and wiring the required infra (as described in the [wiki](https://github.com/kenshoo/persistence-layer/wiki/Setting-up-an-Entity-Persistence)), you can execute PL commands as follows:
 ```java
 var cmd = new CreateCampaignCommand();
 
