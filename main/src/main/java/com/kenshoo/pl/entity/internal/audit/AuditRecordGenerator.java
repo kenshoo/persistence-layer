@@ -106,7 +106,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final Entity entity) {
-        return auditedFieldSet.getMandatoryFields().stream()
+        return auditedFieldSet.getExternalMandatoryFields().stream()
                               .map(field -> new EntityFieldValue(field, extractEntityValue(entity, field)))
                               .filter(fieldValue -> nonNull(fieldValue.getValue()))
                               .collect(toList());
