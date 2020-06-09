@@ -30,6 +30,17 @@ public class SelfAuditedFieldsResolverTest {
     }
 
     @Test
+    public void resolve_WhenAudited_AndHasId_AndMandatoryFieldsOnly_ShouldReturnIdAndMandatoryFields() {
+        final AuditedFieldSet<AuditedWithSelfMandatoryOnlyType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithSelfMandatoryOnlyType.ID)
+                           .withSelfMandatoryFields(AuditedWithSelfMandatoryOnlyType.NAME)
+                           .build();
+
+        assertThat(RESOLVER.resolve(AuditedWithSelfMandatoryOnlyType.INSTANCE),
+                   isPresentAndIs(expectedFieldSet));
+    }
+
+    @Test
     public void resolve_WhenAudited_AndHasId_AndMandatoryFields_AndOtherFields_ShouldReturnEverything() {
         final AuditedFieldSet<AuditedWithSelfMandatoryType> expectedFieldSet =
             AuditedFieldSet.builder(AuditedWithSelfMandatoryType.ID)

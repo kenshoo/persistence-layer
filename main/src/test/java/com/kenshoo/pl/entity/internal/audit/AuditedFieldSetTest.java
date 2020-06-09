@@ -324,20 +324,41 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void hasOnChangeFields_WhenExist_ShouldReturnTrue() {
+    public void hasSelfFields_WhenHasOnChangeFields_ShouldReturnTrue() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
                 .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
                                                     AuditedType.DESC))
                 .build();
 
-        assertThat(auditedFieldSet.hasOnChangeFields(), is(true));
+        assertThat(auditedFieldSet.hasSelfFields(), is(true));
     }
 
     @Test
-    public void hasOnChangeFields_WhenDontExist_ShouldReturnFalse() {
+    public void hasSelfFields_WhenHasSelfMandatoryFields_ShouldReturnTrue() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withSelfMandatoryFields(ImmutableSet.of(AuditedType.NAME,
+                                                         AuditedType.DESC))
+                .build();
+
+        assertThat(auditedFieldSet.hasSelfFields(), is(true));
+    }
+
+    @Test
+    public void hasSelfFields_WhenHasIdOnly_ShouldReturnFalse() {
         final AuditedFieldSet<AuditedType> auditedFieldSet = builder(AuditedType.ID).build();
 
-        assertThat(auditedFieldSet.hasOnChangeFields(), is(false));
+        assertThat(auditedFieldSet.hasSelfFields(), is(false));
+    }
+
+    @Test
+    public void hasSelfFields_WhenHasIdAndExternalMandatoryOnly_ShouldReturnFalse() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withExternalMandatoryFields(NotAuditedAncestorType.NAME)
+                .build();
+
+        assertThat(auditedFieldSet.hasSelfFields(), is(false));
     }
 }

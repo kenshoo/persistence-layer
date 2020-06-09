@@ -52,8 +52,8 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         return onChangeFields;
     }
 
-    public boolean hasOnChangeFields() {
-        return !onChangeFields.isEmpty();
+    public boolean hasSelfFields() {
+        return !selfMandatoryFields.isEmpty() || !onChangeFields.isEmpty();
     }
 
     public Stream<? extends EntityField<?, ?>> getAllFields() {
