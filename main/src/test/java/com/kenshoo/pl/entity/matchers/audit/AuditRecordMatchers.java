@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.matchers.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldValue;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
@@ -22,7 +23,7 @@ public class AuditRecordMatchers {
     }
 
     public static Matcher<AuditRecord<?>> hasMandatoryFieldValue(final EntityField<?, ?> field, final Object value) {
-        return new AuditRecordMandatoryFieldValueMatcher(field, value);
+        return new AuditRecordMandatoryFieldValueMatcher(new EntityFieldValue(field, value));
     }
 
     public static Matcher<AuditRecord<?>> hasNoMandatoryFieldValues() {

@@ -62,7 +62,7 @@ public class FieldAuditRecord<E extends EntityType<E>> {
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-            .append("fieldName", field)
+            .append("field", field.getEntityType().getName() + "." + field)
             .append("oldValue", oldValue)
             .append("newValue", newValue)
             .toString();

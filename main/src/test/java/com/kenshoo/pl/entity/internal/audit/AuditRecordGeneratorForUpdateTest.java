@@ -80,7 +80,8 @@ public class AuditRecordGeneratorForUpdateTest {
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
         //noinspection ResultOfMethodCallIgnored
-        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)).when(completeFieldSet).getMandatoryFields();
+        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+            .when(completeFieldSet).getExternalMandatoryFields();
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
@@ -408,7 +409,8 @@ public class AuditRecordGeneratorForUpdateTest {
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet())))
             .thenReturn(AuditedFieldSet.builder(AuditedType.ID).build());
         //noinspection ResultOfMethodCallIgnored
-        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)).when(completeFieldSet).getMandatoryFields();
+        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+            .when(completeFieldSet).getExternalMandatoryFields();
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
@@ -445,7 +447,8 @@ public class AuditRecordGeneratorForUpdateTest {
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields)))
             .thenReturn(expectedIntersectionFieldSet);
         //noinspection ResultOfMethodCallIgnored
-        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)).when(completeFieldSet).getMandatoryFields();
+        doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+            .when(completeFieldSet).getExternalMandatoryFields();
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
