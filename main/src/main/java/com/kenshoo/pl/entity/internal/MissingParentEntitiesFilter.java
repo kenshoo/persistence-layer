@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Collections2;
 import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
@@ -23,7 +22,7 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
-    public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
+    public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
         if (foreignKeys.isEmpty()) {
             return changes;
         }

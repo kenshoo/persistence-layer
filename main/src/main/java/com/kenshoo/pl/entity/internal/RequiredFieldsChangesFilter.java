@@ -1,14 +1,17 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.kenshoo.pl.entity.*;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements ChangesFilter<E> {
@@ -20,17 +23,36 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
     }
 
     @Override
-    public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
-        Predicate<EntityField<E, ?>> isReferringToParentCommand = IsFieldReferringToParentCommand.of(changes);
+    public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext context) {
+
+        final List<EntityField<E, ?>> requiredFields = entityType()
+                .map(entityType -> only(this.requiredFields, notReferringToParentIn(context.getHierarchy(), entityType)))
+                .orElse(emptyList());
+
+        if (requiredFields.isEmpty()) {
+            return changes;
+        }
+
         return changes.stream().filter(change -> requiredFields.stream().allMatch(entityField -> {
             boolean fieldSpecified = change.isFieldChanged(entityField) && change.get(entityField) != null;
-            boolean isValid = fieldSpecified || isReferringToParentCommand.test(entityField);
-            if (!isValid) {
-                changeContext.addValidationError(change,
+            if (!fieldSpecified) {
+                context.addValidationError(change,
                         new ValidationError(Errors.FIELD_IS_REQUIRED, entityField, ImmutableMap.of("field", entityField.toString())));
             }
-            return isValid;
+            return fieldSpecified;
         })).collect(toList());
+    }
+
+    private Predicate<EntityField<E, ?>> notReferringToParentIn(Hierarchy hierarchy, EntityType<E> entityType) {
+        return new IsFieldReferringToParent<>(hierarchy, entityType).negate();
+    }
+
+    private Optional<EntityType<E>> entityType() {
+        return requiredFields.stream().findFirst().map(EntityField::getEntityType);
+    }
+
+    private <T> List<T> only(Collection<T> items, Predicate<T> predicate) {
+        return items.stream().filter(predicate).collect(toList());
     }
 
     @Override
@@ -40,6 +62,6 @@ public class RequiredFieldsChangesFilter<E extends EntityType<E>> implements Cha
 
     @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
-        return SupportedChangeOperation.CREATE;
+        return CREATE;
     }
 }

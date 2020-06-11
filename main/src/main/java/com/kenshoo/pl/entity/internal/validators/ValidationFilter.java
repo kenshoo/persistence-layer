@@ -19,7 +19,7 @@ public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<
         this.validators = validators;
     }
 
-    public <T extends ChangeEntityCommand<E>> Collection<T> filter(Collection<T> commands, final ChangeOperation changeOperation, final ChangeContext changeContext) {
+    public <T extends EntityChange<E>> Collection<T> filter(Collection<T> commands, final ChangeOperation changeOperation, final ChangeContext changeContext) {
         validators.stream().filter(CurrentStateConsumer.supporting(changeOperation)).
                 forEach(validator -> validator.validate(commands, changeOperation, changeContext));
         return Collections2.filter(commands, (Predicate<EntityChange<E>>) entityChange -> !changeContext.containsErrorNonRecursive(entityChange));

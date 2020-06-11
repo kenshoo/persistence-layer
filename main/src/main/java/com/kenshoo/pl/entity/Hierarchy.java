@@ -2,18 +2,19 @@ package com.kenshoo.pl.entity;
 
 import org.apache.commons.lang3.tuple.Pair;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
 
 
-class Hierarchy {
+public class Hierarchy {
 
     private final EntityType<?> root;
     private final Set<Pair<EntityType<?>, EntityType<?>>> parentChildRelations;
 
-    private Hierarchy(EntityType<?> root, Set<Pair<EntityType<?>, EntityType<?>>> parentChildRelations) {
+    Hierarchy(EntityType<?> root, Set<Pair<EntityType<?>, EntityType<?>>> parentChildRelations) {
         this.root = root;
         this.parentChildRelations = parentChildRelations;
     }
@@ -23,11 +24,17 @@ class Hierarchy {
         return new Hierarchy(rootFlow.getEntityType(), relations);
     }
 
-    Collection<? extends EntityType<?>> childrenTypes(EntityType<?> parent) {
+    public Collection<? extends EntityType<?>> childrenTypes(EntityType<?> parent) {
         return seq(parentChildRelations)
                 .filter(pair -> pair.getLeft().equals(parent))
                 .map(Pair::getRight)
                 .toList();
+    }
+
+    public Optional<? extends EntityType<?>> getParent(EntityType<?> child) {
+        return parentChildRelations.stream().filter(i -> i.getRight() == child)
+                .map(Pair::getLeft)
+                .findFirst();
     }
 
     EntityType<?> root() {
