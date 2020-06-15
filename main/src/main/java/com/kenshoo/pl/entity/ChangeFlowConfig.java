@@ -4,7 +4,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.internal.*;
-import com.kenshoo.pl.entity.internal.audit.AllAuditedFieldsResolver;
 import com.kenshoo.pl.entity.internal.audit.AuditRecordGenerator;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
 import com.kenshoo.pl.entity.spi.*;
@@ -145,7 +144,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         public Builder(E entityType) {
             this(entityType,
-                 AllAuditedFieldsResolver.INSTANCE);
+                 AuditedFieldsResolver.INSTANCE);
         }
 
         @VisibleForTesting
