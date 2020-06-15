@@ -13,11 +13,11 @@ import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;
 import org.jooq.lambda.Seq;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.spi.PersistenceLayerRetryer.JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 
 public class ChangeFlowConfig<E extends EntityType<E>> {
@@ -57,7 +57,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.requiredRelationFields = requiredRelationFields;
         this.requiredFields = requiredFields;
         this.childFlows = childFlows;
-        this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields)), new MissingEntitiesFilter<>(entityType));
+        this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields).collect(toList())), new MissingEntitiesFilter<>(entityType));
         this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
         this.auditRecordGenerator = auditRecordGenerator;
@@ -286,7 +286,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                                           ImmutableList.copyOf(outputGenerators),
                                           ImmutableSet.copyOf(requiredRelationFields),
                                           ImmutableSet.copyOf(requiredFields),
-                                          flowConfigBuilders.stream().map(Builder::build).collect(Collectors.toList()),
+                                          flowConfigBuilders.stream().map(Builder::build).collect(toList()),
                                           retryer,
                                           auditRecordGenerator,
                                           features

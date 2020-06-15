@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Collections2;
 import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;

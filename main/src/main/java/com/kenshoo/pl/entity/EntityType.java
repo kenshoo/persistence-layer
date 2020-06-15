@@ -69,12 +69,12 @@ public interface EntityType<E extends EntityType<E>> {
                 .findFirst();
     }
 
-    default Collection<EntityField<E, ?>> determineForeignKeys(Set<EntityField<E, ?>> requiredFields) {
+    default Stream<EntityField<E, ?>> determineForeignKeys(Set<EntityField<E, ?>> requiredFields) {
         Set<TableField<Record, ?>> foreignKeyFields = getPrimaryTable().getReferences().stream()
                 .map(Key::getFields)
                 .flatMap(Collection::stream)
                 .collect(toSet());
-        return requiredFields.stream().filter(entityField -> entityField.getDbAdapter().getTableFields().anyMatch(foreignKeyFields::contains)).collect(toList());
+        return requiredFields.stream().filter(entityField -> entityField.getDbAdapter().getTableFields().anyMatch(foreignKeyFields::contains));
     }
 
     default <TO extends EntityType<TO>> ForeignKey<E, TO> getKeyTo(EntityType<TO> other) {
