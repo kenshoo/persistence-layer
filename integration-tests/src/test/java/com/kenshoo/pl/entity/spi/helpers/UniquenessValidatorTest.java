@@ -61,7 +61,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_dont_fail_if_not_same_value() {
+    public void testDontFailIfNotSameValueBulk() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness).build();
 
@@ -76,7 +76,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_fail_2nd_command_when_duplication_is_within_the_bulk() {
+    public void testFail3rdCommandWhenDuplicationIsWithinTheBulk() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness).build();
 
@@ -92,7 +92,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_fail_command_when_key_already_exists_in_db() {
+    public void testFailCommandWhenKeyAlreadyExistsInDb() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness)
                 .setErrorCode("I found a duplication")
@@ -117,7 +117,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_dont_fail_when_only_part_of_the_unique_key_matched() {
+    public void testDontFailWhenOnlyPartOfTheUniqueKeyMatched() {
 
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(
                 ParentEntity.NAME,
@@ -144,7 +144,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_fail_when_all_parts_of_the_unique_key_matched() {
+    public void testFailWhenAllPartsOfTheUniqueKeyMatched() {
 
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(
                 ParentEntity.NAME,
@@ -171,7 +171,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_dont_fail_command_condition_is_unmatched() {
+    public void testDontFailCommandConditionIsUnmatched() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
 
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator

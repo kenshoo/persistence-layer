@@ -50,9 +50,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     @Override
     public void validate(Collection<? extends EntityChange<E>> commands, ChangeOperation op, ChangeContext ctx) {
 
-        Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = commands
-                .stream()
-                .collect(toMap(cmd -> createKeyValue(cmd, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
+        Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = markDuplicatesInCollectionWithErrors(commands, ctx);
 
         UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
         EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
@@ -61,6 +59,12 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
                 .stream().collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
 
         duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
+    }
+
+    private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
+        return commands
+                .stream()
+                .collect(toMap(cmd -> createKeyValue(cmd, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
     }
 
     private ValidationError errorForDatabaseConflict(Entity dupEntity, UniqueKey<E> pk) {
