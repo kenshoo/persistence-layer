@@ -21,6 +21,7 @@ import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.jooq.lambda.function.Functions.not;
@@ -60,7 +61,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_dont_fail_if_key_is_unique() {
+    public void test_dont_fail_if_not_same_value() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness).build();
 
@@ -75,7 +76,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void test_fail_2nd_command_if_not_unique_within_the_bulk() {
+    public void test_fail_2nd_command_when_duplication_is_within_the_bulk() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness).build();
 
@@ -93,7 +94,9 @@ public class UniquenessValidatorTest {
     @Test
     public void test_fail_command_when_key_already_exists_in_db() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
-        UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness).build();
+        UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness)
+                .setErrorCode("I found a duplication")
+                .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
 
@@ -105,6 +108,12 @@ public class UniquenessValidatorTest {
         CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
 
         assertThat(failedCommands(results), contains(commands.get(0)));
+        assertThat(firstError(results).getErrorCode(), is("I found a duplication"));
+        assertThat(firstError(results).getParameters().get("ID"), is("99"));
+    }
+
+    private ValidationError firstError(CreateResult<ParentEntity, Identifier<ParentEntity>> results) {
+        return results.getChangeResults().iterator().next().getErrors().iterator().next();
     }
 
     @Test
