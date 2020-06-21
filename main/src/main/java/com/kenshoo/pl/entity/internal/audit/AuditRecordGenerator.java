@@ -6,6 +6,7 @@ import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -13,7 +14,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -94,7 +94,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                        final Entity entity,
                                                        final EntityField<E, ?> field) {
         return new FieldAuditRecord<>(field,
-                                      extractEntityValue(entity, field),
+                                      entity.getOptional(field).orElse(null),
                                       entityChange.get(field));
     }
 
@@ -107,13 +107,10 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
     private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final Entity entity) {
         return auditedFieldSet.getExternalMandatoryFields().stream()
-                              .map(field -> new EntityFieldValue(field, extractEntityValue(entity, field)))
-                              .filter(fieldValue -> nonNull(fieldValue.getValue()))
+                              .map(field -> ImmutablePair.of(field, entity.getOptional(field)))
+                              .filter(pair -> pair.getValue().isPresent())
+                              .map(pair -> new EntityFieldValue(pair.getKey(), pair.getValue().get()))
                               .collect(toList());
-    }
-
-    private Object extractEntityValue(Entity entity, EntityField<?, ?> field) {
-        return entity.containsField(field) ? entity.get(field) : null;
     }
 
     private boolean fieldWasChanged(final EntityChange<E> entityChange,

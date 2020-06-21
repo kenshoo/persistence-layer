@@ -28,7 +28,7 @@ public class EntityIdExtractor {
 
         return Seq.<Supplier<Optional<?>>>of(() -> extractFromEntityChange(entityChange, idField),
                                              () -> extractFromIdentifier(entityChange, idField),
-                                             () -> extractFromEntity(entity, idField))
+                                             () -> entity.getOptional(idField))
             .map(Supplier::get)
             .findFirst(Optional::isPresent)
             .flatMap(optionalId -> optionalId.map(String::valueOf));
@@ -46,13 +46,6 @@ public class EntityIdExtractor {
         final Identifier<E> identifier = entityChange.getIdentifier();
         if (identifier != null && identifier.containsField(idField)) {
             return Optional.ofNullable(identifier.get(idField));
-        }
-        return Optional.empty();
-    }
-
-    private <E extends EntityType<E>> Optional<?> extractFromEntity(Entity entity, EntityField<E, ?> idField) {
-        if (entity.containsField(idField)) {
-            return Optional.ofNullable(entity.get(idField));
         }
         return Optional.empty();
     }
