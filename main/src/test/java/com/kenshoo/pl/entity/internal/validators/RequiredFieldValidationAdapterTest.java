@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -60,7 +59,7 @@ public class RequiredFieldValidationAdapterTest {
         when(entityChange.get(any())).thenReturn(null);
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
 
-        ValidationError result = underTest.validate(entityChange, entity, ChangeOperation.CREATE);
+        ValidationError result = underTest.validate(entityChange, entity);
 
         assertEquals(ERROR_CODE, result.getErrorCode());
         assertEquals(TestEntity.FIELD_1, result.getField());
@@ -70,7 +69,7 @@ public class RequiredFieldValidationAdapterTest {
     public void when_required_field_is_not_null_then_return_null() {
         when(entityChange.get(any())).thenReturn(VALUE);
 
-        ValidationError result = underTest.validate(entityChange, entity, ChangeOperation.CREATE);
+        ValidationError result = underTest.validate(entityChange, entity);
 
         assertNull(result);
     }
@@ -83,14 +82,14 @@ public class RequiredFieldValidationAdapterTest {
 
     @Test
     public void when_call_validated_fields_then_return_required_field() {
-        Optional<? extends EntityField<TestEntity, ?>> field = underTest.getValidatedFields().findFirst();
+        Optional<? extends EntityField<TestEntity, ?>> field = underTest.validatedFields().findFirst();
         assertTrue(field.isPresent());
         assertEquals(field.get(), TestEntity.FIELD_1);
     }
 
     @Test
     public void when_call_fields_to_fetch_then_empty() {
-        Stream<? extends EntityField<?, ?>> result = underTest.getFieldsToFetch(ChangeOperation.CREATE);
+        Stream<? extends EntityField<?, ?>> result = underTest.fetchFields();
         assertEquals(Optional.empty(), result.findAny());
     }
 
@@ -99,13 +98,13 @@ public class RequiredFieldValidationAdapterTest {
         when(entityChange.get(any())).thenReturn(null);
         when(validator.requireWhen()).thenReturn(entity -> false);
 
-        assertNull(underTest.validate(entityChange, entity, ChangeOperation.CREATE));
+        assertNull(underTest.validate(entityChange, entity));
     }
 
     @Test
     public void when_call_fields_to_fetch_then_fetched_field_only() {
         when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.getFieldsToFetch(ChangeOperation.CREATE);
+        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.fetchFields();
         List<? extends EntityField<?, ?>> fieldsToFetch = fetchedStream.collect(Collectors.toList());
 
         assertFalse("Fetch validated field", fieldsToFetch.contains(TestEntity.FIELD_1));

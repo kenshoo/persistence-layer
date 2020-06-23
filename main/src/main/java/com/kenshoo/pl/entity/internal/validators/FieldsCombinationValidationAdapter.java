@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -25,7 +24,7 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
     }
 
     @Override
-    public Stream<EntityField<E, ?>> getValidatedFields() {
+    public Stream<EntityField<E, ?>> validatedFields() {
         return validator.validatedFields();
     }
 
@@ -35,19 +34,14 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
-        Stream<EntityField<?, ?>> substitutionsFields = validator.fetchFields();
-        if (changeOperation == ChangeOperation.UPDATE) {
-            return Stream.concat(validator.validatedFields(), substitutionsFields);
-        } else {
-            return substitutionsFields;
-        }
+    public Stream<? extends EntityField<?, ?>> fetchFields() {
+        return Stream.concat(validator.validatedFields(), validator.fetchFields());
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
         if(validator.validateWhen().test(entity)) {
-            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, entity, validator.validatedFields(), changeOperation);
+            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, entity, validator.validatedFields(), entityChange.getChangeOperation());
             if (hasSubstitutions()) {
                 return validator.validate(new OverrideFieldsCombination<>(entity, resultingFieldsCombination, mapFieldToOverrideFunction()));
             } else {
@@ -59,7 +53,7 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
     }
 
     private boolean hasSubstitutions() {
-        return validator.substitutions().findAny() != null;
+        return validator.substitutions().findAny().isPresent();
     }
 
     private Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> mapFieldToOverrideFunction() {

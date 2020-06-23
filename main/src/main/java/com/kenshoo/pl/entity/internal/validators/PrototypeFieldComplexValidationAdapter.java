@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -22,7 +21,7 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
     }
 
     @Override
-    public Stream<EntityField<E, ?>> getValidatedFields() {
+    public Stream<EntityField<E, ?>> validatedFields() {
         return Stream.of(validatedField);
     }
 
@@ -32,12 +31,12 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
+    public Stream<? extends EntityField<?, ?>> fetchFields() {
         return prototypeFieldValidator.fetchFields();
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
         if (entityChange.isFieldChanged(validatedField)) {
             return prototypeFieldValidator.validate(entityChange.get(validatedField), entity);
         } else {

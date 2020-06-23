@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -70,7 +69,7 @@ public class ImmutableFieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Optional<? extends EntityField<?, ?>> field = adapter.getFieldsToFetch(ChangeOperation.UPDATE).findFirst();
+        Optional<? extends EntityField<?, ?>> field = adapter.fetchFields().findFirst();
         assertTrue("Fetch validated field", field.isPresent());
         assertEquals("Fetch validated field", field.get(), this.field);
     }
@@ -78,14 +77,14 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testFetchFieldsInUpdateWithWhenPredicate() {
         when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        List<EntityField<?, ?>> fieldsToFetch = adapter.getFieldsToFetch(ChangeOperation.UPDATE).collect(Collectors.toList());
+        List<EntityField<?, ?>> fieldsToFetch = adapter.fetchFields().collect(Collectors.toList());
         assertTrue("Fetch validated field", fieldsToFetch.contains(field));
         assertTrue("Fetch validated field", fieldsToFetch.contains(fetchField));
     }
 
     @Test
     public void testValidatedFields() {
-        Optional<? extends EntityField<TestEntity, ?>> field = adapter.getValidatedFields().findFirst();
+        Optional<? extends EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
         assertTrue("Validated field", field.isPresent());
         assertEquals("Validated field", field.get(), this.field);
     }
@@ -93,7 +92,7 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testValidateValueChange() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        ValidationError validationError = adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        ValidationError validationError = adapter.validate(entityChange, entity);
         assertNotNull("No validation error", validationError);
         assertEquals("Error code", validationError.getErrorCode(), ERROR_CODE);
     }
@@ -102,6 +101,6 @@ public class ImmutableFieldValidationAdapterTest {
     public void testValidateValueChangeWhenPredicateFalse() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(validator.immutableWhen()).thenReturn(entity -> false);
-        assertNull(adapter.validate(entityChange, entity, ChangeOperation.UPDATE));
+        assertNull(adapter.validate(entityChange, entity));
     }
 }

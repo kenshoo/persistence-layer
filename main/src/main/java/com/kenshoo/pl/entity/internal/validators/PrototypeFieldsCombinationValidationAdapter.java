@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -27,7 +26,7 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
     }
 
     @Override
-    public Stream<EntityField<E, ?>> getValidatedFields() {
+    public Stream<EntityField<E, ?>> validatedFields() {
         return fieldsMapping.values().stream();
     }
 
@@ -37,17 +36,13 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
-        if (changeOperation == ChangeOperation.UPDATE) {
-            return fieldsMapping.values().stream();
-        } else {
-            return Stream.empty();
-        }
+    public Stream<? extends EntityField<?, ?>> fetchFields() {
+        return fieldsMapping.values().stream();
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
-        FieldsValueMap<E> fieldsValueMap = new ResultingFieldsCombination<>(entityChange, entity, fieldsMapping.values().stream(), changeOperation);
+    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
+        FieldsValueMap<E> fieldsValueMap = new ResultingFieldsCombination<>(entityChange, entity, fieldsMapping.values().stream(), entityChange.getChangeOperation());
         PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsValueMap);
         return prototypeFieldsCombinationValidator.validate(prototypeFieldsCombination);
     }

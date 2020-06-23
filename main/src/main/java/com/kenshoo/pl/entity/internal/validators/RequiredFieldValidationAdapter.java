@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.google.common.collect.ImmutableMap;
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -10,7 +9,6 @@ import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.ValidationError;
 import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
@@ -22,7 +20,7 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     }
 
     @Override
-    public Stream<EntityField<E, ?>> getValidatedFields() {
+    public Stream<EntityField<E, ?>> validatedFields() {
         return Stream.of(validator.requiredField());
     }
 
@@ -32,12 +30,12 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
+    public Stream<? extends EntityField<?, ?>> fetchFields() {
         return validator.fetchFields();
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
         if (entityChange.get(validator.requiredField()) == null && validator.requireWhen().test(entity)) {
             return new ValidationError(validator.getErrorCode(), validator.requiredField(), ImmutableMap.of("field", validator.requiredField().toString()));
         }

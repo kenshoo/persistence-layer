@@ -149,10 +149,10 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerEntityChangeValidatorTest() {
         when(entityChangeValidator.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_AND_UPDATE);
-        when(entityChangeValidator.getValidatedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
+        when(entityChangeValidator.validatedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
         validator.register(entityChangeValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(entityChangeValidator).validate(entityChange, entity, ChangeOperation.CREATE);
+        verify(entityChangeValidator).validate(entityChange, entity);
     }
 
     @Test
