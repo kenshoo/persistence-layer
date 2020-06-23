@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 
 import static com.kenshoo.pl.entity.Triptional.State.*;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 
 public class Triptional<T> {
 
@@ -41,7 +40,7 @@ public class Triptional<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Triptional<T> nul() {
+    public static <T> Triptional<T> nullInstance() {
         return (Triptional<T>) NULL_INSTANCE;
     }
 
@@ -70,7 +69,7 @@ public class Triptional<T> {
     }
 
     public Optional<T> asOptional() {
-        return mapToOptional(identity());
+        return Optional.ofNullable(value);
     }
 
     public <U> Optional<U> mapToOptional(final Function<? super T, ? extends U> mapper) {
@@ -79,14 +78,7 @@ public class Triptional<T> {
 
     public <U> Optional<U> mapToOptional(final Function<? super T, ? extends U> filledMapper,
                                          final Supplier<? extends U> nullReplacer) {
-        switch (state) {
-            case FILLED:
-                return Optional.ofNullable(filledMapper.apply(value));
-            case NULL:
-                return Optional.ofNullable(nullReplacer.get());
-            default:
-                return Optional.empty();
-        }
+        return map(filledMapper, nullReplacer).asOptional();
     }
 
     public boolean isPresent() {
