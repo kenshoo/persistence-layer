@@ -1,5 +1,9 @@
 package com.kenshoo.pl.entity;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,7 +50,14 @@ public class Triptional<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> Triptional<T> absent() {
-        return (Triptional<T>)ABSENT_INSTANCE;
+        return (Triptional<T>) ABSENT_INSTANCE;
+    }
+
+    public T get() {
+        if (isAbsent()) {
+            throw new NoSuchElementException("No value present");
+        }
+        return value;
     }
 
     public <U> Triptional<U> map(final Function<? super T, ? extends U> mapper) {
@@ -99,5 +110,42 @@ public class Triptional<T> {
 
     public boolean isNull() {
         return state == NULL;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (!(obj instanceof Triptional)) {
+            return false;
+        }
+
+        final Triptional<?> other = (Triptional<?>) obj;
+        return new EqualsBuilder()
+            .append(state, other.state)
+            .append(value, other.value)
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(state)
+            .append(value)
+            .toHashCode();
+    }
+
+    @Override
+    public String toString() {
+        switch (state) {
+            case FILLED:
+                return String.format("Triptional[%s]", value);
+            case NULL:
+                return "Triptional.null";
+            default:
+                return "Triptional.absent";
+        }
     }
 }
