@@ -28,7 +28,7 @@ public class EntityIdExtractor {
 
         return Seq.<Supplier<Optional<?>>>of(() -> extractFromEntityChange(entityChange, idField),
                                              () -> extractFromIdentifier(entityChange, idField),
-                                             () -> entity.getOptional(idField))
+                                             () -> entity.safeGet(idField).asOptional())
             .map(Supplier::get)
             .findFirst(Optional::isPresent)
             .flatMap(optionalId -> optionalId.map(String::valueOf));

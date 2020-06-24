@@ -5,60 +5,59 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
-import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityTest {
 
-    private static final String DUMMY_FIELD_VALUE = "abc";
+    private static final String DUMMY_VALUE = "abc";
 
     @SuppressWarnings("unchecked")
     @Mock
     final EntityField<TestEntity, String> mockField = mock(EntityField.class);
 
     @Test
-    public void testGetOptional_WhenNotNull_ShouldReturnIt() {
-        final Entity entity = new Entity() {
-            public boolean containsField(EntityField<?, ?> field) {
-                return true;
-            }
-            @SuppressWarnings("unchecked")
-            public <T> T get(EntityField<?, T> field) {
-                return (T) DUMMY_FIELD_VALUE;
-            }
-        };
+    public void safeGet_WhenNotNull_ShouldReturnIt() {
+        final Entity entity = new StubEntity(true, DUMMY_VALUE);
 
-        assertThat(entity.getOptional(mockField), isPresentAndIs(DUMMY_FIELD_VALUE));
+        assertThat(entity.safeGet(mockField), is(Triptional.of(DUMMY_VALUE)));
     }
 
     @Test
-    public void testGetOptional_WhenExistsAndNull_ShouldReturnEmpty() {
-        final Entity entity = new Entity() {
-            public boolean containsField(EntityField<?, ?> field) {
-                return true;
-            }
-            public <T> T get(EntityField<?, T> field) {
-                return null;
-            }
-        };
+    public void safeGet_WhenPresentAndNull_ShouldReturnNull() {
+        final Entity entity = new StubEntity(true, null);
 
-        assertThat(entity.getOptional(mockField), isEmpty());
+        assertThat(entity.safeGet(mockField), is(Triptional.nullInstance()));
     }
 
     @Test
-    public void testGetOptional_WhenDoesntExists_ShouldReturnEmpty() {
-        final Entity entity = new Entity() {
-            public boolean containsField(EntityField<?, ?> field) {
-                return false;
-            }
-            public <T> T get(EntityField<?, T> field) {
-                return null;
-            }
-        };
+    public void safeGet_WhenAbsent_ShouldReturnAbsent() {
+        final Entity entity = new StubEntity(false, null);
 
-        assertThat(entity.getOptional(mockField), isEmpty());
+        assertThat(entity.safeGet(mockField), is(Triptional.absent()));
+    }
+
+    private static final class StubEntity implements Entity {
+
+        private final boolean fieldPresent;
+        private final Object value;
+
+        private StubEntity(final boolean fieldPresent, final Object value) {
+            this.fieldPresent = fieldPresent;
+            this.value = value;
+        }
+
+        @Override
+        public boolean containsField(final EntityField<?, ?> field) {
+            return fieldPresent;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T get(final EntityField<?, T> field) {
+            return (T)value;
+        }
     }
 }
