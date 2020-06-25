@@ -59,6 +59,7 @@ public class FieldsCombinationValidationAdapterTest {
     public void setUp(){
         when(validator.validateWhen()).thenReturn(p -> true);
         when(validator.validatedFields()).thenReturn(Stream.of(field1, field2));
+        when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.UPDATE);
         when(entityChange.isFieldChanged(field1)).thenReturn(true);
         when(entityChange.isFieldChanged(field2)).thenReturn(false);
         when(entityChange.get(field1)).thenReturn(STRING_VALUE1);
@@ -73,20 +74,22 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.UPDATE).collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Stream<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.CREATE);
-        assertFalse("Do not fetch fields", fields.findFirst().isPresent());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        assertTrue("Fetch field1", fields.contains(field1));
+        assertTrue("Fetch field2", fields.contains(field2));;
     }
 
     @Test
     public void testValidateForCreate() {
-        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.CREATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), null);
@@ -96,7 +99,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test
     public void testValidateForUpdate() {
-        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), STRING_VALUE2);
@@ -106,7 +109,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidField() {
-        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(argThat(fieldCombination -> {
             fieldCombination.get(invalidField);
             return true;
@@ -121,7 +124,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(fieldSubstitution.overrideHow()).thenReturn(entity -> "override");
 
 
-        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), "override");
             return true;
@@ -136,7 +139,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(fieldSubstitution.overrideHow()).thenReturn(entity -> "override");
 
 
-        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             return true;
@@ -148,7 +151,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
         when(validator.fetchFields()).thenReturn(Stream.of(field3));
 
-        Collection<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.UPDATE).collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
         assertTrue("Fetch field3", fields.contains(field3));
@@ -157,14 +160,14 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void skipValidationForUpdate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, entity, ChangeOperation.UPDATE);
+        adapter.validate(entityChange, entity);
         verify(validator, never()).validate(any());
     }
 
     @Test
     public void skipValidationForCreate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        adapter.validate(entityChange, entity);
         verify(validator, never()).validate(any());
     }
 }

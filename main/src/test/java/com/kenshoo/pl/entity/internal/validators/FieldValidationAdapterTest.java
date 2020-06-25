@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -62,19 +61,19 @@ public class FieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.UPDATE).collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.getFieldsToFetch(ChangeOperation.CREATE).collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 
     @Test
     public void testValidatedFields() {
-        Optional<EntityField<TestEntity, ?>> field = adapter.getValidatedFields().findFirst();
+        Optional<EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
         assertTrue("Validated field", field.isPresent());
         assertEquals("Validated field", field.get(), this.field);
     }
@@ -83,14 +82,14 @@ public class FieldValidationAdapterTest {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(STRING_VALUE);
     }
 
     @Test
     public void testNoValueToValidate() {
         when(entityChange.isFieldChanged(field)).thenReturn(false);
-        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        adapter.validate(entityChange, entity);
         verify(validator, never()).validate(STRING_VALUE);
     }
 }

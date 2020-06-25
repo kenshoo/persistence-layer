@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.google.common.collect.ImmutableMap;
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -21,7 +20,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public Stream<EntityField<E, ?>> getValidatedFields() {
+    public Stream<EntityField<E, ?>> validatedFields() {
         return Stream.of(validator.immutableField());
     }
 
@@ -31,7 +30,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> getFieldsToFetch(ChangeOperation changeOperation) {
+    public Stream<? extends EntityField<?, ?>> fetchFields() {
         Stream<EntityField<?, ?>> fetchFields = validator.fetchFields();
         if(fetchFields != null) {
             return Stream.concat(Stream.of(validator.immutableField()), validator.fetchFields());
@@ -41,7 +40,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity, ChangeOperation changeOperation) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
         if (entityChange.isFieldChanged(validator.immutableField()) && validator.immutableWhen().test(entity)) {
             return new ValidationError(validator.getErrorCode(), validator.immutableField(), ImmutableMap.of("field", validator.immutableField().toString()));
         }

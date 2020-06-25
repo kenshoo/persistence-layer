@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -63,14 +62,14 @@ public class FieldComplexValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInCreate() {
-        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.getFieldsToFetch(ChangeOperation.CREATE).findFirst();
+        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.fetchFields().findFirst();
         assertTrue(fieldToFetch.isPresent());
         assertEquals("Fetch field", fieldToFetch.get(), fetchField);
     }
 
     @Test
     public void testValidatedFields() {
-        Optional<EntityField<TestEntity, ?>> validatedField = adapter.getValidatedFields().findFirst();
+        Optional<EntityField<TestEntity, ?>> validatedField = adapter.validatedFields().findFirst();
         assertTrue(validatedField.isPresent());
         assertEquals("Validated field", validatedField.get(), field);
     }
@@ -79,7 +78,7 @@ public class FieldComplexValidationAdapterTest {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, entity, ChangeOperation.CREATE);
+        adapter.validate(entityChange, entity);
         verify(validator).validate(STRING_VALUE, entity);
     }
 }
