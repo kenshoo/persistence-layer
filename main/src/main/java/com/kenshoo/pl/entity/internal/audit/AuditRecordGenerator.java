@@ -86,16 +86,17 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                                            final Collection<? extends EntityField<E, ?>> candidateOnChangeFields) {
         return candidateOnChangeFields.stream()
                                       .filter(field -> fieldWasChanged(entityChange, entity, field))
-                                      .map(field -> buildFieldChangeRecord(entityChange, entity, field))
+                                      .map(field -> buildFieldRecord(entityChange, entity, field))
                                       .collect(toList());
     }
 
-    private FieldAuditRecord<E> buildFieldChangeRecord(final EntityChange<E> entityChange,
-                                                       final Entity entity,
-                                                       final EntityField<E, ?> field) {
-        return new FieldAuditRecord<>(field,
-                                      entity.getOptional(field).orElse(null),
-                                      entityChange.get(field));
+    private FieldAuditRecord<E> buildFieldRecord(final EntityChange<E> entityChange,
+                                                 final Entity entity,
+                                                 final EntityField<E, ?> field) {
+        final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
+        entity.getOptional(field).ifPresent(fieldRecordBuilder::oldValue);
+        return fieldRecordBuilder.newValue(entityChange.get(field))
+                                 .build();
     }
 
     private String extractEntityId(final EntityChange<E> entityChange,

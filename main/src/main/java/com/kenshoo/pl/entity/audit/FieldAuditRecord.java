@@ -7,6 +7,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.util.Optional;
+
 import static java.util.Objects.requireNonNull;
 
 public class FieldAuditRecord<E extends EntityType<E>> {
@@ -14,10 +16,10 @@ public class FieldAuditRecord<E extends EntityType<E>> {
     private final Object oldValue;
     private final Object newValue;
 
-    public FieldAuditRecord(final EntityField<E, ?> field,
-                            final Object oldValue,
-                            final Object newValue) {
-        this.field = requireNonNull(field, "A field is required");
+    private FieldAuditRecord(final EntityField<E, ?> field,
+                             final Object oldValue,
+                             final Object newValue) {
+        this.field = field;
         this.oldValue = oldValue;
         this.newValue = newValue;
     }
@@ -26,12 +28,16 @@ public class FieldAuditRecord<E extends EntityType<E>> {
         return field;
     }
 
-    public Object getOldValue() {
-        return oldValue;
+    public Optional<?> getOldValue() {
+        return Optional.ofNullable(oldValue);
     }
 
-    public Object getNewValue() {
-        return newValue;
+    public Optional<?> getNewValue() {
+        return Optional.ofNullable(newValue);
+    }
+
+    public static <E extends EntityType<E>> Builder<E> builder(final EntityField<E, ?> field) {
+        return new Builder<>(field);
     }
 
     @Override
@@ -66,5 +72,29 @@ public class FieldAuditRecord<E extends EntityType<E>> {
             .append("oldValue", oldValue)
             .append("newValue", newValue)
             .toString();
+    }
+
+    public static class Builder<E extends EntityType<E>> {
+        private final EntityField<E, ?> field;
+        private Object oldValue;
+        private Object newValue;
+
+        private Builder(final EntityField<E, ?> field) {
+            this.field = requireNonNull(field, "A field is required");
+        }
+
+        public Builder<E> oldValue(Object oldValue) {
+            this.oldValue = oldValue;
+            return this;
+        }
+
+        public Builder<E> newValue(Object newValue) {
+            this.newValue = newValue;
+            return this;
+        }
+
+        public FieldAuditRecord<E> build() {
+            return new FieldAuditRecord<>(field, oldValue, newValue);
+        }
     }
 }

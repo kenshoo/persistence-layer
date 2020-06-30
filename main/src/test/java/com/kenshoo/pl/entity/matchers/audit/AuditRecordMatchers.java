@@ -31,17 +31,24 @@ public class AuditRecordMatchers {
     }
 
     public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasCreatedFieldRecord(final EntityField<E, ?> field, final Object value) {
-        return hasFieldRecord(new FieldAuditRecord<>(field, null, value));
+        return hasFieldRecord(FieldAuditRecord.builder(field)
+                                              .newValue(value)
+                                              .build());
     }
 
     public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasChangedFieldRecord(final EntityField<E, ?> field,
                                                                                           final String oldValue,
                                                                                           final String newValue) {
-        return hasFieldRecord(new FieldAuditRecord<>(field, oldValue, newValue));
+        return hasFieldRecord(FieldAuditRecord.builder(field)
+                                              .oldValue(oldValue)
+                                              .newValue(newValue)
+                                              .build());
     }
 
     public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasDeletedFieldRecord(final EntityField<E, ?> field, final Object value) {
-        return hasFieldRecord(new FieldAuditRecord<>(field, value, null));
+        return hasFieldRecord(FieldAuditRecord.builder(field)
+                                              .oldValue(value)
+                                              .build());
     }
 
     public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasFieldRecordFor(final EntityField<E, ?> expectedField) {
