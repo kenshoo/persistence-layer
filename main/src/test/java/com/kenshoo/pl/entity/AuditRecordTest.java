@@ -19,7 +19,9 @@ public class AuditRecordTest {
     private static final String ENTITY_ID_2 = "456";
 
     private static final FieldAuditRecord<AuditedType> NAME_FIELD_RECORD =
-        new FieldAuditRecord<>(AuditedType.NAME, null, "name");
+        FieldAuditRecord.builder(AuditedType.NAME)
+                        .newValue("name")
+                        .build();
 
     @Mock
     private AuditRecord<?> childRecord;
