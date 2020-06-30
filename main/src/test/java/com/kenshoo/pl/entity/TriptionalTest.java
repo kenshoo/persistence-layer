@@ -183,7 +183,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void mapTwoArgs_WhenNull_ShouldReturnInstanceWithValueFromSupplier() {
+    public void mapTwoArgs_WhenNull_ShouldReturnInstanceWithReplacingValue() {
         final Triptional<String> mappedObj = Triptional.nullInstance()
                                                        .map(String::valueOf, () -> "blabla");
         assertThat(mappedObj.get(), is("blabla"));
@@ -194,6 +194,85 @@ public class TriptionalTest {
     public void mapTwoArgs_WhenAbsent_ShouldReturnAbsentInstance() {
         final Triptional<String> mappedObj = Triptional.absent()
                                                        .map(String::valueOf, () -> "blabla");
+        assertThat(mappedObj.isAbsent(), is(true));
+    }
+
+    @Test
+    public void flatMapOneArg_WhenFilled_AndMappedToFilled_ShouldReturnFilledWithNewValue() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(this::toTriptionalString);
+        assertThat(mappedObj.get(), is("2"));
+    }
+
+    @Test
+    public void flatMapOneArg_WhenFilled_AndMappedToNullInstance_ShouldReturnNullInstance() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.nullInstance());
+        assertThat(mappedObj.isNull(), is(true));
+    }
+
+    @Test
+    public void flatMapOneArg_WhenFilled_AndMappedToAbsent_ShouldReturnAbsent() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.absent());
+        assertThat(mappedObj.isAbsent(), is(true));
+    }
+
+    @Test
+    public void flatMapOneArg_WhenNull_ShouldReturnNullInstance() {
+        final Triptional<String> mappedObj = Triptional.nullInstance().flatMap(this::toTriptionalString);
+        assertThat(mappedObj.isNull(), is(true));
+    }
+
+    @Test
+    public void flatMapOneArg_WhenAbsent_ShouldReturnAbsentInstance() {
+        final Triptional<String> mappedObj = Triptional.absent().flatMap(this::toTriptionalString);
+        assertThat(mappedObj.isAbsent(), is(true));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenFilled_AndMappedToFilled_ShouldReturnFilledWithMappedValue() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(this::toTriptionalString,
+                                                                      () -> Triptional.of("blabla"));
+        assertThat(mappedObj.get(), is("2"));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenFilled_AndMappedToNullInstance_ShouldReturnNullInstance() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.nullInstance(),
+                                                                      () -> Triptional.of("blabla"));
+        assertThat(mappedObj.isNull(), is(true));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenFilled_AndMappedToAbsent_ShouldReturnAbsent() {
+        final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.absent(),
+                                                                      () -> Triptional.of("blabla"));
+        assertThat(mappedObj.isAbsent(), is(true));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenNull_AndReplacerReturnsFilled_ShouldReturnReplacingInstance() {
+        final Triptional<String> mappedObj = Triptional.nullInstance().flatMap(this::toTriptionalString,
+                                                                               () -> Triptional.of("blabla"));
+        assertThat(mappedObj.get(), is("blabla"));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenNull_AndReplacerReturnsNull_ShouldReturnNullInstance() {
+        final Triptional<String> mappedObj = Triptional.nullInstance().flatMap(this::toTriptionalString,
+                                                                               Triptional::nullInstance);
+        assertThat(mappedObj.isNull(), is(true));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenNull_AndReplacerReturnsAbsent_ShouldReturnAbsent() {
+        final Triptional<String> mappedObj = Triptional.nullInstance().flatMap(this::toTriptionalString,
+                                                                               Triptional::absent);
+        assertThat(mappedObj.isAbsent(), is(true));
+    }
+
+    @Test
+    public void flatMapTwoArgs_WhenAbsent_ShouldReturnAbsent() {
+        final Triptional<String> mappedObj = Triptional.absent().flatMap(this::toTriptionalString,
+                                                                         () -> Triptional.of("blabla"));
         assertThat(mappedObj.isAbsent(), is(true));
     }
 
@@ -235,7 +314,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void mapToOptionalTwoArgs_WhenNull_ShouldReturnPresentWithSupplierValue() {
+    public void mapToOptionalTwoArgs_WhenNull_ShouldReturnPresentWithReplacingValue() {
         assertThat(Triptional.nullInstance()
                              .mapToOptional(String::valueOf, () -> "bla"),
                    isPresentAndIs("bla"));
@@ -276,5 +355,9 @@ public class TriptionalTest {
     @Test
     public void equals_WhenOneNullAndOneAbsent_ShouldReturnFalse() {
         assertThat(Triptional.nullInstance().equals(Triptional.absent()), is(false));
+    }
+
+    private Triptional<String> toTriptionalString(final Object val) {
+        return Triptional.of(String.valueOf(val));
     }
 }
