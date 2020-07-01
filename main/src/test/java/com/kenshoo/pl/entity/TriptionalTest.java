@@ -2,12 +2,16 @@ package com.kenshoo.pl.entity;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertThat;
 
 public class TriptionalTest {
@@ -130,6 +134,27 @@ public class TriptionalTest {
     @Test(expected = NoSuchElementException.class)
     public void absent_ShouldThrowExceptionOnGet() {
         Triptional.absent().get();
+    }
+
+    @Test
+    public void ifFilled_WhenFilled_ShouldCallConsumer() {
+        final List<Integer> outputList = new ArrayList<>();
+        Triptional.of(3).ifFilled(outputList::add);
+        assertThat(outputList, is(singletonList(3)));
+    }
+
+    @Test
+    public void ifFilled_WhenNull_ShouldNotCallConsumer() {
+        final List<Object> outputList = new ArrayList<>();
+        Triptional.nullInstance().ifFilled(outputList::add);
+        assertThat(outputList, is(empty()));
+    }
+
+    @Test
+    public void ifFilled_WhenAbsent_ShouldNotCallConsumer() {
+        final List<Object> outputList = new ArrayList<>();
+        Triptional.absent().ifFilled(outputList::add);
+        assertThat(outputList, is(empty()));
     }
 
     @Test

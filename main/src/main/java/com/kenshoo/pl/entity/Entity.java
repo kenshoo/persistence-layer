@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity;
 
 import java.util.List;
-import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 
@@ -23,11 +22,16 @@ public interface Entity {
 
     <T> T get(EntityField<?, T> field);
 
-    default <T> Optional<T> getOptional(final EntityField<?, T> field) {
+    /**
+     * @param field the field whose value should be fetched
+     * @param <T> the type of value in the field
+     * @return the field value if not <code>null</code>; or <code>Triptional.nullInstance()</code> if <code>null</code>; or <code>Triptional.absent()</code> if the field doesn't exist
+     */
+    default <T> Triptional<T> safeGet(final EntityField<?, T> field) {
         if (containsField(field)) {
-            return Optional.ofNullable(get(field));
+            return Triptional.of(get(field));
         }
-        return Optional.empty();
+        return Triptional.absent();
     }
 
     default <E extends EntityType<E>> List<FieldsValueMap<E>> getMany(E type) {

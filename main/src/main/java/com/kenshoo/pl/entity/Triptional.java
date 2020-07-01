@@ -5,6 +5,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -58,6 +59,11 @@ public class Triptional<T> {
             throw new NoSuchElementException("No value present");
         }
         return value;
+    }
+
+    public void ifFilled(final Consumer<? super T> consumer) {
+        if (value != null)
+            consumer.accept(value);
     }
 
     public <U> Triptional<U> map(final Function<? super T, ? extends U> mapper) {
