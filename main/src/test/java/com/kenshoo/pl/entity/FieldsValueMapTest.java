@@ -10,6 +10,8 @@ import static org.mockito.Mockito.mock;
 public class FieldsValueMapTest {
 
     private static final String DUMMY_VALUE = "abc";
+    private static final boolean PRESENT = true;
+    private static final boolean ABSENT = false;
 
     @SuppressWarnings("unchecked")
     @Mock
@@ -18,19 +20,19 @@ public class FieldsValueMapTest {
     @Test
     public void safeGet_WhenNotNull_ShouldReturnIt() {
 
-        assertThat(new StubFieldsValueMap<TestEntity>(true, DUMMY_VALUE).safeGet(mockField),
+        assertThat(new StubFieldsValueMap<TestEntity>(PRESENT, DUMMY_VALUE).safeGet(mockField),
                    is(Triptional.of(DUMMY_VALUE)));
     }
 
     @Test
     public void safeGet_WhenPresentAndNull_ShouldReturnNull() {
-        assertThat(new StubFieldsValueMap<TestEntity>(true).safeGet(mockField),
+        assertThat(new StubFieldsValueMap<TestEntity>(PRESENT).safeGet(mockField),
                    is(Triptional.nullInstance()));
     }
 
     @Test
     public void safeGet_WhenDoesntExist_ShouldReturnAbsent() {
-        assertThat(new StubFieldsValueMap<TestEntity>(false).safeGet(mockField),
+        assertThat(new StubFieldsValueMap<TestEntity>(ABSENT).safeGet(mockField),
                    is(Triptional.absent()));
     }
 
