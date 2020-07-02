@@ -85,6 +85,25 @@ public class Triptional<T> {
         }
     }
 
+    public <U> Triptional<U> flatMap(final Function<? super T, Triptional<U>> mapper) {
+        return flatMap(mapper, Triptional::nullInstance);
+    }
+
+    public <U> Triptional<U> flatMap(final Function<? super T, Triptional<U>> filledMapper,
+                                     final Supplier<Triptional<U>> nullReplacer) {
+        requireNonNull(filledMapper, "filledMapper is required");
+        requireNonNull(nullReplacer, "nullReplacer is required");
+
+        switch (state) {
+            case FILLED:
+                return requireNonNull(filledMapper.apply(value));
+            case NULL:
+                return requireNonNull(nullReplacer.get());
+            default:
+                return absent();
+        }
+    }
+
     public Optional<T> asOptional() {
         return Optional.ofNullable(value);
     }

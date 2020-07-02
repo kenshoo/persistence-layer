@@ -95,8 +95,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                  final EntityField<E, ?> field) {
         final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
         entity.safeGet(field).ifFilled(fieldRecordBuilder::oldValue);
-        return fieldRecordBuilder.newValue(entityChange.get(field))
-                                 .build();
+        entityChange.safeGet(field).ifFilled(fieldRecordBuilder::newValue);
+        return fieldRecordBuilder.build();
     }
 
     private String extractEntityId(final EntityChange<E> entityChange,

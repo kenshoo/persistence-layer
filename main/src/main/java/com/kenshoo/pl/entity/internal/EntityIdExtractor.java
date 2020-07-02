@@ -26,28 +26,18 @@ public class EntityIdExtractor {
                                                                final Entity entity,
                                                                final EntityField<E, ?> idField) {
 
-        return Seq.<Supplier<Optional<?>>>of(() -> extractFromEntityChange(entityChange, idField),
-                                             () -> extractFromIdentifier(entityChange, idField),
-                                             () -> entity.safeGet(idField).asOptional())
+        return Seq.<Supplier<Triptional<?>>>of(() -> entityChange.safeGet(idField),
+                                               () -> extractFromIdentifier(entityChange, idField),
+                                               () -> entity.safeGet(idField))
             .map(Supplier::get)
-            .findFirst(Optional::isPresent)
-            .flatMap(optionalId -> optionalId.map(String::valueOf));
+            .findFirst(Triptional::isFilled)
+            .flatMap(triptionalId -> triptionalId.mapToOptional(String::valueOf));
     }
 
-    private <E extends EntityType<E>> Optional<?> extractFromEntityChange(final EntityChange<E> entityChange,
+    private <E extends EntityType<E>> Triptional<?> extractFromIdentifier(final EntityChange<E> entityChange,
                                                                           final EntityField<E, ?> idField) {
-        if (entityChange.containsField(idField)) {
-            return Optional.ofNullable(entityChange.get(idField));
-        }
-        return Optional.empty();
-    }
-
-    private <E extends EntityType<E>> Optional<?> extractFromIdentifier(EntityChange<E> entityChange, EntityField<E, ?> idField) {
-        final Identifier<E> identifier = entityChange.getIdentifier();
-        if (identifier != null && identifier.containsField(idField)) {
-            return Optional.ofNullable(identifier.get(idField));
-        }
-        return Optional.empty();
+        return Triptional.of(entityChange.getIdentifier())
+                         .flatMap(identifier -> identifier.safeGet(idField));
     }
 
     private EntityIdExtractor() {
