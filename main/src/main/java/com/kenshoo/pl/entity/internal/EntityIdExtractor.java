@@ -4,7 +4,7 @@ import com.kenshoo.pl.entity.*;
 
 import java.util.Optional;
 
-import static com.kenshoo.pl.entity.internal.Triptionals.firstFilled;
+import static com.kenshoo.pl.entity.internal.Triptionals.firstPresent;
 import static java.util.Objects.requireNonNull;
 
 public class EntityIdExtractor {
@@ -25,16 +25,15 @@ public class EntityIdExtractor {
                                                                   final CurrentEntityState currentState,
                                                                   final EntityField<E, T> idField) {
 
-        return firstFilled(() -> entityChange.safeGet(idField),
-                           () -> extractFromIdentifier(entityChange, idField),
-                           () ->  currentState.safeGet(idField))
+        return firstPresent(() -> extractFromIdentifier(entityChange, idField),
+                            () -> new FinalEntityState(currentState, entityChange).safeGet(idField))
             .mapToOptional(String::valueOf);
     }
 
     private <E extends EntityType<E>, T> Triptional<T> extractFromIdentifier(final EntityChange<E> entityChange,
                                                                              final EntityField<E, T> idField) {
         return Triptional.of(entityChange.getIdentifier())
-                         .flatMap(identifier -> identifier.safeGet(idField));
+                         .flatMap(identifier -> identifier.safeGet(idField), Triptional::absent);
     }
 
     private EntityIdExtractor() {

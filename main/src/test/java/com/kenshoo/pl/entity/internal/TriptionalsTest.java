@@ -8,7 +8,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.function.Supplier;
 
-import static com.kenshoo.pl.entity.internal.Triptionals.firstFilled;
+import static com.kenshoo.pl.entity.internal.Triptionals.firstPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.never;
@@ -21,87 +21,87 @@ public class TriptionalsTest {
     private StubTriptionalSupplier stubTriptionalSupplier;
 
     @Test
-    public void firstFilled_WhenOneSupplierOfFilled_ShouldReturnIt() {
-        assertThat(firstFilled(() -> Triptional.of(2)), is(Triptional.of(2)));
+    public void firstPresent_WhenOneSupplierOfFilled_ShouldReturnIt() {
+        assertThat(firstPresent(() -> Triptional.of(2)), is(Triptional.of(2)));
     }
 
     @Test
-    public void firstFilled_WhenOneSupplierOfNull_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::nullInstance), is(Triptional.absent()));
+    public void firstPresent_WhenOneSupplierOfNull_ShouldReturnNull() {
+        assertThat(firstPresent(Triptional::nullInstance), is(Triptional.nullInstance()));
     }
 
     @Test
-    public void firstFilled_WhenOneSupplierOfAbsent_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::absent), is(Triptional.absent()));
+    public void firstPresent_WhenOneSupplierOfAbsent_ShouldReturnAbsent() {
+        assertThat(firstPresent(Triptional::absent), is(Triptional.absent()));
     }
 
     @Test
-    public void firstFilled_WhenTwoSuppliersOfFilled_ShouldReturnFirstValue() {
-        assertThat(firstFilled(() -> Triptional.of(2),
+    public void firstPresent_WhenTwoSuppliersOfFilled_ShouldReturnFirstValue() {
+        assertThat(firstPresent(() -> Triptional.of(2),
                                () -> Triptional.of(3)),
                    is(Triptional.of(2)));
     }
 
     @Test
-    public void firstFilled_WhenTwoSuppliersOfFilled_ShouldNotCalculateSecondValue() {
-        firstFilled(() -> Triptional.of(2),
+    public void firstPresent_WhenTwoSuppliersOfFilled_ShouldNotCalculateSecondValue() {
+        firstPresent(() -> Triptional.of(2),
                     stubTriptionalSupplier);
 
         verify(stubTriptionalSupplier, never()).get();
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfFilled_SecondOfNull_ShouldReturnFirstValue() {
-        assertThat(firstFilled(() -> Triptional.of(2),
+    public void firstPresent_WhenFirstSupplierOfFilled_SecondOfNull_ShouldReturnFirstValue() {
+        assertThat(firstPresent(() -> Triptional.of(2),
                                Triptional::nullInstance),
                    is(Triptional.of(2)));
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfFilled_SecondOfAbsent_ShouldReturnFirstValue() {
-        assertThat(firstFilled(() -> Triptional.of(2),
+    public void firstPresent_WhenFirstSupplierOfFilled_SecondOfAbsent_ShouldReturnFirstValue() {
+        assertThat(firstPresent(() -> Triptional.of(2),
                                Triptional::absent),
                    is(Triptional.of(2)));
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfNull_SecondOfFilled_ShouldReturnSecondValue() {
-        assertThat(firstFilled(Triptional::absent,
+    public void firstPresent_WhenFirstSupplierOfNull_SecondOfFilled_ShouldReturnNull() {
+        assertThat(firstPresent(Triptional::nullInstance,
                                () -> Triptional.of(2)),
-                   is(Triptional.of(2)));
+                   is(Triptional.nullInstance()));
     }
 
     @Test
-    public void firstFilled_WhenTwoSuppliersOfNull_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::nullInstance,
+    public void firstPresent_WhenTwoSuppliersOfNull_ShouldReturnNull() {
+        assertThat(firstPresent(Triptional::nullInstance,
                                Triptional::nullInstance),
-                   is(Triptional.absent()));
+                   is(Triptional.nullInstance()));
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfNull_SecondOfAbsent_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::nullInstance,
+    public void firstPresent_WhenFirstSupplierOfNull_SecondOfAbsent_ShouldReturnNull() {
+        assertThat(firstPresent(Triptional::nullInstance,
                                Triptional::absent),
-                   is(Triptional.absent()));
+                   is(Triptional.nullInstance()));
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfAbsent_SecondOfFilled_ShouldReturnSecondValue() {
-        assertThat(firstFilled(Triptional::absent,
+    public void firstPresent_WhenFirstSupplierOfAbsent_SecondOfFilled_ShouldReturnSecondValue() {
+        assertThat(firstPresent(Triptional::absent,
                                () -> Triptional.of(2)),
                    is(Triptional.of(2)));
     }
 
     @Test
-    public void firstFilled_WhenFirstSupplierOfAbsent_SecondOfNull_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::absent,
+    public void firstPresent_WhenFirstSupplierOfAbsent_SecondOfNull_ShouldReturnNull() {
+        assertThat(firstPresent(Triptional::absent,
                                Triptional::nullInstance),
-                   is(Triptional.absent()));
+                   is(Triptional.nullInstance()));
     }
 
     @Test
-    public void firstFilled_WhenTwoSuppliersOfAbsent_ShouldReturnAbsent() {
-        assertThat(firstFilled(Triptional::absent,
+    public void firstPresent_WhenTwoSuppliersOfAbsent_ShouldReturnAbsent() {
+        assertThat(firstPresent(Triptional::absent,
                                Triptional::absent),
                    is(Triptional.absent()));
     }

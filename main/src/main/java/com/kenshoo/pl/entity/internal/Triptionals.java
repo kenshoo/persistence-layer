@@ -10,11 +10,11 @@ import static org.jooq.lambda.Seq.seq;
 public final class Triptionals {
 
     @SafeVarargs
-    public static <T> Triptional<T> firstFilled(final Supplier<Triptional<T>>... suppliers) {
+    public static <T> Triptional<T> firstPresent(final Supplier<Triptional<T>>... suppliers) {
         return seq(Arrays.stream(suppliers))
-                     .map(Supplier::get)
-                     .findFirst(Triptional::isFilled)
-                     .orElse(Triptional.absent());
+            .map(Supplier::get)
+            .findFirst(Triptional::isPresent)
+            .orElse(Triptional.absent());
     }
 
     private Triptionals() {
