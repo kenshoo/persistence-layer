@@ -20,7 +20,7 @@ import static java.util.stream.Collectors.toSet;
 
 public class EntityChangeCompositeValidator<E extends EntityType<E>> implements ChangesValidator<E> {
 
-    private final Multimap<ValidationTrigger<E>, EntityChangeValidator<E>> changesValidators = HashMultimap.create();;
+    private final Multimap<ValidationTrigger<E>, EntityChangeValidator<E>> changesValidators = HashMultimap.create();
 
     public void register(E entityType, ChangeValidator validator) {
         if (validator instanceof FieldComplexValidator) {
