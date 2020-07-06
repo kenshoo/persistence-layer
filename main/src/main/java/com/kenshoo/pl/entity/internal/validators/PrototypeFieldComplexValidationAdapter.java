@@ -36,9 +36,9 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
         if (entityChange.isFieldChanged(validatedField)) {
-            return prototypeFieldValidator.validate(entityChange.get(validatedField), entity);
+            return prototypeFieldValidator.validate(entityChange.get(validatedField), currentState);
         } else {
             return null;
         }

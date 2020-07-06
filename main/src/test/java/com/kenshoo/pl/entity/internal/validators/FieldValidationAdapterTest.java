@@ -43,7 +43,7 @@ public class FieldValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @InjectMocks
     private FieldValidationAdapter<TestEntity, String> adapter;
@@ -82,14 +82,14 @@ public class FieldValidationAdapterTest {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(STRING_VALUE);
     }
 
     @Test
     public void testNoValueToValidate() {
         when(entityChange.isFieldChanged(field)).thenReturn(false);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator, never()).validate(STRING_VALUE);
     }
 }

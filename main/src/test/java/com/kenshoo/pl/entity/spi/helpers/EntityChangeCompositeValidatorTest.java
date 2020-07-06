@@ -72,7 +72,7 @@ public class EntityChangeCompositeValidatorTest {
     private ChangeEntityCommand<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @InjectMocks
     EntityChangeCompositeValidator<TestEntity> validator;
@@ -82,7 +82,7 @@ public class EntityChangeCompositeValidatorTest {
     @Before
     public void setUp(){
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(FIELD_1_VALUE);
-        when(changeContext.getEntity(entityChange)).thenReturn(entity);
+        when(changeContext.getEntity(entityChange)).thenReturn(currentState);
         when(entityChange.getChangedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
         entityChanges = ImmutableList.of(entityChange);
@@ -109,7 +109,7 @@ public class EntityChangeCompositeValidatorTest {
         when(prototypeFieldComplexValidator.getPrototype()).thenReturn(TestDataFieldPrototype.FIELD_1);
         validator.register(TestEntity.INSTANCE, prototypeFieldComplexValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(prototypeFieldComplexValidator).validate(FIELD_1_VALUE, entity);
+        verify(prototypeFieldComplexValidator).validate(FIELD_1_VALUE, currentState);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class EntityChangeCompositeValidatorTest {
         when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
         validator.register(fieldComplexValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(fieldComplexValidator).validate(FIELD_1_VALUE, entity);
+        verify(fieldComplexValidator).validate(FIELD_1_VALUE, currentState);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class EntityChangeCompositeValidatorTest {
         when(entityChangeValidator.validatedFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
         validator.register(entityChangeValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(entityChangeValidator).validate(entityChange, entity);
+        verify(entityChangeValidator).validate(entityChange, currentState);
     }
 
     @Test

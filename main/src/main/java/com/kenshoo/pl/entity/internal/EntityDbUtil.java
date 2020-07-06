@@ -45,16 +45,16 @@ public class EntityDbUtil {
         return getFieldValuesInner(fields, field -> getDbValues(fieldsValueMap, field, FieldsValueMap::get));
     }
 
-    public static <E extends EntityType<E>> Object[] getFieldValues(Collection<EntityField<E, ?>> fields, Entity entity) {
-        return getFieldValuesInner(fields, field -> getDbValues(entity, field, Entity::get));
+    public static <E extends EntityType<E>> Object[] getFieldValues(Collection<EntityField<E, ?>> fields, Entity currentState) {
+        return getFieldValuesInner(fields, field -> getDbValues(currentState, field, Entity::get));
     }
 
     private static <E extends EntityType<E>> Object[] getFieldValuesInner(Collection<EntityField<E, ?>> fields, Function<EntityField<E, ?>, Stream<?>> mapper) {
         return fields.stream().flatMap(mapper).toArray();
     }
 
-    private static <E extends EntityType<E>, O, T> Stream<Object> getDbValues(O entity, EntityField<E, T> field, BiFunction<O, EntityField<E, T>, T> getter) {
-        return field.getDbAdapter().getDbValues(getter.apply(entity, field));
+    private static <E extends EntityType<E>, O, T> Stream<Object> getDbValues(O currentState, EntityField<E, T> field, BiFunction<O, EntityField<E, T>, T> getter) {
+        return field.getDbAdapter().getDbValues(getter.apply(currentState, field));
     }
 
 }

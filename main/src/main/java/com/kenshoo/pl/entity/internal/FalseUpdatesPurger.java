@@ -45,10 +45,10 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     @Override
     public void enrich(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext) {
         commands.forEach(command -> {
-            Entity entity = changeContext.getEntity(command);
+            Entity currentState = changeContext.getEntity(command);
             // Collect the fields first to avoid modification of command's inner collection while traversing
             List<FieldChange<E, ?>> unchangedFields = command.getChanges()
-                    .filter(fieldChange -> areEqual(entity, fieldChange))
+                    .filter(fieldChange -> areEqual(currentState, fieldChange))
                     .filter(change -> !fieldsToRetain.contains(change.getField()))
                     .collect(toList());
             unchangedFields.forEach(fieldChange -> fieldUnsetter.accept(command, fieldChange.getField()));
@@ -69,12 +69,12 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
         return SupportedChangeOperation.UPDATE;
     }
 
-    private <T> boolean areEqual(Entity entity, FieldChange<E, T> fieldChange) {
-        if (!entity.containsField(fieldChange.getField())) {
+    private <T> boolean areEqual(Entity currentState, FieldChange<E, T> fieldChange) {
+        if (!currentState.containsField(fieldChange.getField())) {
             return false;
         }
         T v1 = fieldChange.getValue();
-        T v2 = entity.get(fieldChange.getField());
+        T v2 =  currentState.get(fieldChange.getField());
         return fieldChange.getField().valuesEqual(v1, v2);
     }
 

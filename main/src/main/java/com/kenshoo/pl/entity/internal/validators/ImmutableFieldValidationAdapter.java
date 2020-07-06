@@ -40,8 +40,8 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
-        if (entityChange.isFieldChanged(validator.immutableField()) && validator.immutableWhen().test(entity)) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+        if (entityChange.isFieldChanged(validator.immutableField()) && validator.immutableWhen().test(currentState)) {
             return new ValidationError(validator.getErrorCode(), validator.immutableField(), ImmutableMap.of("field", validator.immutableField().toString()));
         }
         return null;

@@ -36,10 +36,10 @@ public interface EntityChangeValidator<E extends EntityType<E>> {
      * the fields it has declared in {@link #fetchFields()}.
      *
      * @param entityChange entity change
-     * @param entity existing entity
+     * @param currentState existing entity
      *
      * @return a validation error if any, <code>null</code> if none
      */
-    ValidationError validate(EntityChange<E> entityChange, Entity entity);
+    ValidationError validate(EntityChange<E> entityChange, Entity currentState);
 
 }

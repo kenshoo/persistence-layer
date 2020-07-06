@@ -22,12 +22,12 @@ public interface FieldValueSupplier<T> extends FetchEntityFields {
     /**
      * Returns the new value for a field given an existing entity
      *
-     * @param entity entity before the change
+     * @param currentState entity before the change
      * @return new field value
      * @throws ValidationException if the supposed change is invalid
      * @throws NotSuppliedException if the supplier doesn't want to change the current value
      */
-    T supply(Entity entity) throws ValidationException, NotSuppliedException;
+    T supply(Entity currentState) throws ValidationException, NotSuppliedException;
 
     static <OLD_VAL, NEW_VAL> FieldValueSupplier<NEW_VAL> fromOldValue(EntityField<?, OLD_VAL> field, Function<OLD_VAL, NEW_VAL> func) {
         return new FieldValueSupplier<NEW_VAL>() {

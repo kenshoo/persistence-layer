@@ -28,8 +28,8 @@ public class OverridingContext implements ChangeContext {
     }
 
     @Override
-    public void addEntity(EntityChange change, Entity entity) {
-        overrides.put(change, new OverridingEntity(entity, original.getEntity(change)));
+    public void addEntity(EntityChange change, Entity currentState) {
+        overrides.put(change, new OverridingEntity(currentState, original.getEntity(change)));
     }
 
     @Override

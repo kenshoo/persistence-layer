@@ -39,11 +39,11 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
-        if(validator.validateWhen().test(entity)) {
-            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, entity, validator.validatedFields(), entityChange.getChangeOperation());
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+        if(validator.validateWhen().test(currentState)) {
+            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, currentState, validator.validatedFields(), entityChange.getChangeOperation());
             if (hasSubstitutions()) {
-                return validator.validate(new OverrideFieldsCombination<>(entity, resultingFieldsCombination, mapFieldToOverrideFunction()));
+                return validator.validate(new OverrideFieldsCombination<>(currentState, resultingFieldsCombination, mapFieldToOverrideFunction()));
             } else {
                 return validator.validate(resultingFieldsCombination);
             }

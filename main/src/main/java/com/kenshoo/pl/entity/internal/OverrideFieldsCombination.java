@@ -12,10 +12,10 @@ public class OverrideFieldsCombination<E extends EntityType<E>> implements Field
 
     private final FieldsValueMap<E> fieldsValueMap;
     private final Map<EntityField<E,?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions;
-    private final Entity entity;
+    private final Entity currentState;
 
-    public OverrideFieldsCombination(Entity entity, FieldsValueMap<E> fieldsValueMap, Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions) {
-        this.entity = entity;
+    public OverrideFieldsCombination(Entity currentState, FieldsValueMap<E> fieldsValueMap, Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions) {
+        this.currentState = currentState;
         this.fieldsValueMap = fieldsValueMap;
         this.overrideFieldValueFunctions = overrideFieldValueFunctions;
 
@@ -42,7 +42,7 @@ public class OverrideFieldsCombination<E extends EntityType<E>> implements Field
             //noinspection unchecked
             FieldsCombinationValidator.Substitution<E, T> overrideFieldFunction = (FieldsCombinationValidator.Substitution<E, T>) overrideFieldValueFunctions.get(field);
             if(overrideFieldFunction.overrideWhen().test(result)) {
-                return overrideFieldFunction.overrideHow().apply(entity);
+                return overrideFieldFunction.overrideHow().apply(currentState);
             }
         }
         return result;

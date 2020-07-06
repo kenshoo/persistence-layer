@@ -62,8 +62,8 @@ public class EntitiesToContextFetcher {
             ChangeEntityCommand<E> cmd) {
 
         final ChangeEntityCommand ancestor = getAncestor(cmd, parentLevel);
-        final EntityImpl entity = (EntityImpl)context.getEntity(cmd);
-        seq(parentFields).forEach(field -> entity.set(field, getValue(context, ancestor, field)));
+        final EntityImpl currentState = (EntityImpl)context.getEntity(cmd);
+        seq(parentFields).forEach(field ->  currentState.set(field, getValue(context, ancestor, field)));
     }
 
 
@@ -120,9 +120,9 @@ public class EntitiesToContextFetcher {
         for (Map.Entry<? extends ChangeEntityCommand<E>, Identifier<E>> entry : keysByCommand.entrySet()) {
             ChangeEntityCommand<E> command = entry.getKey();
             Identifier<E> identifier = entry.getValue();
-            Entity entity = fetchedEntities.get(identifier);
-            if (entity != null) {
-                changeContext.addEntity(command, entity);
+            Entity currentState = fetchedEntities.get(identifier);
+            if (currentState != null) {
+                changeContext.addEntity(command, currentState);
             }
         }
     }

@@ -38,7 +38,7 @@ public class PrototypeFieldComplexValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @Mock
     private PrototypeFieldComplexValidator<String> validator;
@@ -78,7 +78,7 @@ public class PrototypeFieldComplexValidationAdapterTest {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, entity);
-        verify(validator).validate(STRING_VALUE, entity);
+        adapter.validate(entityChange, currentState);
+        verify(validator).validate(STRING_VALUE, currentState);
     }
 }

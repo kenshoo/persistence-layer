@@ -134,19 +134,19 @@ public class OldEntityFetcher {
             condition = condition.and(fieldAndValue.getField().eq(fieldAndValue.getValue()));
         }
         List<Entity> entities = query.where(condition).fetch(record -> {
-            EntityImpl entity = new EntityImpl();
+            EntityImpl currentState = new EntityImpl();
             Iterator<Object> valuesIterator = record.intoList().iterator();
             for (EntityField<E, ?> field : fieldsToFetch) {
-                fieldFromRecordToEntity(entity, field, valuesIterator);
+                fieldFromRecordToEntity(currentState, field, valuesIterator);
             }
-            return entity;
+            return currentState;
         });
         //noinspection unchecked
         ClassLoader classLoader = entityIface.getClassLoader();
         Class<?>[] interfaces = {entityIface};
         //noinspection unchecked
         return entities.stream()
-                .map(entity -> (PE) Proxy.newProxyInstance(classLoader, interfaces, new PartialEntityInvocationHandler<>(entityMethodsMap, entity)))
+                .map(currentState -> (PE) Proxy.newProxyInstance(classLoader, interfaces, new PartialEntityInvocationHandler<>(entityMethodsMap, currentState)))
                 .collect(toList());
     }
 
@@ -227,8 +227,8 @@ public class OldEntityFetcher {
         );
     }
 
-    private <T> void fieldFromRecordToEntity(EntityImpl entity, EntityField<?, T> field, Iterator<Object> valuesIterator) {
-        entity.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
+    private <T> void fieldFromRecordToEntity(EntityImpl currentState, EntityField<?, T> field, Iterator<Object> valuesIterator) {
+         currentState.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
     }
 
     private <E extends EntityType<E>, T> void addToValues(Identifier<E> key, EntityField<E, T> field, List<Object> values) {
@@ -247,10 +247,10 @@ public class OldEntityFetcher {
     }
 
     private Entity mapRecordToEntity(final Record record, final Collection<EntityField<?, ?>> fieldsToFetch) {
-        final EntityImpl entity = new EntityImpl();
+        final EntityImpl currentState = new EntityImpl();
         final Iterator<Object> valuesIterator = record.intoList().iterator();
-        fieldsToFetch.forEach( field -> fieldFromRecordToEntity(entity, field, valuesIterator));
-        return entity;
+        fieldsToFetch.forEach( field -> fieldFromRecordToEntity(currentState, field, valuesIterator));
+        return currentState;
     }
 
     @SuppressWarnings("unchecked")

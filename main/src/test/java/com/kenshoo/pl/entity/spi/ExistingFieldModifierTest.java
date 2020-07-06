@@ -20,7 +20,7 @@ public class ExistingFieldModifierTest {
     private ChangeContext changeContext;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     private final TestFieldEnricher testFieldEnricher = new TestFieldEnricher();
 
@@ -28,7 +28,7 @@ public class ExistingFieldModifierTest {
 
     @Before
     public void setup() {
-        when(changeContext.getEntity(cmd)) .thenReturn(entity);
+        when(changeContext.getEntity(cmd)) .thenReturn(currentState);
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ExistingFieldModifierTest {
         }
 
         @Override
-        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity entity) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity currentState) {
             return "override " + entityChange.get(TestEntity.FIELD_1);
         }
     }

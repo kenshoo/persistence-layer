@@ -129,11 +129,11 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     @Override
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
         entityChanges.forEach(entityChange -> {
-            Entity entity = changeContext.getEntity(entityChange);
+            Entity currentState = changeContext.getEntity(entityChange);
             Collection<EntityChangeValidator<E>> validators = findValidators(entityChange);
             validators.stream()
                     .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
-                    .map(validator -> validator.validate(entityChange, entity))
+                    .map(validator -> validator.validate(entityChange, currentState))
                     .filter(Objects::nonNull)
                     .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
         });

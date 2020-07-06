@@ -38,8 +38,8 @@ public class ChangeContextImpl implements ChangeContext {
     }
 
     @Override
-    public void addEntity(EntityChange change, Entity entity) {
-        this.entities.put(change, entity);
+    public void addEntity(EntityChange change, Entity currentState) {
+        this.entities.put(change, currentState);
     }
 
     @Override

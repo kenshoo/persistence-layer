@@ -20,45 +20,45 @@ public class EntityIdExtractorTest {
     public void extractWhenExistsInCommandDirectly() {
         final EntityChange<TestEntity> cmd = new TestCommand()
             .with(TestEntity.ID, ID_VALUE);
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
-        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, entity), isPresentAndIs(STRING_ID_VALUE));
+        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }
 
     @Test
     public void extractWhenExistsInIdentifierButNotDirectlyInCommand() {
         final EntityChange<TestEntity> cmd = new TestCommand()
             .withIdentifier(new TestEntity.Key(ID_VALUE));
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
-        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, entity), isPresentAndIs(STRING_ID_VALUE));
+        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }
 
     @Test
     public void extractWhenExistsInEntityButNotInIdentifier() {
         final EntityChange<TestEntity> cmd = new TestCommand()
             .withIdentifier(new SingleUniqueKeyValue<>(TestEntity.FIELD_1, "abc"));
-        final EntityImpl entity = new EntityImpl();
-        entity.set(TestEntity.ID, ID_VALUE);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(TestEntity.ID, ID_VALUE);
 
-        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, entity), isPresentAndIs(STRING_ID_VALUE));
+        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }
 
     @Test
     public void extractWhenExistsInEntityOnly() {
         final EntityChange<TestEntity> cmd = TestCommand.EMPTY;
-        final EntityImpl entity = new EntityImpl();
-        entity.set(TestEntity.ID, ID_VALUE);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(TestEntity.ID, ID_VALUE);
 
-        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, entity), isPresentAndIs(STRING_ID_VALUE));
+        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }
 
     @Test
     public void extractWhenDoesntExistAnywhere() {
         final EntityChange<TestEntity> cmd = TestCommand.EMPTY;
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
-        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, entity), isEmpty());
+        assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isEmpty());
     }
 
     private static class TestCommand extends ChangeEntityCommand<TestEntity> implements EntityCommandExt<TestEntity, TestCommand> {

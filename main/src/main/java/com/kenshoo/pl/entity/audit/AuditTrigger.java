@@ -8,7 +8,7 @@ package com.kenshoo.pl.entity.audit;
 public enum AuditTrigger {
 
     /**
-     * Indicates that a field should be audited always, regardless of whether its value has changed - whenever there is some other change in the entity.<br>
+     * Indicates that a field should be audited always, regardless of whether its value has changed - whenever there is some other change in the  currentState.<br>
      * This means that the <b>current</b> value of the field will always be included in {@link AuditRecord#getMandatoryFieldValues()}.
      */
     ALWAYS,
