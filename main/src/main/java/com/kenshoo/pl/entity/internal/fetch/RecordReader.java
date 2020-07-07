@@ -2,7 +2,7 @@ package com.kenshoo.pl.entity.internal.fetch;
 
 import com.google.common.collect.Iterators;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import org.jooq.Record;
 
 import java.util.Collection;
@@ -19,8 +19,8 @@ public class RecordReader {
         return new UniqueKey<>(aliasedKey.unAliasedFields()).createValue(fieldsValueMap);
     }
 
-    public static EntityImpl createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
-        EntityImpl currentState = new EntityImpl();
+    public static CurrentEntityState createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
+        CurrentEntityState currentState = new CurrentEntityState();
         Iterator<Object> valuesIterator = record.intoList().iterator();
         fields.forEach(field -> populateEntity(field, valuesIterator, currentState));
         return currentState;
@@ -38,7 +38,7 @@ public class RecordReader {
         fieldsValueMap.set(field, value);
     }
 
-    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, EntityImpl currentState) {
+    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, CurrentEntityState currentState) {
          currentState.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator));
     }
 

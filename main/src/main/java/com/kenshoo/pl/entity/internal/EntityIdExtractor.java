@@ -12,7 +12,7 @@ public class EntityIdExtractor {
     public static final EntityIdExtractor INSTANCE = new EntityIdExtractor();
 
     public <E extends EntityType<E>> Optional<String> extract(final EntityChange<E> entityChange,
-                                                              final Entity currentState) {
+                                                              final CurrentEntityState currentState) {
         requireNonNull(entityChange, "entityChange is required");
         requireNonNull(currentState, "entity is required");
 
@@ -22,7 +22,7 @@ public class EntityIdExtractor {
     }
 
     private <E extends EntityType<E>, T> Optional<String> extract(final EntityChange<E> entityChange,
-                                                                  final Entity currentState,
+                                                                  final CurrentEntityState currentState,
                                                                   final EntityField<E, T> idField) {
 
         return firstFilled(() -> entityChange.safeGet(idField),

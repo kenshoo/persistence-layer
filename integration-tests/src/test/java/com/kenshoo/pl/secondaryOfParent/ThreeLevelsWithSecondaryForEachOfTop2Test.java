@@ -116,7 +116,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
-        final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<EntityType0>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
                                                EntityType1.ENTITY_1_SEC_FIELD_1, EntityType2.ENTITY_2_SEC_FIELD_1);
 
@@ -130,7 +130,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
-        final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<EntityType0>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
                                                EntityType1.ENTITY_1_SEC_FIELD_1, EntityType2.FIELD_1, EntityType2.ENTITY_2_SEC_FIELD_1);
 

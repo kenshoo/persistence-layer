@@ -113,7 +113,7 @@ public class SingleFieldEnricherTest {
 
     private ChangeContext prepareCtx(CreateEntityCommand<TestEntity> cmd, String value) {
         ChangeContextImpl ctx = new ChangeContextImpl(null, FeatureSet.EMPTY);
-        EntityImpl currentState = new EntityImpl();
+        CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(TestEntity.FIELD_2, value);
         ctx.addEntity(cmd, currentState);
         return ctx;
@@ -133,12 +133,12 @@ public class SingleFieldEnricherTest {
         }
 
         @Override
-        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity currentState) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, CurrentEntityState currentState) {
             return  currentState.get(TestEntity.FIELD_2);
         }
 
         @Override
-        protected BiPredicate<EntityChange<TestEntity>, Entity> additionalPostFetchCommandFilter() {
+        protected BiPredicate<EntityChange<TestEntity>, CurrentEntityState> additionalPostFetchCommandFilter() {
             return (entityChange, currentState) -> !(currentState.containsField(TestEntity.FIELD_2) &&  currentState.get(TestEntity.FIELD_2).equals(DO_NOT_ENRICH_VALUE));
         }
 

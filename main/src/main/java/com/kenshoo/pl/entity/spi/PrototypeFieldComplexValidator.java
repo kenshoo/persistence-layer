@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldPrototype;
 import com.kenshoo.pl.entity.ValidationError;
@@ -27,7 +27,7 @@ public interface PrototypeFieldComplexValidator<T> extends ChangeValidator {
      *
      * @return a validation error if any, <code>null</code> if none
      */
-    ValidationError validate(T fieldValue, Entity currentState);
+    ValidationError validate(T fieldValue, CurrentEntityState currentState);
 
     /**
      * @return a list of fields to fetch. Can contain only parent entities fields.

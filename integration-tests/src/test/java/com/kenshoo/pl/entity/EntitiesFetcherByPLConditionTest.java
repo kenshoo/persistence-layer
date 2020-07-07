@@ -89,7 +89,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereOneMatchesAndFieldOfConditionRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Alpha"),
                                                             TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -102,7 +102,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereOneMatchesAndFieldOfConditionNotRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Alpha"),
                                                             TestEntityType.ID, TestEntityType.TYPE);
         assertThat("Incorrect number of entities fetched: ",
@@ -115,13 +115,13 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereTwoMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.TYPE.eq(1),
                                                             TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(2));
 
-        final List<Entity> sortedEntities = entities.stream()
+        final List<CurrentEntityState> sortedEntities = entities.stream()
                                                     .sorted(comparing(entity -> entity.get(TestEntityType.ID)))
                                                     .collect(toList());
 
@@ -135,7 +135,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereNoneMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.TYPE.eq(999),
                                                             TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Should not find entities for given condition: ",
@@ -150,7 +150,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnChildAndParentRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Alpha"),
                                                             TestParentEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -162,7 +162,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnChildAndParentSecondaryRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Alpha"),
                                                             TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -174,7 +174,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnChildAndBothParentAndSecondaryRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.FIELD1.eq("Charlie"),
                                                             TestParentEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -187,7 +187,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentAndChildRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.FIELD2.eq("ParentBravo2"),
                                                             TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -199,7 +199,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentAndParentRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.FIELD2.eq("ParentBravo2"),
                                                             TestParentEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -211,7 +211,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentAndParentSecondaryRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.FIELD2.eq("ParentBravo2"),
                                                             TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -223,7 +223,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentAndBothChildAndParentSecondaryRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.FIELD2.eq("ParentBravo2"),
                                                             TestEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -236,7 +236,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndChildRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
                                                             TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -248,7 +248,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndParentRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
                                                             TestParentEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -260,7 +260,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndParentSecondaryRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
                                                             TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -272,7 +272,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByEqualsConditionWhereConditionOnParentSecondaryAndBothChildAndParentRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestParentEntityType.SECONDARY_FIELD2.eq("ParentSecondaryBravo2"),
                                                             TestEntityType.FIELD1, TestParentEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -285,7 +285,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByAndConditionWhereOneMatches() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.ID.eq(1).and(TestEntityType.TYPE.eq(1)),
                                                             TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -297,7 +297,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByAndConditionWhereNoneMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.ID.eq(1).and(TestEntityType.TYPE.eq(99)),
                                                             TestEntityType.FIELD1);
         assertThat("Should not find entities for given condition: ",
@@ -306,7 +306,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByOrConditionWhereOneMatches() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.ID.eq(2).or(TestEntityType.TYPE.eq(99)),
                                                             TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -318,14 +318,14 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByOrConditionWhereTwoMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.ID.eq(2).or(TestEntityType.TYPE.eq(3)),
                                                             TestEntityType.TYPE, TestEntityType.FIELD1);
 
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(2));
 
-        final List<Entity> sortedEntities = entities.stream()
+        final List<CurrentEntityState> sortedEntities = entities.stream()
                                                     .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
                                                     .collect(toList());
 
@@ -337,7 +337,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByOrConditionWhereNoneMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             TestEntityType.ID.eq(999).or(TestEntityType.TYPE.eq(999)),
                                                             TestEntityType.TYPE, TestEntityType.FIELD1);
 
@@ -347,11 +347,11 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByNotEqualsConditionWhereTwoMatch() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                                                             not(TestEntityType.ID.eq(1)),
                                                             TestEntityType.TYPE, TestEntityType.FIELD1);
 
-        final List<Entity> sortedEntities = entities.stream()
+        final List<CurrentEntityState> sortedEntities = entities.stream()
                                                     .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
                                                     .collect(toList());
 
@@ -366,12 +366,12 @@ public class EntitiesFetcherByPLConditionTest {
     public void fetchByUniqueKeys() {
         final PairUniqueKey<TestEntityType, Integer, Integer> uniqueKey= new PairUniqueKey<>(TestEntityType.ID, TestEntityType.TYPE);
 
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
                 PLCondition.trueCondition(),
                 TestEntityType.TYPE, TestEntityType.FIELD1);
 
-        final List<Entity> sortedEntities = entities.stream()
+        final List<CurrentEntityState> sortedEntities = entities.stream()
                 .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
                 .collect(toList());
 
@@ -385,12 +385,12 @@ public class EntitiesFetcherByPLConditionTest {
     public void fetchByUniqueKeysAndCondition() {
         final PairUniqueKey<TestEntityType, Integer, Integer> uniqueKey= new PairUniqueKey<>(TestEntityType.ID, TestEntityType.TYPE);
 
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
                 not(TestEntityType.ID.eq(1)),
                 TestEntityType.ID, TestEntityType.TYPE, TestEntityType.FIELD1);
 
-        final List<Entity> sortedEntities = entities.stream()
+        final List<CurrentEntityState> sortedEntities = entities.stream()
                 .sorted(comparing(entity -> entity.get(TestEntityType.TYPE)))
                 .collect(toList());
 
@@ -401,7 +401,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByInConditionForStringFieldWhereTwoMatchesAndFieldOfConditionRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 TestEntityType.FIELD1.in("Alpha", "Bravo"),
                 TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -418,7 +418,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByInConditionForIntFieldWhereTwoMatchesAndFieldOfConditionRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 TestEntityType.TYPE.in(2, 3),
                 TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -435,7 +435,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByNotInConditionForIntFieldWhereTwoMatchesAndFieldOfConditionRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 PLCondition.not(TestEntityType.TYPE.in(2, 3)),
                 TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -452,7 +452,7 @@ public class EntitiesFetcherByPLConditionTest {
 
     @Test
     public void fetchByInConditionForStringFieldWhereNotAllMatchesAndFieldOfConditionRequested() {
-        final List<Entity> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 TestEntityType.FIELD1.in("Alpha", "NotExist"),
                 TestEntityType.ID, TestEntityType.FIELD1);
         assertThat("Incorrect number of entities fetched: ",

@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
@@ -20,16 +20,16 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
 
     private final boolean isSuccess;
     private final Identifier<E> identifier;
-    private final Entity currentState;
+    private final CurrentEntityState currentState;
     private final Optional<String> errorCode;
     private InspectedStatus inspectedStatus = InspectedStatus.IDENTICAL;
 
 
-    private ObservedResult(Identifier<E> identifier, Entity currentState) {
+    private ObservedResult(Identifier<E> identifier, CurrentEntityState currentState) {
         this(identifier, currentState, true, null);
     }
 
-    private ObservedResult(Identifier<E> identifier, Entity currentState, boolean isSuccess, String errorCode) {
+    private ObservedResult(Identifier<E> identifier, CurrentEntityState currentState, boolean isSuccess, String errorCode) {
         this.isSuccess = isSuccess;
         this.identifier = identifier;
         this.currentState = currentState;
@@ -67,7 +67,7 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
         return errorCode;
     }
 
-    public static <E extends EntityType<E>> ObservedResult<E> of(Identifier<E> identifier, Entity currentState)  {
+    public static <E extends EntityType<E>> ObservedResult<E> of(Identifier<E> identifier, CurrentEntityState currentState)  {
         return new ObservedResult<>(identifier, currentState);
     }
 
@@ -77,7 +77,7 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
 
     public static class Builder<E extends EntityType<E>> {
         private Identifier<E> identifier;
-        private Entity currentState;
+        private CurrentEntityState currentState;
         private boolean isSuccess = true;
         private String errorCode;
 
@@ -86,7 +86,7 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
             return this;
         }
 
-        public Builder<E> withEntity(Entity currentState) {
+        public Builder<E> withEntity(CurrentEntityState currentState) {
             this.currentState = currentState;
             return this;
         }

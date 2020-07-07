@@ -170,7 +170,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     }
 
     private boolean isMissing(ChangeEntityCommand<?> cmd, ChangeContext context) {
-        return context.getEntity(cmd) == Entity.EMPTY;
+        return context.getEntity(cmd) == CurrentEntityState.EMPTY;
     }
 
     private <E extends EntityType<E>> Collection<EntityChange<E>> prepareOneLayer(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
@@ -209,7 +209,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         List<C> validCommands = Lists.newArrayListWithCapacity(commands.size());
 
         for (C command : commands) {
-            Entity currentState = changeContext.getEntity(command);
+            CurrentEntityState currentState = changeContext.getEntity(command);
             try {
                 command.resolveSuppliers(currentState);
                 validCommands.add(command);
@@ -278,7 +278,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     }
 
     private void populateIdentityField(final ChangeEntityCommand<ROOT> cmd, final ChangeContext changeContext, final EntityField<ROOT, Object> idField) {
-        final Entity currentState = Optional.ofNullable(changeContext.getEntity(cmd))
+        final CurrentEntityState currentState = Optional.ofNullable(changeContext.getEntity(cmd))
                                       .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
         cmd.set(idField,  currentState.get(idField));
     }

@@ -130,7 +130,7 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         final EntityType0.Key keyToFetch = new EntityType0.Key(ENTITY_0_ID);
 
-        final Map<Identifier<EntityType0>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<EntityType0>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch), EntityType2.NAME, EntityType3.NAME);
 
         assertThat(fetchedKeyToEntity.get(keyToFetch),

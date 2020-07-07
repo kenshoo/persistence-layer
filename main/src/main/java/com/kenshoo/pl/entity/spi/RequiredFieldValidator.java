@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
@@ -28,7 +28,7 @@ public interface RequiredFieldValidator<E extends EntityType<E>, T> extends Chan
     /**
      * @return Predicate when should validate field.
      */
-    default Predicate<Entity> requireWhen() {
+    default Predicate<CurrentEntityState> requireWhen() {
         return e -> true;
     }
 

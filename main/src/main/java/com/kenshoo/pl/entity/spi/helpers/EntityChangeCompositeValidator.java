@@ -4,7 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldPrototype;
@@ -129,7 +129,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     @Override
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
         entityChanges.forEach(entityChange -> {
-            Entity currentState = changeContext.getEntity(entityChange);
+            CurrentEntityState currentState = changeContext.getEntity(entityChange);
             Collection<EntityChangeValidator<E>> validators = findValidators(entityChange);
             validators.stream()
                     .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))

@@ -1,4 +1,4 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
@@ -11,7 +11,19 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 
 
-public class EntityImpl implements Entity {
+public class CurrentEntityState implements Entity {
+
+    public final  static CurrentEntityState EMPTY = new CurrentEntityState() {
+        @Override
+        public boolean containsField(EntityField<?, ?> field) {
+            return false;
+        }
+
+        @Override
+        public <T> T get(EntityField<?, T> field) {
+            return null;
+        }
+    };
 
     private final Map<EntityField<?, ?>, Object> fields = new HashMap<>();
     private Map<EntityType, List<FieldsValueMap>> manyByType;

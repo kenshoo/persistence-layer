@@ -17,7 +17,7 @@ public class CommonTypesStringConverterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void unsupportedClass() {
-        new CommonTypesStringConverter<>(Entity.class);
+        new CommonTypesStringConverter<>(CurrentEntityState.class);
     }
 
     @Test

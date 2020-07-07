@@ -81,7 +81,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
             }
 
             @Override
-            public T supply(Entity currentState) throws ValidationException {
+            public T supply(CurrentEntityState currentState) throws ValidationException {
                 FieldsValueMap<E> result = delegatingSupplier.supply(currentState);
                 if (result.containsField(entityField)) {
                     return result.get(entityField);
@@ -149,7 +149,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         values.remove(field);
     }
 
-    void resolveSuppliers(Entity currentState) throws ValidationException {
+    void resolveSuppliers(CurrentEntityState currentState) throws ValidationException {
         // HashMap creates keySet/entrySet on demand so if the map is empty, calling these method implicitly increases its
         // memory consumption. Since in many cases the suppliers HashMap is empty, we can short-circuit this.
         if (suppliers.isEmpty()) {

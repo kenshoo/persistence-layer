@@ -446,7 +446,7 @@ public class PersistenceLayerTest {
         // because it is not nullable.
         UpdateTestCommand cmd = new UpdateTestCommand(ID_1).with(URL, GOOGLE_URL).with(URL_PARAM, "abc");
         persistenceLayer.update(asList(cmd), changeFlowConfig().build());
-        Entity fromDB = plContext.select(URL_PARAM).from(INSTANCE).where(ID.eq(ID_1)).fetch().get(0);
+        CurrentEntityState fromDB = plContext.select(URL_PARAM).from(INSTANCE).where(ID.eq(ID_1)).fetch().get(0);
         assertThat(fromDB.get(URL_PARAM), is("abc"));
     }
 
@@ -532,7 +532,7 @@ public class PersistenceLayerTest {
             public void enrich(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
                 ChangeEntityCommand<EntityForTest> command = Iterables.getFirst(changeEntityCommands, null);
                 assertNotNull(command);
-                Entity entity = changeContext.getEntity(command);
+                CurrentEntityState entity = changeContext.getEntity(command);
                 command.set(EntityForTest.FIELD2, Integer.parseInt(entity.get(EntityForTestComplexKeyParent.FIELD1)));
             }
 
@@ -653,7 +653,7 @@ public class PersistenceLayerTest {
         Instant expectedCreationDate = Instant.now();
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
-        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(new EntityForTest.Key(newId)),
+        Map<Identifier<EntityForTest>, CurrentEntityState> entityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(new EntityForTest.Key(newId)),
                                                                                               EntityForTest.CREATION_DATE);
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
@@ -671,7 +671,7 @@ public class PersistenceLayerTest {
         Instant expectedCreationDate = Instant.now();
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
-        Map<Identifier<EntityForTest>, Entity> entityMap = entitiesFetcher.fetchEntitiesByIds(singleton(new EntityForTest.Key(newId)),
+        Map<Identifier<EntityForTest>, CurrentEntityState> entityMap = entitiesFetcher.fetchEntitiesByIds(singleton(new EntityForTest.Key(newId)),
                                                                                                singleton(EntityForTest.CREATION_DATE));
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
@@ -789,7 +789,7 @@ public class PersistenceLayerTest {
         UpdateTestCommand command = new UpdateTestCommand(NON_EXISTING_ID);
         command.set(EntityForTest.FIELD2, new FieldValueSupplier<Integer>() {
             @Override
-            public Integer supply(Entity entity) {
+            public Integer supply(CurrentEntityState entity) {
                 return entity.get(EntityForTest.FIELD2) + 20;
             }
 
@@ -1338,7 +1338,7 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public FieldsValueMap<EntityForTest> supply(Entity entity) throws ValidationException {
+        public FieldsValueMap<EntityForTest> supply(CurrentEntityState entity) throws ValidationException {
             if (validationError.isPresent()) {
                 throw new ValidationException(validationError.get());
             }
@@ -1365,7 +1365,7 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public FieldsValueMap<EntityForTest> supply(Entity entity) throws ValidationException {
+        public FieldsValueMap<EntityForTest> supply(CurrentEntityState entity) throws ValidationException {
 
             FieldsValueMapImpl<EntityForTest> entityFieldsSupplier = new FieldsValueMapImpl<>();
             for (EntityField<EntityForTest, ?> fieldToNull : fieldsToNull) {
@@ -1384,7 +1384,7 @@ public class PersistenceLayerTest {
     private static class TestField1MultiFieldSupplier implements MultiFieldValueSupplier<EntityForTest> {
 
         @Override
-        public FieldsValueMap<EntityForTest> supply(Entity entity) throws ValidationException {
+        public FieldsValueMap<EntityForTest> supply(CurrentEntityState entity) throws ValidationException {
             FieldsValueMapImpl<EntityForTest> entityFieldsSupplier = new FieldsValueMapImpl<>();
             entityFieldsSupplier.set(EntityForTest.FIELD1, FIELD1_VALID_VALUE);
             return entityFieldsSupplier;

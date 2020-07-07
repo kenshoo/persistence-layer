@@ -47,7 +47,7 @@ public class FieldsCombinationValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     @Mock
     private FieldsCombinationValidator.Substitution<TestEntity, String> fieldSubstitution;

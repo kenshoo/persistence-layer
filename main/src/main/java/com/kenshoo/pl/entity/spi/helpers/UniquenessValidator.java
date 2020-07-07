@@ -2,7 +2,7 @@ package com.kenshoo.pl.entity.spi.helpers;
 
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -55,7 +55,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
         EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
 
-        Map<Identifier<E>, Entity> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
+        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
                 .stream().collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
 
         duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
@@ -67,7 +67,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
                 .collect(toMap(cmd -> createKeyValue(cmd, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
     }
 
-    private ValidationError errorForDatabaseConflict(Entity dupEntity, UniqueKey<E> pk) {
+    private ValidationError errorForDatabaseConflict(CurrentEntityState dupEntity, UniqueKey<E> pk) {
         return new ValidationError(errorCode, Seq.of(pk.getFields()).toMap(Object::toString, field -> String.valueOf(dupEntity.get(field))));
     }
 
@@ -83,7 +83,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         return new UniqueKeyValue<>(key, values);
     }
 
-    private Identifier<E> createKeyValue(Entity cmd, UniqueKey<E> key) {
+    private Identifier<E> createKeyValue(CurrentEntityState cmd, UniqueKey<E> key) {
         Object[] values = Stream.of(key.getFields()).map(cmd::get).toArray();
         return new UniqueKeyValue<>(key, values);
     }

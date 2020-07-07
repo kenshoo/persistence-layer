@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -40,6 +40,6 @@ public interface EntityChangeValidator<E extends EntityType<E>> {
      *
      * @return a validation error if any, <code>null</code> if none
      */
-    ValidationError validate(EntityChange<E> entityChange, Entity currentState);
+    ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState);
 
 }

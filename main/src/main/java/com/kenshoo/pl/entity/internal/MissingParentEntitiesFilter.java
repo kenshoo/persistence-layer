@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity.internal;
 import com.google.common.collect.Collections2;
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -27,8 +27,8 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
             return changes;
         }
         return Collections2.filter(changes, command -> {
-                    Entity currentState = changeContext.getEntity(command);
-                    if (currentState == Entity.EMPTY) {
+                    CurrentEntityState currentState = changeContext.getEntity(command);
+                    if (currentState == CurrentEntityState.EMPTY) {
                         changeContext.addValidationError(command, new ValidationError(Errors.PARENT_ENTITY_NOT_FOUND));
                         return false;
                     }

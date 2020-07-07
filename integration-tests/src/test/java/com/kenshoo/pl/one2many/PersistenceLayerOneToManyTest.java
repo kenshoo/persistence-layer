@@ -699,7 +699,7 @@ public class PersistenceLayerOneToManyTest {
             }
 
             @Override
-            public ValidationError validate(String fieldValue, Entity entity) {
+            public ValidationError validate(String fieldValue, CurrentEntityState entity) {
                 return entity.get(ParentEntity.NAME).equals(parentName)
                         ? new ValidationError("this is invalid")
                         : null;
@@ -865,7 +865,7 @@ public class PersistenceLayerOneToManyTest {
     private <E extends EntityType<E>> FieldValueSupplier<String> supplyFromField(EntityField<E, String> field, Function<String, String> mapping) {
         return new FieldValueSupplier<String>() {
             @Override
-            public String supply(Entity entity) throws ValidationException, NotSuppliedException {
+            public String supply(CurrentEntityState entity) throws ValidationException, NotSuppliedException {
                 return mapping.apply(entity.get(field));
             }
 

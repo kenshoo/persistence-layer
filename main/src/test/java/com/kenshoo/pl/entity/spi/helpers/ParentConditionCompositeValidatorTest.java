@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.TestEntity;
@@ -57,10 +57,10 @@ public class ParentConditionCompositeValidatorTest {
     private EntityChange<TestEntity> entityChange2;
 
     @Mock
-    private Entity entity1;
+    private CurrentEntityState entity1;
 
     @Mock
-    private Entity entity2;
+    private CurrentEntityState entity2;
 
     private Collection<EntityChange<TestEntity>> entityChanges;
 

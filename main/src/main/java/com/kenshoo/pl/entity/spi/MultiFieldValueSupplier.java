@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
 
@@ -20,6 +20,6 @@ public interface MultiFieldValueSupplier<E extends EntityType<E>> extends  Fetch
      * @param currentState entity before the change
      * @return new values
      */
-    FieldsValueMap<E> supply(Entity currentState) throws ValidationException;
+    FieldsValueMap<E> supply(CurrentEntityState currentState) throws ValidationException;
 
 }

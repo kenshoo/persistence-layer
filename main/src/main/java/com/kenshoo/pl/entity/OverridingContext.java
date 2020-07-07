@@ -10,7 +10,7 @@ import static java.util.Optional.ofNullable;
 public class OverridingContext implements ChangeContext {
 
     private final ChangeContext original;
-    private final Map<EntityChange, Entity> overrides = new IdentityHashMap<>();
+    private final Map<EntityChange, CurrentEntityState> overrides = new IdentityHashMap<>();
 
     public OverridingContext(ChangeContext original) {
         this.original = original;
@@ -22,13 +22,13 @@ public class OverridingContext implements ChangeContext {
     }
 
     @Override
-    public Entity getEntity(EntityChange entityChange) {
+    public CurrentEntityState getEntity(EntityChange entityChange) {
         return ofNullable(overrides.get(entityChange))
                 .orElseGet(() -> original.getEntity(entityChange));
     }
 
     @Override
-    public void addEntity(EntityChange change, Entity currentState) {
+    public void addEntity(EntityChange change, CurrentEntityState currentState) {
         overrides.put(change, new OverridingEntity(currentState, original.getEntity(change)));
     }
 
@@ -72,13 +72,13 @@ public class OverridingContext implements ChangeContext {
         return original.getHierarchy();
     }
 
-    private static class OverridingEntity implements Entity {
+    private static class OverridingEntity extends CurrentEntityState {
 
-        private final Entity overriding;
-        private final Entity original;
+        private final CurrentEntityState overriding;
+        private final CurrentEntityState original;
 
 
-        private OverridingEntity(Entity overriding, Entity original) {
+        private OverridingEntity(CurrentEntityState overriding, CurrentEntityState original) {
             this.overriding = overriding;
             this.original = original;
         }

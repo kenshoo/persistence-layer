@@ -72,7 +72,7 @@ public class EntityChangeCompositeValidatorTest {
     private ChangeEntityCommand<TestEntity> entityChange;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     @InjectMocks
     EntityChangeCompositeValidator<TestEntity> validator;

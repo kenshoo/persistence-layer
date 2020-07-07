@@ -8,9 +8,9 @@ public interface ChangeContext {
 
     boolean isEnabled(Feature feature);
 
-    Entity getEntity(EntityChange entityChange);
+    CurrentEntityState getEntity(EntityChange entityChange);
 
-    void addEntity(EntityChange change, Entity currentState);
+    void addEntity(EntityChange change, CurrentEntityState currentState);
 
     void addValidationError(EntityChange<? extends EntityType<?>> entityChange, ValidationError error);
 

@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.google.common.collect.ImmutableMap;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -35,7 +35,7 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
         if (entityChange.get(validator.requiredField()) == null && validator.requireWhen().test(currentState)) {
             return new ValidationError(validator.getErrorCode(), validator.requiredField(), ImmutableMap.of("field", validator.requiredField().toString()));
         }

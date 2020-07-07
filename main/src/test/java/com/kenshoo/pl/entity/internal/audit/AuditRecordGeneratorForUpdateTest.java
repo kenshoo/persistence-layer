@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class AuditRecordGeneratorForUpdateTest {
     public void generate_WithIdOnly_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.ID, ID);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
@@ -70,7 +70,7 @@ public class AuditRecordGeneratorForUpdateTest {
     public void generate_WithMandatoryFieldsOnly_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.ID, ID);
          currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
          currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
@@ -97,7 +97,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC, "newDesc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "oldDesc");
 
@@ -128,7 +128,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC2, "desc2");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "oldDesc");
          currentState.set(AuditedType.DESC2, "desc2");
@@ -160,7 +160,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC2, "desc2");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "name");
          currentState.set(AuditedType.DESC, "desc");
          currentState.set(AuditedType.DESC2, "desc2");
@@ -189,7 +189,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC2, "desc2");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "oldDesc");
          currentState.set(AuditedType.DESC2, "desc2");
@@ -220,7 +220,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC2, "desc2");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "desc");
          currentState.set(AuditedType.DESC2, "desc2");
@@ -251,7 +251,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC2, "desc2");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "name");
          currentState.set(AuditedType.DESC, "desc");
          currentState.set(AuditedType.DESC2, "desc2");
@@ -278,7 +278,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC, "newDesc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.NAME, "oldDesc");
 
@@ -297,7 +297,7 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, "newName");
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, null);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
@@ -320,7 +320,7 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, null);
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
@@ -345,7 +345,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC, "newDesc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "oldDesc");
 
@@ -376,7 +376,7 @@ public class AuditRecordGeneratorForUpdateTest {
     public void generate_WithIdAndChildRecordsOnly_ShouldGenerateBasicDataAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.ID, ID);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
@@ -400,7 +400,7 @@ public class AuditRecordGeneratorForUpdateTest {
     public void generate_WithMandatoryFieldsAndChildRecordsOnly_ShouldGenerateBasicAndMandatoryFieldsAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.ID, ID);
          currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
          currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
@@ -431,7 +431,7 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.DESC, "newDesc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
+        final CurrentEntityState currentState = new CurrentEntityState();
          currentState.set(AuditedType.ID, ID);
          currentState.set(AuditedType.NAME, "oldName");
          currentState.set(AuditedType.DESC, "oldDesc");

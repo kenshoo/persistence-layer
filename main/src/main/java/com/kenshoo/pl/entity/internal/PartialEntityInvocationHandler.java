@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
@@ -11,9 +11,9 @@ import java.util.Map;
 public class PartialEntityInvocationHandler<E extends EntityType<E>> implements InvocationHandler {
 
     private final Map<Method, EntityField<E, ?>> methodsMap;
-    private final Entity currentState;
+    private final CurrentEntityState currentState;
 
-    public PartialEntityInvocationHandler(Map<Method, EntityField<E, ?>> methodsMap, Entity currentState) {
+    public PartialEntityInvocationHandler(Map<Method, EntityField<E, ?>> methodsMap, CurrentEntityState currentState) {
         this.methodsMap = methodsMap;
         this.currentState = currentState;
     }

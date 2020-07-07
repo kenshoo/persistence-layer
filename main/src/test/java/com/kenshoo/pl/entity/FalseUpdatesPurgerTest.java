@@ -172,8 +172,8 @@ public class FalseUpdatesPurgerTest {
         }
     }
 
-    private Entity currentState(Map<EntityField<TestEntity, ?>, Object> state) {
-        return new Entity() {
+    private CurrentEntityState currentState(Map<EntityField<TestEntity, ?>, Object> state) {
+        return new CurrentEntityState() {
 
             @Override
             public boolean containsField(EntityField<?, ?> field) {

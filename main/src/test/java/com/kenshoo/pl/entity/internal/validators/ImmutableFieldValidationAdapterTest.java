@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
@@ -49,7 +49,7 @@ public class ImmutableFieldValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     @InjectMocks
     private ImmutableFieldValidationAdapter<TestEntity, String> adapter;

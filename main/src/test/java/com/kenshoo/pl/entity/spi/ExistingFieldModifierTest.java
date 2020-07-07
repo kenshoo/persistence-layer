@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.spi.ExistingFieldModifier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +19,7 @@ public class ExistingFieldModifierTest {
     private ChangeContext changeContext;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     private final TestFieldEnricher testFieldEnricher = new TestFieldEnricher();
 
@@ -62,7 +61,7 @@ public class ExistingFieldModifierTest {
         }
 
         @Override
-        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity currentState) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, CurrentEntityState currentState) {
             return "override " + entityChange.get(TestEntity.FIELD_1);
         }
     }

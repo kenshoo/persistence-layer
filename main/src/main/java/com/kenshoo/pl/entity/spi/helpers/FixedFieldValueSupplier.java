@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.spi.FieldValueSupplier;
 
@@ -16,7 +16,7 @@ public class FixedFieldValueSupplier<T> implements FieldValueSupplier<T> {
     }
 
     @Override
-    public T supply(Entity currentState) {
+    public T supply(CurrentEntityState currentState) {
         return value;
     }
 

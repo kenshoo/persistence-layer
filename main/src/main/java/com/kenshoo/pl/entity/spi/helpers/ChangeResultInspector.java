@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity.spi.helpers;
 import com.google.common.collect.Sets;
 import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.ChangeResult;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChangeResult;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -36,7 +36,7 @@ public class ChangeResultInspector<E extends EntityType<E>> {
         this.inspectedFlow = inspectedFlow;
     }
 
-    public void inspect(Map<? extends Identifier<E>, Entity> originalState, ChangeResult<E, ?, ?> results, List<ObservedResult<E>> observedResults) {
+    public void inspect(Map<? extends Identifier<E>, CurrentEntityState> originalState, ChangeResult<E, ?, ?> results, List<ObservedResult<E>> observedResults) {
         Iterator<? extends EntityChangeResult<E, ?, ?>> resultIterator = results.iterator();
         Iterator<ObservedResult<E>> observedResultIterator = observedResults.iterator();
         while(resultIterator.hasNext() && observedResultIterator.hasNext()) {
@@ -59,7 +59,7 @@ public class ChangeResultInspector<E extends EntityType<E>> {
         logger.warn("Change result inspector can't inspect keyword changes for flow " + inspectedFlow, t);
     }
 
-    private void inspectResult(Entity originalEntity, EntityChangeResult<E, ?, ?> result, ObservedResult<E> observedResult) {
+    private void inspectResult(CurrentEntityState originalEntity, EntityChangeResult<E, ?, ?> result, ObservedResult<E> observedResult) {
         ChangeEntityCommand<E> command = result.getCommand();
         inspectedFields.forEach(field -> {
             boolean fieldChanged = command.isFieldChanged(field);
@@ -87,7 +87,7 @@ public class ChangeResultInspector<E extends EntityType<E>> {
     }
 
 
-    private <T> Object getValue(Entity fieldsValueMap, EntityField<E, T> field) {
+    private <T> Object getValue(CurrentEntityState fieldsValueMap, EntityField<E, T> field) {
         return field.getDbAdapter().getDbValues(fieldsValueMap.get(field)).collect(Collectors.toList()).get(0);
     }
 

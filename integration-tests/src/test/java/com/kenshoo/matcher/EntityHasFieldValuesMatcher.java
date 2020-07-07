@@ -1,7 +1,7 @@
 package com.kenshoo.matcher;
 
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldValue;
 import org.apache.commons.lang3.StringUtils;
@@ -13,7 +13,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.joining;
 
-public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<Entity> {
+public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<CurrentEntityState> {
 
     private final Collection<EntityFieldValue> expectedFieldValues;
     private String mismatchesMessage;
@@ -24,7 +24,7 @@ public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<Entity> {
     }
 
     @Override
-    protected boolean matchesSafely(final Entity actualEntity) {
+    protected boolean matchesSafely(final CurrentEntityState actualEntity) {
         mismatchesMessage = expectedFieldValues.stream()
                                                .map(fieldValue -> validateField(actualEntity, fieldValue))
                                                .collect(joining("\n"));
@@ -38,11 +38,11 @@ public class EntityHasFieldValuesMatcher extends TypeSafeMatcher<Entity> {
     }
 
     @Override
-    protected void describeMismatchSafely(Entity item, Description mismatchDescription) {
+    protected void describeMismatchSafely(CurrentEntityState item, Description mismatchDescription) {
         mismatchDescription.appendText("the following mismatches occurred:\n" + mismatchesMessage);
     }
 
-    private String validateField(final Entity actualEntity, final EntityFieldValue fieldValue) {
+    private String validateField(final CurrentEntityState actualEntity, final EntityFieldValue fieldValue) {
         if (!actualEntity.containsField(fieldValue.getField())) {
             return "\t\tMissing expected field '" + fieldValue.getFieldName() + "'";
         }
