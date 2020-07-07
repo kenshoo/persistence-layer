@@ -41,8 +41,8 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
-        FieldsValueMap<E> fieldsValueMap = new ResultingFieldsCombination<>(entityChange, entity, fieldsMapping.values().stream(), entityChange.getChangeOperation());
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+        FieldsValueMap<E> fieldsValueMap = new ResultingFieldsCombination<>(entityChange, currentState, fieldsMapping.values().stream(), entityChange.getChangeOperation());
         PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsValueMap);
         return prototypeFieldsCombinationValidator.validate(prototypeFieldsCombination);
     }

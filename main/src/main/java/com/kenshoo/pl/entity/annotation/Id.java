@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates the field that can be used as unique identifier. For a specific entity, only one field can be annotated
+ * Annotates the field that can be used as unique identifier. For a specific currentState, only one field can be annotated
  * with <code>@Id</code> and it has to be either <code>Integer</code> or <code>Long</code>. This field is be used
- * by audit log to reference the entity. If no field is annotated with <code>@Id</code>, audit log is not written for this entity.
+ * by audit log to reference the  currentState. If no field is annotated with <code>@Id</code>, audit log is not written for this  currentState.
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

@@ -10,7 +10,7 @@ public interface ChangeContext {
 
     Entity getEntity(EntityChange entityChange);
 
-    void addEntity(EntityChange change, Entity entity);
+    void addEntity(EntityChange change, Entity currentState);
 
     void addValidationError(EntityChange<? extends EntityType<?>> entityChange, ValidationError error);
 

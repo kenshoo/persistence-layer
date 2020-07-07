@@ -36,7 +36,7 @@ public class PrototypeFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
         if (entityChange.isFieldChanged(validatedField)) {
             ValidationError error = prototypeFieldValidator.validate(entityChange.get(validatedField));
             return error != null ? new ValidationError(error.getErrorCode(), validatedField, error.getParameters()) : null;

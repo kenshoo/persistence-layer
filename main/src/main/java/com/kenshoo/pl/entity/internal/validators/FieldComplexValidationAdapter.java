@@ -34,9 +34,9 @@ public class FieldComplexValidationAdapter<E extends EntityType<E>, T> implement
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
         if (entityChange.isFieldChanged(validator.validatedField())) {
-            return validator.validate(entityChange.get(validator.validatedField()), entity);
+            return validator.validate(entityChange.get(validator.validatedField()), currentState);
         } else {
             return null;
         }

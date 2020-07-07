@@ -49,7 +49,7 @@ public class ImmutableFieldValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @InjectMocks
     private ImmutableFieldValidationAdapter<TestEntity, String> adapter;
@@ -58,7 +58,7 @@ public class ImmutableFieldValidationAdapterTest {
     public void setUp(){
         when(validator.immutableField()).thenReturn(field);
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
-        when(validator.immutableWhen()).thenReturn(entity -> true);
+        when(validator.immutableWhen()).thenReturn(currentState -> true);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testValidateValueChange() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        ValidationError validationError = adapter.validate(entityChange, entity);
+        ValidationError validationError = adapter.validate(entityChange, currentState);
         assertNotNull("No validation error", validationError);
         assertEquals("Error code", validationError.getErrorCode(), ERROR_CODE);
     }
@@ -100,7 +100,7 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testValidateValueChangeWhenPredicateFalse() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        when(validator.immutableWhen()).thenReturn(entity -> false);
-        assertNull(adapter.validate(entityChange, entity));
+        when(validator.immutableWhen()).thenReturn(currentState -> false);
+        assertNull(adapter.validate(entityChange, currentState));
     }
 }

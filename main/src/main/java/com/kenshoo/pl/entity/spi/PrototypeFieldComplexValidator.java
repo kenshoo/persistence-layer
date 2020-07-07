@@ -23,11 +23,11 @@ public interface PrototypeFieldComplexValidator<T> extends ChangeValidator {
      * the fields it has declared in {@link #fetchFields()}.
      *
      * @param fieldValue new value of the field
-     * @param entity existing entity
+     * @param currentState existing entity
      *
      * @return a validation error if any, <code>null</code> if none
      */
-    ValidationError validate(T fieldValue, Entity entity);
+    ValidationError validate(T fieldValue, Entity currentState);
 
     /**
      * @return a list of fields to fetch. Can contain only parent entities fields.

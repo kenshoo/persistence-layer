@@ -89,8 +89,8 @@ public class DeletionCommandPopulator {
         });
     }
 
-    private static <E extends EntityType<E>> Identifier<E> concatenatedId(ChangeEntityCommand<E> entity) {
-        return concat(entity.getIdentifier(), entity.getKeysToParent());
+    private static <E extends EntityType<E>> Identifier<E> concatenatedId(ChangeEntityCommand<E> currentState) {
+        return concat(currentState.getIdentifier(),  currentState.getKeysToParent());
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>

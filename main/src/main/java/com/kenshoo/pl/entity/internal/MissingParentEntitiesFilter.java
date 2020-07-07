@@ -27,8 +27,8 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
             return changes;
         }
         return Collections2.filter(changes, command -> {
-                    Entity entity = changeContext.getEntity(command);
-                    if (entity == Entity.EMPTY) {
+                    Entity currentState = changeContext.getEntity(command);
+                    if (currentState == Entity.EMPTY) {
                         changeContext.addValidationError(command, new ValidationError(Errors.PARENT_ENTITY_NOT_FOUND));
                         return false;
                     }

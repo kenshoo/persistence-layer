@@ -15,11 +15,11 @@ import java.util.Collection;
 public interface MultiFieldValueSupplier<E extends EntityType<E>> extends  FetchEntityFields {
 
     /**
-     * Returns a set of new values given an existing entity. In most of the cases should use {@link com.kenshoo.pl.entity.FieldsValueMapImpl}.
+     * Returns a set of new values given an existing  currentState. In most of the cases should use {@link com.kenshoo.pl.entity.FieldsValueMapImpl}.
      *
-     * @param entity entity before the change
+     * @param currentState entity before the change
      * @return new values
      */
-    FieldsValueMap<E> supply(Entity entity) throws ValidationException;
+    FieldsValueMap<E> supply(Entity currentState) throws ValidationException;
 
 }

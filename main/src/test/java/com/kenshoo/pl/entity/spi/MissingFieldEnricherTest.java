@@ -20,13 +20,13 @@ public class MissingFieldEnricherTest {
     private ChangeContext changeContext;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     private final CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
 
     @Before
     public void setup() {
-       when(changeContext.getEntity(cmd)).thenReturn(entity);
+       when(changeContext.getEntity(cmd)).thenReturn(currentState);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class MissingFieldEnricherTest {
         }
 
         @Override
-        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity entity) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity currentState) {
             return "value";
         }
 

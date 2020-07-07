@@ -67,9 +67,9 @@ public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements Post
     @Override
     public void enrich(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext) {
         for (ChangeEntityCommand<E> command : commands) {
-            Entity entity = changeContext.getEntity(command);
+            Entity currentState = changeContext.getEntity(command);
             for (Field2Copy<E, ?> field2Copy : fields2Copy) {
-                copyField(field2Copy, entity, command);
+                copyField(field2Copy, currentState, command);
             }
         }
     }
@@ -79,8 +79,8 @@ public class CopyFieldsOnCreateEnricher<E extends EntityType<E>> implements Post
         return fields2Copy.stream().map(pair -> pair.target);
     }
     
-    private <T> void copyField(Field2Copy<E, T> field2Copy, Entity entity, ChangeEntityCommand<E> command) {
-        command.set(field2Copy.target, entity.get(field2Copy.source));
+    private <T> void copyField(Field2Copy<E, T> field2Copy, Entity currentState, ChangeEntityCommand<E> command) {
+        command.set(field2Copy.target,  currentState.get(field2Copy.source));
     }
 
     @Override

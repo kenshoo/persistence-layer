@@ -25,8 +25,8 @@ public class MissingEntitiesFilter<E extends EntityType<E>> implements ChangesFi
     @Override
     public <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, ChangeOperation changeOperation, ChangeContext changeContext) {
         return Collections2.filter(changes, command -> {
-                    Entity entity = changeContext.getEntity(command);
-                    if (entity == Entity.EMPTY) {
+                    Entity currentState = changeContext.getEntity(command);
+                    if (currentState == Entity.EMPTY) {
                         if(!command.allowMissingEntity()) {
                             changeContext.addValidationError(command, new ValidationError(Errors.ENTITY_NOT_FOUND, ImmutableMap.of("id", command.getIdentifier().toString())));
                         }

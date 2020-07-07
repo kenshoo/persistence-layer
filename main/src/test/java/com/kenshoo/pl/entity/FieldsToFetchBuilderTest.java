@@ -321,7 +321,7 @@ public class FieldsToFetchBuilderTest {
     private <T> FieldValueSupplier<T> supplierRequiring(final EntityField<?, ?> requestedField) {
         return new FieldValueSupplier<T>() {
             @Override
-            public T supply(Entity entity) throws NotSuppliedException {
+            public T supply(Entity currentState) throws NotSuppliedException {
                 return null;
             }
             public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {

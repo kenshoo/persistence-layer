@@ -23,9 +23,9 @@ public class LazyDelegatingMultiSupplier<E extends EntityType<E>> implements Mul
     }
 
     @Override
-    public FieldsValueMap<E> supply(Entity entity) throws ValidationException {
+    public FieldsValueMap<E> supply(Entity currentState) throws ValidationException {
         if (suppliedMap == null) {
-            suppliedMap = multiSupplier.supply(entity);
+            suppliedMap = multiSupplier.supply(currentState);
         }
         return suppliedMap;
     }

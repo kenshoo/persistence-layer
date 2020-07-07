@@ -47,7 +47,7 @@ public class FieldsCombinationValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @Mock
     private FieldsCombinationValidator.Substitution<TestEntity, String> fieldSubstitution;
@@ -63,7 +63,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(entityChange.isFieldChanged(field1)).thenReturn(true);
         when(entityChange.isFieldChanged(field2)).thenReturn(false);
         when(entityChange.get(field1)).thenReturn(STRING_VALUE1);
-        when(entity.get(field2)).thenReturn(STRING_VALUE2);
+        when(currentState.get(field2)).thenReturn(STRING_VALUE2);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void testValidateForCreate() {
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.CREATE);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), null);
@@ -99,7 +99,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test
     public void testValidateForUpdate() {
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), STRING_VALUE2);
@@ -109,7 +109,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidField() {
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(argThat(fieldCombination -> {
             fieldCombination.get(invalidField);
             return true;
@@ -121,10 +121,10 @@ public class FieldsCombinationValidationAdapterTest {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
         when(fieldSubstitution.overrideField()).thenReturn(field1);
         when(fieldSubstitution.overrideWhen()).thenReturn(value -> true);
-        when(fieldSubstitution.overrideHow()).thenReturn(entity -> "override");
+        when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
 
 
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), "override");
             return true;
@@ -136,10 +136,10 @@ public class FieldsCombinationValidationAdapterTest {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
         when(fieldSubstitution.overrideField()).thenReturn(field1);
         when(fieldSubstitution.overrideWhen()).thenReturn(value -> false);
-        when(fieldSubstitution.overrideHow()).thenReturn(entity -> "override");
+        when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
 
 
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             return true;
@@ -160,14 +160,14 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void skipValidationForUpdate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator, never()).validate(any());
     }
 
     @Test
     public void skipValidationForCreate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator, never()).validate(any());
     }
 }

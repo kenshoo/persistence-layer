@@ -51,15 +51,15 @@ public class AuditRecordGeneratorForCreateTest {
     public void generate_WithIdOnly_ShouldGenerateMandatoryData() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, emptyList());
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -71,9 +71,9 @@ public class AuditRecordGeneratorForCreateTest {
     public void generate_WithMandatoryFieldsOnly_ShouldGenerateBasicDataAndMandatoryFields() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
-        final EntityImpl entity = new EntityImpl();
-        entity.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        entity.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -84,10 +84,10 @@ public class AuditRecordGeneratorForCreateTest {
         //noinspection ResultOfMethodCallIgnored
         doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(completeFieldSet).getExternalMandatoryFields();
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, emptyList());
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -101,9 +101,9 @@ public class AuditRecordGeneratorForCreateTest {
     public void generate_WithMandatoryFieldsHavingNullValues_ShouldNotGenerateMandatoryFields() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
-        final EntityImpl entity = new EntityImpl();
-        entity.set(NotAuditedAncestorType.NAME, null);
-        entity.set(NotAuditedAncestorType.DESC, null);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(NotAuditedAncestorType.NAME, null);
+         currentState.set(NotAuditedAncestorType.DESC, null);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -114,10 +114,10 @@ public class AuditRecordGeneratorForCreateTest {
         //noinspection ResultOfMethodCallIgnored
         doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(completeFieldSet).getExternalMandatoryFields();
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, emptyList());
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(hasNoMandatoryFieldValues()));
@@ -130,7 +130,7 @@ public class AuditRecordGeneratorForCreateTest {
             .with(AuditedType.DESC, "desc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -138,10 +138,10 @@ public class AuditRecordGeneratorForCreateTest {
                            .build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(cmdChangedFields))).thenReturn(expectedIntersectionFieldSet);
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, emptyList());
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -155,17 +155,17 @@ public class AuditRecordGeneratorForCreateTest {
     public void generate_WithChildRecordsOnly_ShouldGenerateBasicDataAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
-        final Entity entity = Entity.EMPTY;
+        final Entity currentState = Entity.EMPTY;
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(expectedIntersectionFieldSet);
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, childRecords);
+            auditRecordGenerator.generate(cmd, currentState, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -179,9 +179,9 @@ public class AuditRecordGeneratorForCreateTest {
     public void generate_WithMandatoryFieldsAndChildRecordsOnly_ShouldGenerateMandatoryFieldsAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE);
 
-        final EntityImpl entity = new EntityImpl();
-        entity.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        entity.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
 
@@ -189,12 +189,12 @@ public class AuditRecordGeneratorForCreateTest {
         //noinspection ResultOfMethodCallIgnored
         doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(completeFieldSet).getExternalMandatoryFields();
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, childRecords);
+            auditRecordGenerator.generate(cmd, currentState, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -210,9 +210,9 @@ public class AuditRecordGeneratorForCreateTest {
             .with(AuditedType.DESC, "desc");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl entity = new EntityImpl();
-        entity.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        entity.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        final EntityImpl currentState = new EntityImpl();
+         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -223,12 +223,12 @@ public class AuditRecordGeneratorForCreateTest {
         //noinspection ResultOfMethodCallIgnored
         doReturn(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(completeFieldSet).getExternalMandatoryFields();
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, entity);
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, entity, childRecords);
+            auditRecordGenerator.generate(cmd, currentState, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),

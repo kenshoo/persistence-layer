@@ -37,7 +37,7 @@ public class RequiredFieldValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @Mock
     private EntityField<TestEntity, String> fetchField;
@@ -51,7 +51,7 @@ public class RequiredFieldValidationAdapterTest {
     @Before
     public void init() {
         when(validator.requiredField()).thenReturn(TestEntity.FIELD_1);
-        when(validator.requireWhen()).thenReturn(entity -> true);
+        when(validator.requireWhen()).thenReturn(currentState -> true);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class RequiredFieldValidationAdapterTest {
         when(entityChange.get(any())).thenReturn(null);
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
 
-        ValidationError result = underTest.validate(entityChange, entity);
+        ValidationError result = underTest.validate(entityChange, currentState);
 
         assertEquals(ERROR_CODE, result.getErrorCode());
         assertEquals(TestEntity.FIELD_1, result.getField());
@@ -69,7 +69,7 @@ public class RequiredFieldValidationAdapterTest {
     public void when_required_field_is_not_null_then_return_null() {
         when(entityChange.get(any())).thenReturn(VALUE);
 
-        ValidationError result = underTest.validate(entityChange, entity);
+        ValidationError result = underTest.validate(entityChange, currentState);
 
         assertNull(result);
     }
@@ -96,9 +96,9 @@ public class RequiredFieldValidationAdapterTest {
     @Test
     public void when_require_value_and_predicate_false_return_null() {
         when(entityChange.get(any())).thenReturn(null);
-        when(validator.requireWhen()).thenReturn(entity -> false);
+        when(validator.requireWhen()).thenReturn(currentState -> false);
 
-        assertNull(underTest.validate(entityChange, entity));
+        assertNull(underTest.validate(entityChange, currentState));
     }
 
     @Test

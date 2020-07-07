@@ -20,19 +20,19 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
 
     private final boolean isSuccess;
     private final Identifier<E> identifier;
-    private final Entity entity;
+    private final Entity currentState;
     private final Optional<String> errorCode;
     private InspectedStatus inspectedStatus = InspectedStatus.IDENTICAL;
 
 
-    private ObservedResult(Identifier<E> identifier, Entity entity) {
-        this(identifier, entity, true, null);
+    private ObservedResult(Identifier<E> identifier, Entity currentState) {
+        this(identifier, currentState, true, null);
     }
 
-    private ObservedResult(Identifier<E> identifier, Entity entity, boolean isSuccess, String errorCode) {
+    private ObservedResult(Identifier<E> identifier, Entity currentState, boolean isSuccess, String errorCode) {
         this.isSuccess = isSuccess;
         this.identifier = identifier;
-        this.entity = entity;
+        this.currentState = currentState;
         this.errorCode = Optional.ofNullable(errorCode);
     }
 
@@ -54,12 +54,12 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
 
     @Override
     public <T> boolean containsField(EntityField<E, T> field) {
-        return entity.containsField(field);
+        return  currentState.containsField(field);
     }
 
     @Override
     public <T> T get(EntityField<E, T> field) {
-        return entity.get(field);
+        return  currentState.get(field);
     }
 
 
@@ -67,8 +67,8 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
         return errorCode;
     }
 
-    public static <E extends EntityType<E>> ObservedResult<E> of(Identifier<E> identifier, Entity entity)  {
-        return new ObservedResult<>(identifier, entity);
+    public static <E extends EntityType<E>> ObservedResult<E> of(Identifier<E> identifier, Entity currentState)  {
+        return new ObservedResult<>(identifier, currentState);
     }
 
     public static <E extends EntityType<E>> ObservedResult<E> error(Identifier<E> identifier,  String errorCode)  {
@@ -77,7 +77,7 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
 
     public static class Builder<E extends EntityType<E>> {
         private Identifier<E> identifier;
-        private Entity entity;
+        private Entity currentState;
         private boolean isSuccess = true;
         private String errorCode;
 
@@ -86,8 +86,8 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
             return this;
         }
 
-        public Builder<E> withEntity(Entity entity) {
-            this.entity = entity;
+        public Builder<E> withEntity(Entity currentState) {
+            this.currentState = currentState;
             return this;
         }
 
@@ -98,7 +98,7 @@ public class ObservedResult<E extends EntityType<E>> implements FieldsValueMap<E
         }
 
         public ObservedResult<E> build() {
-            return new ObservedResult<>(identifier, entity, isSuccess, errorCode);
+            return new ObservedResult<>(identifier, currentState, isSuccess, errorCode);
         }
     }
 }

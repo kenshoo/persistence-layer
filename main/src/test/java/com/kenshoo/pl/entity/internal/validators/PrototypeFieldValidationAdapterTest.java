@@ -38,7 +38,7 @@ public class PrototypeFieldValidationAdapterTest  {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity entity;
+    private Entity currentState;
 
     @InjectMocks
     PrototypeFieldValidationAdapter<TestEntity, String> adapter;
@@ -77,7 +77,7 @@ public class PrototypeFieldValidationAdapterTest  {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, entity);
+        adapter.validate(entityChange, currentState);
         verify(validator).validate(STRING_VALUE);
     }
 }

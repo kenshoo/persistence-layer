@@ -31,14 +31,14 @@ abstract public class SingleFieldEnricher<E extends EntityType<E>, T> implements
 
     abstract protected EntityField<E, T> enrichedField();
 
-    abstract protected T enrichedValue(EntityChange<E> entityChange, Entity entity);
+    abstract protected T enrichedValue(EntityChange<E> entityChange, Entity currentState);
 
     protected Predicate<EntityChange<E>> additionalCommandFilter() {
         return entityChange -> true;
     }
 
     protected BiPredicate<EntityChange<E>, Entity> additionalPostFetchCommandFilter() {
-        return (entityChange, entity) -> true;
+        return (entityChange, currentState) -> true;
     }
 
     protected boolean shouldRunForCommand(EntityChange<E> entityChange) {

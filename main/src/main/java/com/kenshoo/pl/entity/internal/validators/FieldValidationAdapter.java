@@ -34,7 +34,7 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Entit
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
         if (entityChange.isFieldChanged(validator.validatedField())) {
             return validator.validate(entityChange.get(validator.validatedField()));
         } else {

@@ -20,10 +20,10 @@ public class RecordReader {
     }
 
     public static EntityImpl createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
-        EntityImpl entity = new EntityImpl();
+        EntityImpl currentState = new EntityImpl();
         Iterator<Object> valuesIterator = record.intoList().iterator();
-        fields.forEach(field -> populateEntity(field, valuesIterator, entity));
-        return entity;
+        fields.forEach(field -> populateEntity(field, valuesIterator, currentState));
+        return currentState;
     }
 
     public static <E extends EntityType<E>> FieldsValueMap<E> createFieldsValueMap(Record record, List<? extends EntityField<E, ?>> fields) {
@@ -38,8 +38,8 @@ public class RecordReader {
         fieldsValueMap.set(field, value);
     }
 
-    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, EntityImpl entity) {
-        entity.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator));
+    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, EntityImpl currentState) {
+         currentState.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator));
     }
 
     private static <E extends EntityType<E>, T> void populateMap(EntityField<E, T> field, Iterator<Object> valuesIterator, FieldsValueMapImpl<E> fieldsValueMap) {

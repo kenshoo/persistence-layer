@@ -209,9 +209,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         List<C> validCommands = Lists.newArrayListWithCapacity(commands.size());
 
         for (C command : commands) {
-            Entity entity = changeContext.getEntity(command);
+            Entity currentState = changeContext.getEntity(command);
             try {
-                command.resolveSuppliers(entity);
+                command.resolveSuppliers(currentState);
                 validCommands.add(command);
             } catch (ValidationException e) {
                 changeContext.addValidationError(command, e.getValidationError());
@@ -278,9 +278,9 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     }
 
     private void populateIdentityField(final ChangeEntityCommand<ROOT> cmd, final ChangeContext changeContext, final EntityField<ROOT, Object> idField) {
-        final Entity entity = Optional.ofNullable(changeContext.getEntity(cmd))
+        final Entity currentState = Optional.ofNullable(changeContext.getEntity(cmd))
                                       .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
-        cmd.set(idField, entity.get(idField));
+        cmd.set(idField,  currentState.get(idField));
     }
 
     private DSLContext dslContext() {

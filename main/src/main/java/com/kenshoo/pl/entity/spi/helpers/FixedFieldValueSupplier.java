@@ -16,7 +16,7 @@ public class FixedFieldValueSupplier<T> implements FieldValueSupplier<T> {
     }
 
     @Override
-    public T supply(Entity entity) {
+    public T supply(Entity currentState) {
         return value;
     }
 
