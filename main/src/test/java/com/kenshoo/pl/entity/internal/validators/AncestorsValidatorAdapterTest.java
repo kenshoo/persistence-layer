@@ -2,7 +2,7 @@ package com.kenshoo.pl.entity.internal.validators;
 
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.spi.ImmutableParentFieldsValidator;
+import com.kenshoo.pl.entity.spi.AncestorsValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
-public class ImmutableParentFieldsValidatorAdapterTest {
+public class AncestorsValidatorAdapterTest {
 
     @Mock
     private EntityField<TestEntity, String> field;
@@ -33,14 +33,14 @@ public class ImmutableParentFieldsValidatorAdapterTest {
     private Entity entity;
 
     @Mock
-    private ImmutableParentFieldsValidator<TestEntity> validator;
+    private AncestorsValidator<TestEntity> validator;
 
     @InjectMocks
-    private ImmutableParentFieldsValidatorAdapter<TestEntity> adapter;
+    private AncestorsValidationAdapter<TestEntity> adapter;
 
     @Before
     public void setUp(){
-        when(validator.parentsFields()).thenReturn(Stream.of(field));
+        when(validator.ancestorsFields()).thenReturn(Stream.of(field));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ImmutableParentFieldsValidatorAdapterTest {
     @Test
     public void test_flow_with_error() {
         Predicate<Entity> predicate = entity -> true;
-        when(validator.immutableWhen()).thenReturn(predicate);
+        when(validator.ancestorsRestriction()).thenReturn(predicate);
         when(validator.errorFor(entityChange, entity)).thenReturn(error);
         ValidationError error = adapter.validate(entityChange, entity);
         assertEquals("Error for mutable condition", this.error, error);
@@ -68,7 +68,7 @@ public class ImmutableParentFieldsValidatorAdapterTest {
     @Test
     public void test_flow_without_error() {
         Predicate<Entity> predicate = entity -> false;
-        when(validator.immutableWhen()).thenReturn(predicate);
+        when(validator.ancestorsRestriction()).thenReturn(predicate);
         ValidationError error = adapter.validate(entityChange, entity);
         assertNull("No error for mutable condition", error);
     }

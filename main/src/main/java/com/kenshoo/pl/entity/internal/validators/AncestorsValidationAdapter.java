@@ -1,15 +1,15 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.spi.ImmutableParentFieldsValidator;
+import com.kenshoo.pl.entity.spi.AncestorsValidator;
 
 import java.util.stream.Stream;
 
-public class ImmutableParentFieldsValidatorAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
+public class AncestorsValidationAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
 
-    private final ImmutableParentFieldsValidator<E> validator;
+    private final AncestorsValidator<E> validator;
 
-    public ImmutableParentFieldsValidatorAdapter(ImmutableParentFieldsValidator<E> validator) {
+    public AncestorsValidationAdapter(AncestorsValidator<E> validator) {
         this.validator = validator;
     }
 
@@ -25,11 +25,11 @@ public class ImmutableParentFieldsValidatorAdapter<E extends EntityType<E>> impl
 
     @Override
     public Stream<? extends EntityField<?, ?>> fetchFields() {
-        return validator.parentsFields();
+        return validator.ancestorsFields();
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
-        return validator.immutableWhen().test(currentState) ? validator.errorFor(entityChange, currentState) : null;
+        return validator.ancestorsRestriction().test(currentState) ? validator.errorFor(entityChange, currentState) : null;
     }
 }

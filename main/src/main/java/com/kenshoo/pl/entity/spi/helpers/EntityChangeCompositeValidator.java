@@ -35,9 +35,9 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
         } else if (validator instanceof ImmutableFieldValidator) {
             //noinspection unchecked
             register((ImmutableFieldValidator) validator);
-        } else if (validator instanceof ImmutableParentFieldsValidator) {
+        } else if (validator instanceof AncestorsValidator) {
                 //noinspection unchecked
-                register((ImmutableParentFieldsValidator) validator);
+                register((AncestorsValidator) validator);
         } else if (validator instanceof PrototypeFieldValidator) {
             //noinspection unchecked
             register(entityType, (PrototypeFieldValidator) validator);
@@ -72,8 +72,8 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
         register(new RequiredFieldValidationAdapter<>(validator));
     }
 
-    public void register(ImmutableParentFieldsValidator<E> validator) {
-        changesValidators.put(new AlwaysTrigger<>(), new ImmutableParentFieldsValidatorAdapter<>(validator));
+    public void register(AncestorsValidator<E> validator) {
+        changesValidators.put(new AlwaysTrigger<>(), new AncestorsValidationAdapter<>(validator));
     }
 
     public void register(EntityChangeValidator<E> validator) {

@@ -5,25 +5,25 @@ import com.kenshoo.pl.entity.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public interface ImmutableParentFieldsValidator<E extends EntityType<E>> extends ChangeValidator {
+public interface AncestorsValidator<E extends EntityType<E>> extends ChangeValidator {
 
     /**
      * @return the fields of the parent entities whose value is required for the validation
      */
-    Stream<EntityField<?, ?>> parentsFields();
+    Stream<EntityField<?, ?>> ancestorsFields();
 
     /**
-     * Called by the framework to validate the fields in entity change. The implementation can query the <code>entity</code> only for
-     * the fields it has declared in {@link #parentsFields()}.
+     * Called by the framework to check if the change is restricted by ancestors. The implementation can query the <code>entity</code> only for
+     * the fields it has declared in {@link #ancestorsFields()}.
      * @return Predicate when parent immutable.
      */
-    default Predicate<Entity> immutableWhen() {
+    default Predicate<Entity> ancestorsRestriction() {
         return e -> true;
     }
 
     /**
      * The implementation can query the <code>entity</code> only for
-     * the fields it has declared in {@link #parentsFields()}.
+     * the fields it has declared in {@link #ancestorsFields()}.
      *
      * @param entityChange entity change
      * @param currentState existing entity
