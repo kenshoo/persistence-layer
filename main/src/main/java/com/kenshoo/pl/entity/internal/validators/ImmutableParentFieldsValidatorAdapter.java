@@ -29,7 +29,7 @@ public class ImmutableParentFieldsValidatorAdapter<E extends EntityType<E>> impl
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity entity) {
-        return validator.immutableWhen().test(entity) ? validator.errorFor(entityChange, entity) : null;
+    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+        return validator.immutableWhen().test(currentState) ? validator.errorFor(entityChange, currentState) : null;
     }
 }

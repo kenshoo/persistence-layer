@@ -26,9 +26,9 @@ public interface ImmutableParentFieldsValidator<E extends EntityType<E>> extends
      * the fields it has declared in {@link #parentsFields()}.
      *
      * @param entityChange entity change
-     * @param entity existing entity
+     * @param currentState existing entity
      *
      * @return generate error
      */
-    ValidationError errorFor(EntityChange<E> entityChange, Entity entity);
+    ValidationError errorFor(EntityChange<E> entityChange, Entity currentState);
 }
