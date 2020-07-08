@@ -39,7 +39,7 @@ public class EntityTest {
         assertThat(currentState.safeGet(mockField), is(Triptional.absent()));
     }
 
-    private static final class StubEntity extends CurrentEntityState {
+    private static final class StubEntity implements CurrentEntityState {
 
         private final boolean fieldPresent;
         private final Object value;

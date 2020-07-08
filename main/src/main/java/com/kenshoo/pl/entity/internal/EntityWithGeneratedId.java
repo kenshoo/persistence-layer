@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity.internal;
 import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 
-public class EntityWithGeneratedId extends CurrentEntityState {
+public class EntityWithGeneratedId implements CurrentEntityState {
 
     private final EntityField<?, Object> idField;
     private final Object idValue;

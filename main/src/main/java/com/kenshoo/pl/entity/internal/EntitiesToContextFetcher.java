@@ -62,7 +62,7 @@ public class EntitiesToContextFetcher {
             ChangeEntityCommand<E> cmd) {
 
         final ChangeEntityCommand ancestor = getAncestor(cmd, parentLevel);
-        final CurrentEntityState currentState = (CurrentEntityState)context.getEntity(cmd);
+        final CurrentEntityMutableState currentState = (CurrentEntityMutableState)context.getEntity(cmd);
         seq(parentFields).forEach(field ->  currentState.set(field, getValue(context, ancestor, field)));
     }
 
@@ -106,7 +106,7 @@ public class EntitiesToContextFetcher {
         E entityType = flowConfig.getEntityType();
         Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields()).filter(not(new IsFieldReferringToParent<>(context.getHierarchy(), entityType))).collect(toList());
         if (foreignKeys.isEmpty()) {
-            CurrentEntityState sharedEntity = new CurrentEntityState();
+            CurrentEntityState sharedEntity = new CurrentEntityMutableState();
             commands.forEach(cmd -> context.addEntity(cmd, sharedEntity));
         } else {
             final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);

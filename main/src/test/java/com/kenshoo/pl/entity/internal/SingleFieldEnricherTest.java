@@ -113,7 +113,7 @@ public class SingleFieldEnricherTest {
 
     private ChangeContext prepareCtx(CreateEntityCommand<TestEntity> cmd, String value) {
         ChangeContextImpl ctx = new ChangeContextImpl(null, FeatureSet.EMPTY);
-        CurrentEntityState currentState = new CurrentEntityState();
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
          currentState.set(TestEntity.FIELD_2, value);
         ctx.addEntity(cmd, currentState);
         return ctx;

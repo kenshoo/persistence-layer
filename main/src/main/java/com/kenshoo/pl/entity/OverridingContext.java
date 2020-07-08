@@ -72,7 +72,7 @@ public class OverridingContext implements ChangeContext {
         return original.getHierarchy();
     }
 
-    private static class OverridingEntity extends CurrentEntityState {
+    private static class OverridingEntity implements CurrentEntityState {
 
         private final CurrentEntityState overriding;
         private final CurrentEntityState original;

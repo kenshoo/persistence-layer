@@ -58,7 +58,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                          final CurrentEntityState currentState,
                                          final Collection<? extends AuditRecord<?>> childRecords) {
         requireNonNull(entityChange, "entityChange is required");
-        requireNonNull(currentState, "entity is required");
+        requireNonNull(currentState, "currentState is required");
 
         final String entityId = extractEntityId(entityChange, currentState);
 
@@ -103,7 +103,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                    final CurrentEntityState currentState) {
         return entityIdExtractor.extract(entityChange, currentState)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
-                                                                                 "from either the EntityChange or the Entity, so the audit record cannot be generated."));
+                                                                                 "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
     }
 
     private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final CurrentEntityState currentState) {

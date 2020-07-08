@@ -134,7 +134,7 @@ public class OldEntityFetcher {
             condition = condition.and(fieldAndValue.getField().eq(fieldAndValue.getValue()));
         }
         List<CurrentEntityState> entities = query.where(condition).fetch(record -> {
-            CurrentEntityState currentState = new CurrentEntityState();
+            CurrentEntityMutableState currentState = new CurrentEntityMutableState();
             Iterator<Object> valuesIterator = record.intoList().iterator();
             for (EntityField<E, ?> field : fieldsToFetch) {
                 fieldFromRecordToEntity(currentState, field, valuesIterator);
@@ -227,7 +227,7 @@ public class OldEntityFetcher {
         );
     }
 
-    private <T> void fieldFromRecordToEntity(CurrentEntityState currentState, EntityField<?, T> field, Iterator<Object> valuesIterator) {
+    private <T> void fieldFromRecordToEntity(CurrentEntityMutableState currentState, EntityField<?, T> field, Iterator<Object> valuesIterator) {
          currentState.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
     }
 
@@ -247,7 +247,7 @@ public class OldEntityFetcher {
     }
 
     private CurrentEntityState mapRecordToEntity(final Record record, final Collection<EntityField<?, ?>> fieldsToFetch) {
-        final CurrentEntityState currentState = new CurrentEntityState();
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
         final Iterator<Object> valuesIterator = record.intoList().iterator();
         fieldsToFetch.forEach( field -> fieldFromRecordToEntity(currentState, field, valuesIterator));
         return currentState;

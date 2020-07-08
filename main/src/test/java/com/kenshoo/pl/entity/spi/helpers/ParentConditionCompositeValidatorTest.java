@@ -57,10 +57,10 @@ public class ParentConditionCompositeValidatorTest {
     private EntityChange<TestEntity> entityChange2;
 
     @Mock
-    private CurrentEntityState entity1;
+    private CurrentEntityState currentEntityState1;
 
     @Mock
-    private CurrentEntityState entity2;
+    private CurrentEntityState currentEntityState2;
 
     private Collection<EntityChange<TestEntity>> entityChanges;
 
@@ -75,8 +75,8 @@ public class ParentConditionCompositeValidatorTest {
         when(validator1.parentIdField()).thenReturn((EntityField) field1);
         //noinspection unchecked
         when(validator2.parentIdField()).thenReturn((EntityField) field2);
-        when(changeContext.getEntity(entityChange1)).thenReturn(entity1);
-        when(changeContext.getEntity(entityChange2)).thenReturn(entity2);
+        when(changeContext.getEntity(entityChange1)).thenReturn(currentEntityState1);
+        when(changeContext.getEntity(entityChange2)).thenReturn(currentEntityState2);
         entityChanges = ImmutableList.of(entityChange1, entityChange2);
     }
 
@@ -113,8 +113,8 @@ public class ParentConditionCompositeValidatorTest {
 
     @Test
     public void testOneValidParentToOneValidator() {
-        when(entity1.get(field1)).thenReturn(PARENT1);
-        when(entity2.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState1.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState2.get(field1)).thenReturn(PARENT1);
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.validate(entityChanges, null, changeContext);
         verify(validator1, times(1)).validate(PARENT1);
@@ -122,8 +122,8 @@ public class ParentConditionCompositeValidatorTest {
 
     @Test
     public void testTwoValidParentsToOneValidator() {
-        when(entity1.get(field1)).thenReturn(PARENT1);
-        when(entity2.get(field1)).thenReturn(PARENT2);
+        when(currentEntityState1.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState2.get(field1)).thenReturn(PARENT2);
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.validate(entityChanges, null, changeContext);
         verify(validator1, times(1)).validate(PARENT1);
@@ -132,10 +132,10 @@ public class ParentConditionCompositeValidatorTest {
 
     @Test
     public void testValidateParentsWithDifferentType() {
-        when(entity1.get(field1)).thenReturn(PARENT1);
-        when(entity1.get(field2)).thenReturn(PARENT3);
-        when(entity2.get(field1)).thenReturn(PARENT1);
-        when(entity2.get(field2)).thenReturn(PARENT3);
+        when(currentEntityState1.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState1.get(field2)).thenReturn(PARENT3);
+        when(currentEntityState2.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState2.get(field2)).thenReturn(PARENT3);
         parentConditionCompositeValidator.register(validator1);
         parentConditionCompositeValidator.register(validator2);
         parentConditionCompositeValidator.validate(entityChanges, null, changeContext);
@@ -145,8 +145,8 @@ public class ParentConditionCompositeValidatorTest {
 
     @Test
     public void testInvalidParent() {
-        when(entity1.get(field1)).thenReturn(PARENT1);
-        when(entity2.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState1.get(field1)).thenReturn(PARENT1);
+        when(currentEntityState2.get(field1)).thenReturn(PARENT1);
         ValidationError error = new ValidationError("Invalid parent operation", field1);
         when(validator1.validate(PARENT1)).thenReturn(error);
         parentConditionCompositeValidator.register(validator1);

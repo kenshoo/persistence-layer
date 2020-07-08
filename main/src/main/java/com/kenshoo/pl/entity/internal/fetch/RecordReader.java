@@ -20,7 +20,7 @@ public class RecordReader {
     }
 
     public static CurrentEntityState createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
-        CurrentEntityState currentState = new CurrentEntityState();
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
         Iterator<Object> valuesIterator = record.intoList().iterator();
         fields.forEach(field -> populateEntity(field, valuesIterator, currentState));
         return currentState;
@@ -38,7 +38,7 @@ public class RecordReader {
         fieldsValueMap.set(field, value);
     }
 
-    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, CurrentEntityState currentState) {
+    private static <E extends EntityType<E>, T> void populateEntity(EntityField<E, T> entityField, Iterator<Object> valuesIterator, CurrentEntityMutableState currentState) {
          currentState.set(entityField, entityField.getDbAdapter().getFromRecord(valuesIterator));
     }
 

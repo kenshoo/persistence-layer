@@ -38,8 +38,8 @@ public class EntityIdExtractorTest {
     public void extractWhenExistsInEntityButNotInIdentifier() {
         final EntityChange<TestEntity> cmd = new TestCommand()
             .withIdentifier(new SingleUniqueKeyValue<>(TestEntity.FIELD_1, "abc"));
-        final CurrentEntityState currentState = new CurrentEntityState();
-         currentState.set(TestEntity.ID, ID_VALUE);
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.ID, ID_VALUE);
 
         assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }
@@ -47,8 +47,8 @@ public class EntityIdExtractorTest {
     @Test
     public void extractWhenExistsInEntityOnly() {
         final EntityChange<TestEntity> cmd = TestCommand.EMPTY;
-        final CurrentEntityState currentState = new CurrentEntityState();
-         currentState.set(TestEntity.ID, ID_VALUE);
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.ID, ID_VALUE);
 
         assertThat(EntityIdExtractor.INSTANCE.extract(cmd, currentState), isPresentAndIs(STRING_ID_VALUE));
     }

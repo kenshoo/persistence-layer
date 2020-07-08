@@ -14,7 +14,7 @@ public class EntityIdExtractor {
     public <E extends EntityType<E>> Optional<String> extract(final EntityChange<E> entityChange,
                                                               final CurrentEntityState currentState) {
         requireNonNull(entityChange, "entityChange is required");
-        requireNonNull(currentState, "entity is required");
+        requireNonNull(currentState, "currentState is required");
 
         return entityChange.getEntityType()
                            .getIdField()

@@ -126,7 +126,7 @@ public class EntitiesFetcher {
             Map<Identifier<E>, List<FieldsValueMap<SUB>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, plan.getFields());
             multiValuesMap.forEach((Identifier<E> id, List<FieldsValueMap<SUB>> multiValues) -> {
                 final SUB subEntityType = entityTypeOf(plan.getFields());
-                ((CurrentEntityState) entities.get(id)).add(subEntityType, multiValues);
+                ((CurrentEntityMutableState) entities.get(id)).add(subEntityType, multiValues);
             });
         }
     }
