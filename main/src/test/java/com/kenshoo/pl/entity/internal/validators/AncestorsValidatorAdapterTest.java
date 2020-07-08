@@ -30,7 +30,7 @@ public class AncestorsValidatorAdapterTest {
     private ValidationError error;
 
     @Mock
-    private Entity entity;
+    private CurrentEntityState entity;
 
     @Mock
     private AncestorsValidator<TestEntity> validator;

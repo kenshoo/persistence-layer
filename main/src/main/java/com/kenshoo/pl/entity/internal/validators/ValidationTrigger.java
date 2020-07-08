@@ -5,5 +5,5 @@ import com.kenshoo.pl.entity.EntityType;
 
 public interface ValidationTrigger<E extends EntityType<E>> {
 
-    boolean shouldValidate(EntityField<E, ?> entityField);
+    boolean triggeredByField(EntityField<E, ?> entityField);
 }

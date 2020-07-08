@@ -29,7 +29,7 @@ public class AncestorsValidationAdapter<E extends EntityType<E>> implements Enti
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, Entity currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
         return validator.ancestorsRestriction().test(currentState) ? validator.errorFor(entityChange, currentState) : null;
     }
 }

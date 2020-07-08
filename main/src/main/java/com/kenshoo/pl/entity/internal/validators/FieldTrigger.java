@@ -14,7 +14,7 @@ public class FieldTrigger<E extends EntityType<E>> implements ValidationTrigger<
     }
 
     @Override
-    public boolean shouldValidate(EntityField<E, ?> entityField) {
+    public boolean triggeredByField(EntityField<E, ?> entityField) {
         return triggerField.equals(entityField);
     }
 

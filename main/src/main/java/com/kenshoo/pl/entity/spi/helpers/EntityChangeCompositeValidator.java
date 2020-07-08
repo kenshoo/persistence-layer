@@ -73,7 +73,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     }
 
     public void register(AncestorsValidator<E> validator) {
-        changesValidators.put(new AlwaysTrigger<>(), new AncestorsValidationAdapter<>(validator));
+        changesValidators.put(new AnyFieldTrigger<>(), new AncestorsValidationAdapter<>(validator));
     }
 
     public void register(EntityChangeValidator<E> validator) {
@@ -117,7 +117,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
         entityChanges.forEach(entityChange -> {
             CurrentEntityState currentState = changeContext.getEntity(entityChange);
-            Collection<EntityChangeValidator<E>> validators = findValidators(entityChange);
+            Collection<EntityChangeValidator<E>> validators = findValidators(entityChange, changeOperation);
             validators.stream()
                     .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                     .map(validator -> validator.validate(entityChange, currentState))
@@ -143,7 +143,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
 
     private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByField(EntityField<E, ?> entityField) {
         return changesValidators.keySet().stream().
-                filter(trigger -> trigger.shouldValidate(entityField)).
+                filter(trigger -> trigger.triggeredByField(entityField)).
                 flatMap(trigger -> changesValidators.get(trigger).stream());
     }
 }
