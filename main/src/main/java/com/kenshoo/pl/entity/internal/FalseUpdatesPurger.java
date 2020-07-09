@@ -4,7 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldChange;
@@ -45,7 +45,7 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
     @Override
     public void enrich(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext) {
         commands.forEach(command -> {
-            Entity currentState = changeContext.getEntity(command);
+            CurrentEntityState currentState = changeContext.getEntity(command);
             // Collect the fields first to avoid modification of command's inner collection while traversing
             List<FieldChange<E, ?>> unchangedFields = command.getChanges()
                     .filter(fieldChange -> areEqual(currentState, fieldChange))
@@ -69,7 +69,7 @@ public class FalseUpdatesPurger<E extends EntityType<E>> implements PostFetchCom
         return SupportedChangeOperation.UPDATE;
     }
 
-    private <T> boolean areEqual(Entity currentState, FieldChange<E, T> fieldChange) {
+    private <T> boolean areEqual(CurrentEntityState currentState, FieldChange<E, T> fieldChange) {
         if (!currentState.containsField(fieldChange.getField())) {
             return false;
         }

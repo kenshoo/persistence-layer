@@ -105,7 +105,7 @@ public class EntitiesFetcherByIdTest {
 
         Identifier<ParentEntity> parentId = new ParentEntity.Key(1);
 
-        Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
+        Map<Identifier<ParentEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
                 ID, FIELD_1);
 
         List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(INSTANCE);
@@ -137,7 +137,7 @@ public class EntitiesFetcherByIdTest {
 
         Identifier<GrandChildEntity> grandChildId = new GrandChildEntity.Color("color1");
 
-        Map<Identifier<GrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
+        Map<Identifier<GrandChildEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
                 OtherChildEntity.ID, OtherChildEntity.NAME);
 
         List<FieldsValueMap<OtherChildEntity>> manyValues = idEntityMap.get(grandChildId).getMany(OtherChildEntity.INSTANCE);

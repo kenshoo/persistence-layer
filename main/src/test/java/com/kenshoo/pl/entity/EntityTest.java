@@ -20,26 +20,26 @@ public class EntityTest {
 
     @Test
     public void safeGet_WhenNotNull_ShouldReturnIt() {
-        final Entity currentState = new StubEntity(true, DUMMY_VALUE);
+        final CurrentEntityState currentState = new StubEntity(true, DUMMY_VALUE);
 
         assertThat(currentState.safeGet(mockField), is(Triptional.of(DUMMY_VALUE)));
     }
 
     @Test
     public void safeGet_WhenPresentAndNull_ShouldReturnNull() {
-        final Entity currentState = new StubEntity(true, null);
+        final CurrentEntityState currentState = new StubEntity(true, null);
 
         assertThat(currentState.safeGet(mockField), is(Triptional.nullInstance()));
     }
 
     @Test
     public void safeGet_WhenAbsent_ShouldReturnAbsent() {
-        final Entity currentState = new StubEntity(false, null);
+        final CurrentEntityState currentState = new StubEntity(false, null);
 
         assertThat(currentState.safeGet(mockField), is(Triptional.absent()));
     }
 
-    private static final class StubEntity implements Entity {
+    private static final class StubEntity implements CurrentEntityState {
 
         private final boolean fieldPresent;
         private final Object value;

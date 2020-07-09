@@ -120,7 +120,7 @@ public class EntityFetcherByIdTest {
 
         final Identifier<ParentEntity> parentId = new ParentEntity.Key(1);
 
-        final Map<Identifier<ParentEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
+        final Map<Identifier<ParentEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(parentId),
                 ID, FIELD_1);
 
         final List<FieldsValueMap<ChildEntity>> manyValues = idEntityMap.get(parentId).getMany(ChildEntity.INSTANCE);
@@ -152,7 +152,7 @@ public class EntityFetcherByIdTest {
 
         final Identifier<GrandChildEntity> grandChildId = new GrandChildEntity.Color("color1");
 
-        final Map<Identifier<GrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
+        final Map<Identifier<GrandChildEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId),
                 OtherChildEntity.ID, OtherChildEntity.NAME);
 
         final List<FieldsValueMap<OtherChildEntity>> manyValues = idEntityMap.get(grandChildId).getMany(OtherChildEntity.INSTANCE);
@@ -183,9 +183,9 @@ public class EntityFetcherByIdTest {
     public void dont_fetch_as_a_secondary_table_of_your_parent_if_you_can_fetch_it_directly_from_another_parent() {
 
         final Identifier<OtherGrandChildEntity> grandChildId = new OtherGrandChildEntity.ChildIdAndName(1, "otherGrandChild1");
-        final Map<Identifier<OtherGrandChildEntity>, Entity> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId), ChildEntity.ID);
+        final Map<Identifier<OtherGrandChildEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId), ChildEntity.ID);
 
-        final Entity entity = idEntityMap.get(grandChildId);
+        final CurrentEntityState entity = idEntityMap.get(grandChildId);
 
         assertThat(entity.get(ChildEntity.ID), Is.is(1));
         assertThat(entity.getMany(ChildEntity.INSTANCE), empty());

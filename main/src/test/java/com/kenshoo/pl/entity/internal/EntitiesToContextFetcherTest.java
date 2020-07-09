@@ -28,7 +28,7 @@ import static java.util.Arrays.asList;
 @RunWith(MockitoJUnitRunner.class)
 public class EntitiesToContextFetcherTest {
 
-    private final static Entity MISSING = Entity.EMPTY;
+    private final static CurrentEntityState MISSING = CurrentEntityState.EMPTY;
 
     @Mock
     private EntitiesFetcher fetcher;

@@ -56,7 +56,7 @@ public class RecursiveAuditRecordGeneratorTest {
     public void generateMany_OneAuditedEntity_WithChanges_ShouldGenerateRecord() {
         final ChangeEntityCommand<AuditedType> cmd = mockCommand();
         final AuditRecord<AuditedType> auditRecord = mockAuditRecord();
-        final Entity currentState = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
@@ -71,7 +71,7 @@ public class RecursiveAuditRecordGeneratorTest {
     @Test
     public void generateMany_OneAuditedEntity_WithoutChanges_ShouldReturnEmpty() {
         final ChangeEntityCommand<AuditedType> cmd = mockCommand();
-        final Entity currentState = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
@@ -100,8 +100,8 @@ public class RecursiveAuditRecordGeneratorTest {
         final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
         final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
 
-        final Entity entity1 = mock(Entity.class);
-        final Entity entity2 = mock(Entity.class);
+        final CurrentEntityState entity1 = mock(CurrentEntityState.class);
+        final CurrentEntityState entity2 = mock(CurrentEntityState.class);
 
         final AuditRecord<AuditedType> auditRecord1 = mockAuditRecord();
         final AuditRecord<AuditedType> auditRecord2 = mockAuditRecord();
@@ -128,8 +128,8 @@ public class RecursiveAuditRecordGeneratorTest {
         final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
         final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
 
-        final Entity entity1 = mock(Entity.class);
-        final Entity entity2 = mock(Entity.class);
+        final CurrentEntityState entity1 = mock(CurrentEntityState.class);
+        final CurrentEntityState entity2 = mock(CurrentEntityState.class);
 
         final AuditRecord<AuditedType> auditRecord1 = mockAuditRecord();
 
@@ -158,9 +158,9 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<TestChild1EntityType> childAuditRecord1B = mockAuditRecord();
         final List<AuditRecord<TestChild1EntityType>> childAuditRecords = ImmutableList.of(childAuditRecord1A, childAuditRecord1B);
 
-        final Entity currentState = mock(Entity.class);
-        final Entity childEntity1A = mock(Entity.class);
-        final Entity childEntity1B = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));
@@ -195,9 +195,9 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<AuditedType> expectedAuditRecord = mockAuditRecord();
         final AuditRecord<TestChild1EntityType> childAuditRecord1A = mockAuditRecord();
 
-        final Entity currentState = mock(Entity.class);
-        final Entity childEntity1A = mock(Entity.class);
-        final Entity childEntity1B = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));
@@ -232,8 +232,8 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<AuditedType> expectedAuditRecord = mockAuditRecord();
         final AuditRecord<TestChild1EntityType> auditedChildRecord = mockAuditRecord();
 
-        final Entity currentState = mock(Entity.class);
-        final Entity auditedChildEntity = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
+        final CurrentEntityState auditedChildEntity = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(ImmutableList.of(child1FlowConfig, child2FlowConfig));
@@ -278,11 +278,11 @@ public class RecursiveAuditRecordGeneratorTest {
                                                                            childAuditRecord2A,
                                                                            childAuditRecord2B);
 
-        final Entity currentState = mock(Entity.class);
-        final Entity childEntity1A = mock(Entity.class);
-        final Entity childEntity1B = mock(Entity.class);
-        final Entity childEntity2A = mock(Entity.class);
-        final Entity childEntity2B = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity2A = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity2B = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(ImmutableList.of(child1FlowConfig, child2FlowConfig));
@@ -327,9 +327,9 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<TestChild1EntityType> childAuditRecord = mockAuditRecord();
         final AuditRecord<TestGrandchildEntityType> grandchildAuditRecord = mockAuditRecord();
 
-        final Entity currentState = mock(Entity.class);
-        final Entity childEntity = mock(Entity.class);
-        final Entity grandchildEntity = mock(Entity.class);
+        final CurrentEntityState currentState = mock(CurrentEntityState.class);
+        final CurrentEntityState childEntity = mock(CurrentEntityState.class);
+        final CurrentEntityState grandchildEntity = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));

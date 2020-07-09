@@ -24,7 +24,7 @@ public class EntitiesToContextFetcher {
 
     public <E extends EntityType<E>> void fetchEntities(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext context, ChangeFlowConfig<E> flow) {
 
-        commands.forEach(c -> context.addEntity(c, Entity.EMPTY));
+        commands.forEach(c -> context.addEntity(c, CurrentEntityState.EMPTY));
 
         final Set<EntityField<?, ?>> fieldsToFetch = context.getFetchRequests().stream().
                 filter( r -> r.getWhereToQuery().equals(flow.getEntityType()) && r.supports(changeOperation)).
@@ -62,7 +62,7 @@ public class EntitiesToContextFetcher {
             ChangeEntityCommand<E> cmd) {
 
         final ChangeEntityCommand ancestor = getAncestor(cmd, parentLevel);
-        final EntityImpl currentState = (EntityImpl)context.getEntity(cmd);
+        final CurrentEntityMutableState currentState = (CurrentEntityMutableState)context.getEntity(cmd);
         seq(parentFields).forEach(field ->  currentState.set(field, getValue(context, ancestor, field)));
     }
 
@@ -98,7 +98,7 @@ public class EntitiesToContextFetcher {
                 cmd -> concat(cmd.getIdentifier(), cmd.getKeysToParent())));
         //noinspection ConstantConditions
         UniqueKey<E> uniqueKey = keysByCommand.values().iterator().next().getUniqueKey();
-        Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByIds(keysByCommand.values(), fieldsToFetch);
+        Map<Identifier<E>, CurrentEntityState> fetchedEntities = entitiesFetcher.fetchEntitiesByIds(keysByCommand.values(), fieldsToFetch);
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }
 
@@ -106,21 +106,21 @@ public class EntitiesToContextFetcher {
         E entityType = flowConfig.getEntityType();
         Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields()).filter(not(new IsFieldReferringToParent<>(context.getHierarchy(), entityType))).collect(toList());
         if (foreignKeys.isEmpty()) {
-            EntityImpl sharedEntity = new EntityImpl();
+            CurrentEntityState sharedEntity = new CurrentEntityMutableState();
             commands.forEach(cmd -> context.addEntity(cmd, sharedEntity));
         } else {
             final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
             Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
-            Map<Identifier<E>, Entity> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
+            Map<Identifier<E>, CurrentEntityState> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
             addFetchedEntitiesToChangeContext(fetchedEntities, context, keysByCommand);
         }
     }
 
-    private <E extends EntityType<E>> void addFetchedEntitiesToChangeContext(Map<Identifier<E>, Entity> fetchedEntities, ChangeContext changeContext, Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand) {
+    private <E extends EntityType<E>> void addFetchedEntitiesToChangeContext(Map<Identifier<E>, CurrentEntityState> fetchedEntities, ChangeContext changeContext, Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand) {
         for (Map.Entry<? extends ChangeEntityCommand<E>, Identifier<E>> entry : keysByCommand.entrySet()) {
             ChangeEntityCommand<E> command = entry.getKey();
             Identifier<E> identifier = entry.getValue();
-            Entity currentState = fetchedEntities.get(identifier);
+            CurrentEntityState currentState = fetchedEntities.get(identifier);
             if (currentState != null) {
                 changeContext.addEntity(command, currentState);
             }
@@ -128,6 +128,6 @@ public class EntitiesToContextFetcher {
     }
 
     private <E extends EntityType<E>> Predicate<ChangeEntityCommand<E>> notMissing(ChangeContext context) {
-        return cmd -> context.getEntity(cmd) != Entity.EMPTY;
+        return cmd -> context.getEntity(cmd) != CurrentEntityState.EMPTY;
     }
 }

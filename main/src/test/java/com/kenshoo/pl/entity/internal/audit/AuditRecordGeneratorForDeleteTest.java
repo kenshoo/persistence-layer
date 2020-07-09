@@ -2,11 +2,12 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityMutableState;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Test;
@@ -50,9 +51,9 @@ public class AuditRecordGeneratorForDeleteTest {
     public void generate_WithIdOnly_ShouldGenerateMandatoryData() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
 
-        final EntityImpl currentState = new EntityImpl();
-         currentState.set(AuditedType.NAME, "oldName");
-         currentState.set(AuditedType.DESC, "oldDesc");
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, "oldName");
+        currentState.set(AuditedType.DESC, "oldDesc");
 
         when(completeFieldSet.intersectWith(eqStreamAsSet(emptySet()))).thenReturn(AuditedFieldSet.builder(AuditedType.ID).build());
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
@@ -72,9 +73,9 @@ public class AuditRecordGeneratorForDeleteTest {
             .with(AuditedType.NAME, "name");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
-         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -106,7 +107,7 @@ public class AuditRecordGeneratorForDeleteTest {
             .with(AuditedType.NAME, "name");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final Entity currentState = Entity.EMPTY;
+        final CurrentEntityState currentState = CurrentEntityState.EMPTY;
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
@@ -135,9 +136,9 @@ public class AuditRecordGeneratorForDeleteTest {
             .with(AuditedType.NAME, "name");
         final Set<? extends EntityField<AuditedType, ?>> cmdChangedFields = cmd.getChangedFields().collect(toSet());
 
-        final EntityImpl currentState = new EntityImpl();
-         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> expectedIntersectionFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)

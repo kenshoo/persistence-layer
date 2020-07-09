@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
@@ -14,11 +14,11 @@ import static java.util.stream.Collectors.toSet;
 
 public class ResultingFieldsCombination<E extends EntityType<E>> implements FieldsValueMap<E> {
     private final EntityChange<E> entityChange;
-    private final Entity currentState;
+    private final CurrentEntityState currentState;
     private final Collection<EntityField<E, ?>> fields;
     private final ChangeOperation changeOperation;
 
-    public ResultingFieldsCombination(EntityChange<E> entityChange, Entity currentState, Stream<EntityField<E, ?>> fields, ChangeOperation changeOperation) {
+    public ResultingFieldsCombination(EntityChange<E> entityChange, CurrentEntityState currentState, Stream<EntityField<E, ?>> fields, ChangeOperation changeOperation) {
         this.entityChange = entityChange;
         this.currentState = currentState;
         this.fields = fields.collect(toSet());

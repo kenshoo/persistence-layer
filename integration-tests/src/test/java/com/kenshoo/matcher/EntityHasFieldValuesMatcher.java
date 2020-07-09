@@ -1,6 +1,7 @@
 package com.kenshoo.matcher;
 
 import com.google.common.collect.ImmutableSet;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldValue;

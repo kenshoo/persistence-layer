@@ -16,7 +16,7 @@ import static org.jooq.lambda.Seq.seq;
 public class ChangeContextImpl implements ChangeContext {
 
     private final Multimap<EntityChange, ValidationError> validationErrors = HashMultimap.create();
-    private final Map<EntityChange, Entity> entities = new IdentityHashMap<>();
+    private final Map<EntityChange, CurrentEntityState> entities = new IdentityHashMap<>();
     private final PersistentLayerStats stats = new PersistentLayerStats();
     private final Set<FieldFetchRequest> fieldsToFetchRequests = Sets.newHashSet();
     private final Hierarchy hierarchy;
@@ -33,12 +33,12 @@ public class ChangeContextImpl implements ChangeContext {
     }
 
     @Override
-    public Entity getEntity(EntityChange entityChange) {
+    public CurrentEntityState getEntity(EntityChange entityChange) {
         return entities.get(entityChange);
     }
 
     @Override
-    public void addEntity(EntityChange change, Entity currentState) {
+    public void addEntity(EntityChange change, CurrentEntityState currentState) {
         this.entities.put(change, currentState);
     }
 

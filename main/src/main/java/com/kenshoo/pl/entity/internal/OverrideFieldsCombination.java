@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
@@ -12,9 +12,9 @@ public class OverrideFieldsCombination<E extends EntityType<E>> implements Field
 
     private final FieldsValueMap<E> fieldsValueMap;
     private final Map<EntityField<E,?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions;
-    private final Entity currentState;
+    private final CurrentEntityState currentState;
 
-    public OverrideFieldsCombination(Entity currentState, FieldsValueMap<E> fieldsValueMap, Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions) {
+    public OverrideFieldsCombination(CurrentEntityState currentState, FieldsValueMap<E> fieldsValueMap, Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> overrideFieldValueFunctions) {
         this.currentState = currentState;
         this.fieldsValueMap = fieldsValueMap;
         this.overrideFieldValueFunctions = overrideFieldValueFunctions;

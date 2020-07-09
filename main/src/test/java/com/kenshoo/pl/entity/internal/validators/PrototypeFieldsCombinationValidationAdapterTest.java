@@ -36,7 +36,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     @InjectMocks
     private PrototypeFieldsCombinationValidationAdapter<TestEntity> adapter;

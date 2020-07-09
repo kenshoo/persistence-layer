@@ -33,7 +33,7 @@ public interface EntityPersistence<E extends EntityType<E>, PK extends Identifie
 
     <ID extends Identifier<E>> InsertOnDuplicateUpdateResult<E, ID> customInsertOnDuplicateUpdate(List<? extends InsertOnDuplicateUpdateCommand<E, ID>> commands, Function<ChangeFlowConfig.Builder<E>, ChangeFlowConfig.Builder<E>> flowConfigModifier);
 
-    <UKV extends UniqueKeyValue<E>> Map<UKV, Entity> fetchEntities(Collection<UKV> keys, Collection<EntityField<?, ?>> fieldsToFetch);
+    <UKV extends UniqueKeyValue<E>> Map<UKV, CurrentEntityState> fetchEntities(Collection<UKV> keys, Collection<EntityField<?, ?>> fieldsToFetch);
 
     <UKV extends UniqueKeyValue<E>, PE extends PartialEntity> Map<UKV, PE> fetchByKeys(Collection<UKV> keys, final Class<PE> entityIface);
 

@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.spi;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.spi.MissingFieldEnricher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +19,7 @@ public class MissingFieldEnricherTest {
     private ChangeContext changeContext;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     private final CreateEntityCommand<TestEntity> cmd = new CreateEntityCommand<>(TestEntity.INSTANCE);
 
@@ -103,7 +102,7 @@ public class MissingFieldEnricherTest {
         }
 
         @Override
-        protected String enrichedValue(EntityChange<TestEntity> entityChange, Entity currentState) {
+        protected String enrichedValue(EntityChange<TestEntity> entityChange, CurrentEntityState currentState) {
             return "value";
         }
 

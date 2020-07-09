@@ -7,7 +7,7 @@ import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.PartialEntityInvocationHandler;
 import org.jooq.*;
@@ -37,13 +37,13 @@ public class OldEntityFetcher {
     }
 
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
-                                                                                   final EntityField<?, ?>... fieldsToFetchArgs) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                               final EntityField<?, ?>... fieldsToFetchArgs) {
         return fetchEntitiesByIds(ids, ImmutableList.copyOf(fieldsToFetchArgs));
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
-                                                                                   final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                               final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         if (ids.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -57,9 +57,9 @@ public class OldEntityFetcher {
         }
     }
 
-    public List<Entity> fetch(final EntityType<?> entityType,
-                              final PLCondition plCondition,
-                              final EntityField<?, ?>... fieldsToFetch) {
+    public List<CurrentEntityState> fetch(final EntityType<?> entityType,
+                                          final PLCondition plCondition,
+                                          final EntityField<?, ?>... fieldsToFetch) {
         requireNonNull(entityType, "An entity type must be provided");
         requireNonNull(plCondition, "A condition must be provided");
         notEmpty(fieldsToFetch, "There must be at least one field to fetch");
@@ -74,10 +74,10 @@ public class OldEntityFetcher {
                 .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
     }
 
-    public List<Entity> fetch(final EntityType<?> entityType,
-                              final Collection<? extends Identifier<?>> ids,
-                              final PLCondition plCondition,
-                              final EntityField<?, ?>... fieldsToFetch) {
+    public List<CurrentEntityState> fetch(final EntityType<?> entityType,
+                                          final Collection<? extends Identifier<?>> ids,
+                                          final PLCondition plCondition,
+                                          final EntityField<?, ?>... fieldsToFetch) {
         notEmpty(fieldsToFetch, "There must be at least one field to fetch");
         requireNonNull(plCondition, "A condition must be provided");
 
@@ -102,7 +102,7 @@ public class OldEntityFetcher {
     }
 
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
             final AliasedKey<E> aliasedKey = new AliasedKey<>(foreignUniqueKey, foreignKeysTable);
             final SelectJoinStep<Record> query = buildFetchQuery(foreignKeysTable.getTable(), aliasedKey.aliasedFields(), fieldsToFetch);
@@ -117,7 +117,7 @@ public class OldEntityFetcher {
         }
         UniqueKey<E> uniqueKey = keys.iterator().next().getUniqueKey();
         final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
-        Map<Identifier<E>, Entity> entityMap = fetchEntitiesByIds(keys, entityMethodsMap.values());
+        Map<Identifier<E>, CurrentEntityState> entityMap = fetchEntitiesByIds(keys, entityMethodsMap.values());
         ClassLoader classLoader = entityIface.getClassLoader();
         Class<?>[] interfaces = {entityIface};
         //noinspection unchecked
@@ -133,8 +133,8 @@ public class OldEntityFetcher {
             //noinspection unchecked
             condition = condition.and(fieldAndValue.getField().eq(fieldAndValue.getValue()));
         }
-        List<Entity> entities = query.where(condition).fetch(record -> {
-            EntityImpl currentState = new EntityImpl();
+        List<CurrentEntityState> entities = query.where(condition).fetch(record -> {
+            CurrentEntityMutableState currentState = new CurrentEntityMutableState();
             Iterator<Object> valuesIterator = record.intoList().iterator();
             for (EntityField<E, ?> field : fieldsToFetch) {
                 fieldFromRecordToEntity(currentState, field, valuesIterator);
@@ -206,7 +206,7 @@ public class OldEntityFetcher {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fields) {
+    private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, Collection<? extends EntityField<?, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 
@@ -227,7 +227,7 @@ public class OldEntityFetcher {
         );
     }
 
-    private <T> void fieldFromRecordToEntity(EntityImpl currentState, EntityField<?, T> field, Iterator<Object> valuesIterator) {
+    private <T> void fieldFromRecordToEntity(CurrentEntityMutableState currentState, EntityField<?, T> field, Iterator<Object> valuesIterator) {
          currentState.set(field, field.getDbAdapter().getFromRecord(valuesIterator));
     }
 
@@ -246,8 +246,8 @@ public class OldEntityFetcher {
                          .reduce(inputJooqCondition, Condition::and);
     }
 
-    private Entity mapRecordToEntity(final Record record, final Collection<EntityField<?, ?>> fieldsToFetch) {
-        final EntityImpl currentState = new EntityImpl();
+    private CurrentEntityState mapRecordToEntity(final Record record, final Collection<EntityField<?, ?>> fieldsToFetch) {
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
         final Iterator<Object> valuesIterator = record.intoList().iterator();
         fieldsToFetch.forEach( field -> fieldFromRecordToEntity(currentState, field, valuesIterator));
         return currentState;

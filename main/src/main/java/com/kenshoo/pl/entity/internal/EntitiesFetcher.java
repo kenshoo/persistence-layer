@@ -36,13 +36,13 @@ public class EntitiesFetcher {
         this.oldEntityFetcher = new OldEntityFetcher(dslContext);
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
-                                                                                   final EntityField<?, ?>... fieldsToFetchArgs) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                               final EntityField<?, ?>... fieldsToFetchArgs) {
         return fetchEntitiesByIds(ids, ImmutableList.copyOf(fieldsToFetchArgs));
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
-                                                                                   final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
+                                                                                               final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
         if (!features.isEnabled(FetchMany)) {
             return oldEntityFetcher.fetchEntitiesByIds(ids, fieldsToFetch);
         }
@@ -57,20 +57,20 @@ public class EntitiesFetcher {
         return fetchEntities(uniqueKey.getEntityType().getPrimaryTable(), aliasedKey, fieldsToFetch, query -> query.whereIdsIn(ids));
     }
 
-    public List<Entity> fetch(final EntityType<?> entityType,
-                              final PLCondition plCondition,
-                              final EntityField<?, ?>... fieldsToFetch) {
+    public List<CurrentEntityState> fetch(final EntityType<?> entityType,
+                                          final PLCondition plCondition,
+                                          final EntityField<?, ?>... fieldsToFetch) {
         return oldEntityFetcher.fetch(entityType, plCondition, fieldsToFetch);
     }
 
-    public List<Entity> fetch(final EntityType<?> entityType,
-                              final Collection<? extends Identifier<?>> ids,
-                              final PLCondition plCondition,
-                              final EntityField<?, ?>... fieldsToFetch) {
+    public List<CurrentEntityState> fetch(final EntityType<?> entityType,
+                                          final Collection<? extends Identifier<?>> ids,
+                                          final PLCondition plCondition,
+                                          final EntityField<?, ?>... fieldsToFetch) {
         return oldEntityFetcher.fetch(entityType, ids, plCondition, fieldsToFetch);
     }
 
-    public <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
+    public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
         if (!features.isEnabled(FetchMany)) {
             return oldEntityFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, keys, fieldsToFetch);
         }
@@ -84,7 +84,7 @@ public class EntitiesFetcher {
         }
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntities(
+    private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntities(
             final DataTable startingTable,
             final AliasedKey<E> aliasedKey,
             final Collection<? extends EntityField<?, ?>> fieldsToFetch,
@@ -99,7 +99,7 @@ public class EntitiesFetcher {
                 .leftJoin(oneToOnePlan.getSecondaryTableRelations());
         queryModifier.accept(mainQueryBuilder);
 
-        final Map<Identifier<E>, Entity> entities = fetchMainEntities(aliasedKey, oneToOnePlan, mainQueryBuilder);
+        final Map<Identifier<E>, CurrentEntityState> entities = fetchMainEntities(aliasedKey, oneToOnePlan, mainQueryBuilder);
 
         executionPlan.getManyToOnePlans().forEach(plan -> {
             final QueryBuilder<E> subQueryBuilder = new QueryBuilder<E>(dslContext).selecting(selectFieldsOf(plan.getFields(), aliasedKey))
@@ -121,23 +121,23 @@ public class EntitiesFetcher {
         return oldEntityFetcher.fetchByCondition(entityType, condition, entityIface);
     }
 
-    private <E extends EntityType<E>, SUB extends EntityType<SUB>> void fetchAndPopulateSubEntities(AliasedKey<E> aliasedKey, Map<Identifier<E>, Entity> entities, ExecutionPlan.ManyToOnePlan<SUB> plan, QueryBuilder<E> queryBuilder) {
+    private <E extends EntityType<E>, SUB extends EntityType<SUB>> void fetchAndPopulateSubEntities(AliasedKey<E> aliasedKey, Map<Identifier<E>, CurrentEntityState> entities, ExecutionPlan.ManyToOnePlan<SUB> plan, QueryBuilder<E> queryBuilder) {
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.build()) {
             Map<Identifier<E>, List<FieldsValueMap<SUB>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, plan.getFields());
             multiValuesMap.forEach((Identifier<E> id, List<FieldsValueMap<SUB>> multiValues) -> {
                 final SUB subEntityType = entityTypeOf(plan.getFields());
-                ((EntityImpl) entities.get(id)).add(subEntityType, multiValues);
+                ((CurrentEntityMutableState) entities.get(id)).add(subEntityType, multiValues);
             });
         }
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchMainEntities(AliasedKey<E> aliasedKey, ExecutionPlan.OneToOnePlan oneToOnePlan, QueryBuilder<E> queryBuilder) {
+    private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchMainEntities(AliasedKey<E> aliasedKey, ExecutionPlan.OneToOnePlan oneToOnePlan, QueryBuilder<E> queryBuilder) {
         try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.build()) {
             return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, oneToOnePlan.getFields());
         }
     }
 
-    private <E extends EntityType<E>> Map<Identifier<E>, Entity> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<?, ?>> fields) {
+    private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<?, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
     }
 

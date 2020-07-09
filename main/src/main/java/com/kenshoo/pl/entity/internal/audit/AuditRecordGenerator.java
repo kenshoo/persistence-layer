@@ -42,7 +42,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     public Optional<? extends AuditRecord<E>> generate(final EntityChange<E> entityChange,
-                                                       final Entity currentState,
+                                                       final CurrentEntityState currentState,
                                                        final Collection<? extends AuditRecord<?>> childRecords) {
         final AuditRecord<E> auditRecord = generateInner(entityChange,
                                                          currentState,
@@ -55,10 +55,10 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private AuditRecord<E> generateInner(final EntityChange<E> entityChange,
-                                         final Entity currentState,
+                                         final CurrentEntityState currentState,
                                          final Collection<? extends AuditRecord<?>> childRecords) {
         requireNonNull(entityChange, "entityChange is required");
-        requireNonNull(currentState, "entity is required");
+        requireNonNull(currentState, "currentState is required");
 
         final String entityId = extractEntityId(entityChange, currentState);
 
@@ -82,7 +82,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private Collection<? extends FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
-                                                                           final Entity currentState,
+                                                                           final CurrentEntityState currentState,
                                                                            final Collection<? extends EntityField<E, ?>> candidateOnChangeFields) {
         return candidateOnChangeFields.stream()
                                       .filter(field -> fieldWasChanged(entityChange, currentState, field))
@@ -91,7 +91,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private FieldAuditRecord<E> buildFieldRecord(final EntityChange<E> entityChange,
-                                                 final Entity currentState,
+                                                 final CurrentEntityState currentState,
                                                  final EntityField<E, ?> field) {
         final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
          currentState.safeGet(field).ifFilled(fieldRecordBuilder::oldValue);
@@ -100,13 +100,13 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private String extractEntityId(final EntityChange<E> entityChange,
-                                   final Entity currentState) {
+                                   final CurrentEntityState currentState) {
         return entityIdExtractor.extract(entityChange, currentState)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
-                                                                                 "from either the EntityChange or the Entity, so the audit record cannot be generated."));
+                                                                                 "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
     }
 
-    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final Entity currentState) {
+    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final CurrentEntityState currentState) {
         return auditedFieldSet.getExternalMandatoryFields().stream()
                               .map(field -> ImmutablePair.of(field,  currentState.safeGet(field)))
                               .filter(pair -> pair.getValue().isFilled())
@@ -115,19 +115,19 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private boolean fieldWasChanged(final EntityChange<E> entityChange,
-                                    final Entity currentState,
+                                    final CurrentEntityState currentState,
                                     final EntityField<E, ?> field) {
         return !fieldStayedTheSame(entityChange, currentState, field);
     }
 
     private boolean fieldStayedTheSame(final EntityChange<E> entityChange,
-                                       final Entity currentState,
+                                       final CurrentEntityState currentState,
                                        final EntityField<E, ?> field) {
         return  currentState.containsField(field) && fieldValuesEqual(entityChange, currentState, field);
     }
 
     private <T> boolean fieldValuesEqual(final EntityChange<E> entityChange,
-                                         final Entity currentState,
+                                         final CurrentEntityState currentState,
                                          final EntityField<E, T> field) {
         return field.valuesEqual(entityChange.get(field),  currentState.get(field));
     }

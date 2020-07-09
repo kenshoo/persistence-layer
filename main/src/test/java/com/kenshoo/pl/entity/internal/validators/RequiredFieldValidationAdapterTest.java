@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
@@ -37,7 +37,7 @@ public class RequiredFieldValidationAdapterTest {
     private EntityChange<TestEntity> entityChange;
 
     @Mock
-    private Entity currentState;
+    private CurrentEntityState currentState;
 
     @Mock
     private EntityField<TestEntity, String> fetchField;

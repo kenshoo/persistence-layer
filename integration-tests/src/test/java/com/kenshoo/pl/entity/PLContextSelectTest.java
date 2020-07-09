@@ -21,7 +21,6 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
-import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -85,7 +84,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromSingleEntity() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                                                .from(TestEntityType.INSTANCE)
                                                .where(TestEntityType.FIELD1.eq("Alpha"))
                                                .fetch();
@@ -99,7 +98,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectIsNull() {
-        final List<Entity> entities = plContext.select(TestParentEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.FIELD1)
                 .from(TestParentEntityType.INSTANCE)
                 .where(TestParentEntityType.FIELD2.isNull())
                 .fetch();
@@ -110,7 +109,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromChildAndParent() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
                                                .from(TestEntityType.INSTANCE)
                                                .where(TestEntityType.FIELD1.eq("Alpha"))
                                                .fetch();
@@ -125,7 +124,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromChildAndParentAndParentSecondary() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID,
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID,
                                                        TestEntityType.FIELD1,
                                                        TestParentEntityType.FIELD1,
                                                        TestParentEntityType.SECONDARY_FIELD1)
@@ -146,7 +145,7 @@ public class PLContextSelectTest {
     public void selectFromSingleEntityByKeys() {
         final SingleUniqueKey<TestEntityType, Integer> uniqueKey = new SingleUniqueKey<>(TestEntityType.ID);
 
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(PLCondition.trueCondition())
                 .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
@@ -162,7 +161,7 @@ public class PLContextSelectTest {
     public void selectFromSingleEntityByParentKeys() {
         final SingleUniqueKey<TestParentEntityType, Integer> uniqueKey = new SingleUniqueKey<>(TestParentEntityType.ID);
 
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(PLCondition.trueCondition())
                 .fetchByKeys(ImmutableList.of(uniqueKey.createValue(1)));
@@ -179,7 +178,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromSingleEntityInClause() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(TestEntityType.FIELD1.in("Alpha", "Bravo"))
                 .fetch();
@@ -196,7 +195,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromSingleEntityInAndEqClause() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(TestEntityType.FIELD1.in("Alpha", "Bravo").and(TestEntityType.ID.eq(2)))
                 .fetch();
@@ -210,7 +209,7 @@ public class PLContextSelectTest {
 
     @Test
     public void selectFromChildAndParentInClause() {
-        final List<Entity> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
+        final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
                 .from(TestEntityType.INSTANCE)
                 .where(TestEntityType.FIELD1.in("Alpha", "Bravo"))
                 .fetch();

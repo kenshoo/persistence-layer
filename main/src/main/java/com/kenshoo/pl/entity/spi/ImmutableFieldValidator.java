@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
@@ -35,7 +35,7 @@ public interface ImmutableFieldValidator<E extends EntityType<E>, T> extends Cha
     /**
      * @return Predicate when should validate field.
      */
-    default Predicate<Entity> immutableWhen() {
+    default Predicate<CurrentEntityState> immutableWhen() {
         return e -> true;
     }
 

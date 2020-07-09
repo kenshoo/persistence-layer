@@ -114,7 +114,7 @@ public class ParentWithTwoSecondariesTest {
 
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
-        final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<ChildEntityType>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
                                                ParentEntityType.SEC_1_FIELD_1,
                                                ParentEntityType.SEC_1_FIELD_2,

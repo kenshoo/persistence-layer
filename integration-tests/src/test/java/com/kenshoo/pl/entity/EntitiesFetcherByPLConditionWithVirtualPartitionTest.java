@@ -72,7 +72,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByEqualsConditionWhereInsidePartitionShouldReturnAll() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             FIELD1.eq("1-1-1"),
                                                             FIELD1);
 
@@ -83,7 +83,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByEqualsConditionWhereOutsidePartitionShouldReturnEmpty() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID2.eq(2),
                                                             FIELD1);
 
@@ -92,13 +92,13 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByEqualsConditionWherePartiallyIntersectsPartitionShouldReturnIntersection() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID1.eq(1),
                                                             FIELD1);
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(2));
 
-        final List<Entity> sortedEntities = sortByField1(entities);
+        final List<CurrentEntityState> sortedEntities = sortByField1(entities);
 
         assertThat(sortedEntities.get(0), hasFieldValues(fieldValue(FIELD1, "1-1-1")));
         assertThat(sortedEntities.get(1), hasFieldValues(fieldValue(FIELD1, "1-1-2")));
@@ -106,13 +106,13 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByAndConditionWhereInsidePartitionShouldReturnAll() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID1.eq(1).and(ID2.eq(1)),
                                                             FIELD1);
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(2));
 
-        final List<Entity> sortedEntities = sortByField1(entities);
+        final List<CurrentEntityState> sortedEntities = sortByField1(entities);
 
         assertThat(sortedEntities.get(0), hasFieldValues(fieldValue(FIELD1, "1-1-1")));
         assertThat(sortedEntities.get(1), hasFieldValues(fieldValue(FIELD1, "1-1-2")));
@@ -120,7 +120,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByAndConditionWhereOutsidePartitionShouldReturnEmpty() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID1.eq(2).and(ID2.eq(1)),
                                                             FIELD1);
         assertThat(entities, is(empty()));
@@ -128,7 +128,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByAndConditionWherePartiallyIntersectsPartitionShouldReturnIntersection() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID2.eq(1).and(ID3.eq(1)),
                                                             FIELD1);
         assertThat("Incorrect number of entities fetched: ",
@@ -138,14 +138,14 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByOrConditionWherePartiallyIntersectsPartitionShouldReturnIntersection() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID1.eq(1).or(ID3.eq(1)),
                                                             FIELD1);
 
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(2));
 
-        final List<Entity> sortedEntities = sortByField1(entities);
+        final List<CurrentEntityState> sortedEntities = sortByField1(entities);
 
         assertThat(sortedEntities.get(0), hasFieldValues(fieldValue(FIELD1, "1-1-1")));
         assertThat(sortedEntities.get(1), hasFieldValues(fieldValue(FIELD1, "1-1-2")));
@@ -153,7 +153,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByOrConditionWhereOutsidePartitionShouldReturnEmpty() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             ID1.eq(2).or(FIELD1.eq("1-2-1")),
                                                             FIELD1);
 
@@ -162,7 +162,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
 
     @Test
     public void fetchByNotEqualsConditionWherePartiallyIntersectsPartitionShouldReturnIntersection() {
-        final List<Entity> entities = entitiesFetcher.fetch(ENTITY_TYPE,
+        final List<CurrentEntityState> entities = entitiesFetcher.fetch(ENTITY_TYPE,
                                                             not(FIELD1.eq("1-1-1")),
                                                             FIELD1);
 
@@ -171,7 +171,7 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
         assertThat(entities.get(0), hasFieldValues(fieldValue(FIELD1, "1-1-2")));
     }
 
-    private List<Entity> sortByField1(List<Entity> entities) {
+    private List<CurrentEntityState> sortByField1(List<CurrentEntityState> entities) {
         return entities.stream()
                        .sorted(comparing(entity -> entity.get(FIELD1)))
                        .collect(toList());

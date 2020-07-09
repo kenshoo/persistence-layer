@@ -2,22 +2,14 @@ package com.kenshoo.pl.entity.spi.helpers;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.kenshoo.pl.entity.CreateEntityCommand;
-import com.kenshoo.pl.entity.CreateResult;
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityCreateResult;
-import com.kenshoo.pl.entity.EntityUpdateResult;
-import com.kenshoo.pl.entity.Identifier;
-import com.kenshoo.pl.entity.TestEntity;
-import com.kenshoo.pl.entity.UpdateEntityCommand;
-import com.kenshoo.pl.entity.UpdateResult;
-import com.kenshoo.pl.entity.ValidationError;
-import com.kenshoo.pl.entity.internal.EntityImpl;
+import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -26,13 +18,15 @@ import static org.junit.Assert.assertEquals;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ChangeResultInspectorTest {
 
+    public static final HashMap<Identifier<TestEntity>, CurrentEntityState> SOME_CURRENT_ENTITY_STATE = Maps.newHashMap();
+
     @Test
     public void testUpdate() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         UpdateTestEntityCommand command = new UpdateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
-        EntityImpl currentState = new EntityImpl();
-         currentState.set(TestEntity.FIELD_1, "value1");
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.FIELD_1, "value1");
         UpdateTestEntityChangeResult testEntityChangeResult = new UpdateTestEntityChangeResult(command);
         UpdateResult<TestEntity, TestEntity.Key> results = new UpdateResult<>(ImmutableList.of(testEntityChangeResult));
 
@@ -49,11 +43,11 @@ public class ChangeResultInspectorTest {
     @Test
     public void testFalseUpdate() {
         UpdateTestEntityCommand command = new UpdateTestEntityCommand();
-        EntityImpl befoeEntity = new EntityImpl();
+        CurrentEntityMutableState befoeEntity = new CurrentEntityMutableState();
         befoeEntity.set(TestEntity.FIELD_1, "value1");
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         beforeEntities.put(command.getIdentifier(), befoeEntity);
-        EntityImpl currentState = new EntityImpl();
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
          currentState.set(TestEntity.FIELD_1, "value1");
         UpdateTestEntityChangeResult testEntityChangeResult = new UpdateTestEntityChangeResult(command);
         UpdateResult<TestEntity, TestEntity.Key> results = new UpdateResult<>(ImmutableList.of(testEntityChangeResult));
@@ -70,13 +64,13 @@ public class ChangeResultInspectorTest {
 
     @Test
     public void testUpdateValueMismatch() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         UpdateTestEntityCommand command = new UpdateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         UpdateTestEntityChangeResult testEntityChangeResult = new UpdateTestEntityChangeResult(command);
         UpdateResult<TestEntity, TestEntity.Key> results = new UpdateResult<>(ImmutableList.of(testEntityChangeResult));
-        EntityImpl currentState = new EntityImpl();
-         currentState.set(TestEntity.FIELD_1, "value2");
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.FIELD_1, "value2");
 
         ChangeResultInspector<TestEntity> inspector = new ChangeResultInspector.Builder<TestEntity>()
                 .withInspectedFields(ImmutableList.of(TestEntity.FIELD_1))
@@ -90,7 +84,7 @@ public class ChangeResultInspectorTest {
 
     @Test
     public void testUpdateWithLegacyError() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         UpdateTestEntityCommand command = new UpdateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         UpdateTestEntityChangeResult testEntityChangeResult = new UpdateTestEntityChangeResult(command);
@@ -107,13 +101,13 @@ public class ChangeResultInspectorTest {
 
     @Test
     public void testUpdateWithPersistenceError() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         UpdateTestEntityCommand command = new UpdateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         UpdateTestEntityChangeResult testEntityChangeResult = new UpdateTestEntityChangeResult(command, ImmutableList.of(new ValidationError("Validation error")));
         UpdateResult<TestEntity, TestEntity.Key> results = new UpdateResult<>(ImmutableList.of(testEntityChangeResult));
-        EntityImpl currentState = new EntityImpl();
-         currentState.set(TestEntity.FIELD_1, "value1");
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.FIELD_1, "value1");
 
         ChangeResultInspector<TestEntity> inspector = new ChangeResultInspector.Builder<TestEntity>()
                 .withInspectedFields(ImmutableList.of(TestEntity.FIELD_1))
@@ -127,13 +121,13 @@ public class ChangeResultInspectorTest {
 
     @Test
     public void testCreate() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
+        Map<Identifier<TestEntity>, CurrentEntityState> beforeEntities = Maps.newHashMap();
         CreateTestEntityCommand command = new CreateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         command.setIdentifier(new TestEntity.Key(1));
         EntityCreateResult<TestEntity, TestEntity.Key> testEntityChangeResult = new EntityCreateResult<>(command);
         CreateResult<TestEntity, TestEntity.Key> results = new CreateResult<>(ImmutableList.of(testEntityChangeResult));
-        EntityImpl currentState = new EntityImpl();
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
          currentState.set(TestEntity.FIELD_1, "value1");
 
         ChangeResultInspector<TestEntity> inspector = new ChangeResultInspector.Builder<TestEntity>()
@@ -148,27 +142,25 @@ public class ChangeResultInspectorTest {
 
     @Test
     public void testCreateValueMismatch() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
         CreateTestEntityCommand command = new CreateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         command.setIdentifier(new TestEntity.Key(1));
         EntityCreateResult<TestEntity, TestEntity.Key> testEntityChangeResult = new EntityCreateResult<>(command);
         CreateResult<TestEntity, TestEntity.Key> results = new CreateResult<>(ImmutableList.of(testEntityChangeResult));
-        EntityImpl currentState = new EntityImpl();
-         currentState.set(TestEntity.FIELD_1, "value2");
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.FIELD_1, "value2");
 
         ChangeResultInspector<TestEntity> inspector = new ChangeResultInspector.Builder<TestEntity>()
                 .withInspectedFields(ImmutableList.of(TestEntity.FIELD_1))
                 .inspectedFlow("Inspected flow").build();
 
         ObservedResult<TestEntity> observedResult = ObservedResult.of(new TestEntity.Key(1), currentState);
-        inspector.inspect(beforeEntities, results, ImmutableList.of(observedResult));
+        inspector.inspect(SOME_CURRENT_ENTITY_STATE, results, ImmutableList.of(observedResult));
         assertEquals("Value mismatch", observedResult.getInspectedStatus(), ObservedResult.InspectedStatus.VALUE_MISMATCH);
     }
 
     @Test
     public void testCreateLegacyWithError() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
         CreateTestEntityCommand command = new CreateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         command.setIdentifier(new TestEntity.Key(1));
@@ -180,26 +172,25 @@ public class ChangeResultInspectorTest {
                 .inspectedFlow("Inspected flow").build();
 
         ObservedResult<TestEntity> observedResult = ObservedResult.error(new TestEntity.Key(1), "Validation error");
-        inspector.inspect(beforeEntities, results, ImmutableList.of(observedResult));
+        inspector.inspect(SOME_CURRENT_ENTITY_STATE, results, ImmutableList.of(observedResult));
         assertEquals("Legacy error mismatch", observedResult.getInspectedStatus(), ObservedResult.InspectedStatus.LEGACY_ERROR_MISMATCH);
     }
 
     @Test
     public void testCreatePersistenceWithError() {
-        Map<Identifier<TestEntity>, Entity> beforeEntities = Maps.newHashMap();
         CreateTestEntityCommand command = new CreateTestEntityCommand();
         command.set(TestEntity.FIELD_1, "value1");
         EntityCreateResult<TestEntity, TestEntity.Key> testEntityChangeResult = new EntityCreateResult<>(command, ImmutableList.of(new ValidationError("Validation error")));
         CreateResult<TestEntity, TestEntity.Key> results = new CreateResult<>(ImmutableList.of(testEntityChangeResult));
-        EntityImpl currentState = new EntityImpl();
-         currentState.set(TestEntity.FIELD_1, "value1");
+        CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(TestEntity.FIELD_1, "value1");
 
         ChangeResultInspector<TestEntity> inspector = new ChangeResultInspector.Builder<TestEntity>()
                 .withInspectedFields(ImmutableList.of(TestEntity.FIELD_1))
                 .inspectedFlow("Inspected flow").build();
 
         ObservedResult<TestEntity> observedResult = ObservedResult.of(new TestEntity.Key(1), currentState);
-        inspector.inspect(beforeEntities, results, ImmutableList.of(observedResult));
+        inspector.inspect(SOME_CURRENT_ENTITY_STATE, results, ImmutableList.of(observedResult));
         assertEquals("Persistence error mismatch", observedResult.getInspectedStatus(), ObservedResult.InspectedStatus.PERSISTENCE_ERROR_MISMATCH);
     }
 

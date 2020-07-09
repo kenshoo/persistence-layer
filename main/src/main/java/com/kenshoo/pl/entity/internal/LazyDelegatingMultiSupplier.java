@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
@@ -23,7 +23,7 @@ public class LazyDelegatingMultiSupplier<E extends EntityType<E>> implements Mul
     }
 
     @Override
-    public FieldsValueMap<E> supply(Entity currentState) throws ValidationException {
+    public FieldsValueMap<E> supply(CurrentEntityState currentState) throws ValidationException {
         if (suppliedMap == null) {
             suppliedMap = multiSupplier.supply(currentState);
         }

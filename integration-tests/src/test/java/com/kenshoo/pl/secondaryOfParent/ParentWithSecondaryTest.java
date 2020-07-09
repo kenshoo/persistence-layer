@@ -102,7 +102,7 @@ public class ParentWithSecondaryTest {
 
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
-        final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<ChildEntityType>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
                                                ParentEntityType.SEC_FIELD_1, ParentEntityType.SEC_FIELD_2);
 
@@ -116,7 +116,7 @@ public class ParentWithSecondaryTest {
 
         final ChildEntityType.Key keyToFetch = new ChildEntityType.Key(CHILD_ID);
 
-        final Map<Identifier<ChildEntityType>, Entity> fetchedKeyToEntity =
+        final Map<Identifier<ChildEntityType>, CurrentEntityState> fetchedKeyToEntity =
             entitiesFetcher.fetchEntitiesByIds(singleton(keyToFetch),
                                                ParentEntityType.FIELD_1, ParentEntityType.SEC_FIELD_1, ParentEntityType.SEC_FIELD_2);
 

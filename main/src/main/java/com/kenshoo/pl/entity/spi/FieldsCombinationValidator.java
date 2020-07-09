@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
@@ -42,7 +42,7 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
     /**
      * @return Predicate when should validate fields.
      */
-    default Predicate<Entity> validateWhen() {
+    default Predicate<CurrentEntityState> validateWhen() {
         return e -> true;
     }
 
@@ -67,6 +67,6 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
         /**
          * @return the field substitution function
          */
-        Function<Entity, T> overrideHow();
+        Function<CurrentEntityState, T> overrideHow();
     }
 }

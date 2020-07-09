@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.pl.data.DatabaseId;
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldDbAdapter;
 import com.kenshoo.pl.entity.EntityType;
@@ -45,8 +45,8 @@ public class EntityDbUtil {
         return getFieldValuesInner(fields, field -> getDbValues(fieldsValueMap, field, FieldsValueMap::get));
     }
 
-    public static <E extends EntityType<E>> Object[] getFieldValues(Collection<EntityField<E, ?>> fields, Entity currentState) {
-        return getFieldValuesInner(fields, field -> getDbValues(currentState, field, Entity::get));
+    public static <E extends EntityType<E>> Object[] getFieldValues(Collection<EntityField<E, ?>> fields, CurrentEntityState currentState) {
+        return getFieldValuesInner(fields, field -> getDbValues(currentState, field, CurrentEntityState::get));
     }
 
     private static <E extends EntityType<E>> Object[] getFieldValuesInner(Collection<EntityField<E, ?>> fields, Function<EntityField<E, ?>, Stream<?>> mapper) {

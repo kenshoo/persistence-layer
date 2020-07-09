@@ -1,9 +1,9 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 
-public class EntityWithGeneratedId implements Entity {
+public class EntityWithGeneratedId implements CurrentEntityState {
 
     private final EntityField<?, Object> idField;
     private final Object idValue;

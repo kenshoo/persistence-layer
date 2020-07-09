@@ -1,9 +1,5 @@
-package com.kenshoo.pl.entity.internal;
+package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.Entity;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.FieldsValueMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +7,7 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 
 
-public class EntityImpl implements Entity {
+public class CurrentEntityMutableState implements CurrentEntityState {
 
     private final Map<EntityField<?, ?>, Object> fields = new HashMap<>();
     private Map<EntityType, List<FieldsValueMap>> manyByType;

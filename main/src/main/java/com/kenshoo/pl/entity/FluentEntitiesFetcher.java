@@ -2,11 +2,8 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,11 +31,11 @@ class FluentEntitiesFetcher implements FetchFromStep, FetchWhereStep, FetchFinal
         return this;
     }
 
-    public List<Entity> fetch() {
+    public List<CurrentEntityState> fetch() {
         return entitiesFetcher.fetch(entityType, condition, fieldsToFetch);
     }
 
-    public List<Entity> fetchByKeys(Collection<? extends Identifier<?>> keys) {
+    public List<CurrentEntityState> fetchByKeys(Collection<? extends Identifier<?>> keys) {
         return entitiesFetcher.fetch(entityType, keys, condition, fieldsToFetch);
     }
 }
