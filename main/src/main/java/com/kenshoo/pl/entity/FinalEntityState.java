@@ -26,7 +26,7 @@ public class FinalEntityState implements Entity {
 
     @Override
     public <CHILD extends EntityType<CHILD>> List<FieldsValueMap<CHILD>> getMany(CHILD type) {
-        throw new UnsupportedOperationException("not yet implemented");
+        throw new UnsupportedOperationException("Final state of children is unknown at this point");
     }
 
 }
