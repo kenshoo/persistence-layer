@@ -4,8 +4,8 @@ import java.util.List;
 
 public class FinalEntityState implements Entity {
 
-    final CurrentEntityState currentState;
-    final EntityChange<? extends EntityType<?>> change;
+    private final CurrentEntityState currentState;
+    private final EntityChange<? extends EntityType<?>> change;
 
     public FinalEntityState(CurrentEntityState currentState, EntityChange<? extends EntityType<?>> change) {
         this.currentState = currentState;
