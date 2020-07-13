@@ -10,6 +10,10 @@ public interface ChangeContext {
 
     CurrentEntityState getEntity(EntityChange entityChange);
 
+    default FinalEntityState getFinalEntity(EntityChange<? extends EntityType<?>> change) {
+        return new FinalEntityState(getEntity(change), change);
+    }
+
     void addEntity(EntityChange change, CurrentEntityState currentState);
 
     void addValidationError(EntityChange<? extends EntityType<?>> entityChange, ValidationError error);
