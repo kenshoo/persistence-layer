@@ -1,13 +1,9 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.kenshoo.jooq.DataTable;
-import com.kenshoo.jooq.QueryExtension;
-import com.kenshoo.jooq.TempTableHelper;
-import com.kenshoo.jooq.TempTableResource;
+import com.google.common.collect.Maps;
+import com.kenshoo.jooq.*;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
@@ -15,12 +11,17 @@ import com.kenshoo.pl.entity.internal.fetch.*;
 import org.jooq.*;
 import org.jooq.lambda.Seq;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.kenshoo.pl.entity.Feature.FetchMany;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.Validate.notEmpty;
 import static org.jooq.lambda.Seq.seq;
 
@@ -63,8 +64,8 @@ public class EntitiesFetcher {
     }
 
     public <E extends EntityType<E>> List<CurrentEntityState> fetch(final EntityType<E> entityType,
-                                          final PLCondition plCondition,
-                                          final EntityField<?, ?>... fieldsToFetch) {
+                                                                    final PLCondition plCondition,
+                                                                    final EntityField<?, ?>... fieldsToFetch) {
 
         requireNonNull(entityType, "An entity type must be provided");
         requireNonNull(plCondition, "A condition must be provided");
@@ -81,9 +82,9 @@ public class EntitiesFetcher {
     }
 
     public List<CurrentEntityState> fetch(final EntityType<?> entityType,
-                                                                    final Collection<? extends Identifier<?>> keys,
-                                                                    final PLCondition plCondition,
-                                                                    final EntityField<?, ?>... fieldsToFetch) {
+                                          final Collection<? extends Identifier<?>> keys,
+                                          final PLCondition plCondition,
+                                          final EntityField<?, ?>... fieldsToFetch) {
         requireNonNull(entityType, "An entity type must be provided");
         notEmpty(keys, "There must be at least one keys to fetch");
         requireNonNull(plCondition, "A condition must be provided");
@@ -110,8 +111,33 @@ public class EntitiesFetcher {
             final DataTable startingTable = foreignKeysTable.getTable();
 
             return fetchEntities(startingTable, aliasedKey, fieldsToFetch, QueryBuilder::withoutPartitions);
-
         }
+    }
+
+    public <E extends EntityType<E>, PE extends PartialEntity, ID extends Identifier<E>> Map<ID, PE> fetchPartialEntities(E entityType, Collection<ID> ids, final Class<PE> entityIface) {
+        if (!features.isEnabled(FetchMany)) {
+            return oldEntityFetcher.fetchPartialEntities(entityType, ids, entityIface);
+        }
+
+        final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
+        Map<Identifier<E>, CurrentEntityState> entitiesMap = fetchEntitiesByIds(ids, entityMethodsMap.values());
+
+        return seq(ids).filter(entitiesMap::containsKey).collect(toMap(identity(), id -> createInstance(entityIface, entityMethodsMap, entitiesMap.get(id))));
+    }
+
+    public <E extends EntityType<E>, PE extends PartialEntity> List<PE> fetchByCondition(E entityType, final Condition condition, final Class<PE> entityIface) {
+        if (!features.isEnabled(FetchMany)) {
+            return oldEntityFetcher.fetchByCondition(entityType, condition, entityIface);
+        }
+
+        final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
+        final AliasedKey<?> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());
+
+        Collection<CurrentEntityState> entities = fetchEntities(entityType.getPrimaryTable(), aliasedKey, entityMethodsMap.values(), query -> query.withCondition(condition)).values();
+
+        return entities.stream()
+                .map(entity -> createInstance(entityIface, entityMethodsMap, entity))
+                .collect(toList());
     }
 
     private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntities(
@@ -141,14 +167,6 @@ public class EntitiesFetcher {
         });
 
         return entities;
-    }
-
-    public <E extends EntityType<E>, PE extends PartialEntity, ID extends Identifier<E>> Map<ID, PE> fetchPartialEntities(E entityType, Collection<ID> keys, final Class<PE> entityIface) {
-        return oldEntityFetcher.fetchPartialEntities(entityType, keys, entityIface);
-    }
-
-    public <E extends EntityType<E>, PE extends PartialEntity> List<PE> fetchByCondition(E entityType, Condition condition, final Class<PE> entityIface) {
-        return oldEntityFetcher.fetchByCondition(entityType, condition, entityIface);
     }
 
     private <E extends EntityType<E>, SUB extends EntityType<SUB>> void fetchAndPopulateSubEntities(AliasedKey<E> aliasedKey, Map<Identifier<E>, CurrentEntityState> entities, ExecutionPlan.ManyToOnePlan<SUB> plan, QueryBuilder<E> queryBuilder) {
@@ -216,5 +234,10 @@ public class EntitiesFetcher {
 
     private Seq<EntityField<?, ?>> fieldsOf(final Collection<? extends Identifier<?>> ids) {
         return Seq.of(ids.iterator().next().getUniqueKey().getFields());
+    }
+
+    private <E extends EntityType<E>, PE extends PartialEntity> PE createInstance(final Class<PE> entityIface, Map<Method, EntityField<E, ?>> entityMethodsMap, CurrentEntityState currentState) {
+        Class<?>[] interfaces = {entityIface};
+        return (PE) Proxy.newProxyInstance(entityIface.getClassLoader(), interfaces, new PartialEntityInvocationHandler<>(entityMethodsMap, currentState));
     }
 }
