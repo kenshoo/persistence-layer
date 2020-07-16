@@ -52,7 +52,7 @@ public class OldEntityFetcher {
         final AliasedKey<E> aliasedKey = new AliasedKey<>(uniqueKey);
 
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), fieldsToFetch);
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder<E>(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryExtender(query, entityType.getPrimaryTable(), ids)) {
             return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, fieldsToFetch);
         }
     }
@@ -60,9 +60,6 @@ public class OldEntityFetcher {
     public List<CurrentEntityState> fetch(final EntityType<?> entityType,
                                           final PLCondition plCondition,
                                           final EntityField<?, ?>... fieldsToFetch) {
-        requireNonNull(entityType, "An entity type must be provided");
-        requireNonNull(plCondition, "A condition must be provided");
-        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
 
         final Set<EntityField<?, ?>> requestedFieldsToFetch = ImmutableSet.copyOf(fieldsToFetch);
         final Set<? extends EntityField<?, ?>> allFieldsToFetch = Sets.union(requestedFieldsToFetch, plCondition.getFields());
@@ -78,8 +75,6 @@ public class OldEntityFetcher {
                                           final Collection<? extends Identifier<?>> ids,
                                           final PLCondition plCondition,
                                           final EntityField<?, ?>... fieldsToFetch) {
-        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
-        requireNonNull(plCondition, "A condition must be provided");
 
         if (ids.isEmpty()) {
             return Collections.emptyList();
@@ -95,7 +90,7 @@ public class OldEntityFetcher {
         final SelectJoinStep<Record> query = buildFetchQuery(entityType.getPrimaryTable(), aliasedKey.aliasedFields(), allFieldsToFetch);
         final Condition completeJooqCondition = addVirtualPartitionConditions(entityType, plCondition.getJooqCondition());
 
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = new QueryBuilder(dslContext).addIdsCondition(query, entityType.getPrimaryTable(), uniqueKey, ids)) {
+        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryExtender(query, entityType.getPrimaryTable(), (Collection)ids)) {
             return queryExtender.getQuery().where(completeJooqCondition)
                     .fetch(record -> mapRecordToEntity(record, requestedFieldsToFetch));
         }
@@ -196,6 +191,32 @@ public class OldEntityFetcher {
         QueryBuilder.joinSecondaryTables(query, joinedTables, targetOneToOneRelations);
 
         return query;
+    }
+
+    private <E extends EntityType<E>, Q extends SelectJoinStep> QueryExtension<Q> queryExtender(Q query, DataTable primaryTable, Collection<? extends Identifier<E>> ids) {
+        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+        List<FieldAndValues<?>> conditions = new ArrayList<>();
+        for (EntityField<E, ?> field : uniqueKey.getFields()) {
+            addToConditions(field, ids, conditions);
+        }
+        primaryTable.getVirtualPartition().forEach(fieldAndValue -> {
+            Object[] values = new Object[ids.size()];
+            Arrays.fill(values, fieldAndValue.getValue());
+            //noinspection unchecked
+            conditions.add(new FieldAndValues<>((Field<Object>) fieldAndValue.getField(), Arrays.asList(values)));
+        });
+        return SelectQueryExtender.of(dslContext, query, conditions);
+    }
+
+    private <E extends EntityType<E>, T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
+        EntityFieldDbAdapter<T> dbAdapter = field.getDbAdapter();
+        List<Object> fieldValues = new ArrayList<>(identifiers.size());
+        for (Identifier<E> identifier : identifiers) {
+            dbAdapter.getDbValues(identifier.get(field)).sequential().forEach(fieldValues::add);
+        }
+        Optional<TableField<Record, ?>> tableField = dbAdapter.getTableFields().findFirst();
+        //noinspection unchecked
+        conditions.add(new FieldAndValues<>((TableField<Record, Object>) tableField.get(), fieldValues));
     }
 
     private Predicate<EntityField<?, ?>> isOfPrimaryTable() {

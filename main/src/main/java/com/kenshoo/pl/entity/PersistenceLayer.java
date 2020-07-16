@@ -41,7 +41,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     public PersistenceLayer(final PLContext plContext) {
         this.plContext = plContext;
         this.fieldsToFetchBuilder = new FieldsToFetchBuilder<>();
-        this.deletionCommandPopulator = new DeletionCommandPopulator(dslContext());
+        this.deletionCommandPopulator = new DeletionCommandPopulator(plContext);
         this.recursiveAuditRecordGenerator = new RecursiveAuditRecordGenerator();
     }
 

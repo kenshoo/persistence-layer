@@ -1,7 +1,9 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.QueryExtension;
 import com.kenshoo.jooq.TempTableHelper;
@@ -15,8 +17,11 @@ import org.jooq.lambda.Seq;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.kenshoo.pl.entity.Feature.FetchMany;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.Validate.notEmpty;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -57,17 +62,42 @@ public class EntitiesFetcher {
         return fetchEntities(uniqueKey.getEntityType().getPrimaryTable(), aliasedKey, fieldsToFetch, query -> query.whereIdsIn(ids));
     }
 
-    public List<CurrentEntityState> fetch(final EntityType<?> entityType,
+    public <E extends EntityType<E>> List<CurrentEntityState> fetch(final EntityType<E> entityType,
                                           final PLCondition plCondition,
                                           final EntityField<?, ?>... fieldsToFetch) {
-        return oldEntityFetcher.fetch(entityType, plCondition, fieldsToFetch);
+
+        requireNonNull(entityType, "An entity type must be provided");
+        requireNonNull(plCondition, "A condition must be provided");
+        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
+
+        if (!features.isEnabled(FetchMany)) {
+            return oldEntityFetcher.fetch(entityType, plCondition, fieldsToFetch);
+        }
+        final AliasedKey<E> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());
+
+        final List<? extends EntityField<?, ?>> allFieldsToFetch = Seq.concat(Seq.of(fieldsToFetch), seq(plCondition.getFields())).distinct().collect(Collectors.toList());
+
+        return Lists.newArrayList(fetchEntities(entityType.getPrimaryTable(), aliasedKey, allFieldsToFetch, query -> query.withCondition(plCondition.getJooqCondition())).values());
     }
 
     public List<CurrentEntityState> fetch(final EntityType<?> entityType,
-                                          final Collection<? extends Identifier<?>> ids,
-                                          final PLCondition plCondition,
-                                          final EntityField<?, ?>... fieldsToFetch) {
-        return oldEntityFetcher.fetch(entityType, ids, plCondition, fieldsToFetch);
+                                                                    final Collection<? extends Identifier<?>> keys,
+                                                                    final PLCondition plCondition,
+                                                                    final EntityField<?, ?>... fieldsToFetch) {
+        requireNonNull(entityType, "An entity type must be provided");
+        notEmpty(keys, "There must be at least one keys to fetch");
+        requireNonNull(plCondition, "A condition must be provided");
+        notEmpty(fieldsToFetch, "There must be at least one field to fetch");
+
+        if (!features.isEnabled(FetchMany)) {
+            return oldEntityFetcher.fetch(entityType, keys, plCondition, fieldsToFetch);
+        }
+
+        final AliasedKey<?> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());
+
+        final List<? extends EntityField<?, ?>> allFieldsToFetch = Seq.concat(Seq.of(fieldsToFetch), seq(plCondition.getFields()), fieldsOf(keys)).distinct().collect(Collectors.toList());
+
+        return Lists.newArrayList(fetchEntities(entityType.getPrimaryTable(), aliasedKey, allFieldsToFetch, query -> query.whereIdsIn(keys).withCondition(plCondition.getJooqCondition())).values());
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
@@ -79,7 +109,7 @@ public class EntitiesFetcher {
             final AliasedKey<E> aliasedKey = new AliasedKey<>(foreignUniqueKey, foreignKeysTable);
             final DataTable startingTable = foreignKeysTable.getTable();
 
-            return fetchEntities(startingTable, aliasedKey, fieldsToFetch, noMoreConditions());
+            return fetchEntities(startingTable, aliasedKey, fieldsToFetch, QueryBuilder::withoutPartitions);
 
         }
     }
@@ -122,7 +152,7 @@ public class EntitiesFetcher {
     }
 
     private <E extends EntityType<E>, SUB extends EntityType<SUB>> void fetchAndPopulateSubEntities(AliasedKey<E> aliasedKey, Map<Identifier<E>, CurrentEntityState> entities, ExecutionPlan.ManyToOnePlan<SUB> plan, QueryBuilder<E> queryBuilder) {
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.build()) {
+        try (QueryExtension<SelectFinalStep<Record>> queryExtender = queryBuilder.build()) {
             Map<Identifier<E>, List<FieldsValueMap<SUB>>> multiValuesMap = fetchMultiValuesMap(queryExtender.getQuery(), aliasedKey, plan.getFields());
             multiValuesMap.forEach((Identifier<E> id, List<FieldsValueMap<SUB>> multiValues) -> {
                 final SUB subEntityType = entityTypeOf(plan.getFields());
@@ -132,7 +162,7 @@ public class EntitiesFetcher {
     }
 
     private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchMainEntities(AliasedKey<E> aliasedKey, ExecutionPlan.OneToOnePlan oneToOnePlan, QueryBuilder<E> queryBuilder) {
-        try (QueryExtension<SelectJoinStep<Record>> queryExtender = queryBuilder.build()) {
+        try (QueryExtension<SelectFinalStep<Record>> queryExtender = queryBuilder.build()) {
             return fetchEntitiesMap(queryExtender.getQuery(), aliasedKey, oneToOnePlan.getFields());
         }
     }
@@ -184,8 +214,7 @@ public class EntitiesFetcher {
         return (E) seq(fields).findFirst().get().getEntityType();
     }
 
-    private <E extends EntityType<E>> Consumer<QueryBuilder<E>> noMoreConditions() {
-        return __ -> {
-        };
+    private Seq<EntityField<?, ?>> fieldsOf(final Collection<? extends Identifier<?>> ids) {
+        return Seq.of(ids.iterator().next().getUniqueKey().getFields());
     }
 }

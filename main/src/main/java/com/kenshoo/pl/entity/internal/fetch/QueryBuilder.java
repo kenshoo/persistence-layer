@@ -3,26 +3,29 @@ package com.kenshoo.pl.entity.internal.fetch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
-import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.UniqueKey;
 import org.jooq.*;
-import org.jooq.impl.DSL;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static org.jooq.impl.DSL.trueCondition;
 import static org.jooq.lambda.function.Functions.not;
 
+
 public class QueryBuilder<E extends EntityType<E>> {
+
+    private final QueryExtender DONT_EXTEND_WITH_IDS = this::dontExtend;
 
     private DSLContext dslContext;
     private List<SelectField<?>> selectedFields;
     private DataTable startingTable;
-    private List<TreeEdge> paths;
-    private Set<OneToOneTableRelation> oneToOneTableRelations;
-    private Collection<? extends Identifier<E>> ids;
+    private List<TreeEdge> paths = Collections.emptyList();
+    private Set<OneToOneTableRelation> oneToOneTableRelations = Collections.emptySet();
+    private Condition condition = trueCondition();
+    private Partitioner partitioner = this::addPartitionToCondition;
+    private QueryExtender queryExtender = DONT_EXTEND_WITH_IDS;
 
 
     public QueryBuilder(DSLContext dslContext) {
@@ -54,45 +57,33 @@ public class QueryBuilder<E extends EntityType<E>> {
         return this;
     }
 
-    public QueryBuilder<E> whereIdsIn(Collection<? extends Identifier<E>> ids) {
-        this.ids = ids;
+    public QueryBuilder<E> whereIdsIn(Collection<? extends Identifier<? extends EntityType<?>>> ids) {
+        if (queryExtender != DONT_EXTEND_WITH_IDS) {
+            throw new IllegalStateException("We currently support only a single query extension");
+        }
+        this.queryExtender = query -> addIdCondition(query, (Collection)ids);
         return this;
     }
 
-    public QueryExtension<SelectJoinStep<Record>> build() {
+    public QueryBuilder<E> withCondition(Condition condition) {
+        this.condition = condition;
+        return this;
+    }
+
+    public QueryBuilder<E> withoutPartitions() {
+        this.partitioner = NO_PARTITION;
+        return this;
+    }
+
+    public QueryExtension<SelectFinalStep<Record>> build() {
         final SelectJoinStep<Record> query = dslContext.select(selectedFields).from(startingTable);
         final Set<DataTable> joinedTables = Sets.newHashSet(startingTable);
         paths.forEach(edge -> joinTables(query, joinedTables, edge));
-        if (oneToOneTableRelations != null) {
-            joinSecondaryTables(query, joinedTables, oneToOneTableRelations);
-        }
-        if (ids != null) {
-            final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
-            return addIdsCondition(query, startingTable, uniqueKey, ids);
-        }
-        return new QueryExtension<SelectJoinStep<Record>>() {
-            @Override
-            public SelectJoinStep<Record> getQuery() {
-                return query;
-            }
+        joinSecondaryTables(query, joinedTables, oneToOneTableRelations);
+        condition = partitioner.transform(startingTable, condition);
+        query.where(condition);
 
-            @Override
-            public void close() {
-            }
-        };
-    }
-
-    public <Q extends SelectFinalStep> QueryExtension<Q> addIdsCondition(Q query, DataTable primaryTable, UniqueKey<E> uniqueKey, Collection<? extends Identifier<E>> identifiers) {
-        List<FieldAndValues<?>> conditions = new ArrayList<>();
-        for (EntityField<E, ?> field : uniqueKey.getFields()) {
-            addToConditions(field, identifiers, conditions);
-        }
-        primaryTable.getVirtualPartition().forEach(fieldAndValue -> {
-            Object[] values = new Object[identifiers.size()];
-            Arrays.fill(values, fieldAndValue.getValue());
-            conditions.add(new FieldAndValues<>((Field<Object>) fieldAndValue.getField(), Arrays.asList(values)));
-        });
-        return SelectQueryExtender.of(dslContext, query, conditions);
+        return queryExtender.transform(query);
     }
 
     static void joinTables(SelectJoinStep<Record> query, Set<DataTable> alreadyJoinedTables, TreeEdge edgeInThePath) {
@@ -127,7 +118,7 @@ public class QueryBuilder<E extends EntityType<E>> {
         if (foreignKeys.isEmpty()) {
             return null;
         }
-        Condition joinCondition = DSL.trueCondition();
+        Condition joinCondition = trueCondition();
         ForeignKey<Record, Record> foreignKey = foreignKeys.get(0);
         org.jooq.UniqueKey<Record> key = foreignKey.getKey();
         List<TableField<Record, ?>> otherTableFields = key.getFields();
@@ -139,14 +130,11 @@ public class QueryBuilder<E extends EntityType<E>> {
         return joinCondition;
     }
 
-    private <T> void addToConditions(EntityField<E, T> field, Collection<? extends Identifier<E>> identifiers, List<FieldAndValues<?>> conditions) {
-        EntityFieldDbAdapter<T> dbAdapter = field.getDbAdapter();
-        List<Object> fieldValues = new ArrayList<>(identifiers.size());
-        for (Identifier<E> identifier : identifiers) {
-            dbAdapter.getDbValues(identifier.get(field)).sequential().forEach(fieldValues::add);
-        }
-        Optional<TableField<Record, ?>> tableField = dbAdapter.getTableFields().findFirst();
-        conditions.add(new FieldAndValues<>((TableField<Record, Object>) tableField.get(), fieldValues));
+    private Condition addPartitionToCondition(DataTable table, final Condition inputJooqCondition) {
+        return table.getVirtualPartition().stream()
+                .map(fv -> (FieldAndValue<Object>) fv)
+                .map(fieldAndValue -> fieldAndValue.getField().eq(fieldAndValue.getValue()))
+                .reduce(inputJooqCondition, Condition::and);
     }
 
     private static Predicate<OneToOneTableRelation> secondaryTableIn(Set<? extends Table<Record>> joinedTables) {
@@ -160,4 +148,33 @@ public class QueryBuilder<E extends EntityType<E>> {
     private static Condition getJoinCondition(final OneToOneTableRelation relation) {
         return getJoinCondition(relation.getSecondary(), relation.getPrimary());
     }
+
+    private interface Partitioner {
+        Condition transform(DataTable table, Condition condition);
+    }
+
+    private final Partitioner NO_PARTITION = (table, cond) -> cond;
+
+    private interface QueryExtender {
+        QueryExtension<SelectFinalStep<Record>> transform(SelectFinalStep<Record> query);
+    }
+
+    private QueryExtension<SelectFinalStep<Record>> dontExtend(SelectFinalStep<Record> query){
+        return new QueryExtension<SelectFinalStep<Record>>() {
+            @Override
+            public SelectFinalStep<Record> getQuery() {
+                return query;
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+    }
+
+    private <I extends EntityType<I>, ID extends Identifier<I>> QueryExtension<SelectFinalStep<Record>> addIdCondition(SelectFinalStep query, Collection<? extends ID> ids) {
+        return SelectQueryExtender.of(this.dslContext, query, Identifier.groupValuesByFields(ids));
+    }
+
 }
+

@@ -1,9 +1,9 @@
 package com.kenshoo.jooq;
 
 import com.google.common.collect.ImmutableList;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.SelectFinalStep;
+import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.UniqueKey;
+import org.jooq.*;
 import org.jooq.lambda.tuple.Tuple2;
 import org.jooq.lambda.tuple.Tuple3;
 import org.jooq.lambda.tuple.Tuple4;
@@ -11,6 +11,7 @@ import org.jooq.lambda.tuple.Tuple5;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -117,4 +118,6 @@ public class SelectQueryExtender {
     public interface BuilderIn5<Q extends SelectFinalStep, T1, T2, T3, T4, T5> {
         QueryExtension<Q> in(Collection<Tuple5<T1, T2, T3, T4, T5>> values);
     }
+
+
 }

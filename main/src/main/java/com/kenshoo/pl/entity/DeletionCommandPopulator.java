@@ -16,8 +16,8 @@ public class DeletionCommandPopulator {
 
     private final ChildrenIdFetcher childrenIdFetcher;
 
-    public DeletionCommandPopulator(DSLContext jooq) {
-        childrenIdFetcher = new ChildrenIdFetcher(jooq);
+    public DeletionCommandPopulator(PLContext plContext) {
+        childrenIdFetcher = new ChildrenIdFetcher(plContext);
     }
 
     @VisibleForTesting
@@ -136,7 +136,6 @@ public class DeletionCommandPopulator {
         public ChildrenFromDB(Stream<FullIdentifier<PARENT, CHILD>> stream) {
             map = stream.collect(groupingBy(FullIdentifier::getParentId,
                     collectingAndThen(toMap(FullIdentifier::getChildId, FullIdentifier::getKetToParent), ChildrenWithKeyToParent::new)));
-            stream.close();
         }
 
         ChildrenWithKeyToParent<CHILD> of(ChangeEntityCommand<PARENT> parent) {
