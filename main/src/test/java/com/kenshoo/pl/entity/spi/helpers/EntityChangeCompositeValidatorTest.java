@@ -59,7 +59,7 @@ public class EntityChangeCompositeValidatorTest {
     EntityChangeValidator<TestEntity> entityChangeValidator;
 
     @Mock
-    AncestorsValidator<TestEntity> immutableParentFieldsValidator;
+    AncestorsValidator immutableParentFieldsValidator;
 
     @Mock
     RequiredFieldValidator<TestEntity, String> requiredFieldValidator;

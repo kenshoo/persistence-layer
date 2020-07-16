@@ -33,7 +33,7 @@ public class AncestorsValidatorAdapterTest {
     private CurrentEntityState entity;
 
     @Mock
-    private AncestorsValidator<TestEntity> validator;
+    private AncestorsValidator validator;
 
     @InjectMocks
     private AncestorsValidationAdapter<TestEntity> adapter;
@@ -58,16 +58,16 @@ public class AncestorsValidatorAdapterTest {
 
     @Test
     public void test_flow_with_error() {
-        Predicate<Entity> predicate = entity -> true;
+        Predicate<CurrentEntityState> predicate = entity -> true;
         when(validator.ancestorsRestriction()).thenReturn(predicate);
-        when(validator.errorFor(entityChange, entity)).thenReturn(error);
+        when(validator.errorFor(entity)).thenReturn(error);
         ValidationError error = adapter.validate(entityChange, entity);
         assertEquals("Error for mutable condition", this.error, error);
     }
 
     @Test
     public void test_flow_without_error() {
-        Predicate<Entity> predicate = entity -> false;
+        Predicate<CurrentEntityState> predicate = entity -> false;
         when(validator.ancestorsRestriction()).thenReturn(predicate);
         ValidationError error = adapter.validate(entityChange, entity);
         assertNull("No error for mutable condition", error);

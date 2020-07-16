@@ -72,7 +72,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
         register(new RequiredFieldValidationAdapter<>(validator));
     }
 
-    public void register(AncestorsValidator<E> validator) {
+    public void register(AncestorsValidator validator) {
         changesValidators.put(new AnyFieldTrigger<>(), new AncestorsValidationAdapter<>(validator));
     }
 

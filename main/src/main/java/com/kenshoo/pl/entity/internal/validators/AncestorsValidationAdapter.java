@@ -7,9 +7,9 @@ import java.util.stream.Stream;
 
 public class AncestorsValidationAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
 
-    private final AncestorsValidator<E> validator;
+    private final AncestorsValidator validator;
 
-    public AncestorsValidationAdapter(AncestorsValidator<E> validator) {
+    public AncestorsValidationAdapter(AncestorsValidator validator) {
         this.validator = validator;
     }
 
@@ -30,6 +30,6 @@ public class AncestorsValidationAdapter<E extends EntityType<E>> implements Enti
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
-        return validator.ancestorsRestriction().test(currentState) ? validator.errorFor(entityChange, currentState) : null;
+        return validator.ancestorsRestriction().test(currentState) ? validator.errorFor(currentState) : null;
     }
 }

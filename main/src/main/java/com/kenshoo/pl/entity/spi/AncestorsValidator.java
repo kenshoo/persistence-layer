@@ -5,7 +5,7 @@ import com.kenshoo.pl.entity.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public interface AncestorsValidator<E extends EntityType<E>> extends ChangeValidator {
+public interface AncestorsValidator extends ChangeValidator {
 
     /**
      * @return the fields of the ancestor entities whose value is required for the validation
@@ -17,7 +17,7 @@ public interface AncestorsValidator<E extends EntityType<E>> extends ChangeValid
      * the fields it has declared in {@link #ancestorsFields()}.
      * @return Predicate when restricted by ancestors.
      */
-    default Predicate<Entity> ancestorsRestriction() {
+    default Predicate<CurrentEntityState> ancestorsRestriction() {
         return e -> true;
     }
 
@@ -25,10 +25,9 @@ public interface AncestorsValidator<E extends EntityType<E>> extends ChangeValid
      * The implementation can query the <code>entity</code> only for
      * the fields it has declared in {@link #ancestorsFields()}.
      *
-     * @param entityChange entity change
-     * @param currentState existing entity
+     * @param currentState existing entity state
      *
      * @return generate error
      */
-    ValidationError errorFor(EntityChange<E> entityChange, Entity currentState);
+    ValidationError errorFor(CurrentEntityState currentState);
 }
