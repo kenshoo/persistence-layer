@@ -1,10 +1,11 @@
 package com.kenshoo.pl.entity;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,18 +31,13 @@ public class Triptional<T> {
         this(null, state);
     }
 
-    private Triptional(final T value) {
-        this(value,
-             value == null ? NULL : FILLED);
-    }
-
     private Triptional(final T value, final State state) {
         this.value = value;
         this.state = state;
     }
 
     public static <T> Triptional<T> of(final T value) {
-        return new Triptional<>(value);
+        return value == null ? nullInstance() : new Triptional<>(value, FILLED);
     }
 
     @SuppressWarnings("unchecked")
@@ -137,8 +133,16 @@ public class Triptional<T> {
         return state == NULL;
     }
 
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(final Object obj) {
+        return equals(obj, Objects::equals);
+    }
+
+    public boolean equals(final Object obj, final BiFunction<T, T, Boolean> valueEqualityFunction) {
+        requireNonNull(valueEqualityFunction, "A value equality function must be provided");
+
+        // The next line covers the cases of both NULL / both ABSENT (as both are singletons), so further down we only need to check FILLED
         if (this == obj) {
             return true;
         }
@@ -148,10 +152,17 @@ public class Triptional<T> {
         }
 
         final Triptional<?> other = (Triptional<?>) obj;
-        return new EqualsBuilder()
-            .append(state, other.state)
-            .append(value, other.value)
-            .isEquals();
+
+        if (!filledWithSameType(other)) {
+            return false;
+        }
+
+        //noinspection unchecked
+        return valueEqualityFunction.apply(value, ((Triptional<T>)other).value);
+    }
+
+    private boolean filledWithSameType(final Triptional<?> other) {
+        return isFilled() && other.isFilled() && value.getClass() == other.value.getClass();
     }
 
     @Override
