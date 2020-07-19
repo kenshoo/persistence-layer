@@ -16,7 +16,7 @@ import static java.util.Objects.requireNonNull;
 public class Triptional<T> {
 
     enum State {
-        FILLED,
+        NOT_NULL,
         NULL,
         ABSENT
     }
@@ -37,7 +37,7 @@ public class Triptional<T> {
     }
 
     public static <T> Triptional<T> of(final T value) {
-        return value == null ? nullInstance() : new Triptional<>(value, FILLED);
+        return value == null ? nullInstance() : new Triptional<>(value, NOT_NULL);
     }
 
     @SuppressWarnings("unchecked")
@@ -57,23 +57,24 @@ public class Triptional<T> {
         return value;
     }
 
-    public void ifFilled(final Consumer<? super T> consumer) {
-        if (value != null)
+    public void ifNotNull(final Consumer<? super T> consumer) {
+        if (value != null) {
             consumer.accept(value);
+        }
     }
 
     public <U> Triptional<U> map(final Function<? super T, ? extends U> mapper) {
         return map(mapper, () -> null);
     }
 
-    public <U> Triptional<U> map(final Function<? super T, ? extends U> filledMapper,
+    public <U> Triptional<U> map(final Function<? super T, ? extends U> notNullMapper,
                                  final Supplier<? extends U> nullReplacer) {
-        requireNonNull(filledMapper, "filledMapper is required");
+        requireNonNull(notNullMapper, "notNullMapper is required");
         requireNonNull(nullReplacer, "nullReplacer is required");
 
         switch (state) {
-            case FILLED:
-                return of(filledMapper.apply(value));
+            case NOT_NULL:
+                return of(notNullMapper.apply(value));
             case NULL:
                 return of(nullReplacer.get());
             default:
@@ -85,14 +86,14 @@ public class Triptional<T> {
         return flatMap(mapper, Triptional::nullInstance);
     }
 
-    public <U> Triptional<U> flatMap(final Function<? super T, Triptional<U>> filledMapper,
+    public <U> Triptional<U> flatMap(final Function<? super T, Triptional<U>> notNullMapper,
                                      final Supplier<Triptional<U>> nullReplacer) {
-        requireNonNull(filledMapper, "filledMapper is required");
+        requireNonNull(notNullMapper, "notNullMapper is required");
         requireNonNull(nullReplacer, "nullReplacer is required");
 
         switch (state) {
-            case FILLED:
-                return requireNonNull(filledMapper.apply(value));
+            case NOT_NULL:
+                return requireNonNull(notNullMapper.apply(value));
             case NULL:
                 return requireNonNull(nullReplacer.get());
             default:
@@ -108,9 +109,9 @@ public class Triptional<T> {
         return mapToOptional(mapper, () -> null);
     }
 
-    public <U> Optional<U> mapToOptional(final Function<? super T, ? extends U> filledMapper,
+    public <U> Optional<U> mapToOptional(final Function<? super T, ? extends U> notNullMapper,
                                          final Supplier<? extends U> nullReplacer) {
-        return map(filledMapper, nullReplacer).asOptional();
+        return map(notNullMapper, nullReplacer).asOptional();
     }
 
     public boolean isPresent() {
@@ -121,12 +122,8 @@ public class Triptional<T> {
         return state == ABSENT;
     }
 
-    public boolean isFilled() {
-        return state == FILLED;
-    }
-
-    public boolean isNotFilled() {
-        return !isFilled();
+    public boolean isNotNull() {
+        return state == NOT_NULL;
     }
 
     public boolean isNull() {
@@ -171,7 +168,7 @@ public class Triptional<T> {
     @Override
     public String toString() {
         switch (state) {
-            case FILLED:
+            case NOT_NULL:
                 return String.format("Triptional[%s]", value);
             case NULL:
                 return "Triptional.null";

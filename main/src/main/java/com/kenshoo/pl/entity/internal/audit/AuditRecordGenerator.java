@@ -88,8 +88,8 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                  final FinalEntityState finalState,
                                                  final EntityField<E, ?> field) {
         final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
-        currentState.safeGet(field).ifFilled(fieldRecordBuilder::oldValue);
-        finalState.safeGet(field).ifFilled(fieldRecordBuilder::newValue);
+        currentState.safeGet(field).ifNotNull(fieldRecordBuilder::oldValue);
+        finalState.safeGet(field).ifNotNull(fieldRecordBuilder::newValue);
         return fieldRecordBuilder.build();
     }
 
@@ -103,7 +103,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final FinalEntityState finalState) {
         return auditedFieldSet.getAllMandatoryFields()
                               .map(field -> ImmutablePair.of(field, finalState.safeGet(field)))
-                              .filter(pair -> pair.getValue().isFilled())
+                              .filter(pair -> pair.getValue().isNotNull())
                               .map(pair -> new EntityFieldValue(pair.getKey(), pair.getValue().get()))
                               .collect(toList());
     }

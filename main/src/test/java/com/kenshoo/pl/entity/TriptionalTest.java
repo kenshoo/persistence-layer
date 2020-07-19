@@ -30,13 +30,8 @@ public class TriptionalTest {
     }
 
     @Test
-    public void of_NotNull_ShouldBeFilled() {
-        assertThat(Triptional.of(3).isFilled(), is(true));
-    }
-
-    @Test
-    public void of_NotNull_ShouldNotBeNotFilled() {
-        assertThat(Triptional.of(3).isNotFilled(), is(false));
+    public void of_NotNull_ShouldBeNotNull() {
+        assertThat(Triptional.of(3).isNotNull(), is(true));
     }
 
     @Test
@@ -60,13 +55,8 @@ public class TriptionalTest {
     }
 
     @Test
-    public void of_Null_ShouldNotBeFilled() {
-        assertThat(Triptional.of(null).isFilled(), is(false));
-    }
-
-    @Test
-    public void of_Null_ShouldBeNotFilled() {
-        assertThat(Triptional.of(null).isNotFilled(), is(true));
+    public void of_Null_ShouldNotBeNotNull() {
+        assertThat(Triptional.of(null).isNotNull(), is(false));
     }
 
     @Test
@@ -90,13 +80,8 @@ public class TriptionalTest {
     }
 
     @Test
-    public void nullInstance_ShouldNotBeFilled() {
-        assertThat(Triptional.nullInstance().isFilled(), is(false));
-    }
-
-    @Test
-    public void nullInstance_ShouldBeNotFilled() {
-        assertThat(Triptional.nullInstance().isNotFilled(), is(true));
+    public void nullInstance_ShouldNotBeNotNull() {
+        assertThat(Triptional.nullInstance().isNotNull(), is(false));
     }
 
     @Test
@@ -120,13 +105,8 @@ public class TriptionalTest {
     }
 
     @Test
-    public void absent_ShouldNotBeFilled() {
-        assertThat(Triptional.absent().isFilled(), is(false));
-    }
-
-    @Test
-    public void absent_ShouldBeNotFilled() {
-        assertThat(Triptional.absent().isNotFilled(), is(true));
+    public void absent_ShouldNotBeNotNull() {
+        assertThat(Triptional.absent().isNotNull(), is(false));
     }
 
     @Test
@@ -140,28 +120,28 @@ public class TriptionalTest {
     }
 
     @Test
-    public void ifFilled_WhenFilled_ShouldCallConsumer() {
+    public void ifNotNull_WhenNotNull_ShouldCallConsumer() {
         final List<Integer> outputList = new ArrayList<>();
-        Triptional.of(3).ifFilled(outputList::add);
+        Triptional.of(3).ifNotNull(outputList::add);
         assertThat(outputList, is(singletonList(3)));
     }
 
     @Test
-    public void ifFilled_WhenNull_ShouldNotCallConsumer() {
+    public void ifNotNull_WhenNull_ShouldNotCallConsumer() {
         final List<Object> outputList = new ArrayList<>();
-        Triptional.nullInstance().ifFilled(outputList::add);
+        Triptional.nullInstance().ifNotNull(outputList::add);
         assertThat(outputList, is(empty()));
     }
 
     @Test
-    public void ifFilled_WhenAbsent_ShouldNotCallConsumer() {
+    public void ifNotNull_WhenAbsent_ShouldNotCallConsumer() {
         final List<Object> outputList = new ArrayList<>();
-        Triptional.absent().ifFilled(outputList::add);
+        Triptional.absent().ifNotNull(outputList::add);
         assertThat(outputList, is(empty()));
     }
 
     @Test
-    public void mapOneArg_WhenFilled_ShouldReturnInstanceWithMappedValue() {
+    public void mapOneArg_WhenNotNull_ShouldReturnInstanceWithMappedValue() {
         final Triptional<String> mappedObj = Triptional.of(2).map(String::valueOf);
         assertThat(mappedObj.get(), is("2"));
     }
@@ -179,7 +159,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void mapTwoArgs_WhenFilled_ShouldReturnInstanceWithValueFromMapper() {
+    public void mapTwoArgs_WhenNotNull_ShouldReturnInstanceWithValueFromMapper() {
         final Triptional<String> mappedObj = Triptional.of(2)
                                                        .map(String::valueOf, () -> "blabla");
         assertThat(mappedObj.get(), is("2"));
@@ -201,19 +181,19 @@ public class TriptionalTest {
     }
 
     @Test
-    public void flatMapOneArg_WhenFilled_AndMappedToFilled_ShouldReturnFilledWithNewValue() {
+    public void flatMapOneArg_WhenNotNull_AndMappedToNotNull_ShouldReturnPresentWithMappedValue() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(this::toTriptionalString);
         assertThat(mappedObj.get(), is("2"));
     }
 
     @Test
-    public void flatMapOneArg_WhenFilled_AndMappedToNullInstance_ShouldReturnNullInstance() {
+    public void flatMapOneArg_WhenNotNull_AndMappedToNullInstance_ShouldReturnNullInstance() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.nullInstance());
         assertThat(mappedObj.isNull(), is(true));
     }
 
     @Test
-    public void flatMapOneArg_WhenFilled_AndMappedToAbsent_ShouldReturnAbsent() {
+    public void flatMapOneArg_WhenNotNull_AndMappedToAbsent_ShouldReturnAbsent() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.absent());
         assertThat(mappedObj.isAbsent(), is(true));
     }
@@ -231,28 +211,28 @@ public class TriptionalTest {
     }
 
     @Test
-    public void flatMapTwoArgs_WhenFilled_AndMappedToFilled_ShouldReturnFilledWithMappedValue() {
+    public void flatMapTwoArgs_WhenNotNull_AndMappedToNotNull_ShouldReturnPresentWithMappedValue() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(this::toTriptionalString,
                                                                       () -> Triptional.of("blabla"));
         assertThat(mappedObj.get(), is("2"));
     }
 
     @Test
-    public void flatMapTwoArgs_WhenFilled_AndMappedToNullInstance_ShouldReturnNullInstance() {
+    public void flatMapTwoArgs_WhenNotNull_AndMappedToNullInstance_ShouldReturnNullInstance() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.nullInstance(),
                                                                       () -> Triptional.of("blabla"));
         assertThat(mappedObj.isNull(), is(true));
     }
 
     @Test
-    public void flatMapTwoArgs_WhenFilled_AndMappedToAbsent_ShouldReturnAbsent() {
+    public void flatMapTwoArgs_WhenNotNull_AndMappedToAbsent_ShouldReturnAbsent() {
         final Triptional<String> mappedObj = Triptional.of(2).flatMap(any -> Triptional.absent(),
                                                                       () -> Triptional.of("blabla"));
         assertThat(mappedObj.isAbsent(), is(true));
     }
 
     @Test
-    public void flatMapTwoArgs_WhenNull_AndReplacerReturnsFilled_ShouldReturnReplacingInstance() {
+    public void flatMapTwoArgs_WhenNull_AndReplacerReturnsNotNull_ShouldReturnReplacingInstance() {
         final Triptional<String> mappedObj = Triptional.nullInstance().flatMap(this::toTriptionalString,
                                                                                () -> Triptional.of("blabla"));
         assertThat(mappedObj.get(), is("blabla"));
@@ -280,7 +260,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void asOptional_WhenFilled_ShouldReturnPresentWithSameValue() {
+    public void asOptional_WhenNotNull_ShouldReturnPresentWithSameValue() {
         assertThat(Triptional.of(2).asOptional(), isPresentAndIs(2));
     }
 
@@ -295,7 +275,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void mapToOptionalOneArg_WhenFilled_ShouldReturnPresentWithMappedValue() {
+    public void mapToOptionalOneArg_WhenNotNull_ShouldReturnPresentWithMappedValue() {
         assertThat(Triptional.of(2).mapToOptional(String::valueOf), isPresentAndIs("2"));
     }
 
@@ -310,7 +290,7 @@ public class TriptionalTest {
     }
 
     @Test
-    public void mapToOptionalTwoArgs_WhenFilled_ShouldReturnPresentWithMappedValue() {
+    public void mapToOptionalTwoArgs_WhenNotNull_ShouldReturnPresentWithMappedValue() {
         assertThat(Triptional.of(2)
                              .mapToOptional(String::valueOf, () -> "bla"),
                    isPresentAndIs("2"));
@@ -331,22 +311,22 @@ public class TriptionalTest {
     }
 
     @Test
-    public void equalsOneArg_WhenBothFilledWithSameValue_ShouldReturnTrue() {
+    public void equalsOneArg_WhenBothNotNullWithSameValue_ShouldReturnTrue() {
         assertThat(Triptional.of(2).equals(Triptional.of(1 + 1)), is(true));
     }
 
     @Test
-    public void equalsOneArg_WhenBothFilledWithDifferentValues_ShouldReturnFalse() {
+    public void equalsOneArg_WhenBothNotNullWithDifferentValues_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.of(3)), is(false));
     }
 
     @Test
-    public void equalsOneArg_WhenOneFilledAndOneNull_ShouldReturnFalse() {
+    public void equalsOneArg_WhenOneNotNullAndOneNull_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.nullInstance()), is(false));
     }
 
     @Test
-    public void equalsOneArg_WhenOneFilledAndOneAbsent_ShouldReturnFalse() {
+    public void equalsOneArg_WhenOneNotNullAndOneAbsent_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.absent()), is(false));
     }
 
@@ -373,20 +353,20 @@ public class TriptionalTest {
     }
 
     @Test
-    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
+    public void equalsTwoArgs_WhenOneNotNullAndOneNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
         assertThat(Triptional.of(EMPTY).equals(Triptional.nullInstance(),
                                                (s1, s2) -> defaultIfEmpty(s1, "bla").equals(defaultIfEmpty(s2, "bla"))),
                    is(true));
     }
 
     @Test
-    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
+    public void equalsTwoArgs_WhenOneNotNullAndOneNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.nullInstance(), Objects::equals),
                    is(false));
     }
 
     @Test
-    public void equalsTwoArgs_WhenOneFilledAndOneAbsent_ShouldReturnFalse() {
+    public void equalsTwoArgs_WhenOneNotNullAndOneAbsent_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.absent(), Objects::equals),
                    is(false));
     }
