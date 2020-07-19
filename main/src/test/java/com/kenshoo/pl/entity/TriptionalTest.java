@@ -5,10 +5,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
 import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -328,35 +331,77 @@ public class TriptionalTest {
     }
 
     @Test
-    public void equals_WhenBothFilledWithSameValue_ShouldReturnTrue() {
+    public void equalsOneArg_WhenBothFilledWithSameValue_ShouldReturnTrue() {
         assertThat(Triptional.of(2).equals(Triptional.of(1 + 1)), is(true));
     }
 
     @Test
-    public void equals_WhenBothFilledWithDifferentValues_ShouldReturnFalse() {
+    public void equalsOneArg_WhenBothFilledWithDifferentValues_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.of(3)), is(false));
     }
 
     @Test
-    public void equals_WhenOneFilledAndOneNull_ShouldReturnFalse() {
+    public void equalsOneArg_WhenOneFilledAndOneNull_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.nullInstance()), is(false));
     }
 
     @Test
-    public void equals_WhenOneFilledAndOneAbsent_ShouldReturnFalse() {
+    public void equalsOneArg_WhenOneFilledAndOneAbsent_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.absent()), is(false));
     }
 
     @Test
-    public void equals_WhenBothNull_ShouldReturnTrue() {
+    public void equalsOneArg_WhenBothNull_ShouldReturnTrue() {
         assertThat(Triptional.nullInstance().equals(Triptional.of(null)), is(true));
     }
 
     @Test
-    public void equals_WhenOneNullAndOneAbsent_ShouldReturnFalse() {
+    public void equalsOneArg_WhenOneNullAndOneAbsent_ShouldReturnFalse() {
         assertThat(Triptional.nullInstance().equals(Triptional.absent()), is(false));
     }
 
+    @Test
+    public void equalsTwoArgs_ForTwoDoublesCloseEnough_ShouldReturnTrue() {
+        assertThat(Triptional.of(2.001).equals(Triptional.of(2.0), (x, y) -> Math.abs(x - y) < 0.01),
+                   is(true));
+    }
+
+    @Test
+    public void equalsTwoArgs_ForTwoDoublesNotCloseEnough_ShouldReturnFalse() {
+        assertThat(Triptional.of(2.1).equals(Triptional.of(2.0), (x, y) -> Math.abs(x - y) < 0.01),
+                   is(false));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
+        assertThat(Triptional.of(EMPTY).equals(Triptional.nullInstance(),
+                                               (s1, s2) -> defaultIfEmpty(s1, "bla").equals(defaultIfEmpty(s2, "bla"))),
+                   is(true));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equals(Triptional.nullInstance(), Objects::equals),
+                   is(false));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenOneFilledAndOneAbsent_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equals(Triptional.absent(), Objects::equals),
+                   is(false));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenBothNull_ShouldReturnTrue() {
+        assertThat(Triptional.nullInstance().equals(Triptional.of(null), Objects::equals),
+                   is(true));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenOneNullAndOneAbsent_ShouldReturnFalse() {
+        assertThat(Triptional.nullInstance().equals(Triptional.absent(), Objects::equals),
+                   is(false));
+    }
     private Triptional<String> toTriptionalString(final Object val) {
         return Triptional.of(String.valueOf(val));
     }

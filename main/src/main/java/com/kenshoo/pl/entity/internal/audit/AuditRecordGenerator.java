@@ -10,7 +10,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
@@ -62,14 +61,11 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final String entityId = extractEntityId(entityChange, currentState);
 
-        final Collection<? extends EntityFieldValue> mandatoryFieldValues = generateMandatoryFieldValues(currentState);
+        final FinalEntityState finalState = new FinalEntityState(currentState, entityChange);
 
-        final Set<? extends EntityField<E, ?>> candidateOnChangeFields = auditedFieldSet.intersectWith(entityChange.getChangedFields())
-                                                                                        .getOnChangeFields();
+        final Collection<? extends EntityFieldValue> mandatoryFieldValues = generateMandatoryFieldValues(finalState);
 
-        final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(entityChange,
-                                                                                            currentState,
-                                                                                            candidateOnChangeFields);
+        final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateChangedFieldRecords(currentState, finalState);
 
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
@@ -81,21 +77,19 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
             .build();
     }
 
-    private Collection<? extends FieldAuditRecord<E>> generateFieldRecords(final EntityChange<E> entityChange,
-                                                                           final CurrentEntityState currentState,
-                                                                           final Collection<? extends EntityField<E, ?>> candidateOnChangeFields) {
-        return candidateOnChangeFields.stream()
-                                      .filter(field -> fieldWasChanged(entityChange, currentState, field))
-                                      .map(field -> buildFieldRecord(entityChange, currentState, field))
-                                      .collect(toList());
+    private Collection<? extends FieldAuditRecord<E>> generateChangedFieldRecords(final CurrentEntityState currentState, final FinalEntityState finalState) {
+        return auditedFieldSet.getAllSelfFields()
+                              .filter(field -> fieldWasChanged(currentState, finalState, field))
+                              .map(field -> buildFieldRecord(currentState, finalState, field))
+                              .collect(toList());
     }
 
-    private FieldAuditRecord<E> buildFieldRecord(final EntityChange<E> entityChange,
-                                                 final CurrentEntityState currentState,
+    private FieldAuditRecord<E> buildFieldRecord(final CurrentEntityState currentState,
+                                                 final FinalEntityState finalState,
                                                  final EntityField<E, ?> field) {
         final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
-         currentState.safeGet(field).ifFilled(fieldRecordBuilder::oldValue);
-        entityChange.safeGet(field).ifFilled(fieldRecordBuilder::newValue);
+        currentState.safeGet(field).ifFilled(fieldRecordBuilder::oldValue);
+        finalState.safeGet(field).ifFilled(fieldRecordBuilder::newValue);
         return fieldRecordBuilder.build();
     }
 
@@ -106,30 +100,24 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
                                                                                  "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
     }
 
-    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final CurrentEntityState currentState) {
-        return auditedFieldSet.getExternalMandatoryFields().stream()
-                              .map(field -> ImmutablePair.of(field,  currentState.safeGet(field)))
+    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final FinalEntityState finalState) {
+        return auditedFieldSet.getAllMandatoryFields()
+                              .map(field -> ImmutablePair.of(field, finalState.safeGet(field)))
                               .filter(pair -> pair.getValue().isFilled())
                               .map(pair -> new EntityFieldValue(pair.getKey(), pair.getValue().get()))
                               .collect(toList());
     }
 
-    private boolean fieldWasChanged(final EntityChange<E> entityChange,
-                                    final CurrentEntityState currentState,
-                                    final EntityField<E, ?> field) {
-        return !fieldStayedTheSame(entityChange, currentState, field);
+    private <T> boolean fieldWasChanged(final CurrentEntityState currentState,
+                                        final FinalEntityState finalState,
+                                        final EntityField<E, T> field) {
+        return !fieldStayedTheSame(currentState, finalState, field);
     }
 
-    private boolean fieldStayedTheSame(final EntityChange<E> entityChange,
-                                       final CurrentEntityState currentState,
-                                       final EntityField<E, ?> field) {
-        return  currentState.containsField(field) && fieldValuesEqual(entityChange, currentState, field);
-    }
-
-    private <T> boolean fieldValuesEqual(final EntityChange<E> entityChange,
-                                         final CurrentEntityState currentState,
-                                         final EntityField<E, T> field) {
-        return field.valuesEqual(entityChange.get(field),  currentState.get(field));
+    private <T> boolean fieldStayedTheSame(final CurrentEntityState currentState,
+                                           final FinalEntityState finalState,
+                                           final EntityField<E, T> field) {
+        return currentState.safeGet(field).equals(finalState.safeGet(field), field::valuesEqual);
     }
 
     @VisibleForTesting

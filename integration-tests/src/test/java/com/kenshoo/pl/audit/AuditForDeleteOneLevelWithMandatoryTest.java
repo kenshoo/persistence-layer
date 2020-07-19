@@ -5,11 +5,14 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.DeleteAuditedWithAncestorMandatoryCommand;
+import com.kenshoo.pl.audit.commands.DeleteAuditedWithSelfMandatoryCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
+import com.kenshoo.pl.entity.internal.audit.MainTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithSelfMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -30,7 +33,6 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     private static final long ID = 1L;
     private static final String NAME = "name";
     private static final String DESC = "desc";
-    private static final String DESC2 = "desc2";
 
     private static final long ANCESTOR_ID = 11L;
     private static final String ANCESTOR_NAME = "ancestorName";
@@ -39,14 +41,17 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
 
-    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainWithAncestorTable.INSTANCE,
+    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainTable.INSTANCE,
+                                                                       MainWithAncestorTable.INSTANCE,
                                                                        AncestorTable.INSTANCE);
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedWithAncestorMandatoryType> auditedWithAncestorMandatoryConfig;
+    private ChangeFlowConfig<AuditedWithAncestorMandatoryType> auditedWithAncestorConfig;
+    private ChangeFlowConfig<AuditedWithSelfMandatoryType> auditedWithSelfConfig;
 
-    private PersistenceLayer<AuditedWithAncestorMandatoryType> auditedWithAncestorMandatoryPL;
+    private PersistenceLayer<AuditedWithAncestorMandatoryType> auditedWithAncestorPL;
+    private PersistenceLayer<AuditedWithSelfMandatoryType> auditedWithSelfPL;
 
     @Before
     public void setUp() {
@@ -57,18 +62,25 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedWithAncestorMandatoryConfig = flowConfig(AuditedWithAncestorMandatoryType.INSTANCE);
+        auditedWithAncestorConfig = flowConfig(AuditedWithAncestorMandatoryType.INSTANCE);
+        auditedWithSelfConfig = flowConfig(AuditedWithSelfMandatoryType.INSTANCE);
 
-        auditedWithAncestorMandatoryPL = persistenceLayer();
+        auditedWithAncestorPL = persistenceLayer();
+        auditedWithSelfPL = persistenceLayer();
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
+
+        dslContext.insertInto(MainTable.INSTANCE)
+                  .set(MainTable.INSTANCE.id, ID)
+                  .set(MainTable.INSTANCE.name, NAME)
+                  .set(MainTable.INSTANCE.desc, DESC)
+                  .execute();
 
         dslContext.insertInto(MainWithAncestorTable.INSTANCE)
                   .set(MainWithAncestorTable.INSTANCE.id, ID)
                   .set(MainWithAncestorTable.INSTANCE.ancestor_id, ANCESTOR_ID)
                   .set(MainWithAncestorTable.INSTANCE.name, NAME)
                   .set(MainWithAncestorTable.INSTANCE.desc, DESC)
-                  .set(MainWithAncestorTable.INSTANCE.desc2, DESC2)
                   .execute();
 
         dslContext.insertInto(AncestorTable.INSTANCE)
@@ -84,9 +96,9 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     }
 
     @Test
-    public void oneEntity_WithEntityLevelMandatoryFields_ShouldCreateRecordWithMandatoryFields() {
-        auditedWithAncestorMandatoryPL.delete(singletonList(deleteCommand()),
-                                              auditedWithAncestorMandatoryConfig);
+    public void entityWithExternalMandatory_ShouldCreateRecordWithExternalMandatory() {
+        auditedWithAncestorPL.delete(singletonList(deleteWithAncestorCommand()),
+                                     auditedWithAncestorConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -97,8 +109,25 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
                                       hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC)));
     }
 
-    private DeleteAuditedWithAncestorMandatoryCommand deleteCommand() {
+    @Test
+    public void entityWithSelfMandatory_ShouldCreateRecordWithSelfMandatory() {
+        auditedWithSelfPL.delete(singletonList(deleteWithSelfCommand()),
+                                 auditedWithSelfConfig);
+
+        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+
+        assertThat("Incorrect number of published records",
+                   auditRecords, hasSize(1));
+        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, hasMandatoryFieldValue(AuditedWithSelfMandatoryType.NAME, NAME));
+    }
+
+    private DeleteAuditedWithAncestorMandatoryCommand deleteWithAncestorCommand() {
         return new DeleteAuditedWithAncestorMandatoryCommand(ID);
+    }
+
+    private DeleteAuditedWithSelfMandatoryCommand deleteWithSelfCommand() {
+        return new DeleteAuditedWithSelfMandatoryCommand(ID);
     }
 
     private <E extends EntityType<E>> ChangeFlowConfig<E> flowConfig(final E entityType) {

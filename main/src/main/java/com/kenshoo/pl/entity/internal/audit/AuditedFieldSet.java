@@ -48,8 +48,14 @@ public class AuditedFieldSet<E extends EntityType<E>> {
         return selfMandatoryFields;
     }
 
-    public Set<? extends EntityField<E, ?>> getOnChangeFields() {
-        return onChangeFields;
+    public Stream<? extends EntityField<?, ?>> getAllMandatoryFields() {
+        return Stream.of(externalMandatoryFields, selfMandatoryFields)
+                     .flatMap(Set::stream);
+    }
+
+    public Stream<? extends EntityField<E, ?>> getAllSelfFields() {
+        return Stream.of(selfMandatoryFields, onChangeFields)
+                     .flatMap(Set::stream);
     }
 
     public boolean hasSelfFields() {
@@ -69,14 +75,6 @@ public class AuditedFieldSet<E extends EntityType<E>> {
             .withExternalMandatoryFields(externalMandatoryFields)
             .withSelfMandatoryFields(selfMandatoryFields)
             .withOnChangeFields(Seq.seq(fields).filter(onChangeFields::contains))
-            .build();
-    }
-
-    public AuditedFieldSet<E> setExternalMandatoryFields(final Iterable<? extends EntityField<?, ?>> externalMandatoryFields) {
-        return builder(idField)
-            .withExternalMandatoryFields(externalMandatoryFields)
-            .withSelfMandatoryFields(selfMandatoryFields)
-            .withOnChangeFields(onChangeFields)
             .build();
     }
 
