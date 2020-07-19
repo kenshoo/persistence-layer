@@ -65,7 +65,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
         final Collection<? extends EntityFieldValue> mandatoryFieldValues = generateMandatoryFieldValues(finalState);
 
-        final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateFieldRecords(currentState, finalState);
+        final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateChangedFieldRecords(currentState, finalState);
 
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
@@ -77,7 +77,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
             .build();
     }
 
-    private Collection<? extends FieldAuditRecord<E>> generateFieldRecords(final CurrentEntityState currentState, final FinalEntityState finalState) {
+    private Collection<? extends FieldAuditRecord<E>> generateChangedFieldRecords(final CurrentEntityState currentState, final FinalEntityState finalState) {
         return auditedFieldSet.getAllSelfFields()
                               .filter(field -> fieldWasChanged(currentState, finalState, field))
                               .map(field -> buildFieldRecord(currentState, finalState, field))

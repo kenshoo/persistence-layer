@@ -142,7 +142,6 @@ public class Triptional<T> {
     public boolean equals(final Object obj, final BiFunction<T, T, Boolean> valueEqualityFunction) {
         requireNonNull(valueEqualityFunction, "A value equality function must be provided");
 
-        // The next line covers the cases of both NULL / both ABSENT (as both are singletons), so further down we only need to check FILLED
         if (this == obj) {
             return true;
         }
@@ -151,18 +150,14 @@ public class Triptional<T> {
             return false;
         }
 
-        final Triptional<?> other = (Triptional<?>) obj;
+        //noinspection unchecked
+        final Triptional<T> other = (Triptional<T>) obj;
 
-        if (!filledWithSameType(other)) {
+        if (!(isPresent() && other.isPresent())) {
             return false;
         }
 
-        //noinspection unchecked
-        return valueEqualityFunction.apply(value, ((Triptional<T>)other).value);
-    }
-
-    private boolean filledWithSameType(final Triptional<?> other) {
-        return isFilled() && other.isFilled() && value.getClass() == other.value.getClass();
+        return valueEqualityFunction.apply(value, other.value);
     }
 
     @Override

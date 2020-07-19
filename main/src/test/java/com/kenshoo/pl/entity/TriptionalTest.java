@@ -10,6 +10,8 @@ import java.util.Objects;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
 import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -371,7 +373,14 @@ public class TriptionalTest {
     }
 
     @Test
-    public void equalsTwoArgs_WhenOneFilledAndOneNull_ShouldReturnFalse() {
+    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
+        assertThat(Triptional.of(EMPTY).equals(Triptional.nullInstance(),
+                                               (s1, s2) -> defaultIfEmpty(s1, "bla").equals(defaultIfEmpty(s2, "bla"))),
+                   is(true));
+    }
+
+    @Test
+    public void equalsTwoArgs_WhenOneFilledAndOneNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
         assertThat(Triptional.of(2).equals(Triptional.nullInstance(), Objects::equals),
                    is(false));
     }
