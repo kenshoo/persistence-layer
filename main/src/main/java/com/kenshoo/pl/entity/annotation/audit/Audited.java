@@ -9,7 +9,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CHANGE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 
 /**
  * Whenever an entity or field has this annotation, it indicates that any changes to the entity / field
@@ -22,9 +22,10 @@ public @interface Audited {
 
     /**
      * @return the rule by which to trigger auditing for the annotated entity type or field.<br>
-     * This attribute is valid for <b>field-level annotations only</b>, and will be ignored if appearing on entities (for the entity-level, ON_CHANGE is implied always).
+     * This attribute is valid for <b>field-level annotations only</b>, and will be ignored if appearing on entities.<br>
+     * For the entity-level,{@link AuditTrigger#ON_CREATE_OR_UPDATE} is implied always.
      */
-    AuditTrigger trigger() default ON_CHANGE;
+    AuditTrigger trigger() default ON_CREATE_OR_UPDATE;
 
     /**
      * <b>NOTE</b>: This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
