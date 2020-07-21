@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.spi;
 
 import com.kenshoo.pl.entity.*;
 
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public interface AncestorsValidator extends ChangeValidator {
@@ -15,19 +14,11 @@ public interface AncestorsValidator extends ChangeValidator {
     /**
      * Called by the framework to check if the change is restricted by ancestors. The implementation can query the <code>entity</code> only for
      * the fields it has declared in {@link #ancestorsFields()}.
-     * @return Predicate when restricted by ancestors.
+     *
+     * @param ancestorsFieldsState ancestor's fields
+     *
+     * @return a validation error if any, <code>null</code> if none
      */
-    default Predicate<CurrentEntityState> ancestorsRestriction() {
-        return e -> true;
-    }
+    ValidationError validate(CurrentEntityState ancestorsFieldsState);
 
-    /**
-     * The implementation can query the <code>entity</code> only for
-     * the fields it has declared in {@link #ancestorsFields()}.
-     *
-     * @param currentState existing entity state
-     *
-     * @return generate error
-     */
-    ValidationError errorFor(CurrentEntityState currentState);
 }

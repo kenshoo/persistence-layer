@@ -59,7 +59,7 @@ public class EntityChangeCompositeValidatorTest {
     EntityChangeValidator<TestEntity> entityChangeValidator;
 
     @Mock
-    AncestorsValidator immutableParentFieldsValidator;
+    AncestorsValidator ancestorsValidator;
 
     @Mock
     RequiredFieldValidator<TestEntity, String> requiredFieldValidator;
@@ -172,10 +172,16 @@ public class EntityChangeCompositeValidatorTest {
     }
 
     @Test
-    public void registerImmutableParentFieldsValidatorTest() {
-        when(immutableParentFieldsValidator.ancestorsRestriction()).thenReturn(entity -> false);
-        validator.register(immutableParentFieldsValidator);
+    public void registerAncestorsValidatorForCreateTest() {
+        validator.register(ancestorsValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(immutableParentFieldsValidator).ancestorsRestriction();
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+    }
+
+    @Test
+    public void registerAncestorsValidatorForUpdateTest() {
+        validator.register(ancestorsValidator);
+        validator.validate(entityChanges, ChangeOperation.UPDATE, changeContext);
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
     }
 }
