@@ -4,14 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.validators.EntityChangeValidator;
-import com.kenshoo.pl.entity.spi.FieldComplexValidator;
-import com.kenshoo.pl.entity.spi.FieldValidator;
-import com.kenshoo.pl.entity.spi.FieldsCombinationValidator;
-import com.kenshoo.pl.entity.spi.ImmutableFieldValidator;
-import com.kenshoo.pl.entity.spi.PrototypeFieldComplexValidator;
-import com.kenshoo.pl.entity.spi.PrototypeFieldValidator;
-import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
-import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
+import com.kenshoo.pl.entity.spi.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,6 +57,9 @@ public class EntityChangeCompositeValidatorTest {
 
     @Mock
     EntityChangeValidator<TestEntity> entityChangeValidator;
+
+    @Mock
+    AncestorsValidator ancestorsValidator;
 
     @Mock
     RequiredFieldValidator<TestEntity, String> requiredFieldValidator;
@@ -166,7 +162,7 @@ public class EntityChangeCompositeValidatorTest {
     }
 
     @Test
-    public void getRequiredFields_new_api() {
+    public void getRequiredFields() {
         when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
         when(requiredFieldValidator.fetchFields()).thenReturn(Stream.of(TestEntity.ID));
         validator.register(requiredFieldValidator);
@@ -175,5 +171,17 @@ public class EntityChangeCompositeValidatorTest {
         assertThat(fields, containsInAnyOrder(TestEntity.ID));
     }
 
+    @Test
+    public void registerAncestorsValidatorForCreateTest() {
+        validator.register(ancestorsValidator);
+        validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+    }
 
+    @Test
+    public void registerAncestorsValidatorForUpdateTest() {
+        validator.register(ancestorsValidator);
+        validator.validate(entityChanges, ChangeOperation.UPDATE, changeContext);
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+    }
 }
