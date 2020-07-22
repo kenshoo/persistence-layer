@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CHANGE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.isAnnotatedWith;
 import static java.util.Objects.requireNonNull;
@@ -47,7 +47,7 @@ public class AuditedFieldsResolver {
         final AuditedFieldSet<E> fieldSet = AuditedFieldSet.builder(idField)
                                                            .withExternalMandatoryFields(seq(externalMandatoryFields))
                                                            .withSelfMandatoryFields(filterFieldsByTrigger(fieldTriggers, ALWAYS))
-                                                           .withOnChangeFields(filterFieldsByTrigger(fieldTriggers, ON_CHANGE))
+                                                           .withOnChangeFields(filterFieldsByTrigger(fieldTriggers, ON_CREATE_OR_UPDATE))
                                                            .build();
 
         if (entityLevelAudited || fieldSet.hasSelfFields()) {
@@ -69,7 +69,7 @@ public class AuditedFieldsResolver {
 
     private <E extends EntityType<E>> Optional<AuditedFieldTrigger<E>> resolveFieldTrigger(final EntityField<E, ?> field,
                                                                                            final boolean entityLevelAudited) {
-        final Optional<AuditTrigger> optionalEntityTrigger = entityLevelAudited ? Optional.of(ON_CHANGE) : Optional.empty();
+        final Optional<AuditTrigger> optionalEntityTrigger = entityLevelAudited ? Optional.of(ON_CREATE_OR_UPDATE) : Optional.empty();
         return Stream.of(extractFieldTrigger(field),
                          optionalEntityTrigger)
                      .filter(Optional::isPresent)
