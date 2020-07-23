@@ -20,7 +20,8 @@ import static java.util.stream.Collectors.toSet;
 
 public class EntityChangeCompositeValidator<E extends EntityType<E>> implements ChangesValidator<E> {
 
-    private final AnyFieldTrigger<E> ANY_FIELD_TRIGGER = new AnyFieldTrigger<>();
+    private final ValidationTrigger<E> ANY_FIELD_TRIGGER = entityField -> true;
+
     private final Multimap<ValidationTrigger<E>, EntityChangeValidator<E>> changesValidators = HashMultimap.create();
 
     public void register(E entityType, ChangeValidator validator) {
