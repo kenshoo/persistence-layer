@@ -38,6 +38,9 @@ public class AuditRecordGeneratorForDeleteTest {
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
+    @Mock
+    private AuditedFieldsToFetchResolver fieldsToFetchResolver;
+
     @Test
     public void generate_WithIdOnly_ShouldGenerateBasicData() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
@@ -198,6 +201,6 @@ public class AuditRecordGeneratorForDeleteTest {
     }
 
     private AuditRecordGenerator<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor);
+        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
     }
 }
