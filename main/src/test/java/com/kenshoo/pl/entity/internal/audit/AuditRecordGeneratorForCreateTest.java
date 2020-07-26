@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.allOf;
@@ -72,7 +73,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -96,7 +97,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -110,7 +111,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_ShouldGenerateMandatoryFieldValuesAndCreatedFieldRecords() {
+    public void generate_WithInternalMandatoryOnly_ShouldGenerateMandatoryFieldValuesAndCreatedFieldRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, NAME)
             .with(AuditedType.DESC, DESC);
@@ -119,7 +120,7 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -136,7 +137,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithOnChangeOnly_ShouldGenerateCreatedFieldRecords() {
+    public void generate_WithOnCreateOrUpdateOnly_ShouldGenerateCreatedFieldRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, NAME)
             .with(AuditedType.DESC, DESC);
@@ -145,7 +146,31 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(allOf(hasCreatedFieldRecord(AuditedType.NAME, NAME),
+                                      hasCreatedFieldRecord(AuditedType.DESC, DESC))));
+    }
+
+    @Test
+    public void generate_WithOnUpdateOnly_ShouldGenerateCreatedFieldRecords() {
+        final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
+            .with(AuditedType.NAME, NAME)
+            .with(AuditedType.DESC, DESC);
+
+        final CurrentEntityState currentState = CurrentEntityState.EMPTY;
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE, ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -181,7 +206,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithExternalAndSelfMandatoryOnly_ShouldGenerateMandatoryFieldValuesForBothTypesAndCreatedRecordsForSelf() {
+    public void generate_WithExternalAndInternalMandatoryOnly_ShouldGenerateMandatoryFieldValuesForBothTypesAndCreatedRecordsForInternal() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, NAME)
             .with(AuditedType.DESC, DESC);
@@ -191,8 +216,8 @@ public class AuditRecordGeneratorForCreateTest {
         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID)
-                                                                            .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                                                                            .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                                                                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                                                                            .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                                                                             .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -211,7 +236,7 @@ public class AuditRecordGeneratorForCreateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryAndOnChangeOnly_ShouldGenerateMandatoryFieldValuesForMandatoryAndCreatedRecordsForAll() {
+    public void generate_WithInternalMandatoryAndOnCreateOrUpdateOnly_ShouldGenerateMandatoryFieldValuesForMandatoryAndCreatedRecordsForAll() {
         final AuditedCommand cmd = new AuditedCommand(ID, CREATE)
             .with(AuditedType.NAME, NAME)
             .with(AuditedType.DESC, DESC)
@@ -220,8 +245,8 @@ public class AuditRecordGeneratorForCreateTest {
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID)
-                                                                            .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
-                                                                            .withOnChangeFields(AuditedType.DESC2)
+                                                                            .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
+                                                                            .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC2)
                                                                             .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -247,7 +272,7 @@ public class AuditRecordGeneratorForCreateTest {
         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID)
-                                                                            .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                                                                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                                                                             .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -278,9 +303,10 @@ public class AuditRecordGeneratorForCreateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
-                           .withSelfMandatoryFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
-                           .withOnChangeFields(AuditedType.DESC2)
+                           .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                           .withInternalFields(ALWAYS, AuditedType.NAME)
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC)
+                           .withInternalFields(ON_UPDATE, AuditedType.DESC2)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -296,7 +322,6 @@ public class AuditRecordGeneratorForCreateTest {
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
                                       hasMandatoryFieldValue(AuditedType.NAME, NAME),
-                                      hasMandatoryFieldValue(AuditedType.DESC, DESC),
                                       hasCreatedFieldRecord(AuditedType.NAME, NAME),
                                       hasCreatedFieldRecord(AuditedType.DESC, DESC),
                                       hasCreatedFieldRecord(AuditedType.DESC2, DESC2),

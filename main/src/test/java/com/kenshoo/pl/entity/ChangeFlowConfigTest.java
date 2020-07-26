@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldSet;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
@@ -16,6 +15,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
 
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -176,7 +176,8 @@ public class ChangeFlowConfigTest {
     public void should_create_audit_record_generator_with_field_set_if_audited_fields_defined() {
 
         final AuditedFieldSet<TestEntity> auditedFieldSet = AuditedFieldSet.builder(TestEntity.ID)
-                                                                           .withOnChangeFields(ImmutableSet.of(TestEntity.FIELD_1, TestEntity.FIELD_2))
+                                                                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                                            .build();
         doReturn(Optional.of(auditedFieldSet)).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
 

@@ -18,9 +18,9 @@ import java.util.Optional;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -52,7 +52,7 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.ID, ID);
+        currentState.set(AuditedType.ID, ID);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
@@ -70,13 +70,13 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.ID, ID);
-         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        currentState.set(AuditedType.ID, ID);
+        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -89,7 +89,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_AllIntersect_AllChanged_ShouldCreateMandatoryFieldValuesAndFieldRecordsForAll() {
+    public void generate_WithInternalMandatoryOnly_AllIntersect_AllChanged_ShouldCreateMandatoryFieldValuesAndFieldRecordsForAll() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC);
@@ -101,7 +101,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -118,7 +118,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_AllIntersect_SomeChanged_ShouldCreateFieldRecordsForChangedOnly() {
+    public void generate_WithInternalMandatoryOnly_AllIntersect_SomeChanged_ShouldCreateFieldRecordsForChangedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, OLD_DESC);
@@ -130,7 +130,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -145,7 +145,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_AllIntersect_NoneChanged_ShouldReturnEmpty() {
+    public void generate_WithInternalMandatoryOnly_AllIntersect_NoneChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, OLD_NAME)
             .with(AuditedType.DESC, OLD_DESC);
@@ -157,7 +157,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -170,7 +170,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_SomeIntersect_AllChanged_ShouldCreateFieldRecordsForIntersectionOnly() {
+    public void generate_WithInternalMandatoryOnly_SomeIntersect_AllChanged_ShouldCreateFieldRecordsForIntersectionOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC);
@@ -182,7 +182,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME)
+                           .withInternalFields(ALWAYS, AuditedType.NAME)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -197,7 +197,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_SomeIntersect_SomeChanged_ShouldCreateFieldRecordsForBothChangedAndIntersectedOnly() {
+    public void generate_WithInternalMandatoryOnly_SomeIntersect_SomeChanged_ShouldCreateFieldRecordsForBothChangedAndIntersectedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, OLD_DESC)
@@ -210,7 +210,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -226,7 +226,7 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_NoneIntersect_SomeChanged_ShouldReturnEmpty() {
+    public void generate_WithInternalMandatoryOnly_NoneIntersect_SomeChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.DESC, NEW_DESC)
             .with(AuditedType.DESC2, NEW_DESC2);
@@ -239,7 +239,7 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME)
+                           .withInternalFields(ALWAYS, AuditedType.NAME)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -252,18 +252,18 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_AllIntersect_AllChanged_ShouldGenerateBasicDataAndFieldRecordsForAll() {
+    public void generate_WithOnCreateOrUpdate_AllIntersect_AllChanged_ShouldGenerateBasicDataAndFieldRecordsForAll() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -281,22 +281,21 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_AllIntersect_SomeChanged_ShouldGenerateFieldRecordsForChanged() {
+    public void generate_WithOnCreateOrUpdate_AllIntersect_SomeChanged_ShouldGenerateFieldRecordsForChanged() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC)
             .with(AuditedType.DESC2, OLD_DESC2);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
-         currentState.set(AuditedType.DESC2, OLD_DESC2);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC,
-                                                               AuditedType.DESC2))
+                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -312,22 +311,21 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_AllIntersect_NoneChanged_ShouldReturnEmpty() {
+    public void generate_WithOnCreateOrUpdate_AllIntersect_NoneChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, OLD_NAME)
             .with(AuditedType.DESC, OLD_DESC)
             .with(AuditedType.DESC2, OLD_DESC2);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
-         currentState.set(AuditedType.DESC2, OLD_DESC2);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC,
-                                                               AuditedType.DESC2))
+                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -340,21 +338,20 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_SomeIntersect_AllChanged_ShouldGenerateRecordsForIntersectedOnly() {
+    public void generate_WithOnCreateOrUpdate_SomeIntersect_AllChanged_ShouldGenerateRecordsForIntersectedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC)
             .with(AuditedType.DESC2, NEW_DESC2);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
-         currentState.set(AuditedType.DESC2, OLD_DESC2);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -370,21 +367,20 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_SomeIntersect_SomeChanged_ShouldGenerateRecordsForIntersectedAndChangedOnly() {
+    public void generate_WithOnCreateOrUpdate_SomeIntersect_SomeChanged_ShouldGenerateRecordsForIntersectedAndChangedOnly() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, OLD_DESC)
             .with(AuditedType.DESC2, OLD_DESC2);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
-         currentState.set(AuditedType.DESC2, OLD_DESC2);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -400,21 +396,20 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_SomeIntersect_NoneChanged_ShouldReturnEmpty() {
+    public void generate_WithOnCreateOrUpdate_SomeIntersect_NoneChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, OLD_NAME)
             .with(AuditedType.DESC, OLD_DESC)
             .with(AuditedType.DESC2, OLD_DESC2);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
-         currentState.set(AuditedType.DESC2, OLD_DESC2);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -427,14 +422,205 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_NoneIntersect_AllChanged_ShouldReturnEmpty() {
+    public void generate_WithOnCreateOrUpdate_NoneIntersect_AllChanged_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord, isEmpty());
+    }
+
+    @Test
+    public void generate_WithOnUpdate_AllIntersect_AllChanged_ShouldGenerateBasicDataAndFieldRecordsForAll() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, NEW_NAME)
+            .with(AuditedType.DESC, NEW_DESC);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
+                                      hasEntityId(STRING_ID),
+                                      hasOperator(UPDATE),
+                                      hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
+                                      hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC))));
+    }
+
+    @Test
+    public void generate_WithOnUpdate_AllIntersect_SomeChanged_ShouldGenerateFieldRecordsForChanged() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, NEW_NAME)
+            .with(AuditedType.DESC, NEW_DESC)
+            .with(AuditedType.DESC2, OLD_DESC2);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE,
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(allOf(hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
+                                      hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC),
+                                      not(hasFieldRecordFor(AuditedType.DESC2)))));
+    }
+
+    @Test
+    public void generate_WithOnUpdate_AllIntersect_NoneChanged_ShouldReturnEmpty() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, OLD_NAME)
+            .with(AuditedType.DESC, OLD_DESC)
+            .with(AuditedType.DESC2, OLD_DESC2);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE,
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord, isEmpty());
+    }
+
+    @Test
+    public void generate_WithOnUpdate_SomeIntersect_AllChanged_ShouldGenerateRecordsForIntersectedOnly() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, NEW_NAME)
+            .with(AuditedType.DESC, NEW_DESC)
+            .with(AuditedType.DESC2, NEW_DESC2);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(allOf(hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
+                                      hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC),
+                                      not(hasFieldRecordFor(AuditedType.DESC2)))));
+    }
+
+    @Test
+    public void generate_WithOnUpdate_SomeIntersect_SomeChanged_ShouldGenerateRecordsForIntersectedAndChangedOnly() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, NEW_NAME)
+            .with(AuditedType.DESC, OLD_DESC)
+            .with(AuditedType.DESC2, OLD_DESC2);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                   isPresentAnd(allOf(hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
+                                      not(hasFieldRecordFor(AuditedType.DESC)),
+                                      not(hasFieldRecordFor(AuditedType.DESC2)))));
+    }
+
+    @Test
+    public void generate_WithOnUpdate_SomeIntersect_NoneChanged_ShouldReturnEmpty() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, OLD_NAME)
+            .with(AuditedType.DESC, OLD_DESC)
+            .with(AuditedType.DESC2, OLD_DESC2);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.DESC2, OLD_DESC2);
+
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            AuditedFieldSet.builder(AuditedType.ID)
+                           .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                           .build();
+        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+
+        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+
+        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+            auditRecordGenerator.generate(cmd, currentState, emptyList());
+
+        assertThat(actualOptionalAuditRecord, isEmpty());
+    }
+
+    @Test
+    public void generate_WithOnUpdate_NoneIntersect_AllChanged_ShouldReturnEmpty() {
+        final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
+            .with(AuditedType.NAME, NEW_NAME)
+            .with(AuditedType.DESC, NEW_DESC);
+
+        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
@@ -453,11 +639,11 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.NAME, NEW_NAME);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, null);
+        currentState.set(AuditedType.NAME, null);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(singleton(AuditedType.NAME))
+                           .withInternalFields(ON_UPDATE, AuditedType.NAME)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -476,11 +662,11 @@ public class AuditRecordGeneratorForUpdateTest {
             .with(AuditedType.NAME, null);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.NAME, OLD_NAME);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(singleton(AuditedType.NAME))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -494,21 +680,20 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     @Test
-    public void generate_WithOnChange_AndChildRecords_ShouldGenerateFieldRecordsAndChildRecords() {
+    public void generate_WithOnCreateOrUpdate_AndChildRecords_ShouldGenerateFieldRecordsAndChildRecords() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE)
             .with(AuditedType.NAME, NEW_NAME)
             .with(AuditedType.DESC, NEW_DESC);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.NAME, OLD_NAME);
-         currentState.set(AuditedType.DESC, OLD_DESC);
+        currentState.set(AuditedType.NAME, OLD_NAME);
+        currentState.set(AuditedType.DESC, OLD_DESC);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -533,7 +718,7 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.ID, ID);
+        currentState.set(AuditedType.ID, ID);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -558,13 +743,13 @@ public class AuditRecordGeneratorForUpdateTest {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-         currentState.set(AuditedType.ID, ID);
-         currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-         currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
+        currentState.set(AuditedType.ID, ID);
+        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
+        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID)
-                                                                            .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                                                                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                                                                             .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -597,9 +782,10 @@ public class AuditRecordGeneratorForUpdateTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .withSelfMandatoryFields(AuditedType.NAME)
-                           .withOnChangeFields(AuditedType.DESC, AuditedType.DESC2)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME)
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC)
+                           .withInternalFields(ON_UPDATE, AuditedType.DESC2)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 

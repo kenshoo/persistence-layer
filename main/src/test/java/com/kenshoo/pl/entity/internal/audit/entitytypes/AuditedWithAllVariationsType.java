@@ -13,24 +13,26 @@ import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorAudi
 
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_UPDATE;
 
 @Audited(extensions = AncestorAuditExtensions.class)
-public class AuditedWithSelfAndAncestorMandatoryType extends AbstractEntityType<AuditedWithSelfAndAncestorMandatoryType> {
+public class AuditedWithAllVariationsType extends AbstractEntityType<AuditedWithAllVariationsType> {
 
-    public static final AuditedWithSelfAndAncestorMandatoryType INSTANCE = new AuditedWithSelfAndAncestorMandatoryType();
+    public static final AuditedWithAllVariationsType INSTANCE = new AuditedWithAllVariationsType();
 
     @Id
-    public static final EntityField<AuditedWithSelfAndAncestorMandatoryType, Long> ID = INSTANCE.field(MainWithAncestorTable.INSTANCE.id);
+    public static final EntityField<AuditedWithAllVariationsType, Long> ID = INSTANCE.field(MainWithAncestorTable.INSTANCE.id);
     @NotAudited
     @Required(RELATION)
-    public static final EntityField<AuditedWithSelfAndAncestorMandatoryType, Long> ANCESTOR_ID = INSTANCE.field(MainWithAncestorTable.INSTANCE.ancestor_id);
+    public static final EntityField<AuditedWithAllVariationsType, Long> ANCESTOR_ID = INSTANCE.field(MainWithAncestorTable.INSTANCE.ancestor_id);
     @Audited(trigger = ALWAYS)
-    public static final EntityField<AuditedWithSelfAndAncestorMandatoryType, String> NAME = INSTANCE.field(MainWithAncestorTable.INSTANCE.name);
-    public static final EntityField<AuditedWithSelfAndAncestorMandatoryType, String> DESC = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc);
-    public static final EntityField<AuditedWithSelfAndAncestorMandatoryType, String> DESC2 = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc2);
+    public static final EntityField<AuditedWithAllVariationsType, String> NAME = INSTANCE.field(MainWithAncestorTable.INSTANCE.name);
+    public static final EntityField<AuditedWithAllVariationsType, String> DESC = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc);
+    @Audited(trigger = ON_UPDATE)
+    public static final EntityField<AuditedWithAllVariationsType, String> DESC2 = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc2);
 
-    private AuditedWithSelfAndAncestorMandatoryType() {
-        super("AuditedWithSelfAndAncestor");
+    private AuditedWithAllVariationsType() {
+        super("AuditedWithAllVariations");
     }
 
     @Override

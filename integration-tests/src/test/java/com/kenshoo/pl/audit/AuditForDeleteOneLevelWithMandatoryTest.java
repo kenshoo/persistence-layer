@@ -5,14 +5,14 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.DeleteAuditedWithAncestorMandatoryCommand;
-import com.kenshoo.pl.audit.commands.DeleteAuditedWithSelfMandatoryCommand;
+import com.kenshoo.pl.audit.commands.DeleteAuditedWithInternalMandatoryCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithSelfMandatoryType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithInternalMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -48,10 +48,10 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
     private ChangeFlowConfig<AuditedWithAncestorMandatoryType> auditedWithAncestorConfig;
-    private ChangeFlowConfig<AuditedWithSelfMandatoryType> auditedWithSelfConfig;
+    private ChangeFlowConfig<AuditedWithInternalMandatoryType> auditedWithInternalConfig;
 
     private PersistenceLayer<AuditedWithAncestorMandatoryType> auditedWithAncestorPL;
-    private PersistenceLayer<AuditedWithSelfMandatoryType> auditedWithSelfPL;
+    private PersistenceLayer<AuditedWithInternalMandatoryType> auditedWithInternalPL;
 
     @Before
     public void setUp() {
@@ -63,10 +63,10 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
             .build();
 
         auditedWithAncestorConfig = flowConfig(AuditedWithAncestorMandatoryType.INSTANCE);
-        auditedWithSelfConfig = flowConfig(AuditedWithSelfMandatoryType.INSTANCE);
+        auditedWithInternalConfig = flowConfig(AuditedWithInternalMandatoryType.INSTANCE);
 
         auditedWithAncestorPL = persistenceLayer();
-        auditedWithSelfPL = persistenceLayer();
+        auditedWithInternalPL = persistenceLayer();
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
@@ -110,24 +110,24 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     }
 
     @Test
-    public void entityWithSelfMandatory_ShouldCreateRecordWithSelfMandatory() {
-        auditedWithSelfPL.delete(singletonList(deleteWithSelfCommand()),
-                                 auditedWithSelfConfig);
+    public void entityWithInternalMandatory_ShouldCreateRecordWithInternalMandatory() {
+        auditedWithInternalPL.delete(singletonList(deleteWithInternalCommand()),
+                                 auditedWithInternalConfig);
 
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, hasMandatoryFieldValue(AuditedWithSelfMandatoryType.NAME, NAME));
+        assertThat(auditRecord, hasMandatoryFieldValue(AuditedWithInternalMandatoryType.NAME, NAME));
     }
 
     private DeleteAuditedWithAncestorMandatoryCommand deleteWithAncestorCommand() {
         return new DeleteAuditedWithAncestorMandatoryCommand(ID);
     }
 
-    private DeleteAuditedWithSelfMandatoryCommand deleteWithSelfCommand() {
-        return new DeleteAuditedWithSelfMandatoryCommand(ID);
+    private DeleteAuditedWithInternalMandatoryCommand deleteWithInternalCommand() {
+        return new DeleteAuditedWithInternalMandatoryCommand(ID);
     }
 
     private <E extends EntityType<E>> ChangeFlowConfig<E> flowConfig(final E entityType) {

@@ -7,16 +7,18 @@ import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.annotation.audit.NotAudited;
 import com.kenshoo.pl.entity.audit.AuditTrigger;
 
-import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.isAnnotatedWith;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
@@ -40,31 +42,32 @@ public class AuditedFieldsResolver {
     private <E extends EntityType<E>> Optional<AuditedFieldSet<E>> resolve(final E entityType, final EntityField<E, ? extends Number> idField) {
         final boolean entityLevelAudited = entityType.getClass().isAnnotationPresent(Audited.class);
 
-        final Stream<? extends EntityField<?, ?>> externalMandatoryFields = externalMandatoryFieldsExtractor.extract(entityType);
+        final Stream<? extends EntityField<?, ?>> externalFields = externalMandatoryFieldsExtractor.extract(entityType);
 
-        final Collection<AuditedFieldTrigger<E>> fieldTriggers = resolveFieldTriggers(entityType, idField, entityLevelAudited);
+        final Map<AuditTrigger, List<EntityField<E, ?>>> internalFields = resolveInternalFieldsByTriggers(entityType, idField, entityLevelAudited);
 
         final AuditedFieldSet<E> fieldSet = AuditedFieldSet.builder(idField)
-                                                           .withExternalMandatoryFields(seq(externalMandatoryFields))
-                                                           .withSelfMandatoryFields(filterFieldsByTrigger(fieldTriggers, ALWAYS))
-                                                           .withOnChangeFields(filterFieldsByTrigger(fieldTriggers, ON_CREATE_OR_UPDATE))
+                                                           .withExternalFields(seq(externalFields))
+                                                           .withInternalFields(internalFields)
                                                            .build();
 
-        if (entityLevelAudited || fieldSet.hasSelfFields()) {
+        if (entityLevelAudited || fieldSet.hasInternalFields()) {
             return Optional.of(fieldSet);
         }
         return empty();
     }
 
-    private <E extends EntityType<E>> Collection<AuditedFieldTrigger<E>> resolveFieldTriggers(final E entityType, EntityField<E, ? extends Number> idField,
-                                                                                              final boolean entityLevelAudited) {
+    private <E extends EntityType<E>> Map<AuditTrigger, List<EntityField<E, ?>>> resolveInternalFieldsByTriggers(final E entityType,
+                                                                                                                 final EntityField<E, ? extends Number> idField,
+                                                                                                                 final boolean entityLevelAudited) {
         return entityType.getFields()
                          .filter(field -> !idField.equals(field))
                          .filter(field -> !isAnnotatedWith(field.getEntityType(), NotAudited.class, field))
                          .map(field -> resolveFieldTrigger(field, entityLevelAudited))
                          .filter(Optional::isPresent)
                          .map(Optional::get)
-                         .collect(toList());
+                         .collect(Collectors.groupingBy(AuditedFieldTrigger::getTrigger,
+                                                        mapping(AuditedFieldTrigger::getField, toList())));
     }
 
     private <E extends EntityType<E>> Optional<AuditedFieldTrigger<E>> resolveFieldTrigger(final EntityField<E, ?> field,
@@ -81,12 +84,5 @@ public class AuditedFieldsResolver {
     private <E extends EntityType<E>> Optional<AuditTrigger> extractFieldTrigger(final EntityField<E, ?> field) {
         return Optional.ofNullable(getFieldAnnotation(field.getEntityType(), field, Audited.class))
                        .map(Audited::trigger);
-    }
-
-    private <E extends EntityType<E>> Iterable<? extends EntityField<E, ?>> filterFieldsByTrigger(final Collection<AuditedFieldTrigger<E>> fieldTriggers,
-                                                                                                  final AuditTrigger trigger) {
-        return seq(fieldTriggers.stream()
-                                .filter(fieldTrigger -> fieldTrigger.getTrigger().equals(trigger))
-                                .map(AuditedFieldTrigger::getField));
     }
 }

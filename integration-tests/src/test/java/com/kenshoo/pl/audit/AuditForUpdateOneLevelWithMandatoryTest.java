@@ -5,14 +5,14 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.UpdateAuditedWithAncestorMandatoryCommand;
-import com.kenshoo.pl.audit.commands.UpdateAuditedWithSelfMandatoryCommand;
+import com.kenshoo.pl.audit.commands.UpdateAuditedWithInternalMandatoryCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithSelfMandatoryType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithInternalMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -46,8 +46,8 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
     private static final EntityField<AuditedWithAncestorMandatoryType, String> AUD_WITH_ANC_NAME_FIELD = AuditedWithAncestorMandatoryType.NAME;
     private static final EntityField<AuditedWithAncestorMandatoryType, String> AUD_WITH_ANC_DESC_FIELD = AuditedWithAncestorMandatoryType.DESC;
 
-    private static final EntityField<AuditedWithSelfMandatoryType, String> AUD_WITH_SELF_NAME_FIELD = AuditedWithSelfMandatoryType.NAME;
-    private static final EntityField<AuditedWithSelfMandatoryType, String> AUD_WITH_SELF_DESC_FIELD = AuditedWithSelfMandatoryType.DESC;
+    private static final EntityField<AuditedWithInternalMandatoryType, String> AUD_WITH_INTERNAL_NAME_FIELD = AuditedWithInternalMandatoryType.NAME;
+    private static final EntityField<AuditedWithInternalMandatoryType, String> AUD_WITH_INTERNAL_DESC_FIELD = AuditedWithInternalMandatoryType.DESC;
 
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
@@ -60,10 +60,10 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
     private ChangeFlowConfig<AuditedWithAncestorMandatoryType> auditedWithAncestorConfig;
-    private ChangeFlowConfig<AuditedWithSelfMandatoryType> auditedWithSelfConfig;
+    private ChangeFlowConfig<AuditedWithInternalMandatoryType> auditedWithInternalConfig;
 
     private PersistenceLayer<AuditedWithAncestorMandatoryType> auditedWithAncestorPL;
-    private PersistenceLayer<AuditedWithSelfMandatoryType> auditedWithSelfPL;
+    private PersistenceLayer<AuditedWithInternalMandatoryType> auditedWithSelfPL;
 
 
     @Before
@@ -76,7 +76,7 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
             .build();
 
         auditedWithAncestorConfig = flowConfig(AuditedWithAncestorMandatoryType.INSTANCE);
-        auditedWithSelfConfig = flowConfig(AuditedWithSelfMandatoryType.INSTANCE);
+        auditedWithInternalConfig = flowConfig(AuditedWithInternalMandatoryType.INSTANCE);
 
         auditedWithAncestorPL = persistenceLayer();
         auditedWithSelfPL = persistenceLayer();
@@ -138,33 +138,33 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
     }
 
     @Test
-    public void entityWithSelfMandatory_AndOnlyMandatoryInCmd_AndChanged_ShouldCreateSelfMandatory_AndFieldRecordsForSame() {
+    public void entityWithInternalMandatory_AndOnlyMandatoryInCmd_AndChanged_ShouldCreateInternalMandatory_AndFieldRecordsForSame() {
         auditedWithSelfPL.update(singletonList(updateAuditedWithSelfCommand()
-                                                   .with(AUD_WITH_SELF_NAME_FIELD, NEW_NAME)),
-                                 auditedWithSelfConfig);
+                                                   .with(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME)),
+                                 auditedWithInternalConfig);
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithSelfMandatoryType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_SELF_NAME_FIELD, NEW_NAME),
-                                      hasChangedFieldRecord(AUD_WITH_SELF_NAME_FIELD, NAME, NEW_NAME)));
+        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME),
+                                      hasChangedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME, NEW_NAME)));
     }
 
     @Test
-    public void entityWithSelfMandatory_AndMandatoryAndOthersInCmd_AndChanged_ShouldCreateSelfMandatory_AndFieldRecordsForAll() {
+    public void entityWithInternalMandatory_AndMandatoryAndOthersInCmd_AndChanged_ShouldCreateInternalMandatory_AndFieldRecordsForAll() {
         auditedWithSelfPL.update(singletonList(updateAuditedWithSelfCommand()
-                                                   .with(AUD_WITH_SELF_NAME_FIELD, NEW_NAME)
-                                                   .with(AUD_WITH_SELF_DESC_FIELD, NEW_DESC)),
-                                 auditedWithSelfConfig);
+                                                   .with(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME)
+                                                   .with(AUD_WITH_INTERNAL_DESC_FIELD, NEW_DESC)),
+                                 auditedWithInternalConfig);
         final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithSelfMandatoryType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_SELF_NAME_FIELD, NEW_NAME),
-                                      hasChangedFieldRecord(AUD_WITH_SELF_NAME_FIELD, NAME, NEW_NAME),
-                                      hasChangedFieldRecord(AUD_WITH_SELF_DESC_FIELD, DESC, NEW_DESC)));
+        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME),
+                                      hasChangedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME, NEW_NAME),
+                                      hasChangedFieldRecord(AUD_WITH_INTERNAL_DESC_FIELD, DESC, NEW_DESC)));
     }
 
     private <E extends EntityType<E>> ChangeFlowConfig<E> flowConfig(final E entityType) {
@@ -179,8 +179,8 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
         return new UpdateAuditedWithAncestorMandatoryCommand(ID);
     }
 
-    private UpdateAuditedWithSelfMandatoryCommand updateAuditedWithSelfCommand() {
-        return new UpdateAuditedWithSelfMandatoryCommand(ID);
+    private UpdateAuditedWithInternalMandatoryCommand updateAuditedWithSelfCommand() {
+        return new UpdateAuditedWithInternalMandatoryCommand(ID);
     }
 
     @SuppressWarnings("unchecked")

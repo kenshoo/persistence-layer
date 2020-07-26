@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -31,8 +32,7 @@ public class AuditRecordGeneratorRequiredFieldsTest {
     public void requiredFields_ShouldReturnResultOfResolver() {
         final AuditedFieldSet<AuditedType> initialFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC2))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC2)
                            .build();
 
         final Set<? extends EntityField<AuditedType, ?>> intersectionFields = ImmutableSet.of(AuditedType.ID,
