@@ -44,6 +44,9 @@ public class AuditRecordGeneratorForUpdateTest {
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
+    @Mock
+    private AuditedFieldsToFetchResolver fieldsToFetchResolver;
+
     @Test
     public void generate_WithIdOnly_ShouldReturnEmpty() {
         final AuditedCommand cmd = new AuditedCommand(ID, UPDATE);
@@ -624,6 +627,6 @@ public class AuditRecordGeneratorForUpdateTest {
     }
 
     private AuditRecordGenerator<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor);
+        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
     }
 }

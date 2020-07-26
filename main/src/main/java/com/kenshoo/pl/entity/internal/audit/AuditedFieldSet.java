@@ -6,7 +6,6 @@ import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jooq.lambda.Seq;
 
 import java.util.Set;
 import java.util.stream.Stream;
@@ -53,6 +52,10 @@ public class AuditedFieldSet<E extends EntityType<E>> {
                      .flatMap(Set::stream);
     }
 
+    public Set<? extends EntityField<E, ?>> getOnChangeFields() {
+        return onChangeFields;
+    }
+
     public Stream<? extends EntityField<E, ?>> getAllSelfFields() {
         return Stream.of(selfMandatoryFields, onChangeFields)
                      .flatMap(Set::stream);
@@ -68,14 +71,6 @@ public class AuditedFieldSet<E extends EntityType<E>> {
                          selfMandatoryFields,
                          onChangeFields)
                      .flatMap(Set::stream);
-    }
-
-    public AuditedFieldSet<E> intersectWith(final Stream<? extends EntityField<E, ?>> fields) {
-        return builder(idField)
-            .withExternalMandatoryFields(externalMandatoryFields)
-            .withSelfMandatoryFields(selfMandatoryFields)
-            .withOnChangeFields(Seq.seq(fields).filter(onChangeFields::contains))
-            .build();
     }
 
     public static <E extends EntityType<E>> Builder<E> builder(final EntityField<E, ? extends Number> idField) {

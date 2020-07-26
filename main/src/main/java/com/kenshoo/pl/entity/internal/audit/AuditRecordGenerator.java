@@ -20,24 +20,27 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
 
     private final AuditedFieldSet<E> auditedFieldSet;
     private final EntityIdExtractor entityIdExtractor;
+    private final AuditedFieldsToFetchResolver auditedFieldsToFetchResolver;
 
     public AuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet) {
         this(auditedFieldSet,
-             EntityIdExtractor.INSTANCE);
+             EntityIdExtractor.INSTANCE,
+             AuditedFieldsToFetchResolver.INSTANCE);
     }
 
     @VisibleForTesting
     AuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet,
-                         final EntityIdExtractor entityIdExtractor) {
+                         final EntityIdExtractor entityIdExtractor,
+                         final AuditedFieldsToFetchResolver auditedFieldsToFetchResolver) {
         this.auditedFieldSet = requireNonNull(auditedFieldSet, "An audited field set is required");
         this.entityIdExtractor = entityIdExtractor;
+        this.auditedFieldsToFetchResolver = auditedFieldsToFetchResolver;
     }
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToUpdate,
                                                               final ChangeOperation operator) {
-        return auditedFieldSet.intersectWith(fieldsToUpdate.stream())
-                              .getAllFields();
+        return auditedFieldsToFetchResolver.resolve(auditedFieldSet, fieldsToUpdate);
     }
 
     public Optional<? extends AuditRecord<E>> generate(final EntityChange<E> entityChange,
