@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 import static com.kenshoo.pl.entity.internal.audit.AuditedFieldSet.builder;
 import static com.kenshoo.pl.entity.internal.audit.AuditedFieldsToFetchResolver.INSTANCE;
 import static java.util.Collections.singleton;
@@ -55,8 +56,8 @@ public class AuditedFieldsToFetchResolverTest {
     public void resolve_FieldSetHasIdAndExternalMandatoryOnly_FieldsToChangeNotEmpty_ShouldReturnFieldSet() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME,
-                                             NotAuditedAncestorType.DESC)
+                .withExternalFields(NotAuditedAncestorType.NAME,
+                                    NotAuditedAncestorType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.NAME);
@@ -72,7 +73,7 @@ public class AuditedFieldsToFetchResolverTest {
     public void resolve_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangeAreDifferent_ShouldReturnFieldSet() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC2);
@@ -88,7 +89,7 @@ public class AuditedFieldsToFetchResolverTest {
     public void resolve_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangeAreTheSame_ShouldReturnFieldsToChange() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.ID,
@@ -104,7 +105,7 @@ public class AuditedFieldsToFetchResolverTest {
     public void resolve_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangePartiallyIntersect_ShouldReturnFieldSet() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
@@ -118,11 +119,10 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasIdAndOnChangeOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
+    public void resolve_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC2);
@@ -135,11 +135,10 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasIdAndOnChangeOnly_FieldsToChangeAreSame_ShouldReturnFieldsToChange() {
+    public void resolve_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeAreSame_ShouldReturnFieldsToChange() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.ID,
@@ -154,12 +153,11 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasIdAndOnChangeOnly_FieldsToChangeIncludedInOnChange_ShouldReturnIdAndFieldsToChange() {
+    public void resolve_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeIncludedInOnCreateOrUpdate_ShouldReturnIdAndFieldsToChange() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC,
-                                                    AuditedType.DESC2))
+                .withInternalFields(ON_CREATE_OR_UPDATE,
+                                    AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
@@ -175,11 +173,11 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasIdAndOnChangeOnly_FieldsToChangeContainOnChange_ShouldReturnFieldSet() {
+    public void resolve_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeContainOnCreateOrUpdate_ShouldReturnFieldSet() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE,
+                                    AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.NAME,
@@ -194,11 +192,10 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasIdAndOnChangeOnly_FieldsToChangePartiallyIntersectOnChange_ShouldReturnIdAndIntersection() {
+    public void resolve_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndIntersection() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
@@ -213,12 +210,126 @@ public class AuditedFieldsToFetchResolverTest {
     }
 
     @Test
-    public void resolve_FieldSetHasEverything_FieldsToChangePartiallyIntersectOnChange_ShouldReturnIdAndMandatoriesAndIntersection() {
+    public void resolve_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
-                .withSelfMandatoryFields(singleton(AuditedType.NAME))
-                .withOnChangeFields(ImmutableSet.of(AuditedType.DESC, AuditedType.DESC2))
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC2);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = singleton(AuditedType.ID);
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeAreSame_ShouldReturnFieldsToChange() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.ID,
+                                                                                          AuditedType.NAME,
+                                                                                          AuditedType.DESC);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeIncludedInOnCreateOrUpdate_ShouldReturnIdAndFieldsToChange() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE,
+                                    AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
+                                                                                          AuditedType.DESC2);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = ImmutableSet.of(AuditedType.ID,
+                                                                                       AuditedType.DESC,
+                                                                                       AuditedType.DESC2);
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeContainOnCreateOrUpdate_ShouldReturnFieldSet() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.NAME,
+                                                                                          AuditedType.DESC,
+                                                                                          AuditedType.DESC2);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasIdAndOnUpdateOnly_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndIntersection() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
+                                                                                          AuditedType.DESC2);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = ImmutableSet.of(AuditedType.ID,
+                                                                                       AuditedType.DESC);
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasEverything_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndMandatoriesAndIntersection() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withInternalFields(ALWAYS, singleton(AuditedType.NAME))
+                .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(AuditedType.DESC))
+                .withInternalFields(ON_UPDATE, ImmutableSet.of(AuditedType.DESC2))
+                .build();
+
+        final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC);
+
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = ImmutableSet.of(AuditedType.ID,
+                                                                                       NotAuditedAncestorType.NAME,
+                                                                                       NotAuditedAncestorType.DESC,
+                                                                                       AuditedType.NAME,
+                                                                                       AuditedType.DESC);
+
+        final Stream<? extends EntityField<?, ?>> actualFieldsToFetch = INSTANCE.resolve(auditedFieldSet, fieldsToChange);
+
+        assertThat(actualFieldsToFetch.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
+    }
+
+    @Test
+    public void resolve_FieldSetHasEverything_FieldsToChangePartiallyIntersectOnUpdate_ShouldReturnIdAndMandatoriesAndIntersection() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withInternalFields(ALWAYS, singleton(AuditedType.NAME))
+                .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(AuditedType.DESC))
+                .withInternalFields(ON_UPDATE, ImmutableSet.of(AuditedType.DESC2))
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC);

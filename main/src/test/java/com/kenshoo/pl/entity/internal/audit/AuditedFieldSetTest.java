@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.Set;
 
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 import static com.kenshoo.pl.entity.internal.audit.AuditedFieldSet.builder;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
@@ -31,7 +32,7 @@ public class AuditedFieldSetTest {
     public void getAllFields_IdAndExternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+                .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -43,10 +44,10 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllFields_IdAndSelfMandatory() {
+    public void getAllFields_IdAndInternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -58,10 +59,25 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllFields_IdAndOnChange() {
+    public void getAllFields_IdAndOnCreateOrUpdate() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.ID,
+                            AuditedType.NAME,
+                            AuditedType.DESC);
+
+        assertThat(auditedFieldSet.getAllFields().collect(toSet()), is(expectedAllFields));
+    }
+
+    @Test
+    public void getAllFields_IdAndOnUpdate() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -76,9 +92,10 @@ public class AuditedFieldSetTest {
     public void getAllFields_AllTypes() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                .withSelfMandatoryFields(AuditedType.NAME)
-                .withOnChangeFields(AuditedType.DESC, AuditedType.DESC2)
+                .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC)
+                .withInternalFields(ON_UPDATE, AuditedType.DESC2)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -93,39 +110,53 @@ public class AuditedFieldSetTest {
     }
 
     @Test
-    public void getAllSelfFields_WhenHasOnChange() {
+    public void getAllInternalFields_WhenHasOnCreateOrUpdate() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
             ImmutableSet.of(AuditedType.NAME,
                             AuditedType.DESC);
 
-        assertThat(auditedFieldSet.getAllSelfFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
-    public void getAllSelfFields_WhenHasSelfMandatory() {
+    public void getAllInternalFields_WhenHasOnUpdate() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
             ImmutableSet.of(AuditedType.NAME,
                             AuditedType.DESC);
 
-        assertThat(auditedFieldSet.getAllSelfFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
-    public void getAllSelfFields_WhenHasOnChangeAndSelfMandatory() {
+    public void getAllInternalFields_WhenHasInternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(AuditedType.NAME)
-                .withOnChangeFields(AuditedType.DESC, AuditedType.DESC2)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.NAME,
+                            AuditedType.DESC);
+
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(expectedAllFields));
+    }
+
+    @Test
+    public void getAllInternalFields_WhenHasOnCreateOrUpdateAndOnUpdate() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ON_UPDATE, AuditedType.DESC2)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -133,49 +164,149 @@ public class AuditedFieldSetTest {
                             AuditedType.DESC,
                             AuditedType.DESC2);
 
-        assertThat(auditedFieldSet.getAllSelfFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
-    public void getAllSelfFields_WhenHasNone() {
+    public void getAllInternalFields_WhenHasOnCreateOrUpdateAndInternalMandatory() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ALWAYS, AuditedType.NAME)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC, AuditedType.DESC2)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedAllFields =
+            ImmutableSet.of(AuditedType.NAME,
+                            AuditedType.DESC,
+                            AuditedType.DESC2);
+
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(expectedAllFields));
+    }
+
+    @Test
+    public void getAllInternalFields_WhenHasNone() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID).build();
 
-        assertThat(auditedFieldSet.getAllSelfFields().collect(toSet()), is(empty()));
+        assertThat(auditedFieldSet.getInternalFields().collect(toSet()), is(empty()));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasOnCreateOrUpdate() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedOnChangeFields =
+            ImmutableSet.of(AuditedType.NAME, AuditedType.DESC);
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(expectedOnChangeFields));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasOnUpdate() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedOnChangeFields =
+            ImmutableSet.of(AuditedType.NAME, AuditedType.DESC);
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(expectedOnChangeFields));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasExternalMandatory() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                .build();
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(empty()));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasInternalMandatory() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(empty()));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasOnCreateOrUpdateAndOnUpdate() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ON_UPDATE, AuditedType.DESC2)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedOnChangeFields =
+            ImmutableSet.of(AuditedType.NAME,
+                            AuditedType.DESC,
+                            AuditedType.DESC2);
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(expectedOnChangeFields));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasOnCreateOrUpdateAndInternalMandatory() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ALWAYS, AuditedType.NAME)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC, AuditedType.DESC2)
+                .build();
+
+        final Set<EntityField<?, ?>> expectedOnChangeFields =
+            ImmutableSet.of(AuditedType.DESC, AuditedType.DESC2);
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(expectedOnChangeFields));
+    }
+
+    @Test
+    public void getOnChangeFields_WhenHasNone() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID).build();
+
+        assertThat(auditedFieldSet.getOnChangeFields().collect(toSet()), is(empty()));
     }
 
     @Test
     public void getAllMandatoryFields_WhenHasExternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
             ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC);
 
-        assertThat(auditedFieldSet.getAllMandatoryFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getMandatoryFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
-    public void getAllMandatoryFields_WhenHasSelfMandatory() {
+    public void getAllMandatoryFields_WhenHasInternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
             ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC);
 
-        assertThat(auditedFieldSet.getAllMandatoryFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getMandatoryFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
-    public void getAllMandatoryFields_WhenHasExternalAndSelfMandatory() {
+    public void getAllMandatoryFields_WhenHasExternalAndInternalMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                .withSelfMandatoryFields(AuditedType.NAME,AuditedType.DESC)
+                .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<EntityField<?, ?>> expectedAllFields =
@@ -184,55 +315,63 @@ public class AuditedFieldSetTest {
                             AuditedType.NAME,
                             AuditedType.DESC);
 
-        assertThat(auditedFieldSet.getAllMandatoryFields().collect(toSet()), is(expectedAllFields));
+        assertThat(auditedFieldSet.getMandatoryFields().collect(toSet()), is(expectedAllFields));
     }
 
     @Test
     public void getAllMandatoryFields_WhenHasNoMandatory() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(AuditedType.NAME, AuditedType.DESC)
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
-        assertThat(auditedFieldSet.getAllMandatoryFields().collect(toSet()), is(empty()));
+        assertThat(auditedFieldSet.getMandatoryFields().collect(toSet()), is(empty()));
     }
 
     @Test
-    public void hasSelfFields_WhenHasOnChangeFields_ShouldReturnTrue() {
+    public void hasInternalFields_WhenHasOnCreateOrUpdateFields_ShouldReturnTrue() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                    AuditedType.DESC))
+                .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
-        assertThat(auditedFieldSet.hasSelfFields(), is(true));
+        assertThat(auditedFieldSet.hasInternalFields(), is(true));
     }
 
     @Test
-    public void hasSelfFields_WhenHasSelfMandatoryFields_ShouldReturnTrue() {
+    public void hasInternalFields_WhenHasOnUpdateFields_ShouldReturnTrue() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withSelfMandatoryFields(ImmutableSet.of(AuditedType.NAME,
-                                                         AuditedType.DESC))
+                .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
-        assertThat(auditedFieldSet.hasSelfFields(), is(true));
+        assertThat(auditedFieldSet.hasInternalFields(), is(true));
     }
 
     @Test
-    public void hasSelfFields_WhenHasIdOnly_ShouldReturnFalse() {
+    public void hasInternalFields_WhenHasInternalMandatoryFields_ShouldReturnTrue() {
+        final AuditedFieldSet<AuditedType> auditedFieldSet =
+            builder(AuditedType.ID)
+                .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
+                .build();
+
+        assertThat(auditedFieldSet.hasInternalFields(), is(true));
+    }
+
+    @Test
+    public void hasInternalFields_WhenHasIdOnly_ShouldReturnFalse() {
         final AuditedFieldSet<AuditedType> auditedFieldSet = builder(AuditedType.ID).build();
 
-        assertThat(auditedFieldSet.hasSelfFields(), is(false));
+        assertThat(auditedFieldSet.hasInternalFields(), is(false));
     }
 
     @Test
-    public void hasSelfFields_WhenHasIdAndExternalMandatoryOnly_ShouldReturnFalse() {
+    public void hasInternalFields_WhenHasIdAndExternalMandatoryOnly_ShouldReturnFalse() {
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             builder(AuditedType.ID)
-                .withExternalMandatoryFields(NotAuditedAncestorType.NAME)
+                .withExternalFields(NotAuditedAncestorType.NAME)
                 .build();
 
-        assertThat(auditedFieldSet.hasSelfFields(), is(false));
+        assertThat(auditedFieldSet.hasInternalFields(), is(false));
     }
 }

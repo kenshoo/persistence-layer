@@ -5,8 +5,10 @@ import com.kenshoo.pl.entity.EntityType;
 import org.jooq.lambda.Seq;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toSet;
 import static org.jooq.lambda.Seq.seq;
 
 public class AuditedFieldsToFetchResolver {
@@ -17,11 +19,13 @@ public class AuditedFieldsToFetchResolver {
         final AuditedFieldSet<E> auditedFieldSet,
         final Collection<? extends EntityField<E, ?>> fieldsToChange) {
 
+        final Set<? extends EntityField<E, ?>> onChangeFields = auditedFieldSet.getOnChangeFields().collect(toSet());
+
         final Seq<? extends EntityField<E, ?>> intersectedChangeFields =
-            seq(fieldsToChange).filter(auditedFieldSet.getOnChangeFields()::contains);
+            seq(fieldsToChange).filter(onChangeFields::contains);
 
         return Seq.<EntityField<?, ?>>of(auditedFieldSet.getIdField())
-            .append(auditedFieldSet.getAllMandatoryFields())
+            .append(auditedFieldSet.getMandatoryFields())
             .append(intersectedChangeFields);
     }
 

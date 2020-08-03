@@ -6,7 +6,6 @@ import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -17,6 +16,7 @@ import java.util.stream.Stream;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -30,19 +30,14 @@ public class AuditedFieldsResolverTest {
     @InjectMocks
     private AuditedFieldsResolver fieldsResolver;
 
-    @Before
-    public void setUp() {
-    }
-
     @Test
-    public void resolve_WhenAudited_AndHasId_AndOtherFields_ShouldReturnIdAndOnChangeFields() {
+    public void resolve_WhenAudited_AndHasId_AndOnCreateAndUpdate_ShouldReturnIdAndOnCreateOrUpdate() {
         when(externalMandatoryFieldsExtractor.extract(AuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedFieldSet<AuditedType> expectedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedType.NAME,
-                                                               AuditedType.DESC,
-                                                               AuditedType.DESC2))
+                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
                            .build();
 
         assertThat(fieldsResolver.resolve(AuditedType.INSTANCE),
@@ -50,15 +45,31 @@ public class AuditedFieldsResolverTest {
     }
 
     @Test
-    public void resolve_WhenAudited_AndHasId_AndSelfMandatoryFields_ShouldReturnIdAndSelfMandatoryFields() {
-        when(externalMandatoryFieldsExtractor.extract(AuditedWithSelfMandatoryOnlyType.INSTANCE)).thenReturn(Stream.empty());
+    public void resolve_WhenAudited_AndHasId_AndOnUpdate_ShouldReturnIdAndOnUpdate() {
+        when(externalMandatoryFieldsExtractor.extract(AuditedWithOnUpdateType.INSTANCE)).thenReturn(Stream.empty());
 
-        final AuditedFieldSet<AuditedWithSelfMandatoryOnlyType> expectedFieldSet =
-            AuditedFieldSet.builder(AuditedWithSelfMandatoryOnlyType.ID)
-                           .withSelfMandatoryFields(AuditedWithSelfMandatoryOnlyType.NAME)
+        final AuditedFieldSet<AuditedWithOnUpdateType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithOnUpdateType.ID)
+                           .withInternalFields(ON_UPDATE,
+                                               AuditedWithOnUpdateType.NAME,
+                                               AuditedWithOnUpdateType.DESC,
+                                               AuditedWithOnUpdateType.DESC2)
                            .build();
 
-        assertThat(fieldsResolver.resolve(AuditedWithSelfMandatoryOnlyType.INSTANCE),
+        assertThat(fieldsResolver.resolve(AuditedWithOnUpdateType.INSTANCE),
+                   isPresentAndIs(expectedFieldSet));
+    }
+
+    @Test
+    public void resolve_WhenAudited_AndHasId_AndInternalMandatoryFields_ShouldReturnIdAndInternalMandatoryFields() {
+        when(externalMandatoryFieldsExtractor.extract(AuditedWithInternalMandatoryOnlyType.INSTANCE)).thenReturn(Stream.empty());
+
+        final AuditedFieldSet<AuditedWithInternalMandatoryOnlyType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithInternalMandatoryOnlyType.ID)
+                           .withInternalFields(ALWAYS, AuditedWithInternalMandatoryOnlyType.NAME)
+                           .build();
+
+        assertThat(fieldsResolver.resolve(AuditedWithInternalMandatoryOnlyType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
@@ -69,10 +80,11 @@ public class AuditedFieldsResolverTest {
 
         final AuditedFieldSet<AuditedWithAncestorMandatoryType> expectedFieldSet =
             AuditedFieldSet.builder(AuditedWithAncestorMandatoryType.ID)
-                           .withOnChangeFields(ImmutableSet.of(AuditedWithAncestorMandatoryType.NAME,
-                                                               AuditedWithAncestorMandatoryType.DESC,
-                                                               AuditedWithAncestorMandatoryType.DESC2))
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                               AuditedWithAncestorMandatoryType.NAME,
+                                               AuditedWithAncestorMandatoryType.DESC,
+                                               AuditedWithAncestorMandatoryType.DESC2)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
 
         assertThat(fieldsResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE),
@@ -82,28 +94,28 @@ public class AuditedFieldsResolverTest {
     @Test
     public void resolve_WhenAudited_AndHasEverything_ShouldReturnEverything() {
         doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
-            .when(externalMandatoryFieldsExtractor).extract(AuditedWithSelfAndAncestorMandatoryType.INSTANCE);
+            .when(externalMandatoryFieldsExtractor).extract(AuditedWithAllVariationsType.INSTANCE);
 
-        final AuditedFieldSet<AuditedWithSelfAndAncestorMandatoryType> expectedFieldSet =
-            AuditedFieldSet.builder(AuditedWithSelfAndAncestorMandatoryType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .withSelfMandatoryFields(AuditedWithSelfAndAncestorMandatoryType.NAME)
-                           .withOnChangeFields(ImmutableSet.of(AuditedWithSelfAndAncestorMandatoryType.DESC,
-                                                               AuditedWithSelfAndAncestorMandatoryType.DESC2))
+        final AuditedFieldSet<AuditedWithAllVariationsType> expectedFieldSet =
+            AuditedFieldSet.builder(AuditedWithAllVariationsType.ID)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withInternalFields(ALWAYS, AuditedWithAllVariationsType.NAME)
+                           .withInternalFields(ON_CREATE_OR_UPDATE, AuditedWithAllVariationsType.DESC)
+                           .withInternalFields(ON_UPDATE, AuditedWithAllVariationsType.DESC2)
                            .build();
 
-        assertThat(fieldsResolver.resolve(AuditedWithSelfAndAncestorMandatoryType.INSTANCE),
+        assertThat(fieldsResolver.resolve(AuditedWithAllVariationsType.INSTANCE),
                    isPresentAndIs(expectedFieldSet));
     }
 
     @Test
-    public void resolve_WhenInclusiveAudited_AndHasId_ShouldReturnIdAndOnChangeForIncludedFields() {
+    public void resolve_WhenInclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForIncludedFields() {
         when(externalMandatoryFieldsExtractor.extract(InclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedFieldSet<InclusiveAuditedType> expectedFieldSet =
             AuditedFieldSet.builder(InclusiveAuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(InclusiveAuditedType.NAME,
-                                                               InclusiveAuditedType.DESC))
+                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                               InclusiveAuditedType.NAME, InclusiveAuditedType.DESC)
                            .build();
 
         assertThat(fieldsResolver.resolve(InclusiveAuditedType.INSTANCE),
@@ -111,12 +123,12 @@ public class AuditedFieldsResolverTest {
     }
 
     @Test
-    public void resolve_WhenExclusiveAudited_AndHasId_ShouldReturnIdAndOnChangeForNotExcludedFields() {
+    public void resolve_WhenExclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForNotExcludedFields() {
         when(externalMandatoryFieldsExtractor.extract(ExclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedFieldSet<ExclusiveAuditedType> expectedFieldSet =
             AuditedFieldSet.builder(ExclusiveAuditedType.ID)
-                           .withOnChangeFields(ImmutableSet.of(ExclusiveAuditedType.NAME))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(ExclusiveAuditedType.NAME))
                            .build();
 
         assertThat(fieldsResolver.resolve(ExclusiveAuditedType.INSTANCE),

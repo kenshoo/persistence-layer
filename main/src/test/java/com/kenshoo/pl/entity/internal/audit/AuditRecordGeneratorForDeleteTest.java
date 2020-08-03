@@ -17,6 +17,8 @@ import java.util.Optional;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -73,7 +75,7 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -90,7 +92,7 @@ public class AuditRecordGeneratorForDeleteTest {
     }
 
     @Test
-    public void generate_WithSelfMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
+    public void generate_WithInternalMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
@@ -99,7 +101,7 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -122,7 +124,7 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withOnChangeFields(singleton(AuditedType.NAME))
+                           .withInternalFields(ON_CREATE_OR_UPDATE, singleton(AuditedType.NAME))
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -139,7 +141,7 @@ public class AuditRecordGeneratorForDeleteTest {
     }
 
     @Test
-    public void generate_WithExternalAndSelfMandatoryOnly_ShouldGenerateMandatoryFieldValuesForBothTypes() {
+    public void generate_WithExternalAndInternalMandatoryOnly_ShouldGenerateMandatoryFieldValuesForBothTypes() {
         final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
 
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
@@ -150,8 +152,8 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .withSelfMandatoryFields(AuditedType.NAME, AuditedType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
@@ -178,7 +180,7 @@ public class AuditRecordGeneratorForDeleteTest {
 
         final AuditedFieldSet<AuditedType> auditedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalMandatoryFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
         final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 

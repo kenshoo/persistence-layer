@@ -11,17 +11,17 @@ import com.kenshoo.pl.entity.internal.audit.MainTable;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
 
 @Audited
-public class AuditedWithSelfMandatoryOnlyType extends AbstractEntityType<AuditedWithSelfMandatoryOnlyType> {
+public class AuditedWithInternalMandatoryOnlyType extends AbstractEntityType<AuditedWithInternalMandatoryOnlyType> {
 
-    public static final AuditedWithSelfMandatoryOnlyType INSTANCE = new AuditedWithSelfMandatoryOnlyType();
+    public static final AuditedWithInternalMandatoryOnlyType INSTANCE = new AuditedWithInternalMandatoryOnlyType();
 
     @Id
-    public static final EntityField<AuditedWithSelfMandatoryOnlyType, Long> ID = INSTANCE.field(MainTable.INSTANCE.id);
+    public static final EntityField<AuditedWithInternalMandatoryOnlyType, Long> ID = INSTANCE.field(MainTable.INSTANCE.id);
     @Audited(trigger = ALWAYS)
-    public static final EntityField<AuditedWithSelfMandatoryOnlyType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
+    public static final EntityField<AuditedWithInternalMandatoryOnlyType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
 
-    private AuditedWithSelfMandatoryOnlyType() {
-        super("AuditedWithSelfMandatoryOnly");
+    private AuditedWithInternalMandatoryOnlyType() {
+        super("AuditedWithInternalMandatoryOnly");
     }
 
     @Override

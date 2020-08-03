@@ -81,7 +81,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private Collection<? extends FieldAuditRecord<E>> generateChangedFieldRecords(final CurrentEntityState currentState, final FinalEntityState finalState) {
-        return auditedFieldSet.getAllSelfFields()
+        return auditedFieldSet.getInternalFields()
                               .filter(field -> fieldWasChanged(currentState, finalState, field))
                               .map(field -> buildFieldRecord(currentState, finalState, field))
                               .collect(toList());
@@ -104,7 +104,7 @@ public class AuditRecordGenerator<E extends EntityType<E>> implements CurrentSta
     }
 
     private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final FinalEntityState finalState) {
-        return auditedFieldSet.getAllMandatoryFields()
+        return auditedFieldSet.getMandatoryFields()
                               .map(field -> ImmutablePair.of(field, finalState.safeGet(field)))
                               .filter(pair -> pair.getValue().isNotNull())
                               .map(pair -> new EntityFieldValue(pair.getKey(), pair.getValue().get()))
