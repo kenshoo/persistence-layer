@@ -5,20 +5,20 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 
-public class OtherGrandChildTable extends AbstractDataTable<OtherGrandChildTable> {
+public class GreatGrandChildTable extends AbstractDataTable<GreatGrandChildTable> {
 
-    public static final OtherGrandChildTable INSTANCE = new OtherGrandChildTable();
+    public static final GreatGrandChildTable INSTANCE = new GreatGrandChildTable();
 
-    private OtherGrandChildTable() {
+    private GreatGrandChildTable() {
         super("otherGrandChildTable");
     }
 
     public final TableField<Record, Integer> parent_id = createPKAndFKField("parent_id", SQLDataType.INTEGER, ParentTable.INSTANCE.id);
-    public final TableField<Record, Integer> child_id = createPKAndFKField("child_id", SQLDataType.INTEGER, ChildTable.INSTANCE.id);
+    public final TableField<Record, String> grandchild_color = createPKAndFKField("grandchild_color", SQLDataType.VARCHAR.length(10), GrandChildTable.INSTANCE.color);
     public final TableField<Record, String>  name = createPKField("name", SQLDataType.VARCHAR.length(40));
 
     @Override
-    public OtherGrandChildTable as(String alias) {
+    public GreatGrandChildTable as(String alias) {
         return null;
     }
 

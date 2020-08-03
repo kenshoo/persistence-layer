@@ -36,7 +36,10 @@ public class ExecutionPlan {
                     if (currentEdge != startingEdge && fields != null) {
                         remainingPrimaryTables.remove(table);
                         oneToOnePaths.add(currentEdge);
-                        this.manyToOnePlans.removeIf(plan -> plan.getPath().target.table == table);
+                        calculatedAsMany(table).ifPresent(plan -> {
+                            oneToOneFields.addAll(fields);
+                            this.manyToOnePlans.remove(plan);
+                        });
                     }
                     seq(remainingPrimaryTables).filter(referencing(table)).forEach(manyToOneEntry -> {
                         final TreeEdge sourceEdge = currentEdge == startingEdge ? null : currentEdge;
@@ -96,6 +99,10 @@ public class ExecutionPlan {
 
     private Seq<TreeEdge> edgesComingOutOf(TreeEdge edge) {
         return seq(edge.target.table.getReferences()).map(new ToEdgesOf(edge.target));
+    }
+
+    private Optional<ManyToOnePlan<?>> calculatedAsMany(DataTable table) {
+        return seq(this.manyToOnePlans).filter(plan -> plan.getPath().target.table == table).findFirst();
     }
 
     private <E extends EntityType<E>>  void populateManyToOnePlans(TreeEdge sourceEdge, DataTable targetTable, DataTable manyToOneTable , List<? extends EntityField<E, ?>> fields) {
