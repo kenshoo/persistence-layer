@@ -29,12 +29,12 @@ public class EntityFetcherByIdTest {
     private static final ChildTable childTable = ChildTable.INSTANCE;
     private static final OtherChildTable otherChildTable = OtherChildTable.INSTANCE;
     private static final GrandChildTable grandChildTable = GrandChildTable.INSTANCE;
-    private static final OtherGrandChildTable otherGrandChildTable = OtherGrandChildTable.INSTANCE;
+    private static final GreatGrandChildTable GREAT_GRAND_CHILD_TABLE = GreatGrandChildTable.INSTANCE;
     private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(parentTable,
             childTable,
             otherChildTable,
             grandChildTable,
-            otherGrandChildTable);
+            GREAT_GRAND_CHILD_TABLE);
 
     private static DSLContext staticDSLContext;
     private static boolean tablesCreated;
@@ -81,14 +81,14 @@ public class EntityFetcherByIdTest {
                 .values(4, "color4")
                 .execute();
 
-        dslContext.insertInto(otherGrandChildTable)
-                .columns(otherGrandChildTable.parent_id, otherGrandChildTable.child_id, otherGrandChildTable.name)
-                .values(1, 1, "otherGrandChild1")
-                .values(1, 1, "otherGrandChild2")
-                .values(1, 2, "otherGrandChild1")
-                .values(1, 2, "otherGrandChild2")
-                .values(2, 3, "otherGrandChild1")
-                .values(2, 4, "otherGrandChild1")
+        dslContext.insertInto(GREAT_GRAND_CHILD_TABLE)
+                .columns(GREAT_GRAND_CHILD_TABLE.parent_id, GREAT_GRAND_CHILD_TABLE.grandchild_color, GREAT_GRAND_CHILD_TABLE.name)
+                .values(1, "color1", "greatGrandChild1")
+                .values(1, "color1", "greatGrandChild2")
+                .values(1, "color2", "greatGrandChild1")
+                .values(1, "color2", "greatGrandChild2")
+                .values(2, "color3", "greatGrandChild1")
+                .values(2, "color4", "greatGrandChild1")
                 .execute();
     }
 
@@ -162,7 +162,7 @@ public class EntityFetcherByIdTest {
     }
 
     /*
-     * requested single child for otherGrandChild (and not fetch a many for parent)
+     * requested single child for GreatGrandChild (and not fetch a many for parent)
      *                   -----------------------------
      *                  |           parent           |
      *                  -----------------------------
@@ -172,20 +172,26 @@ public class EntityFetcherByIdTest {
      *         ------------------         |
      *        |      child      |        |
      *        ------------------        |
-     *                   /|\ (1)       |
-     *                   |            |
-     *                  |  (n)       |  (n)
-     *            -------------------------------
-     *           |        otherGrandChild       |
-     *           -------------------------------
+     *          /|\ (1)                |
+     *          |                     |
+     *         |  (n)                |
+     *   ---------------            |
+     *  | grandChild   |           |
+     *  ---------------           |
+     *        /|\ (1)            |
+     *        |                 |
+     *       |  (n)            |  (n)
+     *    -------------------------------
+     *   |        GreatGrandChild       |
+     *   -------------------------------
      */
     @Test
     public void dont_fetch_as_a_secondary_table_of_your_parent_if_you_can_fetch_it_directly_from_another_parent() {
 
-        final Identifier<OtherGrandChildEntity> grandChildId = new OtherGrandChildEntity.ChildIdAndName(1, "otherGrandChild1");
-        final Map<Identifier<OtherGrandChildEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(grandChildId), ChildEntity.ID);
+        final Identifier<GreatGrandChildEntity> greatGrandChildId = new GreatGrandChildEntity.GrandchildColorAndName("color1", "greatGrandChild1");
+        final Map<Identifier<GreatGrandChildEntity>, CurrentEntityState> idEntityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(greatGrandChildId),ParentEntity.ID_IN_TARGET,  ChildEntity.ID);
 
-        final CurrentEntityState entity = idEntityMap.get(grandChildId);
+        final CurrentEntityState entity = idEntityMap.get(greatGrandChildId);
 
         assertThat(entity.get(ChildEntity.ID), Is.is(1));
         assertThat(entity.getMany(ChildEntity.INSTANCE), empty());
