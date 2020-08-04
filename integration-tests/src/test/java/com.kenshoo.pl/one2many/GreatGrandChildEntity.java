@@ -12,7 +12,7 @@ public class GreatGrandChildEntity extends AbstractEntityType<GreatGrandChildEnt
     public static final EntityField<GreatGrandChildEntity, String>  NAME = INSTANCE.field(GreatGrandChildTable.INSTANCE.name);
 
     private GreatGrandChildEntity() {
-        super("otherGrandChildEntity");
+        super("greatGrandChildEntity");
     }
 
 
