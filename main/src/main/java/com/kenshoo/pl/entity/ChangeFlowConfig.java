@@ -4,7 +4,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.internal.*;
-import com.kenshoo.pl.entity.internal.audit.AuditRecordGenerator;
+import com.kenshoo.pl.entity.internal.audit.AuditRecordGeneratorStateConsumer;
+import com.kenshoo.pl.entity.internal.audit.AuditRecordGeneratorStateConsumerImpl;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
@@ -35,7 +36,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     private final List<ChangesFilter<E>> postFetchFilters;
     private final List<ChangesFilter<E>> postSupplyFilters;
     private final PersistenceLayerRetryer retryer;
-    private final AuditRecordGenerator<E> auditRecordGenerator;
+    private final AuditRecordGeneratorStateConsumer<E> auditRecordGenerator;
     private final FeatureSet features;
 
 
@@ -47,7 +48,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              Set<EntityField<E, ?>> requiredFields,
                              List<ChangeFlowConfig<? extends EntityType<?>>> childFlows,
                              PersistenceLayerRetryer retryer,
-                             AuditRecordGenerator<E> auditRecordGenerator,
+                             AuditRecordGeneratorStateConsumer<E> auditRecordGenerator,
                              FeatureSet features) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
@@ -71,7 +72,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         return retryer;
     }
 
-    public Optional<AuditRecordGenerator<E>> auditRecordGenerator() {
+    public Optional<AuditRecordGeneratorStateConsumer<E>> auditRecordGenerator() {
         return Optional.ofNullable(auditRecordGenerator);
     }
 
@@ -276,9 +277,9 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             ImmutableList.Builder<ChangesValidator<E>> validatorList = ImmutableList.builder();
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
-            final AuditRecordGenerator<E> auditRecordGenerator = auditedFieldsResolver.resolve(entityType)
-                                                                                      .map(AuditRecordGenerator::new)
-                                                                                      .orElse(null);
+            final AuditRecordGeneratorStateConsumer<E> auditRecordGenerator = auditedFieldsResolver.resolve(entityType)
+                                                                                                   .map(AuditRecordGeneratorStateConsumerImpl::new)
+                                                                                                   .orElse(null);
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
                                           validatorList.build(),

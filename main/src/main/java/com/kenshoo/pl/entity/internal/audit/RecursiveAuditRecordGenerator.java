@@ -19,7 +19,6 @@ public class RecursiveAuditRecordGenerator {
         final Stream<? extends EntityChange<E>> entityChanges,
         final ChangeContext changeContext) {
 
-        //noinspection RedundantTypeArguments
         return flowConfig.auditRecordGenerator()
                          .map(auditRecordGenerator -> this.<E>generateMany(flowConfig,
                                                                            auditRecordGenerator,
@@ -34,7 +33,6 @@ public class RecursiveAuditRecordGenerator {
         final Stream<? extends EntityChange<E>> entityChanges,
         final ChangeContext changeContext) {
 
-        //noinspection RedundantTypeArguments
         return entityChanges.map(entityChange -> this.<E>generateOne(flowConfig,
                                                                      auditRecordGenerator,
                                                                      entityChange,

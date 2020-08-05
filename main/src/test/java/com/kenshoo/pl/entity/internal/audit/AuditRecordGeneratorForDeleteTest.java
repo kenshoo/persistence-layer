@@ -52,7 +52,7 @@ public class AuditRecordGeneratorForDeleteTest {
         currentState.set(AuditedType.DESC, "oldDesc");
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -77,7 +77,7 @@ public class AuditRecordGeneratorForDeleteTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -103,7 +103,7 @@ public class AuditRecordGeneratorForDeleteTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -126,7 +126,7 @@ public class AuditRecordGeneratorForDeleteTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ON_CREATE_OR_UPDATE, singleton(AuditedType.NAME))
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -155,7 +155,7 @@ public class AuditRecordGeneratorForDeleteTest {
                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -182,7 +182,7 @@ public class AuditRecordGeneratorForDeleteTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -202,7 +202,7 @@ public class AuditRecordGeneratorForDeleteTest {
         return mock(AuditRecord.class);
     }
 
-    private AuditRecordGenerator<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
+    private AuditRecordGeneratorStateConsumerImpl<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
+        return new AuditRecordGeneratorStateConsumerImpl<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
     }
 }
