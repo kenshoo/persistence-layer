@@ -9,37 +9,26 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-public class AuditRecordGeneratorStateConsumerImpl<E extends EntityType<E>> implements AuditRecordGeneratorStateConsumer<E> {
+public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditRecordGenerator<E> {
 
     private final AuditedFieldSet<E> auditedFieldSet;
     private final EntityIdExtractor entityIdExtractor;
-    private final AuditedFieldsToFetchResolver auditedFieldsToFetchResolver;
 
-    public AuditRecordGeneratorStateConsumerImpl(final AuditedFieldSet<E> auditedFieldSet) {
+    public AuditRecordGeneratorImpl(final AuditedFieldSet<E> auditedFieldSet) {
         this(auditedFieldSet,
-             EntityIdExtractor.INSTANCE,
-             AuditedFieldsToFetchResolver.INSTANCE);
+             EntityIdExtractor.INSTANCE);
     }
 
     @VisibleForTesting
-    AuditRecordGeneratorStateConsumerImpl(final AuditedFieldSet<E> auditedFieldSet,
-                                          final EntityIdExtractor entityIdExtractor,
-                                          final AuditedFieldsToFetchResolver auditedFieldsToFetchResolver) {
+    AuditRecordGeneratorImpl(final AuditedFieldSet<E> auditedFieldSet,
+                             final EntityIdExtractor entityIdExtractor) {
         this.auditedFieldSet = requireNonNull(auditedFieldSet, "An audited field set is required");
         this.entityIdExtractor = entityIdExtractor;
-        this.auditedFieldsToFetchResolver = auditedFieldsToFetchResolver;
-    }
-
-    @Override
-    public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToUpdate,
-                                                              final ChangeOperation operator) {
-        return auditedFieldsToFetchResolver.resolve(auditedFieldSet, fieldsToUpdate);
     }
 
     @Override
