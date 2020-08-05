@@ -134,7 +134,7 @@ From maven
 <dependency>
     <groupId>com.kenshoo</groupId>
     <artifactId>persistence-layer</artifactId>
-    <version>0.1.40-jooq-3.10.4</version>
+    <version>0.1.50-jooq-3.10.4</version>
 </dependency>
 ```
 
