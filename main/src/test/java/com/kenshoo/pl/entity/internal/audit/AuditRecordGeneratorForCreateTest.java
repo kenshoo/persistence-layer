@@ -50,7 +50,7 @@ public class AuditRecordGeneratorForCreateTest {
         final CurrentEntityState currentState = CurrentEntityState.EMPTY;
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -75,7 +75,7 @@ public class AuditRecordGeneratorForCreateTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -99,7 +99,7 @@ public class AuditRecordGeneratorForCreateTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -122,7 +122,7 @@ public class AuditRecordGeneratorForCreateTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -148,7 +148,7 @@ public class AuditRecordGeneratorForCreateTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -172,7 +172,7 @@ public class AuditRecordGeneratorForCreateTest {
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ON_UPDATE, ImmutableSet.of(AuditedType.NAME, AuditedType.DESC))
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -191,7 +191,7 @@ public class AuditRecordGeneratorForCreateTest {
         final CurrentEntityState currentState = CurrentEntityState.EMPTY;
 
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -219,7 +219,7 @@ public class AuditRecordGeneratorForCreateTest {
                                                                             .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                                                                             .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                                                                             .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -248,7 +248,7 @@ public class AuditRecordGeneratorForCreateTest {
                                                                             .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                                                                             .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC2)
                                                                             .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -274,7 +274,7 @@ public class AuditRecordGeneratorForCreateTest {
         final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID)
                                                                             .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                                                                             .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -308,7 +308,7 @@ public class AuditRecordGeneratorForCreateTest {
                            .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.DESC)
                            .withInternalFields(ON_UPDATE, AuditedType.DESC2)
                            .build();
-        final AuditRecordGenerator<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
+        final AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
 
         doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
 
@@ -333,7 +333,7 @@ public class AuditRecordGeneratorForCreateTest {
         return mock(AuditRecord.class);
     }
 
-    private AuditRecordGenerator<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
+    private AuditRecordGeneratorStateConsumerImpl<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
+        return new AuditRecordGeneratorStateConsumerImpl<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
     }
 }

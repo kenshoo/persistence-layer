@@ -51,7 +51,7 @@ public class AuditRecordGeneratorRequiredFieldsTest {
         assertThat(actualRequiredFields, is(intersectionFields));
     }
 
-    private AuditRecordGenerator<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGenerator<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
+    private AuditRecordGeneratorStateConsumerImpl<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
+        return new AuditRecordGeneratorStateConsumerImpl<>(fieldSet, entityIdExtractor, fieldsToFetchResolver);
     }
 }
