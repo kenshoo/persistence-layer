@@ -173,7 +173,7 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_create_audit_record_generator_with_field_set_if_audited_fields_defined() {
+    public void should_create_audit_record_generator_if_audited_fields_defined() {
 
         final AuditedFieldSet<TestEntity> auditedFieldSet = AuditedFieldSet.builder(TestEntity.ID)
                                                                            .withInternalFields(ON_CREATE_OR_UPDATE,
@@ -185,12 +185,6 @@ public class ChangeFlowConfigTest {
                                                                                        auditedFieldsResolver).build();
         assertThat("Audit record generator should exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(true));
-
-        flowConfig.auditRecordGenerator().ifPresent(auditRecordGenerator ->
-            assertThat("Incorrect field set passed to audit generator: ",
-                       auditRecordGenerator.getAuditedFieldSet(), is(auditedFieldSet)
-            )
-        );
     }
 
     @Test
