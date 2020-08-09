@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface AuditRecordGenerator<E extends EntityType<E>> {
-    Optional<? extends AuditRecord<E>> generate(EntityChange<E> entityChange,
-                                                CurrentEntityState currentState,
-                                                Collection<? extends AuditRecord<?>> childRecords);
+    Optional<AuditRecord<E>> generate(EntityChange<E> entityChange,
+                                      CurrentEntityState currentState,
+                                      Collection<? extends AuditRecord<?>> childRecords);
 }

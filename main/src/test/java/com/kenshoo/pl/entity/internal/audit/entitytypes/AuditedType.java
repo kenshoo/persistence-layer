@@ -5,6 +5,8 @@ import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
 
+import static java.lang.Math.abs;
+
 @Audited
 public class AuditedType extends AbstractType<AuditedType> {
 
@@ -15,6 +17,7 @@ public class AuditedType extends AbstractType<AuditedType> {
     public static final EntityField<AuditedType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
     public static final EntityField<AuditedType, String> DESC = INSTANCE.field(MainTable.INSTANCE.desc);
     public static final EntityField<AuditedType, String> DESC2 = INSTANCE.field(MainTable.INSTANCE.desc2);
+    public static final EntityField<AuditedType, Double> AMOUNT = INSTANCE.field(MainTable.INSTANCE.amount, (a1, a2) -> abs(a1 - a2) < 0.01);
 
     private AuditedType() {
         super("Audited");
