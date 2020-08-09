@@ -44,13 +44,13 @@ public class RecursiveAuditRecordGeneratorTest {
     private ChangeContext changeContext;
 
     @Mock
-    private AuditRecordGeneratorStateConsumerImpl<AuditedType> auditRecordGenerator;
+    private AuditRecordGenerator<AuditedType> auditRecordGenerator;
     @Mock
-    private AuditRecordGeneratorStateConsumerImpl<TestChild1EntityType> child1AuditRecordGenerator;
+    private AuditRecordGenerator<TestChild1EntityType> child1AuditRecordGenerator;
     @Mock
-    private AuditRecordGeneratorStateConsumerImpl<TestChild2EntityType> child2AuditRecordGenerator;
+    private AuditRecordGenerator<TestChild2EntityType> child2AuditRecordGenerator;
     @Mock
-    private AuditRecordGeneratorStateConsumerImpl<TestGrandchildEntityType> grandchildAuditRecordGenerator;
+    private AuditRecordGenerator<TestGrandchildEntityType> grandchildAuditRecordGenerator;
 
     @Test
     public void generateMany_OneAuditedEntity_WithChanges_ShouldGenerateRecord() {

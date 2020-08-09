@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import com.kenshoo.pl.entity.internal.audit.AuditRequiredFieldsCalculator;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldSet;
 import com.kenshoo.pl.entity.internal.audit.AuditedFieldsResolver;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
@@ -14,13 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -170,6 +171,44 @@ public class ChangeFlowConfigTest {
         final ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
 
         assertThat(flow.getPrimaryIdentityField(), equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void audit_required_fields_calculator_should_be_in_state_consumers_if_audited_fields_defined() {
+
+        final AuditedFieldSet<TestEntity> auditedFieldSet = AuditedFieldSet.builder(TestEntity.ID)
+                                                                           .withInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                                           .build();
+        doReturn(Optional.of(auditedFieldSet)).when(auditedFieldsResolver).resolve(TestEntity.INSTANCE);
+
+        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                                                       auditedFieldsResolver).build();
+
+        final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
+                                                                  .map(Object::getClass)
+                                                                  .collect(Collectors.toSet());
+
+        assertThat("AuditRequiredFieldsCalculator should be included in state consumers",
+                   currentStateConsumerTypes,
+                   hasItem(AuditRequiredFieldsCalculator.class));
+    }
+
+    @Test
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_audited_fields_defined() {
+
+        when(auditedFieldsResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
+
+        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                                                       auditedFieldsResolver).build();
+
+        final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
+                                                                  .map(Object::getClass)
+                                                                  .collect(Collectors.toSet());
+
+        assertThat("AuditRequiredFieldsCalculator should NOT be included in state consumers",
+                   currentStateConsumerTypes,
+                   not(hasItem(AuditRequiredFieldsCalculator.class)));
     }
 
     @Test
