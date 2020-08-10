@@ -1,14 +1,10 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityFieldValue;
-import com.kenshoo.pl.entity.FinalEntityState;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import com.kenshoo.pl.entity.internal.audit.AuditRecordGeneratorImpl.FinalEntityStateCreator;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Before;
@@ -54,7 +50,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
     private EntityIdExtractor entityIdExtractor;
 
     @Mock
-    private FinalEntityStateCreator finalStateCreator;
+    private ChangeContext changeContext;
 
     @Mock
     private CurrentEntityState currentState;
@@ -72,8 +68,9 @@ public class AuditRecordGeneratorImplForUpdateTest {
     public void setUp() {
         when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
         when(cmd.getChangeOperation()).thenReturn(UPDATE);
+        when(changeContext.getEntity(cmd)).thenReturn(currentState);
+        when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
-        when(finalStateCreator.apply(currentState, cmd)).thenReturn(finalState);
     }
 
     @Test
@@ -82,7 +79,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord, isEmpty());
     }
@@ -97,7 +94,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord, isEmpty());
     }
@@ -118,7 +115,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
@@ -140,7 +137,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
@@ -172,7 +169,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         //noinspection unchecked
         assertThat(actualOptionalAuditRecord,

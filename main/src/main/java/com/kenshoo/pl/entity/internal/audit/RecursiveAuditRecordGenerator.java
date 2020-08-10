@@ -55,7 +55,7 @@ public class RecursiveAuditRecordGenerator {
                       .collect(toList());
 
         return auditRecordGenerator.generate(entityChange,
-                                             changeContext.getEntity(entityChange),
+                                             changeContext,
                                              childAuditRecords);
     }
 

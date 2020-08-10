@@ -1,10 +1,7 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityFieldValue;
-import com.kenshoo.pl.entity.FinalEntityState;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
@@ -47,7 +44,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
     private EntityIdExtractor entityIdExtractor;
 
     @Mock
-    private AuditRecordGeneratorImpl.FinalEntityStateCreator finalStateCreator;
+    private ChangeContext changeContext;
 
     @Mock
     private CurrentEntityState currentState;
@@ -65,8 +62,9 @@ public class AuditRecordGeneratorImplForDeleteTest {
     public void setUp() {
         when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
         when(cmd.getChangeOperation()).thenReturn(DELETE);
+        when(changeContext.getEntity(cmd)).thenReturn(currentState);
+        when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
-        when(finalStateCreator.apply(currentState, cmd)).thenReturn(finalState);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
     }
 
@@ -75,7 +73,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -87,7 +85,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
     public void generate_WithNoId_ShouldThrowException() {
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.empty());
 
-        auditRecordGenerator.generate(cmd, currentState, emptyList());
+        auditRecordGenerator.generate(cmd, changeContext, emptyList());
     }
 
     @Test
@@ -99,7 +97,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -113,7 +111,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasSameChildRecord(childRecords.get(0)),
@@ -131,7 +129,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),

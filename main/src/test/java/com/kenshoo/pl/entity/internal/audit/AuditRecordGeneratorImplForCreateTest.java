@@ -1,10 +1,7 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityFieldValue;
-import com.kenshoo.pl.entity.FinalEntityState;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
@@ -50,7 +47,7 @@ public class AuditRecordGeneratorImplForCreateTest {
     private EntityIdExtractor entityIdExtractor;
 
     @Mock
-    private AuditRecordGeneratorImpl.FinalEntityStateCreator finalStateCreator;
+    private ChangeContext changeContext;
 
     @Mock
     private CurrentEntityState currentState;
@@ -68,8 +65,9 @@ public class AuditRecordGeneratorImplForCreateTest {
     public void setUp() {
         when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
         when(cmd.getChangeOperation()).thenReturn(CREATE);
+        when(changeContext.getEntity(cmd)).thenReturn(currentState);
+        when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
-        when(finalStateCreator.apply(currentState, cmd)).thenReturn(finalState);
     }
 
     @Test
@@ -78,7 +76,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -96,7 +94,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -117,7 +115,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasCreatedFieldRecord(AuditedType.NAME, NAME),
@@ -132,7 +130,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasSameChildRecord(childRecords.get(0)),
@@ -157,7 +155,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -186,7 +184,7 @@ public class AuditRecordGeneratorImplForCreateTest {
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),

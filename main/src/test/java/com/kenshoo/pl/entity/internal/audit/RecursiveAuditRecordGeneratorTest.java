@@ -56,11 +56,9 @@ public class RecursiveAuditRecordGeneratorTest {
     public void generateMany_OneAuditedEntity_WithChanges_ShouldGenerateRecord() {
         final ChangeEntityCommand<AuditedType> cmd = mockCommand();
         final AuditRecord<AuditedType> auditRecord = mockAuditRecord();
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        doReturn(Optional.of(auditRecord)).when(auditRecordGenerator).generate(cmd, currentState, emptyList());
+        doReturn(Optional.of(auditRecord)).when(auditRecordGenerator).generate(cmd, changeContext, emptyList());
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -71,11 +69,9 @@ public class RecursiveAuditRecordGeneratorTest {
     @Test
     public void generateMany_OneAuditedEntity_WithoutChanges_ShouldReturnEmpty() {
         final ChangeEntityCommand<AuditedType> cmd = mockCommand();
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        doReturn(Optional.empty()).when(auditRecordGenerator).generate(cmd, currentState, emptyList());
+        doReturn(Optional.empty()).when(auditRecordGenerator).generate(cmd, changeContext, emptyList());
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -100,19 +96,13 @@ public class RecursiveAuditRecordGeneratorTest {
         final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
         final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
 
-        final CurrentEntityState entity1 = mock(CurrentEntityState.class);
-        final CurrentEntityState entity2 = mock(CurrentEntityState.class);
-
         final AuditRecord<AuditedType> auditRecord1 = mockAuditRecord();
         final AuditRecord<AuditedType> auditRecord2 = mockAuditRecord();
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
 
-        when(changeContext.getEntity(cmd1)).thenReturn(entity1);
-        when(changeContext.getEntity(cmd2)).thenReturn(entity2);
-
-        doReturn(Optional.of(auditRecord1)).when(auditRecordGenerator).generate(cmd1, entity1, emptyList());
-        doReturn(Optional.of(auditRecord2)).when(auditRecordGenerator).generate(cmd2, entity2, emptyList());
+        doReturn(Optional.of(auditRecord1)).when(auditRecordGenerator).generate(cmd1, changeContext, emptyList());
+        doReturn(Optional.of(auditRecord2)).when(auditRecordGenerator).generate(cmd2, changeContext, emptyList());
 
         final Set<AuditRecord<AuditedType>> expectedAuditRecords =
             ImmutableSet.of(auditRecord1, auditRecord2);
@@ -128,18 +118,12 @@ public class RecursiveAuditRecordGeneratorTest {
         final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
         final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
 
-        final CurrentEntityState entity1 = mock(CurrentEntityState.class);
-        final CurrentEntityState entity2 = mock(CurrentEntityState.class);
-
         final AuditRecord<AuditedType> auditRecord1 = mockAuditRecord();
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
 
-        when(changeContext.getEntity(cmd1)).thenReturn(entity1);
-        when(changeContext.getEntity(cmd2)).thenReturn(entity2);
-
-        doReturn(Optional.of(auditRecord1)).when(auditRecordGenerator).generate(cmd1, entity1, emptyList());
-        doReturn(Optional.empty()).when(auditRecordGenerator).generate(cmd2, entity2, emptyList());
+        doReturn(Optional.of(auditRecord1)).when(auditRecordGenerator).generate(cmd1, changeContext, emptyList());
+        doReturn(Optional.empty()).when(auditRecordGenerator).generate(cmd2, changeContext, emptyList());
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd1, cmd2), changeContext);
@@ -158,10 +142,6 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<TestChild1EntityType> childAuditRecord1B = mockAuditRecord();
         final List<AuditRecord<TestChild1EntityType>> childAuditRecords = ImmutableList.of(childAuditRecord1A, childAuditRecord1B);
 
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
-
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));
 
@@ -171,13 +151,9 @@ public class RecursiveAuditRecordGeneratorTest {
 
         when(cmd.getChildren(TestChild1EntityType.INSTANCE)).thenReturn(Stream.of(childCmd1A, childCmd1B));
 
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        when(changeContext.getEntity(childCmd1A)).thenReturn(childEntity1A);
-        when(changeContext.getEntity(childCmd1B)).thenReturn(childEntity1B);
-
-        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, childEntity1A, emptyList());
-        doReturn(Optional.of(childAuditRecord1B)).when(child1AuditRecordGenerator).generate(childCmd1B, childEntity1B, emptyList());
-        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, currentState, childAuditRecords);
+        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, changeContext, emptyList());
+        doReturn(Optional.of(childAuditRecord1B)).when(child1AuditRecordGenerator).generate(childCmd1B, changeContext, emptyList());
+        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, changeContext, childAuditRecords);
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -195,10 +171,6 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<AuditedType> expectedAuditRecord = mockAuditRecord();
         final AuditRecord<TestChild1EntityType> childAuditRecord1A = mockAuditRecord();
 
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
-
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));
 
@@ -208,13 +180,9 @@ public class RecursiveAuditRecordGeneratorTest {
 
         when(cmd.getChildren(TestChild1EntityType.INSTANCE)).thenReturn(Stream.of(childCmd1A, childCmd1B));
 
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        when(changeContext.getEntity(childCmd1A)).thenReturn(childEntity1A);
-        when(changeContext.getEntity(childCmd1B)).thenReturn(childEntity1B);
-
-        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, childEntity1A, emptyList());
-        doReturn(Optional.empty()).when(child1AuditRecordGenerator).generate(childCmd1B, childEntity1B, emptyList());
-        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, currentState, singletonList(childAuditRecord1A));
+        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, changeContext, emptyList());
+        doReturn(Optional.empty()).when(child1AuditRecordGenerator).generate(childCmd1B, changeContext, emptyList());
+        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, changeContext, singletonList(childAuditRecord1A));
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -232,9 +200,6 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<AuditedType> expectedAuditRecord = mockAuditRecord();
         final AuditRecord<TestChild1EntityType> auditedChildRecord = mockAuditRecord();
 
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
-        final CurrentEntityState auditedChildEntity = mock(CurrentEntityState.class);
-
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(ImmutableList.of(child1FlowConfig, child2FlowConfig));
 
@@ -248,11 +213,8 @@ public class RecursiveAuditRecordGeneratorTest {
         when(cmd.getChildren(TestChild1EntityType.INSTANCE)).thenReturn(Stream.of(auditedChildCmd));
         when(cmd.getChildren(TestChild2EntityType.INSTANCE)).thenReturn(Stream.of(notAuditedChildCmd));
 
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        when(changeContext.getEntity(auditedChildCmd)).thenReturn(auditedChildEntity);
-
-        doReturn(Optional.of(auditedChildRecord)).when(child1AuditRecordGenerator).generate(auditedChildCmd, auditedChildEntity, emptyList());
-        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, currentState, singletonList(auditedChildRecord));
+        doReturn(Optional.of(auditedChildRecord)).when(child1AuditRecordGenerator).generate(auditedChildCmd, changeContext, emptyList());
+        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, changeContext, singletonList(auditedChildRecord));
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -278,12 +240,6 @@ public class RecursiveAuditRecordGeneratorTest {
                                                                            childAuditRecord2A,
                                                                            childAuditRecord2B);
 
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1A = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity1B = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity2A = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity2B = mock(CurrentEntityState.class);
-
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(ImmutableList.of(child1FlowConfig, child2FlowConfig));
 
@@ -298,17 +254,11 @@ public class RecursiveAuditRecordGeneratorTest {
         when(cmd.getChildren(TestChild1EntityType.INSTANCE)).thenReturn(Stream.of(childCmd1A, childCmd1B));
         when(cmd.getChildren(TestChild2EntityType.INSTANCE)).thenReturn(Stream.of(childCmd2A, childCmd2B));
 
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        when(changeContext.getEntity(childCmd1A)).thenReturn(childEntity1A);
-        when(changeContext.getEntity(childCmd1B)).thenReturn(childEntity1B);
-        when(changeContext.getEntity(childCmd2A)).thenReturn(childEntity2A);
-        when(changeContext.getEntity(childCmd2B)).thenReturn(childEntity2B);
-
-        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, childEntity1A, emptyList());
-        doReturn(Optional.of(childAuditRecord1B)).when(child1AuditRecordGenerator).generate(childCmd1B, childEntity1B, emptyList());
-        doReturn(Optional.of(childAuditRecord2A)).when(child2AuditRecordGenerator).generate(childCmd2A, childEntity2A, emptyList());
-        doReturn(Optional.of(childAuditRecord2B)).when(child2AuditRecordGenerator).generate(childCmd2B, childEntity2B, emptyList());
-        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, currentState, allChildAuditRecords);
+        doReturn(Optional.of(childAuditRecord1A)).when(child1AuditRecordGenerator).generate(childCmd1A, changeContext, emptyList());
+        doReturn(Optional.of(childAuditRecord1B)).when(child1AuditRecordGenerator).generate(childCmd1B, changeContext, emptyList());
+        doReturn(Optional.of(childAuditRecord2A)).when(child2AuditRecordGenerator).generate(childCmd2A, changeContext, emptyList());
+        doReturn(Optional.of(childAuditRecord2B)).when(child2AuditRecordGenerator).generate(childCmd2B, changeContext, emptyList());
+        doReturn(Optional.of(expectedAuditRecord)).when(auditRecordGenerator).generate(cmd, changeContext, allChildAuditRecords);
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);
@@ -327,10 +277,6 @@ public class RecursiveAuditRecordGeneratorTest {
         final AuditRecord<TestChild1EntityType> childAuditRecord = mockAuditRecord();
         final AuditRecord<TestGrandchildEntityType> grandchildAuditRecord = mockAuditRecord();
 
-        final CurrentEntityState currentState = mock(CurrentEntityState.class);
-        final CurrentEntityState childEntity = mock(CurrentEntityState.class);
-        final CurrentEntityState grandchildEntity = mock(CurrentEntityState.class);
-
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         when(flowConfig.childFlows()).thenReturn(singletonList(child1FlowConfig));
 
@@ -345,16 +291,12 @@ public class RecursiveAuditRecordGeneratorTest {
         when(cmd.getChildren(TestChild1EntityType.INSTANCE)).thenReturn(Stream.of(childCmd));
         when(childCmd.getChildren(TestGrandchildEntityType.INSTANCE)).thenReturn(Stream.of(grandchildCmd));
 
-        when(changeContext.getEntity(cmd)).thenReturn(currentState);
-        when(changeContext.getEntity(childCmd)).thenReturn(childEntity);
-        when(changeContext.getEntity(grandchildCmd)).thenReturn(grandchildEntity);
-
         doReturn(Optional.of(grandchildAuditRecord))
-            .when(grandchildAuditRecordGenerator).generate(grandchildCmd, grandchildEntity, emptyList());
+            .when(grandchildAuditRecordGenerator).generate(grandchildCmd, changeContext, emptyList());
         doReturn(Optional.of(childAuditRecord))
-            .when(child1AuditRecordGenerator).generate(childCmd, childEntity, singletonList(grandchildAuditRecord));
+            .when(child1AuditRecordGenerator).generate(childCmd, changeContext, singletonList(grandchildAuditRecord));
         doReturn(Optional.of(expectedAuditRecord))
-            .when(auditRecordGenerator).generate(cmd, currentState, singletonList(childAuditRecord));
+            .when(auditRecordGenerator).generate(cmd, changeContext, singletonList(childAuditRecord));
 
         final Stream<? extends AuditRecord<AuditedType>> actualAuditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig, Stream.of(cmd), changeContext);

@@ -8,7 +8,6 @@ import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Objects.requireNonNull;
@@ -18,33 +17,31 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
     private final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
     private final AuditFieldChangesGenerator<E> fieldChangesGenerator;
     private final EntityIdExtractor entityIdExtractor;
-    private final FinalEntityStateCreator finalStateCreator;
 
     public AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
                                     final AuditFieldChangesGenerator<E> fieldChangesGenerator) {
         this(mandatoryFieldValuesGenerator,
              fieldChangesGenerator,
-             EntityIdExtractor.INSTANCE,
-             FinalEntityState::new);
+             EntityIdExtractor.INSTANCE);
     }
 
     @VisibleForTesting
     AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
                              final AuditFieldChangesGenerator<E> fieldChangesGenerator,
-                             final EntityIdExtractor entityIdExtractor,
-                             final FinalEntityStateCreator finalStateCreator) {
+                             final EntityIdExtractor entityIdExtractor) {
         this.mandatoryFieldValuesGenerator = mandatoryFieldValuesGenerator;
         this.fieldChangesGenerator = fieldChangesGenerator;
         this.entityIdExtractor = entityIdExtractor;
-        this.finalStateCreator = finalStateCreator;
     }
 
     @Override
     public Optional<AuditRecord<E>> generate(final EntityChange<E> entityChange,
-                                             final CurrentEntityState currentState,
+                                             final ChangeContext context,
                                              final Collection<? extends AuditRecord<?>> childRecords) {
+        requireNonNull(entityChange, "entityChange is required");
+
         final AuditRecord<E> auditRecord = generateInner(entityChange,
-                                                         currentState,
+                                                         context,
                                                          childRecords);
 
         if (entityChange.getChangeOperation() == UPDATE && auditRecord.hasNoChanges()) {
@@ -54,14 +51,14 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
     }
 
     private AuditRecord<E> generateInner(final EntityChange<E> entityChange,
-                                         final CurrentEntityState currentState,
+                                         final ChangeContext context,
                                          final Collection<? extends AuditRecord<?>> childRecords) {
-        requireNonNull(entityChange, "entityChange is required");
-        requireNonNull(currentState, "currentState is required");
+        requireNonNull(context, "context is required");
+
+        final CurrentEntityState currentState = context.getEntity(entityChange);
+        final FinalEntityState finalState = context.getFinalEntity(entityChange);
 
         final String entityId = extractEntityId(entityChange, currentState);
-
-        final FinalEntityState finalState = finalStateCreator.apply(currentState, entityChange);
 
         final Collection<EntityFieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
@@ -82,8 +79,5 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         return entityIdExtractor.extract(entityChange, currentState)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
                                                                                  "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
-    }
-
-    interface FinalEntityStateCreator extends BiFunction<CurrentEntityState, EntityChange<?>, FinalEntityState> {
     }
 }
