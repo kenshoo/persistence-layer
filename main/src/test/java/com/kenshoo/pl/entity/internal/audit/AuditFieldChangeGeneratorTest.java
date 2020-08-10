@@ -32,13 +32,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class AuditFieldChangeGeneratorTest {
 
-    private static final AuditFieldChangeGenerator GENERATOR = AuditFieldChangeGenerator.INSTANCE;
-
     @Mock
     private CurrentEntityState currentState;
 
     @Mock
     private FinalEntityState finalState;
+
+    private final AuditFieldChangeGenerator generator = new AuditFieldChangeGenerator();
 
     @Test
     public void generate_CurrentNotNull_FinalNotNull_ChangedTrivially_ShouldReturnUpdatedFieldChange() {
@@ -132,6 +132,6 @@ public class AuditFieldChangeGeneratorTest {
     }
 
     private Optional<? extends FieldAuditRecord<AuditedType>> generate(final EntityField<AuditedType, ?> field) {
-        return GENERATOR.generate(currentState, finalState, field);
+        return generator.generate(currentState, finalState, field);
     }
 }

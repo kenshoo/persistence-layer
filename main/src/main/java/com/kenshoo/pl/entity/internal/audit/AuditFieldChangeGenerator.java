@@ -10,9 +10,7 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-class AuditFieldChangeGenerator {
-
-    static final AuditFieldChangeGenerator INSTANCE = new AuditFieldChangeGenerator();
+public class AuditFieldChangeGenerator {
 
     <E extends EntityType<E>> Optional<FieldAuditRecord<E>> generate(final CurrentEntityState currentState,
                                                                      final FinalEntityState finalState,

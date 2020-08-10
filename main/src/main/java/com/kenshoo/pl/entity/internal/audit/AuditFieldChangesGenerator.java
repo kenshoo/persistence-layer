@@ -21,7 +21,7 @@ public class AuditFieldChangesGenerator<E extends EntityType<E>> {
     private final AuditFieldChangeGenerator singleGenerator;
 
     public AuditFieldChangesGenerator(final Stream<? extends EntityField<E, ?>> onChangeFields) {
-        this(onChangeFields, AuditFieldChangeGenerator.INSTANCE);
+        this(onChangeFields, new AuditFieldChangeGenerator());
     }
 
     @VisibleForTesting
