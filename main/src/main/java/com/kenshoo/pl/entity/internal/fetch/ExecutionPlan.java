@@ -90,19 +90,19 @@ public class ExecutionPlan {
     }
 
     private Predicate<EntityField<?,?>> tableIn(List<TreeEdge> oneToOnePaths) {
-        return field -> seq(oneToOnePaths).anyMatch(path -> path.target.table == field.getEntityType().getPrimaryTable());
+        return field -> seq(oneToOnePaths).anyMatch(path -> field.getEntityType().getPrimaryTable().equals(path.target.table));
     }
 
     private Predicate<EntityField<?,?>> tableEqual(DataTable table) {
-        return field -> field.getEntityType().getPrimaryTable() == table;
+        return field -> table.equals(field.getEntityType().getPrimaryTable());
     }
 
     private Predicate<DataTable> notMany(List<ManyToOnePlan<?>> manyToOnePlans) {
-        return table -> seq(manyToOnePlans).noneMatch(plan -> plan.getPath().target.table == table);
+        return table -> seq(manyToOnePlans).noneMatch(plan -> table.equals(plan.getPath().target.table));
     }
 
     private Predicate<ManyToOnePlan<?>> notIn(List<TreeEdge> oneToOnePaths) {
-        return plan -> seq(oneToOnePaths).noneMatch(path -> path.target.table == plan.getPath().target.table);
+        return plan -> seq(oneToOnePaths).noneMatch(path -> plan.getPath().target.table.equals(path.target.table));
     }
 
     private Seq<TreeEdge> edgesComingOutOf(TreeEdge edge) {
