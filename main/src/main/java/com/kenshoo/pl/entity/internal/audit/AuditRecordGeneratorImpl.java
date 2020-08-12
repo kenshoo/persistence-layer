@@ -5,38 +5,43 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.Collection;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditRecordGenerator<E> {
 
-    private final AuditedFieldSet<E> auditedFieldSet;
+    private final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
+    private final AuditFieldChangesGenerator<E> fieldChangesGenerator;
     private final EntityIdExtractor entityIdExtractor;
 
-    public AuditRecordGeneratorImpl(final AuditedFieldSet<E> auditedFieldSet) {
-        this(auditedFieldSet,
+    public AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
+                                    final AuditFieldChangesGenerator<E> fieldChangesGenerator) {
+        this(mandatoryFieldValuesGenerator,
+             fieldChangesGenerator,
              EntityIdExtractor.INSTANCE);
     }
 
     @VisibleForTesting
-    AuditRecordGeneratorImpl(final AuditedFieldSet<E> auditedFieldSet,
+    AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
+                             final AuditFieldChangesGenerator<E> fieldChangesGenerator,
                              final EntityIdExtractor entityIdExtractor) {
-        this.auditedFieldSet = requireNonNull(auditedFieldSet, "An audited field set is required");
+        this.mandatoryFieldValuesGenerator = mandatoryFieldValuesGenerator;
+        this.fieldChangesGenerator = fieldChangesGenerator;
         this.entityIdExtractor = entityIdExtractor;
     }
 
     @Override
-    public Optional<? extends AuditRecord<E>> generate(final EntityChange<E> entityChange,
-                                                       final CurrentEntityState currentState,
-                                                       final Collection<? extends AuditRecord<?>> childRecords) {
+    public Optional<AuditRecord<E>> generate(final EntityChange<E> entityChange,
+                                             final ChangeContext context,
+                                             final Collection<? extends AuditRecord<?>> childRecords) {
+        requireNonNull(entityChange, "entityChange is required");
+
         final AuditRecord<E> auditRecord = generateInner(entityChange,
-                                                         currentState,
+                                                         context,
                                                          childRecords);
 
         if (entityChange.getChangeOperation() == UPDATE && auditRecord.hasNoChanges()) {
@@ -46,18 +51,18 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
     }
 
     private AuditRecord<E> generateInner(final EntityChange<E> entityChange,
-                                         final CurrentEntityState currentState,
+                                         final ChangeContext context,
                                          final Collection<? extends AuditRecord<?>> childRecords) {
-        requireNonNull(entityChange, "entityChange is required");
-        requireNonNull(currentState, "currentState is required");
+        requireNonNull(context, "context is required");
+
+        final CurrentEntityState currentState = context.getEntity(entityChange);
+        final FinalEntityState finalState = context.getFinalEntity(entityChange);
 
         final String entityId = extractEntityId(entityChange, currentState);
 
-        final FinalEntityState finalState = new FinalEntityState(currentState, entityChange);
+        final Collection<EntityFieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
-        final Collection<? extends EntityFieldValue> mandatoryFieldValues = generateMandatoryFieldValues(finalState);
-
-        final Collection<? extends FieldAuditRecord<E>> fieldRecords = generateChangedFieldRecords(currentState, finalState);
+        final Collection<FieldAuditRecord<E>> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 
         return new AuditRecord.Builder<E>()
             .withEntityType(entityChange.getEntityType())
@@ -69,51 +74,10 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
             .build();
     }
 
-    private Collection<? extends FieldAuditRecord<E>> generateChangedFieldRecords(final CurrentEntityState currentState, final FinalEntityState finalState) {
-        return auditedFieldSet.getInternalFields()
-                              .filter(field -> fieldWasChanged(currentState, finalState, field))
-                              .map(field -> buildFieldRecord(currentState, finalState, field))
-                              .collect(toList());
-    }
-
-    private FieldAuditRecord<E> buildFieldRecord(final CurrentEntityState currentState,
-                                                 final FinalEntityState finalState,
-                                                 final EntityField<E, ?> field) {
-        final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
-        currentState.safeGet(field).ifNotNull(fieldRecordBuilder::oldValue);
-        finalState.safeGet(field).ifNotNull(fieldRecordBuilder::newValue);
-        return fieldRecordBuilder.build();
-    }
-
     private String extractEntityId(final EntityChange<E> entityChange,
                                    final CurrentEntityState currentState) {
         return entityIdExtractor.extract(entityChange, currentState)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
                                                                                  "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
-    }
-
-    private Collection<? extends EntityFieldValue> generateMandatoryFieldValues(final FinalEntityState finalState) {
-        return auditedFieldSet.getMandatoryFields()
-                              .map(field -> ImmutablePair.of(field, finalState.safeGet(field)))
-                              .filter(pair -> pair.getValue().isNotNull())
-                              .map(pair -> new EntityFieldValue(pair.getKey(), pair.getValue().get()))
-                              .collect(toList());
-    }
-
-    private <T> boolean fieldWasChanged(final CurrentEntityState currentState,
-                                        final FinalEntityState finalState,
-                                        final EntityField<E, T> field) {
-        return !fieldStayedTheSame(currentState, finalState, field);
-    }
-
-    private <T> boolean fieldStayedTheSame(final CurrentEntityState currentState,
-                                           final FinalEntityState finalState,
-                                           final EntityField<E, T> field) {
-        return currentState.safeGet(field).equals(finalState.safeGet(field), field::valuesEqual);
-    }
-
-    @VisibleForTesting
-    public AuditedFieldSet<E> getAuditedFieldSet() {
-        return auditedFieldSet;
     }
 }

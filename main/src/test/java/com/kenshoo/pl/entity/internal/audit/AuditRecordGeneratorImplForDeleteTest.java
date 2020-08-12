@@ -1,31 +1,30 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.CurrentEntityMutableState;
-import com.kenshoo.pl.entity.CurrentEntityState;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.kenshoo.pl.entity.ChangeOperation.DELETE;
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AuditRecordGeneratorImplForDeleteTest {
@@ -34,27 +33,47 @@ public class AuditRecordGeneratorImplForDeleteTest {
     private static final String STRING_ID = String.valueOf(ID);
     private static final String ANCESTOR_NAME = "ancestorName";
     private static final String ANCESTOR_DESC = "ancestorDesc";
-    private static final String NAME = "name";
-    private static final String DESC = "desc";
+
+    @Mock
+    private AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
+
+    @Mock
+    private AuditFieldChangesGenerator<AuditedType> fieldChangesGenerator;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
 
+    @Mock
+    private ChangeContext changeContext;
+
+    @Mock
+    private CurrentEntityState currentState;
+
+    @Mock
+    private EntityChange<AuditedType> cmd;
+
+    @Mock
+    private FinalEntityState finalState;
+
+    @InjectMocks
+    private AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator;
+
+    @Before
+    public void setUp() {
+        when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
+        when(cmd.getChangeOperation()).thenReturn(DELETE);
+        when(changeContext.getEntity(cmd)).thenReturn(currentState);
+        when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
+        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
+    }
+
     @Test
     public void generate_WithIdOnly_ShouldGenerateBasicData() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
-
-        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        currentState.set(AuditedType.NAME, "oldName");
-        currentState.set(AuditedType.DESC, "oldDesc");
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet = AuditedFieldSet.builder(AuditedType.ID).build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
@@ -62,26 +81,23 @@ public class AuditRecordGeneratorImplForDeleteTest {
                                       hasOperator(DELETE))));
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void generate_WithNoId_ShouldThrowException() {
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.empty());
+
+        auditRecordGenerator.generate(cmd, changeContext, emptyList());
+    }
+
     @Test
-    public void generate_WithExternalMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
+    public void generate_WithMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
+        final Collection<EntityFieldValue> expectedMandatoryFieldValues =
+            ImmutableList.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
+                             new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
 
-        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
-            AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
-
-        final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -89,48 +105,13 @@ public class AuditRecordGeneratorImplForDeleteTest {
     }
 
     @Test
-    public void generate_WithInternalMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
-
-        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        currentState.set(AuditedType.NAME, NAME);
-        currentState.set(AuditedType.DESC, DESC);
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
-            AuditedFieldSet.builder(AuditedType.ID)
-                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
-                           .build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
-
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
-
-        assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasMandatoryFieldValue(AuditedType.NAME, NAME),
-                                      hasMandatoryFieldValue(AuditedType.DESC, DESC))));
-    }
-
-    @Test
     public void generate_WithChildRecordsOnly_ShouldGenerateChildRecords() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE)
-            .with(AuditedType.NAME, "name");
-
-        final CurrentEntityState currentState = CurrentEntityState.EMPTY;
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
-            AuditedFieldSet.builder(AuditedType.ID)
-                           .withInternalFields(ON_CREATE_OR_UPDATE, singleton(AuditedType.NAME))
-                           .build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasSameChildRecord(childRecords.get(0)),
@@ -138,55 +119,17 @@ public class AuditRecordGeneratorImplForDeleteTest {
     }
 
     @Test
-    public void generate_WithExternalAndInternalMandatoryOnly_ShouldGenerateMandatoryFieldValuesForBothTypes() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE);
+    public void generate_WithMandatoryAndChildRecords_ShouldGenerateMandatoryFieldValuesAndChildRecords() {
+        final Collection<EntityFieldValue> expectedMandatoryFieldValues =
+            ImmutableList.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
+                             new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
 
-        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
-        currentState.set(AuditedType.NAME, NAME);
-        currentState.set(AuditedType.DESC, DESC);
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
-            AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
-                           .build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
-
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, emptyList());
-
-        assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                                      hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
-                                      hasMandatoryFieldValue(AuditedType.NAME, NAME),
-                                      hasMandatoryFieldValue(AuditedType.DESC, DESC))));
-    }
-
-    @Test
-    public void generate_WithExternalMandatoryAndChildRecords_ShouldGenerateMandatoryFieldValuesAndChildRecords() {
-        final AuditedCommand cmd = new AuditedCommand(ID, DELETE)
-            .with(AuditedType.NAME, "name");
-
-        final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        currentState.set(NotAuditedAncestorType.NAME, ANCESTOR_NAME);
-        currentState.set(NotAuditedAncestorType.DESC, ANCESTOR_DESC);
-
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
-            AuditedFieldSet.builder(AuditedType.ID)
-                           .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                           .build();
-        final AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator = newAuditRecordGenerator(auditedFieldSet);
-
-        doReturn(Optional.of(STRING_ID)).when(entityIdExtractor).extract(cmd, currentState);
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
 
         final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
         final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
-            auditRecordGenerator.generate(cmd, currentState, childRecords);
+            auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
@@ -197,9 +140,5 @@ public class AuditRecordGeneratorImplForDeleteTest {
 
     private AuditRecord<?> mockChildRecord() {
         return mock(AuditRecord.class);
-    }
-
-    private AuditRecordGeneratorImpl<AuditedType> newAuditRecordGenerator(final AuditedFieldSet<AuditedType> fieldSet) {
-        return new AuditRecordGeneratorImpl<>(fieldSet, entityIdExtractor);
     }
 }

@@ -37,7 +37,7 @@ public class AuditedFieldsResolverTest {
         final AuditedFieldSet<AuditedType> expectedFieldSet =
             AuditedFieldSet.builder(AuditedType.ID)
                            .withInternalFields(ON_CREATE_OR_UPDATE,
-                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
+                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2, AuditedType.AMOUNT)
                            .build();
 
         assertThat(fieldsResolver.resolve(AuditedType.INSTANCE),

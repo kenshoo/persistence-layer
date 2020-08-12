@@ -283,7 +283,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             final AuditRequiredFieldsCalculator<E> auditRequiredFieldsCalculator =
                 optionalAuditedFieldSet.map(AuditRequiredFieldsCalculator::new).orElse(null);
             final AuditRecordGenerator<E> auditRecordGenerator =
-                optionalAuditedFieldSet.map(AuditRecordGeneratorImpl::new).orElse(null);
+                optionalAuditedFieldSet.map(this::createAuditRecordGenerator).orElse(null);
 
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
@@ -297,6 +297,15 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                                           auditRecordGenerator,
                                           features
             );
+        }
+
+        private AuditRecordGenerator<E> createAuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet) {
+            final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator =
+                new AuditMandatoryFieldValuesGenerator(auditedFieldSet.getMandatoryFields());
+
+            final AuditFieldChangesGenerator<E> fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedFieldSet.getInternalFields());
+
+            return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator, fieldChangesGenerator);
         }
 
         static private class Labeled<Element> {
