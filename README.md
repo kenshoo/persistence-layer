@@ -28,7 +28,7 @@ PL precalculates the fields required by the flow components and fetches exactly 
 It also precalculates which validators are really required by your commands and there are more optimizations along the way. Oh, and it does not use reflection.
 
 ## Compatibility
-* Java 8 or greater
+* Java 11 or greater
 * MySQL Database (5.6 or greater)
 * PL depends on [JOOQ](https://www.jooq.org). Each PL release version specifies the JOOQ version it was built with. E.g. release "0.1.40-jooq-3.10.4" was built with JOOQ 3.10.4. If you need a very specific JOOQ version, we can add it to our build process.
 
