@@ -11,10 +11,10 @@ dependencies {
     compile libraries.jool
     compile libraries.guava
 
-    compile libraries.jool
     compile libraries.apacheCommons3
     compile libraries.mysqlConnector
     compile libraries.guavaRetrying
+    compile libraries.jaxbApi
 
     testCompile libraries.junit
     testCompile libraries.mockito
