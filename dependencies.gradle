@@ -6,7 +6,7 @@ ext.jooq_version = project.hasProperty('JOOQ_VERSION') ? "$JOOQ_VERSION" : '3.10
 project.ext.libraries = [
         slf4j                : 'org.slf4j:slf4j-api:1.7.21',
         junit                : 'junit:junit:4.12',
-        mockito              : 'org.mockito:mockito-core:2.2.29',
+        mockito              : 'org.mockito:mockito-core:3.5.0',
         hamcrest             : 'org.hamcrest:hamcrest-library:1.3',
         shazamcrest          : dependencies.create('com.shazam:shazamcrest:0.11') {
             exclude group: 'junit', module: '*'
@@ -22,6 +22,5 @@ project.ext.libraries = [
 
         guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
 
-        dockerTest           : 'com.kenshoo:docker-test:4.5.+'
-
+        dockerTest           : 'com.kenshoo:docker-test:4.5.+',
 ]

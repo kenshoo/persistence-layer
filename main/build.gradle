@@ -11,7 +11,6 @@ dependencies {
     compile libraries.jool
     compile libraries.guava
 
-    compile libraries.jool
     compile libraries.apacheCommons3
     compile libraries.mysqlConnector
     compile libraries.guavaRetrying
