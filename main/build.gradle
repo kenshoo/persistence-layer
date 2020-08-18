@@ -14,7 +14,6 @@ dependencies {
     compile libraries.apacheCommons3
     compile libraries.mysqlConnector
     compile libraries.guavaRetrying
-    compile libraries.jaxbApi
 
     testCompile libraries.junit
     testCompile libraries.mockito

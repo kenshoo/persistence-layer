@@ -23,6 +23,4 @@ project.ext.libraries = [
         guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
 
         dockerTest           : 'com.kenshoo:docker-test:4.5.+',
-
-        jaxbApi              : 'javax.xml.bind:jaxb-api:2.3.1'
 ]
