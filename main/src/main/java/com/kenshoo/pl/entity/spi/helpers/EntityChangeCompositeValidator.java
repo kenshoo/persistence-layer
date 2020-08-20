@@ -119,9 +119,9 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
         entityChanges.forEach(entityChange -> {
             CurrentEntityState currentState = changeContext.getEntity(entityChange);
-            Collection<EntityChangeValidator<E>> validators = findValidators(entityChange, changeOperation);
+            Collection<? extends EntityField<E, ?>> fieldsToUpdate = entityChange.getChangedFields().collect(Collectors.toList());
+            Collection<EntityChangeValidator<E>> validators = findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation).collect(toSet());
             validators.stream()
-                    .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                     .map(validator -> validator.validate(entityChange, currentState))
                     .filter(Objects::nonNull)
                     .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
@@ -130,20 +130,14 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
 
     @Override
     public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return findValidatorsTriggeredByFields(fieldsToUpdate)
-                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
+        return findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
                 .flatMap(EntityChangeValidator::fetchFields);
     }
 
-    private Collection<EntityChangeValidator<E>> findValidators(EntityChange<E> entityChange, ChangeOperation changeOperation) {
-        return findValidatorsTriggeredByFields(entityChange.getChangedFields().collect(Collectors.toList()))
-                .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
-                .collect(toSet());
-    }
-
-    private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByFields(Collection<? extends EntityField<E, ?>> entityFields) {
+    private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByFields(Collection<? extends EntityField<E, ?>> entityFields, ChangeOperation changeOperation) {
         return changesValidators.stream().
                 filter(validator -> validator.v1().triggeredByFields(entityFields)).
-                map(validator -> validator.v2());
+                map(validator -> validator.v2()).
+                filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation));
     }
 }
