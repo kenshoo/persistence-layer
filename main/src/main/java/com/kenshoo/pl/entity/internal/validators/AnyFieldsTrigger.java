@@ -18,6 +18,6 @@ public class AnyFieldsTrigger <E extends EntityType<E>> implements ValidationTri
 
     @Override
     public boolean triggeredByFields(Collection<? extends EntityField<E, ?>> entityFields) {
-        return entityFields.stream().anyMatch(field -> triggerFields.contains(field));
+        return entityFields.stream().anyMatch(triggerFields::contains);
     }
 }

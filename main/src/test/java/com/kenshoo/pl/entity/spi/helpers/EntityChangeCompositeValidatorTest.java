@@ -198,7 +198,6 @@ public class EntityChangeCompositeValidatorTest {
         when(ancestorsValidator.ancestorsFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
         validator.register(ancestorsValidator);
         List<? extends EntityField<?, ?>> fields = validator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
-        ;
         assertThat(fields.size(), is(1));
         assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
     }

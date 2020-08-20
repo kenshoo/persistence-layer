@@ -17,6 +17,6 @@ public class FieldTrigger<E extends EntityType<E>> implements ValidationTrigger<
 
     @Override
     public boolean triggeredByFields(Collection<? extends EntityField<E, ?>> entityFields) {
-        return entityFields.stream().anyMatch(field -> triggerField.equals(field));
+        return entityFields.stream().anyMatch(triggerField::equals);
     }
 }
