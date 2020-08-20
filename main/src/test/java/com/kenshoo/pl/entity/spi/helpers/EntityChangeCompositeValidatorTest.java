@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +29,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class EntityChangeCompositeValidatorTest {
 
-    private static final int ENTITY_ID = 10;
     private static final String FIELD_1_VALUE = "value1";
 
     @Mock
@@ -175,7 +175,7 @@ public class EntityChangeCompositeValidatorTest {
     public void registerAncestorsValidatorForCreateTest() {
         validator.register(ancestorsValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
-        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+        verify(ancestorsValidator).validate(currentState);
     }
 
     @Test
@@ -183,5 +183,23 @@ public class EntityChangeCompositeValidatorTest {
         validator.register(ancestorsValidator);
         validator.validate(entityChanges, ChangeOperation.UPDATE, changeContext);
         verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+    }
+
+    @Test
+    public void registerAncestorsValidatorForEmptyUpdateTest() {
+        when(entityChange.getChangedFields()).thenReturn(Stream.of());
+        validator.register(ancestorsValidator);
+        validator.validate(entityChanges, ChangeOperation.UPDATE, changeContext);
+        verify(ancestorsValidator).validate(currentState);
+    }
+
+    @Test
+    public void ancestorsRequiredFieldsForEmptyUpdateTest() {
+        when(ancestorsValidator.ancestorsFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
+        validator.register(ancestorsValidator);
+        List<? extends EntityField<?, ?>> fields = validator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
+        ;
+        assertThat(fields.size(), is(1));
+        assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
     }
 }

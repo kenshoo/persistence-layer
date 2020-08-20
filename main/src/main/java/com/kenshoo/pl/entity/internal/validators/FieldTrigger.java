@@ -3,7 +3,9 @@ package com.kenshoo.pl.entity.internal.validators;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
+import java.util.Collection;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class FieldTrigger<E extends EntityType<E>> implements ValidationTrigger<E> {
 
@@ -14,20 +16,7 @@ public class FieldTrigger<E extends EntityType<E>> implements ValidationTrigger<
     }
 
     @Override
-    public boolean triggeredByField(EntityField<E, ?> entityField) {
-        return triggerField.equals(entityField);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FieldTrigger<?> that = (FieldTrigger<?>) o;
-        return Objects.equals(triggerField, that.triggerField);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(triggerField);
+    public boolean triggeredByFields(Collection<? extends EntityField<E, ?>> entityFields) {
+        return entityFields.stream().anyMatch(field -> triggerField.equals(field));
     }
 }

@@ -1,7 +1,5 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.kenshoo.pl.entity.ChangeContext;
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.CurrentEntityState;
@@ -12,17 +10,20 @@ import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.validators.*;
 import com.kenshoo.pl.entity.spi.*;
+import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 
 public class EntityChangeCompositeValidator<E extends EntityType<E>> implements ChangesValidator<E> {
 
-    private final ValidationTrigger<E> ANY_FIELD_TRIGGER = entityField -> true;
+    private final ValidationTrigger<E> ANY_CHANGE_TRIGGER = entityField -> true;
 
-    private final Multimap<ValidationTrigger<E>, EntityChangeValidator<E>> changesValidators = HashMultimap.create();
+    private final List<Tuple2<ValidationTrigger<E>, EntityChangeValidator<E>>> changesValidators = new ArrayList<>();
 
     public void register(E entityType, ChangeValidator validator) {
         if (validator instanceof FieldComplexValidator) {
@@ -38,8 +39,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             //noinspection unchecked
             register((ImmutableFieldValidator) validator);
         } else if (validator instanceof AncestorsValidator) {
-                //noinspection unchecked
-                register((AncestorsValidator) validator);
+            register((AncestorsValidator) validator);
         } else if (validator instanceof PrototypeFieldValidator) {
             //noinspection unchecked
             register(entityType, (PrototypeFieldValidator) validator);
@@ -75,11 +75,11 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     }
 
     public void register(AncestorsValidator validator) {
-        changesValidators.put(ANY_FIELD_TRIGGER, new AncestorsValidationAdapter<>(validator));
+        changesValidators.add(Tuple.tuple(ANY_CHANGE_TRIGGER, new AncestorsValidationAdapter<>(validator)));
     }
 
     public void register(EntityChangeValidator<E> validator) {
-        validator.validatedFields().forEach(field -> changesValidators.put(new FieldTrigger<>(field), validator));
+        changesValidators.add(Tuple.tuple(new AnyFieldsTrigger<>(validator.validatedFields()), validator));
     }
 
     public <T> void register(E entityType, PrototypeFieldValidator<T> validator) {
@@ -88,7 +88,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             throw new IllegalArgumentException("Can not find entity field by prototype: " + validator.getPrototype());
         }
         for (EntityField<E, T> entityField : entityFields) {
-            changesValidators.put(new FieldTrigger<>(entityField), new PrototypeFieldValidationAdapter<>(entityField, validator));
+            changesValidators.add(Tuple.tuple(new FieldTrigger<>(entityField), new PrototypeFieldValidationAdapter<>(entityField, validator)));
         }
     }
 
@@ -111,7 +111,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             throw new IllegalArgumentException("Can not find entity field by prototype: " + validator.getPrototype());
         }
         for (EntityField<E, T> entityField : entityFields) {
-            changesValidators.put(new FieldTrigger<>(entityField), new PrototypeFieldComplexValidationAdapter<>(entityField, validator));
+            changesValidators.add(Tuple.tuple(new FieldTrigger<>(entityField), new PrototypeFieldComplexValidationAdapter<>(entityField, validator)));
         }
     }
 
@@ -130,22 +130,20 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
 
     @Override
     public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        return fieldsToUpdate.stream()
-                .flatMap(this::findValidatorsTriggeredByField)
+        return findValidatorsTriggeredByFields(fieldsToUpdate)
                 .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                 .flatMap(EntityChangeValidator::fetchFields);
     }
 
     private Collection<EntityChangeValidator<E>> findValidators(EntityChange<E> entityChange, ChangeOperation changeOperation) {
-        return entityChange.getChangedFields()
-                .flatMap(this::findValidatorsTriggeredByField)
+        return findValidatorsTriggeredByFields(entityChange.getChangedFields().collect(Collectors.toList()))
                 .filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation))
                 .collect(toSet());
     }
 
-    private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByField(EntityField<E, ?> entityField) {
-        return changesValidators.keySet().stream().
-                filter(trigger -> trigger.triggeredByField(entityField)).
-                flatMap(trigger -> changesValidators.get(trigger).stream());
+    private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByFields(Collection<? extends EntityField<E, ?>> entityFields) {
+        return changesValidators.stream().
+                filter(validator -> validator.v1().triggeredByFields(entityFields)).
+                map(validator -> validator.v2());
     }
 }
