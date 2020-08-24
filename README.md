@@ -1,4 +1,4 @@
-## Persistence Layer (Java)
+## High performance Java/MySQL library built on JOOQ
 
 Is Hibernate too slow for you?
 
