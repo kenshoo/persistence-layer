@@ -4,7 +4,7 @@ Is Hibernate too slow for you?
 
 Do you need high performance for bulk operations?
 
-Do you have a flow of business rules to run upon persitence?
+Do you have a flow of business rules to run upon persistence?
 
 If so, then PL may be the library you need.
 
