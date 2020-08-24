@@ -5,10 +5,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static com.kenshoo.pl.entity.Triptional.State.*;
 import static java.util.Objects.requireNonNull;
@@ -312,6 +309,50 @@ public class Triptional<T> {
     public <U> Optional<U> mapToOptional(final Function<? super T, ? extends U> notNullMapper,
                                          final Supplier<? extends U> nullReplacer) {
         return map(notNullMapper, nullReplacer).asOptional();
+    }
+
+    /**
+     * Return {@code true} if there is a value present (possibly {@code null}), and it equals the input;
+     * otherwise {@code false}
+     *
+     * @param value a value to compare to this value
+     * @return {@code true} if there is a value present, and it equals the input; otherwise {@code false}
+     */
+    public boolean contains(final T value) {
+        return isPresent() && Objects.equals(this.value, value);
+    }
+
+    /**
+     * If a value is present, and the value matches the given predicate,
+     * returns an {@code Triptional} describing the value, otherwise returns an
+     * absent {@code Triptional}.
+     *
+     * @param predicate the predicate to apply to a value, if present
+     * @return an {@code Triptional} describing the value of this
+     *         {@code Triptional}, if a value is present and the value matches the
+     *         given predicate; otherwise an absent {@code Triptional}
+     * @throws NullPointerException if the predicate is {@code null}
+     */
+    public Triptional<T> filter(final Predicate<? super T> predicate) {
+        requireNonNull(predicate, "a predicate must be provided");
+        if (matches(predicate)) {
+            return this;
+        }
+        return absent();
+    }
+
+    /**
+     * Return {@code true} if there is a value is present, and it matches the given predicate;
+     * otherwise return {@code false}
+     *
+     * @param predicate the predicate to apply to a value, if present
+     * @return {@code true} if there is a value is present, and it matches the given predicate;
+     *         otherwise {@code false}
+     * @throws NullPointerException if the predicate is {@code null}
+     */
+    public boolean matches(final Predicate<? super T> predicate) {
+        requireNonNull(predicate, "a predicate must be provided");
+        return isPresent() && predicate.test(value);
     }
 
     /**

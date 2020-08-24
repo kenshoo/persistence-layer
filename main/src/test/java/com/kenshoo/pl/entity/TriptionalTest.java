@@ -311,6 +311,96 @@ public class TriptionalTest {
     }
 
     @Test
+    public void contains_WhenBothNotNullAndEqual_ShouldReturnTrue() {
+        assertThat(Triptional.of(2).contains(2), is(true));
+    }
+
+    @Test
+    public void contains_WhenBothNotNullAndUnequal_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).contains(3), is(false));
+    }
+
+    @Test
+    public void contains_WhenThisNullAndOtherNotNull_ShouldReturnFalse() {
+        assertThat(Triptional.nullInstance().contains(3), is(false));
+    }
+
+    @Test
+    public void contains_WhenThisNotNullAndOtherNull_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).contains(null), is(false));
+    }
+
+    @Test
+    public void contains_WhenThisAbsentAndOtherNotNull_ShouldReturnFalse() {
+        assertThat(Triptional.absent().contains(3), is(false));
+    }
+
+    @Test
+    public void contains_WhenThisAbsentAndOtherNull_ShouldReturnFalse() {
+        assertThat(Triptional.absent().contains(null), is(false));
+    }
+
+    @Test
+    public void filter_WhenNotNullAndMatchesPredicate_ShouldReturnThis_Scenario1() {
+        assertThat(Triptional.of(2).filter(num -> num < 3), is(Triptional.of(2)));
+    }
+
+    @Test
+    public void filter_WhenNotNullAndMatchesPredicate_ShouldReturnThis_Scenario2() {
+        assertThat(Triptional.of(2).filter(num -> num > 1), is(Triptional.of(2)));
+    }
+
+    @Test
+    public void filter_WhenNotNullAndDoesntMatchPredicate_ShouldReturnAbsent() {
+        assertThat(Triptional.of(2).filter(num -> num < 2), is(Triptional.absent()));
+    }
+
+    @Test
+    public void filter_WhenNullAndMatchesPredicate_ShouldReturnThis() {
+        assertThat(Triptional.nullInstance().filter(Objects::isNull), is(Triptional.nullInstance()));
+    }
+
+    @Test
+    public void filter_WhenNullAndDoesntMatchPredicate_ShouldReturnAbsent() {
+        assertThat(Triptional.nullInstance().filter("abc"::equals), is(Triptional.absent()));
+    }
+
+    @Test
+    public void filter_WhenAbsent_ShouldReturnAbsent() {
+        assertThat(Triptional.absent().filter("abc"::equals), is(Triptional.absent()));
+    }
+
+    @Test
+    public void matches_WhenNotNullAndMatchesPredicate_ShouldReturnTrue_Scenario1() {
+        assertThat(Triptional.of(2).matches(num -> num < 3), is(true));
+    }
+
+    @Test
+    public void matches_WhenNotNullAndMatchesPredicate_ShouldReturnTrue_Scenario2() {
+        assertThat(Triptional.of(2).matches(num -> num > 1), is(true));
+    }
+
+    @Test
+    public void matches_WhenNotNullAndDoesntMatchPredicate_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).matches(num -> num < 2), is(false));
+    }
+
+    @Test
+    public void matches_WhenNullAndMatchesPredicate_ShouldReturnTrue() {
+        assertThat(Triptional.nullInstance().matches(Objects::isNull), is(true));
+    }
+
+    @Test
+    public void matches_WhenNullAndDoesntMatchPredicate_ShouldReturnFalse() {
+        assertThat(Triptional.nullInstance().matches("abc"::equals), is(false));
+    }
+
+    @Test
+    public void matches_WhenAbsent_ShouldReturnFalse() {
+        assertThat(Triptional.absent().matches("abc"::equals), is(false));
+    }
+
+    @Test
     public void equalsOneArg_WhenBothNotNullWithSameValue_ShouldReturnTrue() {
         assertThat(Triptional.of(2).equals(Triptional.of(1 + 1)), is(true));
     }
