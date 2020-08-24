@@ -312,17 +312,6 @@ public class Triptional<T> {
     }
 
     /**
-     * Return {@code true} if there is a value present (possibly {@code null}), and it equals the input;
-     * otherwise {@code false}
-     *
-     * @param value a value to compare to this value
-     * @return {@code true} if there is a value present, and it equals the input; otherwise {@code false}
-     */
-    public boolean contains(final T value) {
-        return isPresent() && Objects.equals(this.value, value);
-    }
-
-    /**
      * If a value is present, and the value matches the given predicate,
      * returns an {@code Triptional} describing the value, otherwise returns an
      * absent {@code Triptional}.
@@ -389,6 +378,17 @@ public class Triptional<T> {
      */
     public boolean isNull() {
         return state == NULL;
+    }
+
+    /**
+     * Return {@code true} if there is a value present (possibly {@code null}), and it equals the input;
+     * otherwise {@code false}
+     *
+     * @param value a value to compare to this value
+     * @return {@code true} if there is a value present, and it equals the input; otherwise {@code false}
+     */
+    public boolean equalsValue(final T value) {
+        return isPresent() && Objects.equals(this.value, value);
     }
 
     /**

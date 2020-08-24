@@ -311,36 +311,6 @@ public class TriptionalTest {
     }
 
     @Test
-    public void contains_WhenBothNotNullAndEqual_ShouldReturnTrue() {
-        assertThat(Triptional.of(2).contains(2), is(true));
-    }
-
-    @Test
-    public void contains_WhenBothNotNullAndUnequal_ShouldReturnFalse() {
-        assertThat(Triptional.of(2).contains(3), is(false));
-    }
-
-    @Test
-    public void contains_WhenThisNullAndOtherNotNull_ShouldReturnFalse() {
-        assertThat(Triptional.nullInstance().contains(3), is(false));
-    }
-
-    @Test
-    public void contains_WhenThisNotNullAndOtherNull_ShouldReturnFalse() {
-        assertThat(Triptional.of(2).contains(null), is(false));
-    }
-
-    @Test
-    public void contains_WhenThisAbsentAndOtherNotNull_ShouldReturnFalse() {
-        assertThat(Triptional.absent().contains(3), is(false));
-    }
-
-    @Test
-    public void contains_WhenThisAbsentAndOtherNull_ShouldReturnFalse() {
-        assertThat(Triptional.absent().contains(null), is(false));
-    }
-
-    @Test
     public void filter_WhenNotNullAndMatchesPredicate_ShouldReturnThis_Scenario1() {
         assertThat(Triptional.of(2).filter(num -> num < 3), is(Triptional.of(2)));
     }
@@ -398,6 +368,41 @@ public class TriptionalTest {
     @Test
     public void matches_WhenAbsent_ShouldReturnFalse() {
         assertThat(Triptional.absent().matches("abc"::equals), is(false));
+    }
+
+    @Test
+    public void equalsValue_WhenBothNotNullAndEqual_ShouldReturnTrue() {
+        assertThat(Triptional.of(2).equalsValue(2), is(true));
+    }
+
+    @Test
+    public void equalsValue_WhenBothNotNullAndUnequal_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equalsValue(3), is(false));
+    }
+
+    @Test
+    public void equalsValue_WhenThisNullAndOtherNotNull_ShouldReturnFalse() {
+        assertThat(Triptional.nullInstance().equalsValue(3), is(false));
+    }
+
+    @Test
+    public void equalsValue_WhenThisNotNullAndOtherNull_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equalsValue(null), is(false));
+    }
+
+    @Test
+    public void equalsValue_WhenBothNull_ShouldReturnTrue() {
+        assertThat(Triptional.nullInstance().equalsValue(null), is(true));
+    }
+
+    @Test
+    public void equalsValue_WhenThisAbsentAndOtherNotNull_ShouldReturnFalse() {
+        assertThat(Triptional.absent().equalsValue(3), is(false));
+    }
+
+    @Test
+    public void equalsValue_WhenThisAbsentAndOtherNull_ShouldReturnFalse() {
+        assertThat(Triptional.absent().equalsValue(null), is(false));
     }
 
     @Test
