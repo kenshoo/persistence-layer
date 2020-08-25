@@ -119,7 +119,6 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             CurrentEntityState currentState = changeContext.getEntity(entityChange);
             Collection<? extends EntityField<E, ?>> fieldsToUpdate = entityChange.getChangedFields().collect(Collectors.toList());
             findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
-                    .distinct()
                     .map(validator -> validator.validate(entityChange, currentState))
                     .filter(Objects::nonNull)
                     .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
