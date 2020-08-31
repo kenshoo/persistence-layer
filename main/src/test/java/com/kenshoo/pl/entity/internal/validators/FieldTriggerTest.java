@@ -15,17 +15,17 @@ public class FieldTriggerTest {
     private final FieldTrigger fieldTrigger = new FieldTrigger<>(TestEntity.FIELD_1);
 
     @Test
-    public void triggered_exactly_by_field() {
+    public void triggeredExactlyByField() {
         assertTrue(fieldTrigger.triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test
-    public void triggered_by_list_contains_field() {
+    public void triggeredByListContainsField() {
         assertTrue(fieldTrigger.triggeredByFields(List.of(TestEntity.FIELD_2, TestEntity.FIELD_1)));
     }
 
     @Test
-    public void do_not_triggered_by_list_not_contains_field() {
+    public void isNotTriggeredByListDoesNotContainField() {
         assertFalse(fieldTrigger.triggeredByFields(List.of(TestEntity.FIELD_2)));
     }
 }

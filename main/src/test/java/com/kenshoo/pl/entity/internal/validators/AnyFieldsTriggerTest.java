@@ -16,17 +16,17 @@ public class AnyFieldsTriggerTest {
     private final AnyFieldsTrigger anyFieldTrigger = new AnyFieldsTrigger<>(Stream.of(TestEntity.FIELD_1, TestEntity.FIELD_2));
 
     @Test
-    public void triggered_by_one_of_fields() {
+    public void triggeredByOneOfFields() {
         assertTrue(anyFieldTrigger.triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test
-    public void triggered_by_list_contains_field() {
+    public void triggeredByListContainsField() {
         assertTrue(anyFieldTrigger.triggeredByFields(List.of(TestEntity.ID, TestEntity.FIELD_1)));
     }
 
     @Test
-    public void do_not_triggered_by_list_not_contains_field() {
+    public void isNotTriggeredByListDoesNotContainField() {
         assertFalse(anyFieldTrigger.triggeredByFields(List.of(TestEntity.ID)));
     }
 }

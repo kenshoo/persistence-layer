@@ -186,7 +186,7 @@ public class EntityChangeCompositeValidatorTest {
     }
 
     @Test
-    public void registerAncestorsValidatorForEmptyUpdateTest() {
+    public void registeredAncestorsValidatorShouldBeInvokedWhenNothingIsChangedTest() {
         when(entityChange.getChangedFields()).thenReturn(Stream.of());
         validator.register(ancestorsValidator);
         validator.validate(entityChanges, ChangeOperation.UPDATE, changeContext);
@@ -194,7 +194,7 @@ public class EntityChangeCompositeValidatorTest {
     }
 
     @Test
-    public void ancestorsRequiredFieldsForEmptyUpdateTest() {
+    public void registeredAncestorsValidatorShouldReturnFieldsWhenNothingIsChangedTest() {
         when(ancestorsValidator.ancestorsFields()).thenReturn(Stream.of(TestEntity.FIELD_1));
         validator.register(ancestorsValidator);
         List<? extends EntityField<?, ?>> fields = validator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
