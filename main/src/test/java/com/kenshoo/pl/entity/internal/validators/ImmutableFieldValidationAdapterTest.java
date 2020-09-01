@@ -11,7 +11,6 @@ import com.kenshoo.pl.entity.spi.ImmutableFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -30,7 +29,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ImmutableFieldValidationAdapterTest {
 
-    final static String STRING_VALUE = "value";
     final static String ERROR_CODE = "error";
 
     @Mock
@@ -51,7 +49,6 @@ public class ImmutableFieldValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    @InjectMocks
     private ImmutableFieldValidationAdapter<TestEntity, String> adapter;
 
     @Before
@@ -59,6 +56,7 @@ public class ImmutableFieldValidationAdapterTest {
         when(validator.immutableField()).thenReturn(field);
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
         when(validator.immutableWhen()).thenReturn(currentState -> true);
+        adapter = new ImmutableFieldValidationAdapter<>(validator);
     }
 
     @Test
@@ -83,10 +81,8 @@ public class ImmutableFieldValidationAdapterTest {
     }
 
     @Test
-    public void testValidatedFields() {
-        Optional<? extends EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
-        assertTrue("Validated field", field.isPresent());
-        assertEquals("Validated field", field.get(), this.field);
+    public void testTriggeredByFields() {
+        assertTrue("Triggered by field",  adapter.trigger().triggeredByFields(List.of(this.field)));
     }
 
     @Test

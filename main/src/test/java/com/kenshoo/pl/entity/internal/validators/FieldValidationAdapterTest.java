@@ -15,8 +15,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.summarizingDouble;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -45,12 +47,12 @@ public class FieldValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    @InjectMocks
     private FieldValidationAdapter<TestEntity, String> adapter;
 
     @Before
     public void setUp(){
         when(validator.validatedField()).thenReturn(field);
+        adapter = new FieldValidationAdapter<>(validator);
     }
 
     @Test
@@ -72,10 +74,8 @@ public class FieldValidationAdapterTest {
     }
 
     @Test
-    public void testValidatedFields() {
-        Optional<EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
-        assertTrue("Validated field", field.isPresent());
-        assertEquals("Validated field", field.get(), this.field);
+    public void testTriggeredByFields() {
+        assertTrue("Triggered by field", adapter.trigger().triggeredByFields(List.of(this.field)));
     }
 
     @Test

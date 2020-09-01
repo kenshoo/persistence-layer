@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -68,10 +69,8 @@ public class PrototypeFieldComplexValidationAdapterTest {
     }
 
     @Test
-    public void testValidatedFields() {
-        Optional<? extends EntityField<?, ?>> validatedField = adapter.validatedFields().findFirst();
-        assertTrue(validatedField.isPresent());
-        assertEquals("Validated field", validatedField.get(), TestEntity.FIELD_1);
+    public void testTriggeredByFields() {
+        assertTrue(adapter.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test

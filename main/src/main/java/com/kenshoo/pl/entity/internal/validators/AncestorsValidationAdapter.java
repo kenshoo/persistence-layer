@@ -5,7 +5,7 @@ import com.kenshoo.pl.entity.spi.AncestorsValidator;
 
 import java.util.stream.Stream;
 
-public class AncestorsValidationAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
+public class AncestorsValidationAdapter<E extends EntityType<E>> implements ChangeValidatorAdapter<E> {
 
     private final AncestorsValidator validator;
 
@@ -13,9 +13,10 @@ public class AncestorsValidationAdapter<E extends EntityType<E>> implements Enti
         this.validator = validator;
     }
 
+
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.empty();
+    public ValidationTrigger<E> trigger() {
+        return entityFields -> true;
     }
 
     @Override

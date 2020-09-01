@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -14,7 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -30,9 +29,6 @@ public class PrototypeFieldValidationAdapterTest  {
     private static final String STRING_VALUE = "value";
     @Mock
     private PrototypeFieldValidator<String> validator;
-
-    @Mock
-    private ChangeEntityCommand<TestEntity> command;
 
     @Mock
     private EntityChange<TestEntity> entityChange;
@@ -67,10 +63,8 @@ public class PrototypeFieldValidationAdapterTest  {
     }
 
     @Test
-    public void testValidatedFields() {
-        Optional<EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
-        assertTrue("Validated field", field.isPresent());
-        assertEquals("Validated field", field.get(), TestEntity.FIELD_1);
+    public void testTriggeredByFields() {
+        assertTrue("Triggered by field",adapter.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test

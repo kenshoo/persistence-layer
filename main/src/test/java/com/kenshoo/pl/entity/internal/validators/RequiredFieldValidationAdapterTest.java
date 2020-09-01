@@ -45,13 +45,13 @@ public class RequiredFieldValidationAdapterTest {
     @Mock
     private RequiredFieldValidator<TestEntity, String> validator;
 
-    @InjectMocks
     private RequiredFieldValidationAdapter underTest;
 
     @Before
     public void init() {
         when(validator.requiredField()).thenReturn(TestEntity.FIELD_1);
         when(validator.requireWhen()).thenReturn(currentState -> true);
+        underTest = new RequiredFieldValidationAdapter(validator);
     }
 
     @Test
@@ -81,10 +81,8 @@ public class RequiredFieldValidationAdapterTest {
     }
 
     @Test
-    public void when_call_validated_fields_then_return_required_field() {
-        Optional<? extends EntityField<TestEntity, ?>> field = underTest.validatedFields().findFirst();
-        assertTrue(field.isPresent());
-        assertEquals(field.get(), TestEntity.FIELD_1);
+    public void triggered_by_required_field() {
+        assertTrue(underTest.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test

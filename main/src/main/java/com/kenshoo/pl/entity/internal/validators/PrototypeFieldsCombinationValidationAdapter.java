@@ -15,19 +15,21 @@ import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
+public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>> implements ChangeValidatorAdapter<E> {
 
     private final PrototypeFieldsCombinationValidator prototypeFieldsCombinationValidator;
     private final Map<EntityFieldPrototype<?>, EntityField<E, ?>> fieldsMapping;
+    private final ValidationTrigger<E> trigger;
 
     public PrototypeFieldsCombinationValidationAdapter(PrototypeFieldsCombinationValidator prototypeFieldsCombinationValidator, Map<EntityFieldPrototype<?>, EntityField<E, ?>> fieldsMapping) {
         this.prototypeFieldsCombinationValidator = prototypeFieldsCombinationValidator;
         this.fieldsMapping = fieldsMapping;
+        this.trigger = new AnyFieldsTrigger<>(fieldsMapping.values().stream());
     }
 
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return fieldsMapping.values().stream();
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override

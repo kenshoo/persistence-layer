@@ -15,17 +15,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FieldsCombinationValidationAdapter<E extends EntityType<E>> implements EntityChangeValidator<E> {
+public class FieldsCombinationValidationAdapter<E extends EntityType<E>> implements ChangeValidatorAdapter<E> {
 
     private final FieldsCombinationValidator<E> validator;
+    private final ValidationTrigger<E> trigger;
 
     public FieldsCombinationValidationAdapter(FieldsCombinationValidator<E> validator) {
         this.validator = validator;
+        this.trigger = new AnyFieldsTrigger<>(validator.validatedFields());
     }
 
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return validator.validatedFields();
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override

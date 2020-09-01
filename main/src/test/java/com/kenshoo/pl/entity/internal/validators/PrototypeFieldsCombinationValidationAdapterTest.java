@@ -16,7 +16,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,12 +37,11 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    @InjectMocks
     private PrototypeFieldsCombinationValidationAdapter<TestEntity> adapter;
 
     @Before
     public void setUp(){
-        adapter = spy(new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.<EntityFieldPrototype<?>, EntityField<TestEntity, ?>>of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2)));
+        adapter = new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.<EntityFieldPrototype<?>, EntityField<TestEntity, ?>>of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2));
 
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.UPDATE);
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
