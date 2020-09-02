@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.List;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
@@ -98,6 +99,11 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
             fieldCombination.get(invalidField);
             return true;
         }));
+    }
+
+    @Test
+    public void testTriggeredByFields() {
+        assertTrue(adapter.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
 }
