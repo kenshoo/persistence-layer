@@ -67,7 +67,7 @@ public class ImmutableFieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Optional<? extends EntityField<?, ?>> field = adapter.fetchFields().findFirst();
+        Optional<? extends EntityField<?, ?>> field = adapter.fieldsToFetch().findFirst();
         assertTrue("Fetch validated field", field.isPresent());
         assertEquals("Fetch validated field", field.get(), this.field);
     }
@@ -75,7 +75,7 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testFetchFieldsInUpdateWithWhenPredicate() {
         when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        List<EntityField<?, ?>> fieldsToFetch = adapter.fetchFields().collect(Collectors.toList());
+        List<EntityField<?, ?>> fieldsToFetch = adapter.fieldsToFetch().collect(Collectors.toList());
         assertTrue("Fetch validated field", fieldsToFetch.contains(field));
         assertTrue("Fetch validated field", fieldsToFetch.contains(fetchField));
     }

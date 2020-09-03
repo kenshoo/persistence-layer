@@ -54,7 +54,7 @@ public class EntityChangeValidatorAdapterTest {
 
     @Test
     public void testFetchFieldsInCreate() {
-        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.fetchFields().findFirst();
+        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.fieldsToFetch().findFirst();
         assertTrue(fieldToFetch.isPresent());
         assertEquals("Fetch field", fieldToFetch.get(), fetchField);
     }

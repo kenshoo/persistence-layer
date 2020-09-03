@@ -32,7 +32,7 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Chang
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return Stream.empty();
     }
 

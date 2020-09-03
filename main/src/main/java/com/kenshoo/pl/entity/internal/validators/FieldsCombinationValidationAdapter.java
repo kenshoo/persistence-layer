@@ -36,7 +36,7 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return Stream.concat(validator.validatedFields(), validator.fetchFields());
     }
 

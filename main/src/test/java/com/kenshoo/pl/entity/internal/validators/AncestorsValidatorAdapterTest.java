@@ -51,7 +51,7 @@ public class AncestorsValidatorAdapterTest {
 
     @Test
     public void test_fetched_fields() {
-        Optional<? extends EntityField<?, ?>> field = adapter.fetchFields().findFirst();
+        Optional<? extends EntityField<?, ?>> field = adapter.fieldsToFetch().findFirst();
         assertTrue("Fetch validated field", field.isPresent());
         assertEquals("Fetch validated field", field.get(), this.field);
     }

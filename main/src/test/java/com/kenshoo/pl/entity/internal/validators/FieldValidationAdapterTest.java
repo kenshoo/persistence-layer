@@ -10,15 +10,12 @@ import com.kenshoo.pl.entity.spi.FieldValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
-import static java.util.stream.Collectors.summarizingDouble;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -63,13 +60,13 @@ public class FieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 

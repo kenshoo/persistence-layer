@@ -74,14 +74,14 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));;
     }
@@ -151,7 +151,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
         when(validator.fetchFields()).thenReturn(Stream.of(field3));
 
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
         assertTrue("Fetch field3", fields.contains(field3));

@@ -25,7 +25,7 @@ public class EntityChangeValidatorAdapter<E extends EntityType<E>> implements Ch
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return validator.fetchFields();
     }
 

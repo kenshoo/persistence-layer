@@ -10,7 +10,6 @@ import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -87,7 +86,7 @@ public class RequiredFieldValidationAdapterTest {
 
     @Test
     public void when_call_fields_to_fetch_then_empty() {
-        Stream<? extends EntityField<?, ?>> result = underTest.fetchFields();
+        Stream<? extends EntityField<?, ?>> result = underTest.fieldsToFetch();
         assertEquals(Optional.empty(), result.findAny());
     }
 
@@ -102,7 +101,7 @@ public class RequiredFieldValidationAdapterTest {
     @Test
     public void when_call_fields_to_fetch_then_fetched_field_only() {
         when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.fetchFields();
+        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.fieldsToFetch();
         List<? extends EntityField<?, ?>> fieldsToFetch = fetchedStream.collect(Collectors.toList());
 
         assertFalse("Fetch validated field", fieldsToFetch.contains(TestEntity.FIELD_1));

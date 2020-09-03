@@ -33,7 +33,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         Stream<EntityField<?, ?>> fetchFields = validator.fetchFields();
         if(fetchFields != null) {
             return Stream.concat(Stream.of(validator.immutableField()), validator.fetchFields());

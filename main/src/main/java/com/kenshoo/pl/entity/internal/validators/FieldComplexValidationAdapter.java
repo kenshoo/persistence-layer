@@ -31,7 +31,7 @@ public class FieldComplexValidationAdapter<E extends EntityType<E>, T> implement
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return validator.fetchFields();
     }
 

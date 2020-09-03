@@ -63,7 +63,7 @@ public class PrototypeFieldComplexValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInCreate() {
-        Optional<? extends EntityField<?, ?>> fetchField = adapter.fetchFields().findFirst();
+        Optional<? extends EntityField<?, ?>> fetchField = adapter.fieldsToFetch().findFirst();
         assertTrue(fetchField.isPresent());
         assertEquals("Fetch field", fetchField.get(), this.fetchField);
     }

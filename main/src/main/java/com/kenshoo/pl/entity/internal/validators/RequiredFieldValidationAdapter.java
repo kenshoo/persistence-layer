@@ -32,7 +32,7 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return validator.fetchFields();
     }
 

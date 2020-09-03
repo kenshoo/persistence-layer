@@ -124,7 +124,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     @Override
     public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
-                .flatMap(ChangeValidatorAdapter::fetchFields);
+                .flatMap(ChangeValidatorAdapter::fieldsToFetch);
     }
 
     public void register(ChangeValidatorAdapter<E> validatorAdapter) {

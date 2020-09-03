@@ -25,7 +25,7 @@ public class AncestorsValidationAdapter<E extends EntityType<E>> implements Chan
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return validator.ancestorsFields();
     }
 

@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
 import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
@@ -10,7 +9,6 @@ import com.kenshoo.pl.entity.spi.FieldComplexValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -60,7 +58,7 @@ public class FieldComplexValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInCreate() {
-        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.fetchFields().findFirst();
+        Optional<? extends EntityField<?, ?>> fieldToFetch = adapter.fieldsToFetch().findFirst();
         assertTrue(fieldToFetch.isPresent());
         assertEquals("Fetch field", fieldToFetch.get(), fetchField);
     }

@@ -52,13 +52,13 @@ public class PrototypeFieldValidationAdapterTest  {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Stream<? extends EntityField<?, ?>> fields = adapter.fetchFields();
+        Stream<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch();
         assertFalse("Do not fetch field", fields.findFirst().isPresent());
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Stream<? extends EntityField<?, ?>> fields = adapter.fetchFields();
+        Stream<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch();
         assertFalse("Do not fetch field", fields.findFirst().isPresent());
     }
 

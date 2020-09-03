@@ -6,7 +6,6 @@ import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -59,14 +58,14 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
