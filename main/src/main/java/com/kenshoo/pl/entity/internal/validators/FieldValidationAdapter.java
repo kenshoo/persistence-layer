@@ -10,17 +10,20 @@ import com.kenshoo.pl.entity.spi.FieldValidator;
 
 import java.util.stream.Stream;
 
-public class FieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
+public class FieldValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
     private final FieldValidator<E, T> validator;
+    private final ValidationTrigger<E> trigger;
 
     public FieldValidationAdapter(FieldValidator<E, T> validator) {
         this.validator = validator;
+        this.trigger = new FieldTrigger<>(validator.validatedField());
     }
 
+
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.of(validator.validatedField());
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Entit
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return Stream.empty();
     }
 

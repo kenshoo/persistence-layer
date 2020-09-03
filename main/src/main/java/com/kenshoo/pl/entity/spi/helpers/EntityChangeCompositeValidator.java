@@ -10,8 +10,6 @@ import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.validators.*;
 import com.kenshoo.pl.entity.spi.*;
-import org.jooq.lambda.tuple.Tuple;
-import org.jooq.lambda.tuple.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,9 +17,7 @@ import java.util.stream.Stream;
 
 public class EntityChangeCompositeValidator<E extends EntityType<E>> implements ChangesValidator<E> {
 
-    private final ValidationTrigger<E> ANY_CHANGE_TRIGGER = entityFields -> true;
-
-    private final List<Tuple2<ValidationTrigger<E>, EntityChangeValidator<E>>> triggeredChangeValidators = new ArrayList<>();
+    private final List<ChangeValidatorAdapter<E>> triggeredChangeValidators = new ArrayList<>();
 
     public void register(E entityType, ChangeValidator validator) {
         if (validator instanceof FieldComplexValidator) {
@@ -73,11 +69,11 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     }
 
     public void register(AncestorsValidator validator) {
-        triggeredChangeValidators.add(Tuple.tuple(ANY_CHANGE_TRIGGER, new AncestorsValidationAdapter<>(validator)));
+        register(new AncestorsValidationAdapter<>(validator));
     }
 
     public void register(EntityChangeValidator<E> validator) {
-        triggeredChangeValidators.add(Tuple.tuple(new AnyFieldsTrigger<>(validator.validatedFields()), validator));
+        register(new EntityChangeValidatorAdapter<>(validator));
     }
 
     public <T> void register(E entityType, PrototypeFieldValidator<T> validator) {
@@ -86,7 +82,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             throw new IllegalArgumentException("Can not find entity field by prototype: " + validator.getPrototype());
         }
         for (EntityField<E, T> entityField : entityFields) {
-            triggeredChangeValidators.add(Tuple.tuple(new FieldTrigger<>(entityField), new PrototypeFieldValidationAdapter<>(entityField, validator)));
+            register(new PrototypeFieldValidationAdapter<>(entityField, validator));
         }
     }
 
@@ -109,7 +105,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             throw new IllegalArgumentException("Can not find entity field by prototype: " + validator.getPrototype());
         }
         for (EntityField<E, T> entityField : entityFields) {
-            triggeredChangeValidators.add(Tuple.tuple(new FieldTrigger<>(entityField), new PrototypeFieldComplexValidationAdapter<>(entityField, validator)));
+            register(new PrototypeFieldComplexValidationAdapter<>(entityField, validator));
         }
     }
 
@@ -128,13 +124,16 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     @Override
     public Stream<EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         return findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
-                .flatMap(EntityChangeValidator::fetchFields);
+                .flatMap(ChangeValidatorAdapter::fieldsToFetch);
     }
 
-    private Stream<EntityChangeValidator<E>> findValidatorsTriggeredByFields(Collection<? extends EntityField<E, ?>> entityFields, ChangeOperation changeOperation) {
+    public void register(ChangeValidatorAdapter<E> validatorAdapter) {
+        triggeredChangeValidators.add(validatorAdapter);
+    }
+
+    private Stream<ChangeValidatorAdapter<E>> findValidatorsTriggeredByFields(Collection<? extends EntityField<E, ?>> entityFields, ChangeOperation changeOperation) {
         return triggeredChangeValidators.stream().
-                filter(triggeredValidator -> triggeredValidator.v1().triggeredByFields(entityFields)).
-                map(triggeredValidator -> triggeredValidator.v2()).
-                filter(validator -> validator.getSupportedChangeOperation().supports(changeOperation));
+                filter(triggeredValidator -> triggeredValidator.trigger().triggeredByFields(entityFields)).
+                filter(triggeredValidator -> triggeredValidator.getSupportedChangeOperation().supports(changeOperation));
     }
 }

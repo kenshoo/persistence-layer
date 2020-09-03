@@ -11,17 +11,20 @@ import com.kenshoo.pl.entity.spi.ImmutableFieldValidator;
 
 import java.util.stream.Stream;
 
-public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
+public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
     private final ImmutableFieldValidator<E, T> validator;
+    private final ValidationTrigger<E> trigger;
 
     public ImmutableFieldValidationAdapter(ImmutableFieldValidator<E, T> validator) {
         this.validator = validator;
+        this.trigger = new FieldTrigger<>(validator.immutableField());
     }
 
+
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.of(validator.immutableField());
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override
@@ -30,7 +33,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         Stream<EntityField<?, ?>> fetchFields = validator.fetchFields();
         if(fetchFields != null) {
             return Stream.concat(Stream.of(validator.immutableField()), validator.fetchFields());

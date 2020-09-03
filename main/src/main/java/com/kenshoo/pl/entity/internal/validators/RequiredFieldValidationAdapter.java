@@ -11,17 +11,19 @@ import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
 import java.util.stream.Stream;
 
-public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
+public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
     private final RequiredFieldValidator<E, T> validator;
+    private final ValidationTrigger<E> trigger;
 
     public RequiredFieldValidationAdapter(RequiredFieldValidator<E, T> validator) {
         this.validator = validator;
+        this.trigger = new FieldTrigger<>(validator.requiredField());
     }
 
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.of(validator.requiredField());
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override
@@ -30,7 +32,7 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return validator.fetchFields();
     }
 

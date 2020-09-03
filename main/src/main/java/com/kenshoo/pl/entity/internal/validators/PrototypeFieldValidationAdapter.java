@@ -10,19 +10,22 @@ import com.kenshoo.pl.entity.spi.PrototypeFieldValidator;
 
 import java.util.stream.Stream;
 
-public class PrototypeFieldValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
+public class PrototypeFieldValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
-    private EntityField<E, T> validatedField;
+    private final EntityField<E, T> validatedField;
     private final PrototypeFieldValidator<T> prototypeFieldValidator;
+    private final ValidationTrigger<E> trigger;
 
     public PrototypeFieldValidationAdapter(EntityField<E, T> validatedField, PrototypeFieldValidator<T> prototypeFieldValidator) {
         this.validatedField = validatedField;
         this.prototypeFieldValidator = prototypeFieldValidator;
+        this.trigger = new FieldTrigger<>(validatedField);
     }
 
+
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.of(this.validatedField);
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override
@@ -31,7 +34,7 @@ public class PrototypeFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return Stream.empty();
     }
 

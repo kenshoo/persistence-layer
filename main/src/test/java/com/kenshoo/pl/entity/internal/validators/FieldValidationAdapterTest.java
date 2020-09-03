@@ -10,12 +10,11 @@ import com.kenshoo.pl.entity.spi.FieldValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -45,12 +44,12 @@ public class FieldValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    @InjectMocks
     private FieldValidationAdapter<TestEntity, String> adapter;
 
     @Before
     public void setUp(){
         when(validator.validatedField()).thenReturn(field);
+        adapter = new FieldValidationAdapter<>(validator);
     }
 
     @Test
@@ -61,21 +60,19 @@ public class FieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toList());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());
         assertEquals("Do not fetch field", fields.size(), 0);
     }
 
     @Test
-    public void testValidatedFields() {
-        Optional<EntityField<TestEntity, ?>> field = adapter.validatedFields().findFirst();
-        assertTrue("Validated field", field.isPresent());
-        assertEquals("Validated field", field.get(), this.field);
+    public void testTriggeredByFields() {
+        assertTrue("Triggered by field", adapter.trigger().triggeredByFields(List.of(this.field)));
     }
 
     @Test

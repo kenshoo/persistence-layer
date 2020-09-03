@@ -10,7 +10,6 @@ import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -45,13 +44,13 @@ public class RequiredFieldValidationAdapterTest {
     @Mock
     private RequiredFieldValidator<TestEntity, String> validator;
 
-    @InjectMocks
     private RequiredFieldValidationAdapter underTest;
 
     @Before
     public void init() {
         when(validator.requiredField()).thenReturn(TestEntity.FIELD_1);
         when(validator.requireWhen()).thenReturn(currentState -> true);
+        underTest = new RequiredFieldValidationAdapter(validator);
     }
 
     @Test
@@ -81,15 +80,13 @@ public class RequiredFieldValidationAdapterTest {
     }
 
     @Test
-    public void when_call_validated_fields_then_return_required_field() {
-        Optional<? extends EntityField<TestEntity, ?>> field = underTest.validatedFields().findFirst();
-        assertTrue(field.isPresent());
-        assertEquals(field.get(), TestEntity.FIELD_1);
+    public void triggered_by_required_field() {
+        assertTrue(underTest.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
     @Test
     public void when_call_fields_to_fetch_then_empty() {
-        Stream<? extends EntityField<?, ?>> result = underTest.fetchFields();
+        Stream<? extends EntityField<?, ?>> result = underTest.fieldsToFetch();
         assertEquals(Optional.empty(), result.findAny());
     }
 
@@ -104,7 +101,7 @@ public class RequiredFieldValidationAdapterTest {
     @Test
     public void when_call_fields_to_fetch_then_fetched_field_only() {
         when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.fetchFields();
+        Stream<? extends EntityField<?, ?>> fetchedStream = underTest.fieldsToFetch();
         List<? extends EntityField<?, ?>> fieldsToFetch = fetchedStream.collect(Collectors.toList());
 
         assertFalse("Fetch validated field", fieldsToFetch.contains(TestEntity.FIELD_1));

@@ -6,17 +6,16 @@ import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.List;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,12 +37,11 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    @InjectMocks
     private PrototypeFieldsCombinationValidationAdapter<TestEntity> adapter;
 
     @Before
     public void setUp(){
-        adapter = spy(new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.<EntityFieldPrototype<?>, EntityField<TestEntity, ?>>of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2)));
+        adapter = new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.<EntityFieldPrototype<?>, EntityField<TestEntity, ?>>of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2));
 
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.UPDATE);
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
@@ -60,14 +58,14 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
 
     @Test
     public void testFetchFieldsInCreate() {
-        Collection<? extends EntityField<?, ?>> fields = adapter.fetchFields().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
@@ -100,6 +98,11 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
             fieldCombination.get(invalidField);
             return true;
         }));
+    }
+
+    @Test
+    public void testTriggeredByFields() {
+        assertTrue(adapter.trigger().triggeredByFields(List.of(TestEntity.FIELD_1)));
     }
 
 }

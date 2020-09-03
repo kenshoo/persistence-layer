@@ -8,21 +8,24 @@ import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.ValidationError;
 import com.kenshoo.pl.entity.spi.PrototypeFieldComplexValidator;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
-public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> implements EntityChangeValidator<E> {
+public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
     private final EntityField<E, T> validatedField;
     private final PrototypeFieldComplexValidator<T> prototypeFieldValidator;
+    private final ValidationTrigger<E> trigger;
 
     public PrototypeFieldComplexValidationAdapter(EntityField<E, T> validatedField, PrototypeFieldComplexValidator<T> prototypeFieldValidator) {
         this.validatedField = validatedField;
         this.prototypeFieldValidator = prototypeFieldValidator;
+        this.trigger = new FieldTrigger<>(validatedField);
     }
 
     @Override
-    public Stream<EntityField<E, ?>> validatedFields() {
-        return Stream.of(validatedField);
+    public ValidationTrigger<E> trigger() {
+        return trigger;
     }
 
     @Override
@@ -31,7 +34,7 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> fetchFields() {
+    public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
         return prototypeFieldValidator.fetchFields();
     }
 

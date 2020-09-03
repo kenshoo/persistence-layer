@@ -1,15 +1,11 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
-import com.kenshoo.pl.entity.spi.FieldComplexValidator;
+import com.kenshoo.pl.entity.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
@@ -21,13 +17,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class FieldComplexValidationAdapterTest {
 
-    final static String STRING_VALUE = "value";
+@RunWith(MockitoJUnitRunner.Silent.class)
+public class EntityChangeValidatorAdapterTest {
 
     @Mock
-    private FieldComplexValidator<TestEntity, String> validator;
+    private EntityChangeValidator<TestEntity> validator;
 
     @Mock
     private EntityField<TestEntity, String> field;
@@ -41,13 +36,14 @@ public class FieldComplexValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
-    private FieldComplexValidationAdapter<TestEntity, String> adapter;
+    private EntityChangeValidatorAdapter<TestEntity> adapter;
 
     @Before
-    public void setUp(){
-        when(validator.validatedField()).thenReturn(field);
-        when(validator.fetchFields()).thenReturn(Stream.of(fetchField));
-        adapter = new FieldComplexValidationAdapter<>(validator);
+    public void setUp() {
+        when(validator.getSupportedChangeOperation()).thenReturn(SupportedChangeOperation.CREATE_AND_UPDATE);
+        when(validator.validatedFields()).thenReturn(Stream.of(field));
+        Mockito.doReturn(Stream.of(fetchField)).when(validator).fetchFields();
+        adapter = new EntityChangeValidatorAdapter<>(validator);
     }
 
     @Test
@@ -70,9 +66,8 @@ public class FieldComplexValidationAdapterTest {
 
     @Test
     public void testValidateValue() {
-        when(entityChange.isFieldChanged(field)).thenReturn(true);
-        when(entityChange.get(field)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState);
-        verify(validator).validate(STRING_VALUE, currentState);
+        verify(validator).validate(entityChange, currentState);
     }
+
 }
