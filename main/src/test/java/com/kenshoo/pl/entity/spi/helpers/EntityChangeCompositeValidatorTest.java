@@ -163,7 +163,6 @@ public class EntityChangeCompositeValidatorTest {
 
     @Test
     public void getRequiredFields() {
-        when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
         when(requiredFieldValidator.fetchFields()).thenReturn(Stream.of(TestEntity.ID));
         validator.register(requiredFieldValidator);
         List<? extends EntityField<?, ?>> fields = validator.requiredFields(ImmutableList.of(TestEntity.FIELD_1), ChangeOperation.CREATE).collect(Collectors.toList());

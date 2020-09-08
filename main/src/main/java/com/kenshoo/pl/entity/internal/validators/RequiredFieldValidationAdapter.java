@@ -14,16 +14,14 @@ import java.util.stream.Stream;
 public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
 
     private final RequiredFieldValidator<E, T> validator;
-    private final ValidationTrigger<E> trigger;
 
     public RequiredFieldValidationAdapter(RequiredFieldValidator<E, T> validator) {
         this.validator = validator;
-        this.trigger = new FieldTrigger<>(validator.requiredField());
     }
 
     @Override
     public ValidationTrigger<E> trigger() {
-        return trigger;
+        return entityFields -> true;
     }
 
     @Override
