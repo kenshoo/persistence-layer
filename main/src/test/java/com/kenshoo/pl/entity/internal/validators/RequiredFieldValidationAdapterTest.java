@@ -85,6 +85,11 @@ public class RequiredFieldValidationAdapterTest {
     }
 
     @Test
+    public void triggered_by_any_field() {
+        assertTrue(underTest.trigger().triggeredByFields(List.of(TestEntity.FIELD_3)));
+    }
+
+    @Test
     public void when_call_fields_to_fetch_then_empty() {
         Stream<? extends EntityField<?, ?>> result = underTest.fieldsToFetch();
         assertEquals(Optional.empty(), result.findAny());
