@@ -24,11 +24,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.FluidPersistenceCmdBuilder.fluid;
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE_AND_UPDATE;
+import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
 import static com.kenshoo.pl.one2many.ChildEntity.ORDINAL;
 import static com.kenshoo.pl.one2many.ParentEntity.ID_IN_TARGET;
@@ -160,7 +160,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(deleteChild(4))
         );
 
-        List<Integer> remainingChildren = seq(childrenInDb()).map(rec -> rec.ordinal).collect(toList());;
+        List<Integer> remainingChildren = seq(childrenInDb()).map(rec -> rec.ordinal).collect(toList());
 
         assertThat(remainingChildren, containsInAnyOrder(1, 2));
     }
@@ -175,7 +175,7 @@ public class PersistenceLayerOneToManyTest {
 
         update(existingParentWithId(generatedId(0)).with(deleteChild(1)));
 
-        List<String> remainingChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> remainingChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
 
         assertThat(remainingChildren, containsInAnyOrder("child2"));
     }
@@ -242,7 +242,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(insertChild().with(ORDINAL, 0).with(FIELD_1, "bla bla")));
 
         update(existingParentWithId(generatedId(0))
-                .with(updateChild(0).with(FIELD_1, supplyFromField(ParentEntity.NAME, parentName -> "I'm the child of " + parentName)))
+                .with(updateChild(0).with(FIELD_1, fromOldValue(ParentEntity.NAME, parentName -> "I'm the child of " + parentName)))
         );
 
         ChildPojo child = childrenInDb().get(0);
@@ -254,17 +254,19 @@ public class PersistenceLayerOneToManyTest {
     public void create_child_with_supplier_from_parent() {
 
         insert(newParent().with(NAME, "moshe"));
+        insert(newParent().with(NAME, "david"));
 
-        update(existingParentWithId(generatedId(0))
-                .with(insertChild()
-                        .with(ORDINAL, 0)
-                        .with(FIELD_1, supplyFromField(ParentEntity.NAME, parentName -> "I'm the child of " + parentName))
-                )
+        var supplier = fromOldValue(ParentEntity.NAME, parentName -> "I'm the child of " + parentName);
+
+        update(
+                existingParentWithId(generatedId(0)).with(insertChild().with(ORDINAL, 0).with(FIELD_1, supplier)),
+                existingParentWithId(generatedId(1)).with(insertChild().with(ORDINAL, 0).with(FIELD_1, supplier))
         );
 
-        ChildPojo child = childrenInDb().get(0);
+        var children = childrenInDb();
 
-        assertThat(child.field1, is("I'm the child of moshe"));
+        assertThat(children.get(0).field1, is("I'm the child of moshe"));
+        assertThat(children.get(1).field1, is("I'm the child of david"));
     }
 
     @Test
@@ -277,10 +279,10 @@ public class PersistenceLayerOneToManyTest {
         );
 
         update(existingParentWithId(generatedId(1))
-                .with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> v + " + something")))
+                .with(updateChild(0).with(FIELD_1, fromOldValue(FIELD_1, v -> v + " + something")))
         );
 
-        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
 
         assertThat(results, containsInAnyOrder("one", "two + something", "three"));
     }
@@ -295,12 +297,12 @@ public class PersistenceLayerOneToManyTest {
         );
 
         update(parentFlow(childFlow(enrichWithValueFrom(FIELD_1, (cmd, previousValue) -> cmd.set(FIELD_1, previousValue + "_suffix")))),
-                existingParentWithId(generatedId(0)).with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> "prefix_" + v))),
-                existingParentWithId(generatedId(1)).with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> "prefix_" + v))),
-                existingParentWithId(generatedId(2)).with(updateChild(0).with(FIELD_1, supplyFromField(FIELD_1, v -> "prefix_" + v)))
+                existingParentWithId(generatedId(0)).with(updateChild(0).with(FIELD_1, fromOldValue(FIELD_1, v -> "prefix_" + v))),
+                existingParentWithId(generatedId(1)).with(updateChild(0).with(FIELD_1, fromOldValue(FIELD_1, v -> "prefix_" + v))),
+                existingParentWithId(generatedId(2)).with(updateChild(0).with(FIELD_1, fromOldValue(FIELD_1, v -> "prefix_" + v)))
         );
 
-        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> results = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
 
         assertThat(results, containsInAnyOrder("prefix_one_suffix", "prefix_two_suffix", "prefix_three_suffix"));
     }
@@ -318,7 +320,7 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(ParentEntity.NAME, "parent2_new").with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
         assertThat(children, contains("one", "valid child"));
 
         assertThat(parentNamesInDB(), containsInAnyOrder("parent1", "parent2_new"));
@@ -349,7 +351,7 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
         assertThat(children, contains("one", "valid child"));
 
         assertThat(parentNamesInDB(), contains("parent1", "parent2"));
@@ -368,7 +370,7 @@ public class PersistenceLayerOneToManyTest {
                 existingParentWithId(generatedId(1)).with(ParentEntity.NAME, "parent2_new").with(updateChild(0).with(FIELD_1, "valid child"))
         );
 
-        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());;
+        List<String> children = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
         assertThat(children, contains("one", "valid child"));
 
         assertThat(parentNamesInDB(), contains("parent1", "parent2_new"));
@@ -382,8 +384,8 @@ public class PersistenceLayerOneToManyTest {
         ));
 
         insert(flow, newParent().with(ParentEntity.NAME, "avraham").with(
-                    insertChild().with(ORDINAL, 0).with(FIELD_1, "izak")
-            )
+                insertChild().with(ORDINAL, 0).with(FIELD_1, "izak")
+                )
         );
 
         List<String> actualChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
@@ -421,7 +423,7 @@ public class PersistenceLayerOneToManyTest {
                 .with(upsertChild(2).with(FIELD_1, "child2"))
         );
 
-        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0)).with(deletionOfOther);;
+        final ParentCmdBuilder parentBuilder = existingParentWithId(generatedId(0)).with(deletionOfOther);
 
         update(parentFlow(childFlow()), parentBuilder);
 
@@ -558,10 +560,10 @@ public class PersistenceLayerOneToManyTest {
     public void when_deleting_parent_with_cascade_then_delete_children_and_grand() {
 
         insert(newParent()
-                        .with(upsertChild(1)
-                                .withChild(upsertGrandChild("red"))
-                                .withChild(upsertGrandChild("blue"))
-                        )
+                .with(upsertChild(1)
+                        .withChild(upsertGrandChild("red"))
+                        .withChild(upsertGrandChild("blue"))
+                )
         );
 
         delete(parentFlow(childFlow()), new ParentCmdBuilder(deleteParentWithId(generatedId(0)).setCascade()));
@@ -576,8 +578,8 @@ public class PersistenceLayerOneToManyTest {
         insert(newParent().with(upsertChild(1).withChild(upsertGrandChild("red"))));
 
         update(parentFlow(childFlow()), existingParentWithId(generatedId(0))
-                        .with(upsertChild(1).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
-                        .with(upsertChild(2).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
+                .with(upsertChild(1).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
+                .with(upsertChild(2).with(new DeletionOfOther<>(GrandChildEntity.INSTANCE)))
         );
 
         assertThat(grandChildrenColorsInDB(), empty());
@@ -676,7 +678,7 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private FieldValidator<ChildEntity, String> field1ShouldNotBe(String invalidValue) {
-        return new FieldValidator<ChildEntity, String>() {
+        return new FieldValidator<>() {
             @Override
             public EntityField<ChildEntity, String> validatedField() {
                 return FIELD_1;
@@ -860,20 +862,6 @@ public class PersistenceLayerOneToManyTest {
     private static class TablesSetup {
         DSLContext staticDSLContext;
         boolean alreadyCreated = false;
-    }
-
-    private <E extends EntityType<E>> FieldValueSupplier<String> supplyFromField(EntityField<E, String> field, Function<String, String> mapping) {
-        return new FieldValueSupplier<String>() {
-            @Override
-            public String supply(CurrentEntityState entity) throws ValidationException, NotSuppliedException {
-                return mapping.apply(entity.get(field));
-            }
-
-            @Override
-            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
-                return Stream.of(field);
-            }
-        };
     }
 
     final IntegerIdGeneratorEnricher<ChildEntity> childrenIdGenerator = new IntegerIdGeneratorEnricher<>(new IdGenerator(), ChildEntity.ID);

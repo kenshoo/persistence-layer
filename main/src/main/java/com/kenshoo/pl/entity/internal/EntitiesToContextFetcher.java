@@ -106,8 +106,7 @@ public class EntitiesToContextFetcher {
         E entityType = flowConfig.getEntityType();
         Collection<EntityField<E, ?>> foreignKeys = entityType.determineForeignKeys(flowConfig.getRequiredRelationFields()).filter(not(new IsFieldReferringToParent<>(context.getHierarchy(), entityType))).collect(toList());
         if (foreignKeys.isEmpty()) {
-            CurrentEntityState sharedEntity = new CurrentEntityMutableState();
-            commands.forEach(cmd -> context.addEntity(cmd, sharedEntity));
+            commands.forEach(cmd -> context.addEntity(cmd, new CurrentEntityMutableState()));
         } else {
             final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
             Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
