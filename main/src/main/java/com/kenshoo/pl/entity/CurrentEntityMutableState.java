@@ -9,7 +9,7 @@ import static java.util.Collections.emptyList;
 
 public class CurrentEntityMutableState implements CurrentEntityState {
 
-    private final Map<EntityField<?, ?>, Object> fields = new HashMap<>();
+    private final Map<EntityField<?, ?>, Object> fields = new HashMap<>(1);
     private Map<EntityType, List<FieldsValueMap>> manyByType;
 
     public boolean containsField(EntityField<?, ?> field) {
