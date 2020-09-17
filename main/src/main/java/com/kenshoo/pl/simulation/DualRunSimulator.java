@@ -6,24 +6,47 @@ import com.kenshoo.pl.simulation.internal.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.lambda.Seq;
 import java.util.*;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
 
+/**
+ * This utility helps to migrate from an old mutation code to Persistence Layer by running them side-by-side and
+ * compare their results.
+ *
+ * <b>Terminology</b>
+ * + ActualMutator - This is the old code.
+ * + Simulated - The persistence layer commands.
+ *
+ * <b>Implementation</b>
+ * This simulator runs both the old mutator along with the simulated commands (PL). However, the simulated commands
+ * run without DbOutputGenerator, meaning, they don't really affect the database. PL simulated commands only run
+ * enrichers, validators, etc.
+ * After the real (old) mutator changed the DB, we fetch the final state of the entities to compare the actual
+ * modification with the content of the simulated commands.
+ *
+ * <b>Limitations</b>
+ * + One-to-many relations: Child commands are not supported.
+ * + ID must be provided to all commands, including CREATE commands, to enable matching them with the actual DB mutation.
+ *
+ * @param <E> EntityType
+ * @param <ID> ID type
+ */
 public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>> {
 
     private final Collection<EntityField<E, ?>> inspectedFields;
     private final ChangeFlowConfig.Builder<E> flowToSimulate;
-    private final EntitiesFetcher fetcher;
     private final PersistenceLayer<E> pl;
+    private final ActualResultFetcher<E, ID> actualResultFetcher;
+    private final ResultComparator<E, ID> resultComparator;
 
     public DualRunSimulator(PLContext plContext, ChangeFlowConfig.Builder<E> flowToSimulate, Collection<EntityField<E, ?>> inspectedFields) {
         this.inspectedFields = inspectedFields;
         this.flowToSimulate = flowToSimulate;
-        this.fetcher = new EntitiesFetcher(plContext.dslContext());
+        this.actualResultFetcher = new ActualResultFetcher<>(new EntitiesFetcher(plContext.dslContext()), inspectedFields);
         this.pl = new PersistenceLayer<>(plContext);
+        this.resultComparator = new ResultComparator<>(inspectedFields);
     }
 
     /**
@@ -49,9 +72,9 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        final var actualResults = fetchActualResults(idsOf(simulatedResults), actualErrors, this::emptyOriginalState);
+        final var actualResults = actualResultFetcher.fetch(idsOf(simulatedResults), actualErrors, this::emptyOriginalState);
 
-        return findMismatches(simulatedResults, actualResults);
+        return resultComparator.findMismatches(simulatedResults, actualResults);
     }
 
     public List<ComparisonMismatch<E, ID>> runUpdate(
@@ -71,100 +94,13 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        final var actualResults = fetchActualResults(idsOf(simulatedResults), actualErrors, originalStateRecorder::get);
+        final var actualResults = actualResultFetcher.fetch(idsOf(simulatedResults), actualErrors, originalStateRecorder::get);
 
-        return findMismatches(simulatedResults, actualResults);
-    }
-
-    private Iterable<ActualResult> fetchActualResults(
-            Collection<ID> allIds,
-            Map<ID, ActualMutatorError<E, ID>> errors,
-            Function<ID, Entity> originalStates) {
-
-        final var finalStates = fetcher.fetchEntitiesByIds(allIds, inspectedFields);
-
-        return seq(allIds).map(id -> {
-
-            final var originalState = originalStates.apply(id);
-            final var finalState = finalStates.get(id);
-
-            if (errors.containsKey(id)) {
-                return new ActualError(errors.get(id).getDescription());
-            }
-
-            if (originalState == null) {
-                return new ActualError("Could not find original state");
-            }
-
-            if (finalState == null) {
-                return new ActualError("Could not find final state");
-            }
-
-            return new ActualSuccess(originalState, finalState);
-        });
-    }
-
-    private List<ComparisonMismatch<E, ID>> findMismatches(
-            Iterable<SimulatedResult<E, ID>> simulatedResults,
-            Iterable<ActualResult> actualDbResults) {
-
-        return seq(simulatedResults).zip(actualDbResults)
-                .map(pair -> findMismatch(pair.v1, pair.v2))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(toList());
-    }
-
-    private Optional<ComparisonMismatch<E, ID>> findMismatch(SimulatedResult<E, ID> simulatedResult, ActualResult actualResult) {
-
-        if (simulatedResult.isError() && actualResult.isError()) {
-            return Optional.empty();
-        }
-
-        if (simulatedResult.isSuccess() && actualResult.isError()) {
-            return Optional.of(new ComparisonMismatch<>(simulatedResult.getId(), "Simulated mutation was successful but real mutation finished with the following error: " + actualResult.getErrorDescription()));
-        }
-
-        if (simulatedResult.isError() && actualResult.isSuccess()) {
-            return Optional.of(new ComparisonMismatch<>(simulatedResult.getId(), "Real mutation was successful but simulated mutation finished with the following errors: " + simulatedResult.getErrors()));
-        }
-
-        final var mismatchingFields = inspectedFields.stream()
-                .map(field -> getFieldMismatch(field, simulatedResult.getCommand(), actualResult))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(toList());
-
-        return mismatchingFields.isEmpty()
-                ? Optional.empty()
-                : Optional.of(new ComparisonMismatch<>(simulatedResult.getId(), "Found field mismatch: " + mismatchingFields));
-    }
-
-    private Optional<String> getFieldMismatch(EntityField<E, ?> field, EntityChange<E> simulated, ActualResult actualResult) {
-
-        if (!simulated.isFieldChanged(field) && !actualResult.isReallyChanged(field)) {
-            return Optional.empty();
-        }
-
-        if (!simulated.isFieldChanged(field) && actualResult.isReallyChanged(field)) {
-            return Optional.of("Field \"" + field + "\" is not populated in the simulated command although it was changed in DB");
-        }
-
-        return Objects.equals(simulated.get(field), actualResult.getFinalValue(field))
-                ? Optional.empty()
-                : Optional.of("Field \"" + field + "\" has mismatch values. Simulated: \"" + simulated.get(field) + "\"" + ", Actual: \"" + actualResult.getFinalValue(field) + "\"");
+        return resultComparator.findMismatches(simulatedResults, actualResults);
     }
 
     private void populateIdsInCreateCommands(Collection<? extends Pair<ID, ? extends CreateEntityCommand<E>>> commands) {
         commands.forEach(cmd -> populateIdToCommandValues(cmd.getKey(), cmd.getValue()));
-    }
-
-    private void populateIdToCommandValues(ID id, CreateEntityCommand<E> command) {
-        Seq.of(id.getUniqueKey().getFields()).forEach(field -> populateFieldValueToCommand(field, id, command));
-    }
-
-    private <T> void populateFieldValueToCommand(EntityField<E, T> field, ID id, CreateEntityCommand<E> command) {
-        command.set(field, id.get(field));
     }
 
     private List<ID> idsOf(Collection<SimulatedResult<E, ID>> simulatedResults) {
@@ -173,6 +109,14 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
 
     private <K, V> List<? extends V> values(Collection<? extends Pair<K, ? extends V>> pairs) {
         return seq(pairs).map(Pair::getValue).toList();
+    }
+
+    private void populateIdToCommandValues(ID id, CreateEntityCommand<E> command) {
+        Seq.of(id.getUniqueKey().getFields()).forEach(field -> populateFieldValueToCommand(field, id, command));
+    }
+
+    private <T> void populateFieldValueToCommand(EntityField<E, T> field, ID id, CreateEntityCommand<E> command) {
+        command.set(field, id.get(field));
     }
 
     private Entity emptyState() {
