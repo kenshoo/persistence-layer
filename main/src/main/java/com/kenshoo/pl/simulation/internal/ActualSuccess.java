@@ -1,4 +1,4 @@
-package com.kenshoo.pl.migration.internal;
+package com.kenshoo.pl.simulation.internal;
 
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
@@ -22,7 +22,7 @@ public class ActualSuccess implements ActualResult {
 
     @Override
     public boolean isReallyChanged(EntityField<?, ?> field) {
-        return Objects.equals(stateBefore.get(field), stateAfter.get(field));
+        return !Objects.equals(stateBefore.get(field), stateAfter.get(field));
     }
 
     @Override

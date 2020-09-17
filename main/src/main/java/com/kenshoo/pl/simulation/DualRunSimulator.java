@@ -1,25 +1,18 @@
-package com.kenshoo.pl.migration;
-
+package com.kenshoo.pl.simulation;
 
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.migration.internal.*;
+import com.kenshoo.pl.simulation.internal.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.lambda.Seq;
+import java.util.*;
+import java.util.function.Function;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
 
 public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>> {
-
-    private final ActualResult NOT_CREATED_IN_DB = new ActualError("not really created in DB");
 
     private final Collection<EntityField<E, ?>> inspectedFields;
     private final ChangeFlowConfig.Builder<E> flowToSimulate;
@@ -33,6 +26,14 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
         this.pl = new PersistenceLayer<>(plContext);
     }
 
+    /**
+     * Note that auto-increment is not supported for simulation. IDs must be provided in order to compare simulated
+     * commands with actual mutations.
+     *
+     * @param databaseMutator
+     * @param commandsToSimulate
+     * @return
+     */
     public List<ComparisonMismatch<E, ID>> runCreation(
             ActualDatabaseMutator<E, ID> databaseMutator,
             Collection<? extends Pair<ID, ? extends CreateEntityCommand<E>>> commandsToSimulate) {
@@ -41,49 +42,71 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
 
         populateIdsInCreateCommands(commandsToSimulate);
 
-        Collection<SimulatedResult<E, ID>> simulatedResults = seq(pl.create(values(commandsToSimulate), plFlow).getChangeResults())
+        final var simulatedResults = seq(pl.create(values(commandsToSimulate), plFlow).getChangeResults())
                 .zip(commandsToSimulate)
                 .map(r -> new SimulatedResult<>(r.v1.getCommand(), r.v2.getKey(), r.v1.getErrors()))
                 .collect(toList());
 
-        var mutatorErrors = seq(databaseMutator.run()).toMap(RealMutatorError::getId);
+        final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        var finalDbEntities = fetcher.fetchEntitiesByIds(idsOf(simulatedResults), inspectedFields);
+        final var actualResults = fetchActualResults(idsOf(simulatedResults), actualErrors, this::emptyOriginalState);
 
-        var actualDbResults = seq(simulatedResults)
-                .map(r ->
-                        ofNullable(mutatorErrors.get(r.getId())).map(this::asActualError)
-                                .orElseGet(() -> ofNullable(finalDbEntities.get(r.getId())).map(this::successfulCreation).orElse(NOT_CREATED_IN_DB))
-                );
-
-        return seq(simulatedResults).zip(actualDbResults)
-                .map(pair -> findMismatch(pair.v1, pair.v2))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(toList());
+        return findMismatches(simulatedResults, actualResults);
     }
 
     public List<ComparisonMismatch<E, ID>> runUpdate(
             ActualDatabaseMutator<E, ID> databaseMutator,
             Collection<? extends UpdateEntityCommand<E, ID>> commandsToSimulate) {
 
-        final var initialStateRecorder = new InitialStateRecorder<>(inspectedFields);
+        final var originalStateRecorder = new InitialStateRecorder<>(inspectedFields);
 
         final var plFlow = flowToSimulate
                 .withoutOutputGenerators()
-                .withOutputGenerator(initialStateRecorder)
+                .withOutputGenerator(originalStateRecorder)
                 .build();
 
-        Collection<SimulatedResult<E, ID>> simulatedResults = seq(pl.update(commandsToSimulate, plFlow).getChangeResults())
+        final var simulatedResults = seq(pl.update(commandsToSimulate, plFlow).getChangeResults())
                 .map(r -> new SimulatedResult<>(r.getCommand(), r.getIdentifier(), r.getErrors()))
                 .collect(toList());
 
-        var mutatorErrors = seq(databaseMutator.run()).toMap(RealMutatorError::getId);
+        final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        var finalDatabaseState = fetcher.fetchEntitiesByIds(idsOf(simulatedResults), inspectedFields);
+        final var actualResults = fetchActualResults(idsOf(simulatedResults), actualErrors, originalStateRecorder::get);
 
-        var actualDbResults = seq(simulatedResults).map(r -> ofNullable(mutatorErrors.get(r.getId())).map(this::asActualError)
-                .orElseGet(() -> new ActualSuccess(initialStateRecorder.get(r.getCommand()), finalDatabaseState.get(r.getId()))));
+        return findMismatches(simulatedResults, actualResults);
+    }
+
+    private Iterable<ActualResult> fetchActualResults(
+            Collection<ID> allIds,
+            Map<ID, ActualMutatorError<E, ID>> errors,
+            Function<ID, Entity> originalStates) {
+
+        final var finalStates = fetcher.fetchEntitiesByIds(allIds, inspectedFields);
+
+        return seq(allIds).map(id -> {
+
+            final var originalState = originalStates.apply(id);
+            final var finalState = finalStates.get(id);
+
+            if (errors.containsKey(id)) {
+                return new ActualError(errors.get(id).getDescription());
+            }
+
+            if (originalState == null) {
+                return new ActualError("Could not find original state");
+            }
+
+            if (finalState == null) {
+                return new ActualError("Could not find final state");
+            }
+
+            return new ActualSuccess(originalState, finalState);
+        });
+    }
+
+    private List<ComparisonMismatch<E, ID>> findMismatches(
+            Iterable<SimulatedResult<E, ID>> simulatedResults,
+            Iterable<ActualResult> actualDbResults) {
 
         return seq(simulatedResults).zip(actualDbResults)
                 .map(pair -> findMismatch(pair.v1, pair.v2))
@@ -166,12 +189,7 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
         };
     }
 
-    private ActualResult successfulCreation(Entity finalState) {
-        return new ActualSuccess(emptyState(), finalState);
+    private Entity emptyOriginalState(ID id) {
+        return emptyState();
     }
-
-    private ActualResult asActualError(RealMutatorError<E, ID> error) {
-        return new ActualError(error.getDescription());
-    }
-
 }

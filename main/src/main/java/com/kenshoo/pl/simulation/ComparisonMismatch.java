@@ -1,9 +1,9 @@
-package com.kenshoo.pl.migration;
+package com.kenshoo.pl.simulation;
 
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.Identifier;
 
-public class RealMutatorError<E extends EntityType<E>, ID extends Identifier<E>> {
+public class ComparisonMismatch<E extends EntityType<E>, ID extends Identifier<E>> {
     private final ID id;
     private final String description;
 
@@ -15,8 +15,13 @@ public class RealMutatorError<E extends EntityType<E>, ID extends Identifier<E>>
         return description;
     }
 
-    public RealMutatorError(ID id, String description) {
+    public ComparisonMismatch(ID id, String description) {
         this.id = id;
         this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "{Id=" + id + ", Error: " + description + "}";
     }
 }

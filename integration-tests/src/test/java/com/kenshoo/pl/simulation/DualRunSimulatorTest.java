@@ -1,11 +1,10 @@
-package com.kenshoo.pl.migration;
+package com.kenshoo.pl.simulation;
 
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.pl.auto.inc.*;
 import com.kenshoo.pl.auto.inc.TestEntity;
-import com.kenshoo.pl.auto.inc.TestEntityCreateCommand;
 import com.kenshoo.pl.auto.inc.TestEntityTable;
-import com.kenshoo.pl.auto.inc.TestSecondaryEntityTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import org.apache.commons.lang3.tuple.Pair;
@@ -157,6 +156,65 @@ public class DualRunSimulatorTest {
         assertThat(results, empty());
     }
 
+    @Test
+    public void testUpdateReturnErrorForMismatchedFieldAndSuccessWhenMatched() {
+
+        // DB Setup
+
+        dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 1).set(PRIMARY_TABLE.name, "one").execute();
+        dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 2).set(PRIMARY_TABLE.name, "two").execute();
+
+        // Simulation Setup
+
+        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
+                NAME
+        ));
+
+        var commandsToSimulate = List.of(
+                new TestEntityUpdateCommand(1).with(NAME, "one A"),
+                new TestEntityUpdateCommand(2).with(NAME, "two B")
+        );
+
+        var realDatabaseChange = withoutFailures(() -> {
+            dslContext.update(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "one A").where(PRIMARY_TABLE.id.eq(1)).execute();
+            dslContext.update(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "one B la la la").where(PRIMARY_TABLE.id.eq(2)).execute();
+        });
+
+        // Action
+
+        var results = simulator.runUpdate(realDatabaseChange, commandsToSimulate);
+
+        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(2));
+    }
+
+    @Test
+    public void testUpdateReturnErrorWhenFieldIsNotInCommandButValueIsChangedInDB() {
+
+        // DB Setup
+
+        dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 1).set(PRIMARY_TABLE.name, "one").execute();
+
+        // Simulation Setup
+
+        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
+                NAME
+        ));
+
+        var commandsToSimulate = List.of(
+                new TestEntityUpdateCommand(1)
+        );
+
+        var realDatabaseChange = withoutFailures(() -> {
+            dslContext.update(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "one was modified").where(PRIMARY_TABLE.id.eq(1)).execute();
+        });
+
+        // Action
+
+        var results = simulator.runUpdate(realDatabaseChange, commandsToSimulate);
+
+        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(1));
+    }
+
     // -------------------------------------------------------------------------------------------- //
     //
     //       helper methods
@@ -183,7 +241,7 @@ public class DualRunSimulatorTest {
     }
 
     private ActualDatabaseMutator<TestEntity, TestEntity.Key> failAllByIds(Integer... ids) {
-        return () -> Seq.of(ids).map(id -> new RealMutatorError<>(id(id), "please fail")).toList();
+        return () -> Seq.of(ids).map(id -> new ActualMutatorError<>(id(id), "please fail")).toList();
     }
 
 

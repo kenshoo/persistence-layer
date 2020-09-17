@@ -1,4 +1,4 @@
-package com.kenshoo.pl.migration.internal;
+package com.kenshoo.pl.simulation.internal;
 
 import com.google.common.collect.Maps;
 import com.kenshoo.pl.entity.*;
@@ -28,8 +28,8 @@ public class InitialStateRecorder<E extends EntityType<E>> implements OutputGene
         return requiredFields();
     }
 
-    public Entity get(EntityChange<E> cmd) {
-        return entities.get(cmd);
+    public Entity get(Identifier<E> id) {
+        return entities.get(id);
     }
 
     private Stream<? extends EntityField<?, ?>> requiredFields() {

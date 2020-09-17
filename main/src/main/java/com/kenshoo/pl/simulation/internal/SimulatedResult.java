@@ -1,4 +1,4 @@
-package com.kenshoo.pl.migration.internal;
+package com.kenshoo.pl.simulation.internal;
 
 import com.kenshoo.pl.entity.*;
 import java.util.Collection;
