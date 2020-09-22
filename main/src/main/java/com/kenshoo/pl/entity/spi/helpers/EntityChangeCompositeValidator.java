@@ -19,35 +19,6 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
 
     private final List<ChangeValidatorAdapter<E>> triggeredChangeValidators = new ArrayList<>();
 
-    public void register(E entityType, ChangeValidator validator) {
-        if (validator instanceof FieldComplexValidator) {
-            //noinspection unchecked
-            register((FieldComplexValidator) validator);
-        } else if (validator instanceof FieldValidator) {
-            //noinspection unchecked
-            register((FieldValidator) validator);
-        } else if (validator instanceof FieldsCombinationValidator) {
-            //noinspection unchecked
-            register((FieldsCombinationValidator) validator);
-        } else if (validator instanceof ImmutableFieldValidator) {
-            //noinspection unchecked
-            register((ImmutableFieldValidator) validator);
-        } else if (validator instanceof AncestorsValidator) {
-            register((AncestorsValidator) validator);
-        } else if (validator instanceof PrototypeFieldValidator) {
-            //noinspection unchecked
-            register(entityType, (PrototypeFieldValidator) validator);
-        } else if ((validator instanceof PrototypeFieldsCombinationValidator)) {
-            register(entityType, (PrototypeFieldsCombinationValidator) validator);
-        } else if (validator instanceof PrototypeFieldComplexValidator) {
-            //noinspection unchecked
-            register(entityType, (PrototypeFieldComplexValidator) validator);
-        } else if (validator instanceof RequiredFieldValidator) {
-            //noinspection unchecked
-            register((RequiredFieldValidator) validator);
-        }
-    }
-
     public void register(FieldsCombinationValidator<E> validator) {
         register(new FieldsCombinationValidationAdapter<>(validator));
     }
