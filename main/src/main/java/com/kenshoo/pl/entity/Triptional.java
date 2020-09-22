@@ -372,6 +372,15 @@ public class Triptional<T> {
     }
 
     /**
+     * Return {@code true} if the value is present and {@code null} or no value, otherwise {@code false}.
+     *
+     * @return {@code true} if the value is present and {@code null} or no value, otherwise {@code false}.
+     */
+    public boolean isNullOrAbsent() {
+        return isAbsent() || isNull();
+    }
+
+    /**
      * Return {@code true} if the value is present and {@code null}, otherwise {@code false}.
      *
      * @return {@code true} if the value is present and {@code null}, otherwise {@code false}.
