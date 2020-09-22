@@ -263,7 +263,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         /* not public */ void withImmutableFields(Stream<EntityField<E, ?>> immutableFields) {
             EntityChangeCompositeValidator<E> compositeValidator = new EntityChangeCompositeValidator<>();
-            immutableFields.forEach(immutableField -> compositeValidator.register(entityType, new ImmutableFieldValidatorImpl<>(immutableField, Errors.FIELD_IS_IMMUTABLE)));
+            immutableFields.forEach(immutableField -> compositeValidator.register(new ImmutableFieldValidatorImpl<>(immutableField, Errors.FIELD_IS_IMMUTABLE)));
             this.withValidator(compositeValidator);
         }
 

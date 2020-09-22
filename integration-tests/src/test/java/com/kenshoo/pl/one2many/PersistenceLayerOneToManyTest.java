@@ -694,7 +694,7 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private FieldComplexValidator<ChildEntity, String> parent1ShouldNotBe(final String parentName) {
-        return new FieldComplexValidator<ChildEntity, String>() {
+        return new FieldComplexValidator<>() {
             @Override
             public EntityField<ChildEntity, String> validatedField() {
                 return FIELD_1;
@@ -828,8 +828,7 @@ public class PersistenceLayerOneToManyTest {
     }
 
     private ChangeFlowConfig.Builder<ChildEntity> childFlow() {
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
-                .withPostFetchCommandEnricher(childrenIdGenerator)
+        return createChildEntityFlowBuilder()
                 .withChildFlowBuilder(grandChildFlow());
     }
 
@@ -837,17 +836,22 @@ public class PersistenceLayerOneToManyTest {
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, GrandChildEntity.INSTANCE);
     }
 
-    private ChangeFlowConfig.Builder<ChildEntity> childFlow(ChangeValidator... validators) {
+    private  ChangeFlowConfig.Builder<ChildEntity> childFlow(FieldComplexValidator<ChildEntity, String> validator) {
         EntityChangeCompositeValidator<ChildEntity> compositeValidator = new EntityChangeCompositeValidator<>();
-        Seq.of(validators).forEach(v -> compositeValidator.register(ChildEntity.INSTANCE, v));
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
-                .withPostFetchCommandEnricher(childrenIdGenerator)
+        compositeValidator.register(validator);
+        return createChildEntityFlowBuilder()
+                .withValidator(compositeValidator);
+    }
+
+    private  ChangeFlowConfig.Builder<ChildEntity> childFlow(FieldValidator<ChildEntity, String> validator) {
+        EntityChangeCompositeValidator<ChildEntity> compositeValidator = new EntityChangeCompositeValidator<>();
+        compositeValidator.register(validator);
+        return createChildEntityFlowBuilder()
                 .withValidator(compositeValidator);
     }
 
     private ChangeFlowConfig.Builder<ChildEntity> childFlow(PostFetchCommandEnricher<ChildEntity>... enrichers) {
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
-                .withPostFetchCommandEnricher(childrenIdGenerator)
+        return createChildEntityFlowBuilder()
                 .withPostFetchCommandEnrichers(Arrays.stream(enrichers).collect(toList()));
     }
 
@@ -858,6 +862,11 @@ public class PersistenceLayerOneToManyTest {
                 .withChildFlowBuilder(childFlow);
     }
 
+
+    private ChangeFlowConfig.Builder<ChildEntity> createChildEntityFlowBuilder() {
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, ChildEntity.INSTANCE)
+                .withPostFetchCommandEnricher(childrenIdGenerator);
+    }
 
     private static class TablesSetup {
         DSLContext staticDSLContext;
