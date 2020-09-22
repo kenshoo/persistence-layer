@@ -114,6 +114,22 @@ public class TriptionalTest {
         assertThat(Triptional.absent().isNull(), is(false));
     }
 
+    @Test
+    public void nullInstance_ShouldBeNullOrAbsent() {
+        assertThat(Triptional.nullInstance().isNullOrAbsent(), is(true));
+    }
+
+    @Test
+    public void of_NotNull_ShouldNotBeNullOrAbsent() {
+        assertThat(Triptional.of(3).isNullOrAbsent(), is(false));
+    }
+
+    @Test
+    public void absent_ShouldBeNullOrAbsent() {
+        assertThat(Triptional.absent().isNullOrAbsent(), is(true));
+    }
+
+
     @Test(expected = NoSuchElementException.class)
     public void absent_ShouldThrowExceptionOnGet() {
         Triptional.absent().get();

@@ -1,11 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +14,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
@@ -31,9 +25,6 @@ public class RequiredFieldValidationAdapterTest {
 
     private final static String ERROR_CODE = "error";
     private final static String VALUE = "value";
-
-    @Mock
-    private EntityChange<TestEntity> entityChange;
 
     @Mock
     private CurrentEntityState currentState;
@@ -55,7 +46,9 @@ public class RequiredFieldValidationAdapterTest {
 
     @Test
     public void when_required_field_is_null_then_return_error_result() {
-        when(entityChange.get(any())).thenReturn(null);
+        CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
+        entityChange.set(TestEntity.FIELD_1, (String)null);
+
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
 
         ValidationError result = underTest.validate(entityChange, currentState);
@@ -66,7 +59,8 @@ public class RequiredFieldValidationAdapterTest {
 
     @Test
     public void when_required_field_is_not_null_then_return_null() {
-        when(entityChange.get(any())).thenReturn(VALUE);
+        CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
+        entityChange.set(TestEntity.FIELD_1, VALUE);
 
         ValidationError result = underTest.validate(entityChange, currentState);
 
@@ -97,7 +91,9 @@ public class RequiredFieldValidationAdapterTest {
 
     @Test
     public void when_require_value_and_predicate_false_return_null() {
-        when(entityChange.get(any())).thenReturn(null);
+        CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
+        entityChange.set(TestEntity.FIELD_1, (String)null);
+
         when(validator.requireWhen()).thenReturn(currentState -> false);
 
         assertNull(underTest.validate(entityChange, currentState));
@@ -113,4 +109,15 @@ public class RequiredFieldValidationAdapterTest {
         assertTrue("Fetch validated field", fieldsToFetch.contains(fetchField));
     }
 
+    @Test
+    public void when_required_field_is_not_exist_then_return_error_result() {
+        CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
+
+        when(validator.getErrorCode()).thenReturn(ERROR_CODE);
+
+        ValidationError result = underTest.validate(entityChange, currentState);
+
+        assertEquals(ERROR_CODE, result.getErrorCode());
+        assertEquals(TestEntity.FIELD_1, result.getField());
+    }
 }
