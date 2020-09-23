@@ -4,12 +4,12 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
-public class RequiredFieldValidatorImpl<E extends EntityType<E>, T> implements RequiredFieldValidator<E, T> {
+public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements RequiredFieldValidator<E, T> {
 
     private final EntityField<E, T> entityField;
     private final String errorCode;
 
-    public RequiredFieldValidatorImpl(EntityField<E, T> entityField, String errorCode) {
+    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode) {
         this.entityField = entityField;
         this.errorCode = errorCode;
     }
