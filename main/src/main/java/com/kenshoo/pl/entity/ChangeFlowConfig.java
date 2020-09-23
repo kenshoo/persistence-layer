@@ -8,6 +8,7 @@ import com.kenshoo.pl.entity.internal.audit.*;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import com.kenshoo.pl.entity.spi.helpers.ImmutableFieldValidatorImpl;
+import com.kenshoo.pl.entity.spi.helpers.RequiredFieldValidatorImpl;
 import org.jooq.lambda.Seq;
 
 import java.util.*;
@@ -58,7 +59,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.requiredFields = requiredFields;
         this.childFlows = childFlows;
         this.postFetchFilters = ImmutableList.of(new MissingParentEntitiesFilter<>(entityType.determineForeignKeys(requiredRelationFields).collect(toList())), new MissingEntitiesFilter<>(entityType));
-        this.postSupplyFilters = ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
+        this.postSupplyFilters = features.isEnabled(Feature.RequiredFieldValidator) ? Collections.emptyList() : ImmutableList.of(new RequiredFieldsChangesFilter<>(requiredFields));
         this.retryer = retryer;
         this.auditRequiredFieldsCalculator = auditRequiredFieldsCalculator;
         this.auditRecordGenerator = auditRecordGenerator;
@@ -257,8 +258,14 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             requiredRelationFields.collect(toCollection(() -> this.requiredRelationFields));
         }
 
-        /* not public */ void withRequiredFields(Stream<EntityField<E, ?>> requiredFields) {
+        /* not public */ void withDeprecatedRequiredFields(Stream<EntityField<E, ?>> requiredFields) {
             requiredFields.collect(toCollection(() -> this.requiredFields));
+        }
+
+        /* not public */ void withRequiredFields(Stream<EntityField<E, ?>> requiredFields) {
+            EntityChangeCompositeValidator<E> compositeValidator = new EntityChangeCompositeValidator<>();
+            requiredFields.forEach(requiredField -> compositeValidator.register(new RequiredFieldValidatorImpl<>(requiredField, Errors.FIELD_IS_REQUIRED)));
+            this.withValidator(compositeValidator);
         }
 
         /* not public */ void withImmutableFields(Stream<EntityField<E, ?>> immutableFields) {

@@ -7,6 +7,7 @@ import org.jooq.Record;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,6 +18,11 @@ import static org.mockito.Mockito.when;
 
 public class ChangeFlowConfigBuilderFactoryTest {
 
+    @Before
+    public void setup() {
+        PLContext plContext = mock(PLContext.class);
+        when(plContext.generateFeatureSet()).thenReturn(FeatureSet.EMPTY);
+    }
 
     @Test
     public void testFieldsAnnotatedWithDontPurgeArePassedToTheFalseUpdatePurger() {
@@ -24,7 +30,9 @@ public class ChangeFlowConfigBuilderFactoryTest {
     }
 
     private ChangeFlowConfig<MockedEntity> buildFlow() {
-        return ChangeFlowConfigBuilderFactory.newInstance(mock(PLContext.class), MockedEntity.INSTANCE).build();
+        PLContext plContext = mock(PLContext.class);
+        when(plContext.generateFeatureSet()).thenReturn(FeatureSet.EMPTY);
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, MockedEntity.INSTANCE).build();
     }
 
     private FalseUpdatesPurger<MockedEntity> getPurger(ChangeFlowConfig<MockedEntity> flow) {

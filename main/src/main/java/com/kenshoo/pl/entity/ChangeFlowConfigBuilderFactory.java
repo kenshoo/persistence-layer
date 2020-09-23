@@ -26,12 +26,16 @@ public class ChangeFlowConfigBuilderFactory {
                 .addFieldsToRetain(entityType.getFields().filter(annotatedWith(entityType, DontPurge.class)))
                 .retainNonNullableFieldsOfSecondaryTables(entityType)
                 .build());
+
         builder.withRequiredRelationFields(entityType.getFields()
-                .filter(entityField -> {
-                    Required requiredAnnotation = getFieldAnnotation(entityType, entityField, Required.class);
-                    return requiredAnnotation != null && requiredAnnotation.value() == RequiredFieldType.RELATION;
-                }));
-        builder.withRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class)));
+                 .filter(annotatedWith(entityType, Required.class, required -> required != null && required.value() == RequiredFieldType.RELATION)));
+
+        if(plContext.generateFeatureSet().isEnabled(Feature.RequiredFieldValidator)) {
+            builder.withRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class, required -> required != null && required.value() == RequiredFieldType.REGULAR)));
+        } else {
+            builder.withDeprecatedRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class)));
+        }
+
         builder.withImmutableFields(entityType.getFields().filter(annotatedWith(entityType, Immutable.class)));
         Optional<EntityField<E, ?>> creationDateField = entityType.getFields()
                 .filter(annotatedWith(entityType, CreationDate.class))
