@@ -117,6 +117,10 @@ public abstract class EntityTypeReflectionUtil {
         return field -> isAnnotatedWith(entityType, annotationType, field);
     }
 
+    public static <E extends EntityType<E>, A extends Annotation> Predicate<EntityField<E, ?>> annotatedWith(E entityType, Class<A> annotationType, Predicate<A> predicate) {
+        return field -> predicate.test(getFieldAnnotation(entityType, field, annotationType));
+    }
+
     public static <E extends EntityType<E>, A extends Annotation> boolean isAnnotatedWith(final EntityType<E> entityType,
                                                                                           final Class<A> annotationType,
                                                                                           final EntityField<E, ?> field) {

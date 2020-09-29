@@ -40,6 +40,7 @@ public class EntitiesToContextFetcherTest {
 
     @Before
     public void setup() {
+        when(plContext.generateFeatureSet()).thenReturn(FeatureSet.EMPTY);
         classUnderTest = new EntitiesToContextFetcher(fetcher);
     }
 
