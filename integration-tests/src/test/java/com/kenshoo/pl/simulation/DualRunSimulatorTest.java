@@ -7,6 +7,8 @@ import com.kenshoo.pl.auto.inc.TestEntity;
 import com.kenshoo.pl.auto.inc.TestEntityTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
+import com.kenshoo.pl.simulation.internal.ActualResultFetcher;
+import com.kenshoo.pl.simulation.internal.ResultComparator;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 import org.junit.After;
@@ -21,7 +23,8 @@ import static com.kenshoo.pl.auto.inc.TestEntity.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
 
 
 public class DualRunSimulatorTest {
@@ -187,11 +190,100 @@ public class DualRunSimulatorTest {
         assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(1));
     }
 
+    @Test
+    public void whenPersistenceLayerThrowsExceptionThenRealMutationShouldStillExecuteAndSingleComparisionMismatchShallBeReturned() {
+
+        flowConfig.withValidator(throwingOnValidate(new RuntimeException("Crashing ha ha")));
+
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(FIELD1));
+
+        var commandsToSimulate = List.of(
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one"),
+                new TestEntityCreateCommand().with(NAME, "2").with(FIELD1, "two")
+        );
+
+        ActualDatabaseMutator<TestEntity> realDatabaseChange = mock(ActualDatabaseMutator.class);
+
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
+
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).getDescription(), containsString("Crashing ha ha"));
+        verify(realDatabaseChange).run();
+    }
+
+    @Test
+    public void whenComparatorThrowsExceptionThenSingleComparisionMismatchShallBeReturned() {
+
+        var simulator = new DualRunSimulator<>(
+                plContext,
+                flowConfig,
+                List.of(FIELD1),
+                emptyFetcher(),
+                comparatorThrowing(new RuntimeException("Let's crash"))
+        );
+
+        var commandsToSimulate = List.of(
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one"),
+                new TestEntityCreateCommand().with(NAME, "2").with(FIELD1, "two")
+        );
+
+        ActualDatabaseMutator<TestEntity> realDatabaseChange = mock(ActualDatabaseMutator.class);
+
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
+
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).getDescription(), containsString("Let's crash"));
+    }
+
+    @Test
+    public void whenFetcherThrowsExceptionThenSingleComparisionMismatchShallBeReturned() {
+
+        var simulator = new DualRunSimulator<>(
+                plContext,
+                flowConfig,
+                List.of(FIELD1),
+                fetcherThrowing(new RuntimeException("Let's crash")),
+                comparatorThrowing(new RuntimeException("this should not happen"))
+        );
+
+        var commandsToSimulate = List.of(
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one"),
+                new TestEntityCreateCommand().with(NAME, "2").with(FIELD1, "two")
+        );
+
+        ActualDatabaseMutator<TestEntity> realDatabaseChange = mock(ActualDatabaseMutator.class);
+
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
+
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).getDescription(), containsString("Let's crash"));
+    }
+
+    @Test(expected = TestException.class)
+    public void simulatorShouldNotCatchExceptionsOfTheRealMutator() {
+
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(FIELD1));
+
+        var commandsToSimulate = List.of(new TestEntityCreateCommand().with(NAME, "1"));
+
+        ActualDatabaseMutator<TestEntity> realDatabaseChange = () -> { throw new TestException(); };
+
+        simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
+    }
+
+
     // -------------------------------------------------------------------------------------------- //
     //
     //       helper methods
     //
     // -------------------------------------------------------------------------------------------- //
+
+    private static class TestException extends RuntimeException {
+    }
+
+    private ChangesValidator<TestEntity> throwingOnValidate(RuntimeException exception) {
+        return (a, b, c) -> { throw exception; };
+    }
 
     private ChangesValidator<TestEntity> failAllCommands() {
         return (cmds, op, ctx) -> cmds.forEach(cmd -> ctx.addValidationError(cmd, new ValidationError("isError")));
@@ -218,6 +310,24 @@ public class DualRunSimulatorTest {
 
     private ActualDatabaseMutator<TestEntity> failAllByNames(String... names) {
         return () -> Seq.of(names).map(name -> new ActualMutatorError<>(new SingleUniqueKeyValue<>(NAME, name), "please fail")).toList();
+    }
+
+    private ActualResultFetcher<TestEntity> emptyFetcher() {
+        var mocked = mock(ActualResultFetcher.class);
+        when(mocked.fetch(any(), any(), any())).thenReturn(emptyList());
+        return mocked;
+    }
+
+    private ResultComparator<TestEntity> comparatorThrowing(Exception e) {
+        var mocked = mock(ResultComparator.class);
+        when(mocked.findMismatches(any(), any())).thenThrow(e);
+        return mocked;
+    }
+
+    private ActualResultFetcher<TestEntity> fetcherThrowing(Exception e) {
+        var mocked = mock(ActualResultFetcher.class);
+        when(mocked.fetch(any(), any(), any())).thenThrow(e);
+        return mocked;
     }
 
 }

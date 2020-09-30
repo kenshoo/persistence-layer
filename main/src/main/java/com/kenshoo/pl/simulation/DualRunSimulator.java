@@ -1,11 +1,15 @@
 package com.kenshoo.pl.simulation;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.simulation.internal.*;
 import java.util.*;
 
+import static com.kenshoo.pl.simulation.internal.ValueOrException.tryGet;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -45,6 +49,20 @@ public class DualRunSimulator<E extends EntityType<E>> {
         this.resultComparator = new ResultComparator<>(inspectedFields);
     }
 
+    @VisibleForTesting
+    DualRunSimulator(
+            PLContext plContext,
+            ChangeFlowConfig.Builder<E> flowToSimulate,
+            Collection<EntityField<E, ?>> inspectedFields,
+            ActualResultFetcher<E> actualResultFetcher,
+            ResultComparator<E> resultComparator) {
+        this.inspectedFields = inspectedFields;
+        this.flowToSimulate = flowToSimulate;
+        this.actualResultFetcher = actualResultFetcher;
+        this.resultComparator = resultComparator;
+        this.pl = new PersistenceLayer<>(plContext);
+    }
+
     /**
      * Runs the real mutator and compares the actual DB affect with the values in the simulated commands.
      * Correlating each simulated command to an actual affect is done by a unique key.
@@ -66,15 +84,16 @@ public class DualRunSimulator<E extends EntityType<E>> {
                 .withOutputGenerator(new FakeAutoIncGenerator<>(uniqueKey.getEntityType()))
                 .build();
 
-        final var simulatedResults = seq(pl.create(commandsToSimulate, plFlow, uniqueKey).getChangeResults())
-                .map(res -> new SimulatedResult<>(res.getCommand(), uniqueKey.createValue(res.getCommand()), res.getErrors()))
-                .collect(toList());
+        var simulatedResults = tryGet(() -> seq(pl.create(commandsToSimulate, plFlow, uniqueKey).getChangeResults())
+                    .map(res -> new SimulatedResult<>(res.getCommand(), uniqueKey.createValue(res.getCommand()), res.getErrors()))
+                    .collect(toList()));
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        final var actualResults = actualResultFetcher.fetch(idsOf(simulatedResults), actualErrors, this::emptyOriginalState);
+        final var actualResults = tryGet(() -> actualResultFetcher.fetch(idsOf(simulatedResults.value()), actualErrors, this::emptyOriginalState));
 
-        return resultComparator.findMismatches(simulatedResults, actualResults);
+        return tryGet(() -> resultComparator.findMismatches(simulatedResults.value(), actualResults.value()))
+                .orWhenException(this::comparisionError);
     }
 
     public <ID extends Identifier<E>> List<ComparisonMismatch<E>> runUpdate(
@@ -88,15 +107,16 @@ public class DualRunSimulator<E extends EntityType<E>> {
                 .withOutputGenerator(originalStateRecorder)
                 .build();
 
-        final var simulatedResults = seq(pl.update(commandsToSimulate, plFlow).getChangeResults())
+        final var simulatedResults = tryGet(() -> seq(pl.update(commandsToSimulate, plFlow).getChangeResults())
                 .map(r -> new SimulatedResult<>(r.getCommand(), r.getIdentifier(), r.getErrors()))
-                .collect(toList());
+                .collect(toList()));
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
 
-        final var actualResults = actualResultFetcher.fetch(idsOf(simulatedResults), actualErrors, originalStateRecorder::get);
+        final var actualResults = tryGet(() -> actualResultFetcher.fetch(idsOf(simulatedResults.value()), actualErrors, originalStateRecorder::get));
 
-        return resultComparator.findMismatches(simulatedResults, actualResults);
+        return tryGet(() -> resultComparator.findMismatches(simulatedResults.value(), actualResults.value()))
+                .orWhenException(this::comparisionError);
     }
 
     private List<Identifier<E>> idsOf(Collection<SimulatedResult<E>> simulatedResults) {
@@ -119,5 +139,12 @@ public class DualRunSimulator<E extends EntityType<E>> {
 
     private Entity emptyOriginalState(Identifier<E> id) {
         return emptyState();
+    }
+
+    private List<ComparisonMismatch<E>> comparisionError(Throwable exception) {
+        return singletonList(new ComparisonMismatch<>(
+                UniqueKeyValue.<E>empty(),
+                "Simulation crashed: " + exception.getMessage() + "\n" + getStackTrace(exception)
+        ));
     }
 }
