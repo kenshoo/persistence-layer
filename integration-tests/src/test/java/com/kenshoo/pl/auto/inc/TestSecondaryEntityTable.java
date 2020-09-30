@@ -9,9 +9,9 @@ public class TestSecondaryEntityTable extends AbstractDataTable<TestSecondaryEnt
 
     public static final TestSecondaryEntityTable INSTANCE = new TestSecondaryEntityTable("TestSecondaryEntity");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
-    final TableField<Record, Integer> parentId = createFKField("parent_id", TestEntityTable.INSTANCE.id);
-    final TableField<Record, String> secondName = createField("second_name", SQLDataType.VARCHAR.length(100));
+    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
+    public final TableField<Record, Integer> parentId = createFKField("parent_id", TestEntityTable.INSTANCE.id);
+    public final TableField<Record, String> secondName = createField("second_name", SQLDataType.VARCHAR.length(100));
 
     private TestSecondaryEntityTable(final String name) {
         super(name);

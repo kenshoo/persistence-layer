@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 
 public class ResultComparatorTest {
 
-    private final ResultComparator<TestEntity, Key> comparator = new ResultComparator<>(List.of(
+    private final ResultComparator<TestEntity> comparator = new ResultComparator<>(List.of(
             FIELD_1,
             FIELD_2
     ));
@@ -39,7 +39,7 @@ public class ResultComparatorTest {
         assertThat(errors, not(empty()));
     }
 
-    private SimulatedResult<TestEntity, Key> failedCommand() {
+    private SimulatedResult<TestEntity> failedCommand() {
         return new SimulatedResult<>(new Command(), new Key(1), PL_ERRORS);
     }
 
@@ -109,7 +109,7 @@ public class ResultComparatorTest {
         assertThat(errors, not(empty()));
     }
 
-    private SimulatedResult<TestEntity, Key> successful(Command command) {
+    private SimulatedResult<TestEntity> successful(Command command) {
         return new SimulatedResult<>(command, new Key(1), PL_SUCCESS);
     }
 

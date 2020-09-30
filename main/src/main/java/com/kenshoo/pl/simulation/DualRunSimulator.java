@@ -3,8 +3,6 @@ package com.kenshoo.pl.simulation;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.simulation.internal.*;
-import org.apache.commons.lang3.tuple.Pair;
-import org.jooq.lambda.Seq;
 import java.util.*;
 
 import static java.util.stream.Collectors.toList;
@@ -28,18 +26,16 @@ import static org.jooq.lambda.Seq.seq;
  *
  * <b>Limitations</b>
  * + One-to-many relations: Child commands are not supported.
- * + ID must be provided to all commands, including CREATE commands, to enable matching them with the actual DB mutation.
  *
  * @param <E> EntityType
- * @param <ID> ID type
  */
-public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>> {
+public class DualRunSimulator<E extends EntityType<E>> {
 
     private final Collection<EntityField<E, ?>> inspectedFields;
     private final ChangeFlowConfig.Builder<E> flowToSimulate;
     private final PersistenceLayer<E> pl;
-    private final ActualResultFetcher<E, ID> actualResultFetcher;
-    private final ResultComparator<E, ID> resultComparator;
+    private final ActualResultFetcher<E> actualResultFetcher;
+    private final ResultComparator<E> resultComparator;
 
     public DualRunSimulator(PLContext plContext, ChangeFlowConfig.Builder<E> flowToSimulate, Collection<EntityField<E, ?>> inspectedFields) {
         this.inspectedFields = inspectedFields;
@@ -50,24 +46,28 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
     }
 
     /**
-     * Note that auto-increment is not supported for simulation. IDs must be provided in order to compare simulated
-     * commands with actual mutations.
+     * Runs the real mutator and compares the actual DB affect with the values in the simulated commands.
+     * Correlating each simulated command to an actual affect is done by a unique key.
+     * The key doesn't have to be the primary key. It could be whatever unique key you want. But it must be
+     * populated in the simulation commands.
      *
+     * @param uniqueKey
      * @param databaseMutator
-     * @param commandsToSimulate
+     * @param commandsToSimulate - must contain values for the unique key.
      * @return
      */
-    public List<ComparisonMismatch<E, ID>> runCreation(
-            ActualDatabaseMutator<E, ID> databaseMutator,
-            Collection<? extends Pair<ID, ? extends CreateEntityCommand<E>>> commandsToSimulate) {
+    public List<ComparisonMismatch<E>> runCreation(
+            UniqueKey<E> uniqueKey,
+            ActualDatabaseMutator<E> databaseMutator,
+            Collection<? extends CreateEntityCommand<E>> commandsToSimulate) {
 
-        final var plFlow = flowToSimulate.withoutOutputGenerators().build();
+        final var plFlow = flowToSimulate
+                .withoutOutputGenerators()
+                .withOutputGenerator(new FakeAutoIncGenerator<>(uniqueKey.getEntityType()))
+                .build();
 
-        populateIdsInCreateCommands(commandsToSimulate);
-
-        final var simulatedResults = seq(pl.create(values(commandsToSimulate), plFlow).getChangeResults())
-                .zip(commandsToSimulate)
-                .map(r -> new SimulatedResult<>(r.v1.getCommand(), r.v2.getKey(), r.v1.getErrors()))
+        final var simulatedResults = seq(pl.create(commandsToSimulate, plFlow, uniqueKey).getChangeResults())
+                .map(res -> new SimulatedResult<>(res.getCommand(), uniqueKey.createValue(res.getCommand()), res.getErrors()))
                 .collect(toList());
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
@@ -77,8 +77,8 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
         return resultComparator.findMismatches(simulatedResults, actualResults);
     }
 
-    public List<ComparisonMismatch<E, ID>> runUpdate(
-            ActualDatabaseMutator<E, ID> databaseMutator,
+    public <ID extends Identifier<E>> List<ComparisonMismatch<E>> runUpdate(
+            ActualDatabaseMutator<E> databaseMutator,
             Collection<? extends UpdateEntityCommand<E, ID>> commandsToSimulate) {
 
         final var originalStateRecorder = new InitialStateRecorder<>(inspectedFields);
@@ -99,24 +99,8 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
         return resultComparator.findMismatches(simulatedResults, actualResults);
     }
 
-    private void populateIdsInCreateCommands(Collection<? extends Pair<ID, ? extends CreateEntityCommand<E>>> commands) {
-        commands.forEach(cmd -> populateIdToCommandValues(cmd.getKey(), cmd.getValue()));
-    }
-
-    private List<ID> idsOf(Collection<SimulatedResult<E, ID>> simulatedResults) {
+    private List<Identifier<E>> idsOf(Collection<SimulatedResult<E>> simulatedResults) {
         return seq(simulatedResults).map(SimulatedResult::getId).toList();
-    }
-
-    private <K, V> List<? extends V> values(Collection<? extends Pair<K, ? extends V>> pairs) {
-        return seq(pairs).map(Pair::getValue).toList();
-    }
-
-    private void populateIdToCommandValues(ID id, CreateEntityCommand<E> command) {
-        Seq.of(id.getUniqueKey().getFields()).forEach(field -> populateFieldValueToCommand(field, id, command));
-    }
-
-    private <T> void populateFieldValueToCommand(EntityField<E, T> field, ID id, CreateEntityCommand<E> command) {
-        command.set(field, id.get(field));
     }
 
     private Entity emptyState() {
@@ -133,7 +117,7 @@ public class DualRunSimulator<E extends EntityType<E>, ID extends Identifier<E>>
         };
     }
 
-    private Entity emptyOriginalState(ID id) {
+    private Entity emptyOriginalState(Identifier<E> id) {
         return emptyState();
     }
 }

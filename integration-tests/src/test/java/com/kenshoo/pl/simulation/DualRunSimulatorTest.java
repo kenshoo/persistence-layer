@@ -7,7 +7,6 @@ import com.kenshoo.pl.auto.inc.TestEntity;
 import com.kenshoo.pl.auto.inc.TestEntityTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.DSLContext;
 import org.jooq.lambda.Seq;
 import org.junit.After;
@@ -18,13 +17,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.auto.inc.TestEntity.ID;
-import static com.kenshoo.pl.auto.inc.TestEntity.NAME;
+import static com.kenshoo.pl.auto.inc.TestEntity.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
 
 
 public class DualRunSimulatorTest {
@@ -49,46 +46,46 @@ public class DualRunSimulatorTest {
                 .forEach(table -> dslContext.deleteFrom(table).execute());
     }
 
+    private final UniqueKey<TestEntity> NAME_AS_UNIQUE_KEY = new SingleUniqueKey<>(NAME);
+
     @Test
     public void testCreationReturnErrorForMismatchedFieldAndSuccessWhenMatched() {
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
-                ID,
-                NAME
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
+                FIELD1
         ));
 
         var commandsToSimulate = List.of(
-            Pair.of(id(1), new TestEntityCreateCommand().with(ID, 1).with(NAME, "one")),
-            Pair.of(id(2), new TestEntityCreateCommand().with(ID, 2).with(NAME, "two"))
+            new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one"),
+            new TestEntityCreateCommand().with(NAME, "2").with(FIELD1, "two")
         );
 
         var realDatabaseChange = withoutFailures(() -> {
-            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 1).set(PRIMARY_TABLE.name, "one").execute();
-            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 2).set(PRIMARY_TABLE.name, "two_la_la_la").execute();
+            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "1").set(PRIMARY_TABLE.field1, "one").execute();
+            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "2").set(PRIMARY_TABLE.field1, "two_la_la_la").execute();
         });
 
-        var results = simulator.runCreation(realDatabaseChange, commandsToSimulate);
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
 
-        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(2));
+        assertThat("Simulation results: " + results, failedNames(results), containsInAnyOrder("2"));
     }
 
     @Test
     public void testCreationReturnErrorForEntityThatWasNotReallyCreatedByTheRealMutator() {
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
-                ID,
-                NAME
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
+                FIELD1
         ));
 
         var commandsToSimulate = List.of(
-                Pair.of(id(1), new TestEntityCreateCommand().with(ID, 1).with(NAME, "one"))
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one")
         );
 
         var realDatabaseChange = withoutFailures(() -> {}); // do nothing
 
-        var results = simulator.runCreation(realDatabaseChange, commandsToSimulate);
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
 
-        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(1));
+        assertThat("Simulation results: " + results, failedNames(results), containsInAnyOrder("1"));
     }
 
     @Test
@@ -96,64 +93,39 @@ public class DualRunSimulatorTest {
 
         flowConfig.withValidator(failAllCommands());
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
-                ID,
-                NAME
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
+                FIELD1
         ));
 
         var commandsToSimulate = List.of(
-                Pair.of(id(1), new TestEntityCreateCommand().with(ID, 1).with(NAME, "one"))
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one")
         );
 
         var realDatabaseChange = withoutFailures(() -> {
-            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 1).set(PRIMARY_TABLE.name, "one").execute();
+            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.name, "1").set(PRIMARY_TABLE.field1, "one").execute();
         });
 
-        var results = simulator.runCreation(realDatabaseChange, commandsToSimulate);
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
 
-        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(1));
+        assertThat("Simulation results: " + results, failedNames(results), containsInAnyOrder("1"));
     }
 
     @Test
     public void testCreationReturnErrorWhenSimulationSucceededButRealMutationFailed() {
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
-                ID,
-                NAME
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
+                FIELD1
         ));
 
         var commandsToSimulate = List.of(
-                Pair.of(id(1), new TestEntityCreateCommand().with(ID, 1).with(NAME, "one"))
+                new TestEntityCreateCommand().with(NAME, "1").with(FIELD1, "one")
         );
 
-        var realDatabaseChange = failAllByIds(1);
+        var realDatabaseChange = failAllByNames("1");
 
-        var results = simulator.runCreation(realDatabaseChange, commandsToSimulate);
+        var results = simulator.runCreation(NAME_AS_UNIQUE_KEY, realDatabaseChange, commandsToSimulate);
 
-        assertThat("Simulation results: " + results, failedIds(results), containsInAnyOrder(1));
-    }
-
-    @Test
-    public void testIdArgumentShallOverrideIdInCreationCommand() {
-
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
-                ID,
-                NAME
-        ));
-
-        var commandsToSimulate = List.of(
-                Pair.of(id(1), new TestEntityCreateCommand().with(ID, 432123).with(NAME, "one")),
-                Pair.of(id(2), new TestEntityCreateCommand().with(NAME, "two"))
-        );
-
-        var realDatabaseChange = withoutFailures(() -> {
-            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 1).set(PRIMARY_TABLE.name, "one").execute();
-            dslContext.insertInto(PRIMARY_TABLE).set(PRIMARY_TABLE.id, 2).set(PRIMARY_TABLE.name, "two").execute();
-        });
-
-        var results = simulator.runCreation(realDatabaseChange, commandsToSimulate);
-
-        assertThat(results, empty());
+        assertThat("Simulation results: " + results, failedNames(results), containsInAnyOrder("1"));
     }
 
     @Test
@@ -166,7 +138,7 @@ public class DualRunSimulatorTest {
 
         // Simulation Setup
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
                 NAME
         ));
 
@@ -196,7 +168,7 @@ public class DualRunSimulatorTest {
 
         // Simulation Setup
 
-        var simulator = new DualRunSimulator<TestEntity, TestEntity.Key>(plContext, flowConfig, List.of(
+        var simulator = new DualRunSimulator<>(plContext, flowConfig, List.of(
                 NAME
         ));
 
@@ -225,7 +197,11 @@ public class DualRunSimulatorTest {
         return (cmds, op, ctx) -> cmds.forEach(cmd -> ctx.addValidationError(cmd, new ValidationError("isError")));
     }
 
-    private List<Integer> failedIds(Collection<ComparisonMismatch<TestEntity, TestEntity.Key>> errors) {
+    private List<String> failedNames(Collection<ComparisonMismatch<TestEntity>> errors) {
+        return errors.stream().map(e -> e.getId().get(NAME)).collect(toList());
+    }
+
+    private List<Integer> failedIds(Collection<ComparisonMismatch<TestEntity>> errors) {
         return errors.stream().map(e -> e.getId().get(ID)).collect(toList());
     }
 
@@ -233,16 +209,15 @@ public class DualRunSimulatorTest {
         return new TestEntity.Key(id);
     }
 
-    private ActualDatabaseMutator<TestEntity, TestEntity.Key> withoutFailures(Runnable operation) {
+    private ActualDatabaseMutator<TestEntity> withoutFailures(Runnable operation) {
         return () -> {
             operation.run();
             return emptyList();
         };
     }
 
-    private ActualDatabaseMutator<TestEntity, TestEntity.Key> failAllByIds(Integer... ids) {
-        return () -> Seq.of(ids).map(id -> new ActualMutatorError<>(id(id), "please fail")).toList();
+    private ActualDatabaseMutator<TestEntity> failAllByNames(String... names) {
+        return () -> Seq.of(names).map(name -> new ActualMutatorError<>(new SingleUniqueKeyValue<>(NAME, name), "please fail")).toList();
     }
-
 
 }

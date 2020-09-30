@@ -11,7 +11,7 @@ import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
 
-public class ResultComparator<E extends EntityType<E>, ID extends Identifier<E>> {
+public class ResultComparator<E extends EntityType<E>> {
 
     private final Collection<EntityField<E, ?>> inspectedFields;
 
@@ -19,8 +19,8 @@ public class ResultComparator<E extends EntityType<E>, ID extends Identifier<E>>
         this.inspectedFields = inspectedFields;
     }
 
-    public List<ComparisonMismatch<E, ID>> findMismatches(
-            Iterable<SimulatedResult<E, ID>> simulatedResults,
+    public List<ComparisonMismatch<E>> findMismatches(
+            Iterable<SimulatedResult<E>> simulatedResults,
             Iterable<ActualResult> actualDbResults) {
 
         return seq(simulatedResults).zip(actualDbResults)
@@ -30,7 +30,7 @@ public class ResultComparator<E extends EntityType<E>, ID extends Identifier<E>>
                 .collect(toList());
     }
 
-    private Optional<ComparisonMismatch<E, ID>> findMismatch(SimulatedResult<E, ID> simulatedResult, ActualResult actualResult) {
+    private Optional<ComparisonMismatch<E>> findMismatch(SimulatedResult<E> simulatedResult, ActualResult actualResult) {
 
         if (simulatedResult.isError() && actualResult.isError()) {
             return Optional.empty();

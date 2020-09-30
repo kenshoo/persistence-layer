@@ -13,7 +13,8 @@ import java.util.function.Function;
 
 import static org.jooq.lambda.Seq.seq;
 
-public class ActualResultFetcher<E extends EntityType<E>, ID extends Identifier<E>> {
+
+public class ActualResultFetcher<E extends EntityType<E>> {
 
     private final EntitiesFetcher fetcher;
     private final Collection<EntityField<E, ?>> inspectedFields;
@@ -24,9 +25,9 @@ public class ActualResultFetcher<E extends EntityType<E>, ID extends Identifier<
     }
 
     public Iterable<ActualResult> fetch(
-            Collection<ID> allIds,
-            Map<ID, ActualMutatorError<E, ID>> errors,
-            Function<ID, Entity> originalStates) {
+            Collection<? extends Identifier<E>> allIds,
+            Map<Identifier<E>, ActualMutatorError<E>> errors,
+            Function<Identifier<E>, Entity> originalStates) {
 
         final var finalStates = fetcher.fetchEntitiesByIds(allIds, inspectedFields);
 

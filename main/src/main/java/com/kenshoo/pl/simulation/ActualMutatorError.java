@@ -3,11 +3,11 @@ package com.kenshoo.pl.simulation;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.Identifier;
 
-public class ActualMutatorError<E extends EntityType<E>, ID extends Identifier<E>> {
-    private final ID id;
+public class ActualMutatorError<E extends EntityType<E>> {
+    private final Identifier<E> id;
     private final String description;
 
-    public ID getId() {
+    public Identifier<E> getId() {
         return id;
     }
 
@@ -15,7 +15,7 @@ public class ActualMutatorError<E extends EntityType<E>, ID extends Identifier<E
         return description;
     }
 
-    public ActualMutatorError(ID id, String description) {
+    public ActualMutatorError(Identifier<E> id, String description) {
         this.id = id;
         this.description = description;
     }

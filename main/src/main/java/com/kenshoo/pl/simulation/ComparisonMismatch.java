@@ -3,11 +3,11 @@ package com.kenshoo.pl.simulation;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.Identifier;
 
-public class ComparisonMismatch<E extends EntityType<E>, ID extends Identifier<E>> {
-    private final ID id;
+public class ComparisonMismatch<E extends EntityType<E>> {
+    private final Identifier<E> id;
     private final String description;
 
-    public ID getId() {
+    public Identifier<E> getId() {
         return id;
     }
 
@@ -15,7 +15,7 @@ public class ComparisonMismatch<E extends EntityType<E>, ID extends Identifier<E
         return description;
     }
 
-    public ComparisonMismatch(ID id, String description) {
+    public ComparisonMismatch(Identifier<E> id, String description) {
         this.id = id;
         this.description = description;
     }

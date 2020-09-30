@@ -4,18 +4,18 @@ import com.kenshoo.pl.entity.*;
 import java.util.Collection;
 
 
-public class SimulatedResult<E extends EntityType<E>, ID extends Identifier<E>> {
+public class SimulatedResult<E extends EntityType<E>> {
     final ChangeEntityCommand<E> cmd;
-    final ID id;
+    final Identifier<E> id;
     final Collection<ValidationError> errors;
 
-    public SimulatedResult(ChangeEntityCommand<E> cmd, ID id, Collection<ValidationError> errors) {
+    public SimulatedResult(ChangeEntityCommand<E> cmd, Identifier<E> id, Collection<ValidationError> errors) {
         this.cmd = cmd;
         this.id = id;
         this.errors = errors;
     }
 
-    public ID getId() {
+    public Identifier<E> getId() {
         return id;
     }
 
