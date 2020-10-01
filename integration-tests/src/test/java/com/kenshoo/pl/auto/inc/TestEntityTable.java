@@ -9,8 +9,9 @@ public class TestEntityTable extends AbstractDataTable<TestEntityTable> {
 
     public static final TestEntityTable INSTANCE = new TestEntityTable("TestEntity");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
-    final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR.length(50));
+    final public TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
+    final public TableField<Record, String> name = createField("name", SQLDataType.VARCHAR.length(50));
+    final public TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
 
     private TestEntityTable(final String name) {
         super(name);
