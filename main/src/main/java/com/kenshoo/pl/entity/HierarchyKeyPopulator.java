@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static com.kenshoo.pl.entity.UniqueKeyValue.concat;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -53,8 +54,8 @@ public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
 
         if (childToParentFields.notEmpty()) {
             seq(parents).filter(hasAnyChildOf(childType)).forEach(parent -> {
-                final UniqueKeyValue<CHILD> identityValues = parentValues(childToParentFields, valueExtractor, parent);
-                parent.getChildren(childType).forEach(child -> child.setKeysToParent(identityValues.concat(child.getKeysToParent())));
+                final Identifier<CHILD> identityValues = parentValues(childToParentFields, valueExtractor, parent);
+                parent.getChildren(childType).forEach(child -> child.setKeysToParent(concat(identityValues, child.getKeysToParent())));
             });
         }
     }
@@ -64,7 +65,7 @@ public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
     }
 
     private <CHILD extends EntityType<CHILD>>
-    UniqueKeyValue<CHILD> parentValues(EntityType.ForeignKey<CHILD, PARENT> childToParentKeys, CommandToValuesStrategy commandToValuesStrategy, EntityChange<PARENT> parent) {
+    Identifier<CHILD> parentValues(EntityType.ForeignKey<CHILD, PARENT> childToParentKeys, CommandToValuesStrategy commandToValuesStrategy, EntityChange<PARENT> parent) {
         Object[] parentValues = commandToValuesStrategy.getValues(childToParentKeys.to(), parent);
         if (childToParentKeys.size() != parentValues.length) {
             throw new IllegalStateException("Found " + parentValues.length + " values out of " + childToParentKeys.size() + " fields for foreign keys. Keys: " + childToParentKeys);

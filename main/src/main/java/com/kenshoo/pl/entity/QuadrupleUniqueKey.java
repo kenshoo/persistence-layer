@@ -17,7 +17,7 @@ public class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends Uni
     }
 
     protected QuadrupleUniqueKeyValue<E, A, B, C, D> createValue(A a, B b, C c, D d) {
-        return new QuadrupleUniqueKeyValue<>(new QuadrupleUniqueKey<>(this.a, this.b, this.c, this.d), a, b, c, d);
+        return new QuadrupleUniqueKeyValue<>(this, a, b, c, d);
     }
 
     @Override

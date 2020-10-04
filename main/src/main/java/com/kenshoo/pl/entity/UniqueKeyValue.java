@@ -93,10 +93,6 @@ public class UniqueKeyValue<E extends EntityType<E>> implements Identifier<E> {
         return stringBuilder.append("}").toString();
     }
 
-    public Identifier<E> concat(Identifier<E> id2) {
-        return concat(this, id2);
-    }
-
     public static <E extends EntityType<E>> Identifier<E> concat(Identifier<E> id1, Identifier<E> id2) {
         if (id1 == null) {
             return id2;

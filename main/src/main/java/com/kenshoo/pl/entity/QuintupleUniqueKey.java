@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity;
 /**
  *
  */
-public abstract class QuintupleUniqueKey<E extends EntityType<E>, T1, T2, T3, T4, T5> extends UniqueKey<E> {
+public class QuintupleUniqueKey<E extends EntityType<E>, T1, T2, T3, T4, T5> extends UniqueKey<E> {
 
     private final EntityField<E, T1> a;
     private final EntityField<E, T2> b;
@@ -21,7 +21,9 @@ public abstract class QuintupleUniqueKey<E extends EntityType<E>, T1, T2, T3, T4
         this.e = e;
     }
 
-    protected abstract QuintupleUniqueKeyValue<E, T1, T2, T3, T4, T5> createValue(T1 a, T2 b, T3 c, T4 d, T5 e);
+    protected QuintupleUniqueKeyValue<E, T1, T2, T3, T4, T5> createValue(T1 a, T2 b, T3 c, T4 d, T5 e) {
+        return new QuintupleUniqueKeyValue<>(this, a, b, c, d,e );
+    }
 
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
