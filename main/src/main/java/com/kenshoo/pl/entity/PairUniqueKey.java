@@ -12,7 +12,7 @@ public class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
     }
 
     protected PairUniqueKeyValue<E, A, B> createValue(A a, B b) {
-        return new PairUniqueKeyValue<>(new PairUniqueKey<>(this.a, this.b), a, b);
+        return new PairUniqueKeyValue<>(this, a, b);
     }
 
     @Override

@@ -15,7 +15,7 @@ public class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey
     }
 
     protected TripleUniqueKeyValue<E, A, B, C> createValue(A a, B b, C c) {
-        return new TripleUniqueKeyValue<>(new TripleUniqueKey<>(this.a, this.b, this.c), a, b, c);
+        return new TripleUniqueKeyValue<>(this, a, b, c);
     }
 
     @Override
