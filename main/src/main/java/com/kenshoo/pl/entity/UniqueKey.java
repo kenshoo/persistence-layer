@@ -43,7 +43,7 @@ public class UniqueKey<E extends EntityType<E>> {
         return ImmutableList.copyOf(tableFields);
     }
 
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         Object[] values = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
             values[i] = fieldsValueMap.get(fields[i]);

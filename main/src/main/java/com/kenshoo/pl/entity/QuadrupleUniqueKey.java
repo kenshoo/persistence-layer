@@ -22,7 +22,7 @@ public class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends Uni
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c), fieldsValueMap.get(d));
     }
 

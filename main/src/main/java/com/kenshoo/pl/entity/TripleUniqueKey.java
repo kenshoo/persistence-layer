@@ -20,7 +20,7 @@ public class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c));
     }
 

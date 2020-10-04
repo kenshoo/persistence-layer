@@ -27,7 +27,7 @@ public class QuintupleUniqueKey<E extends EntityType<E>, T1, T2, T3, T4, T5> ext
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c), fieldsValueMap.get(d), fieldsValueMap.get(e));
     }
 

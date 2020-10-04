@@ -17,7 +17,7 @@ public class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b));
     }
 

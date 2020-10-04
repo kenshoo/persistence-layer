@@ -19,7 +19,7 @@ public class SingleUniqueKey<E extends EntityType<E>, A> extends UniqueKey<E> {
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a));
     }
 

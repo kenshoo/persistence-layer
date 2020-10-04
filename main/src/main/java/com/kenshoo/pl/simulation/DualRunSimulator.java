@@ -85,7 +85,7 @@ public class DualRunSimulator<E extends EntityType<E>> {
                 .build();
 
         var simulatedResults = tryGet(() -> seq(pl.create(commandsToSimulate, plFlow, uniqueKey).getChangeResults())
-                    .map(res -> new SimulatedResult<>(res.getCommand(), uniqueKey.createValue(res.getCommand()), res.getErrors()))
+                    .map(res -> new SimulatedResult<>(res.getCommand(), uniqueKey.createIdentifier(res.getCommand()), res.getErrors()))
                     .collect(toList()));
 
         final var actualErrors = seq(databaseMutator.run()).toMap(__ -> __.getId());
