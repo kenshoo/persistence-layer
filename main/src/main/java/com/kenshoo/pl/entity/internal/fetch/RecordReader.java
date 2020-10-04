@@ -16,7 +16,7 @@ public class RecordReader {
     public static <E extends EntityType<E>> Identifier<E> createKey(Record record, AliasedKey<E> aliasedKey) {
         final FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
         aliasedKey.fields().forEach(aliasedField -> populateMap(aliasedField.unAliased(), aliasedField.aliased().getName(), record, fieldsValueMap));
-        return new UniqueKey<>(aliasedKey.unAliasedFields()).createValue(fieldsValueMap);
+        return new UniqueKey<>(aliasedKey.unAliasedFields()).createIdentifier(fieldsValueMap);
     }
 
     public static CurrentEntityState createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {

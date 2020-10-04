@@ -66,7 +66,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
             .map(EntityChangeResult::getCommand)
             .forEach(cmd -> {
                 optionalIdentityField.ifPresent(idField -> populateIdentityField(cmd, changeContext, idField));
-                cmd.setIdentifier(primaryKey.createValue(cmd));
+                cmd.setIdentifier(primaryKey.createIdentifier(cmd));
             });
     }
 

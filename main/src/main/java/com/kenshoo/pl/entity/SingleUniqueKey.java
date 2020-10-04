@@ -13,12 +13,17 @@ public class SingleUniqueKey<E extends EntityType<E>, A> extends UniqueKey<E> {
         this.a = a;
     }
 
+    @Deprecated
     protected SingleUniqueKeyValue<E, A> createValue(A value) {
         return new SingleUniqueKeyValue<>(this, value);
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a));
+    }
+
+    public Identifier<E> createIdentifier(A value) {
+        return createValue(value);
     }
 }

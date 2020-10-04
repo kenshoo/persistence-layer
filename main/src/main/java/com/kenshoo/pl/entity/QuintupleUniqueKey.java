@@ -21,12 +21,17 @@ public class QuintupleUniqueKey<E extends EntityType<E>, T1, T2, T3, T4, T5> ext
         this.e = e;
     }
 
+    @Deprecated
     protected QuintupleUniqueKeyValue<E, T1, T2, T3, T4, T5> createValue(T1 a, T2 b, T3 c, T4 d, T5 e) {
         return new QuintupleUniqueKeyValue<>(this, a, b, c, d,e );
     }
 
     @Override
-    public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
+    public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c), fieldsValueMap.get(d), fieldsValueMap.get(e));
+    }
+
+    public Identifier<E> createIdentifier(T1 a, T2 b, T3 c, T4 d, T5 e) {
+        return createValue(a, b, c, d, e);
     }
 }

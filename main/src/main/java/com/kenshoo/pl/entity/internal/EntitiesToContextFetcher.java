@@ -109,7 +109,7 @@ public class EntitiesToContextFetcher {
             commands.forEach(cmd -> context.addEntity(cmd, new CurrentEntityMutableState()));
         } else {
             final UniqueKey<E> foreignUniqueKey = new ForeignUniqueKey<>(foreignKeys);
-            Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createValue));
+            Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(identity(), foreignUniqueKey::createIdentifier));
             Map<Identifier<E>, CurrentEntityState> fetchedEntities = entitiesFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, Sets.newHashSet(keysByCommand.values()), fieldsToFetch);
             addFetchedEntitiesToChangeContext(fetchedEntities, context, keysByCommand);
         }

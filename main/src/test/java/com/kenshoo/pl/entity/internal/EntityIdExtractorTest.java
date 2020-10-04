@@ -37,7 +37,7 @@ public class EntityIdExtractorTest {
     @Test
     public void extractWhenExistsInEntityButNotInIdentifier() {
         final EntityChange<TestEntity> cmd = new TestCommand()
-            .withIdentifier(new SingleUniqueKeyValue<>(TestEntity.FIELD_1, "abc"));
+            .withIdentifier(new SingleUniqueKey<>(TestEntity.FIELD_1).createIdentifier("abc"));
         final CurrentEntityMutableState currentState = new CurrentEntityMutableState();
         currentState.set(TestEntity.ID, ID_VALUE);
 
