@@ -1,10 +1,7 @@
 package com.kenshoo.pl.auto.inc;
 
 import com.kenshoo.jooq.DataTable;
-import com.kenshoo.pl.entity.AbstractEntityType;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SingleUniqueKeyValue;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.annotation.Id;
 
 
@@ -33,15 +30,15 @@ public class ParentEntity extends AbstractEntityType<ParentEntity> {
         return SupportedChangeOperation.CREATE_UPDATE_AND_DELETE;
     }
 
-    public static class ParentId extends SingleUniqueKeyValue<ParentEntity, Integer> {
-        public ParentId(int id) {
-            super(ID, id);
-        }
-    }
-
     public static class IdInTarget extends SingleUniqueKeyValue<ParentEntity, Integer> {
+        public static final SingleUniqueKey<ParentEntity, Integer> DEFINITION = new SingleUniqueKey<>(ParentEntity.ID_IN_TARGET) {
+            protected SingleUniqueKeyValue<ParentEntity, Integer> createValue(Integer value) {
+                return new IdInTarget(value);
+            }
+        };
+
         public IdInTarget(Integer val) {
-            super(ID_IN_TARGET, val);
+            super(DEFINITION, val);
         }
     }
 }

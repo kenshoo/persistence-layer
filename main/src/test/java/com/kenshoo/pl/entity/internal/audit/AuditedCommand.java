@@ -11,7 +11,7 @@ class AuditedCommand extends ChangeEntityCommand<AuditedType> implements EntityC
     AuditedCommand(final long id, final ChangeOperation operator) {
         super(AuditedType.INSTANCE);
         this.operator = operator;
-        this.identifier = new SingleUniqueKeyValue<>(AuditedType.ID, id);
+        this.identifier = new SingleUniqueKey<>(AuditedType.ID).createIdentifier(id);
     }
 
     @Override

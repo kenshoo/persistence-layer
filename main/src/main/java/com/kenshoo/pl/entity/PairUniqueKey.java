@@ -11,6 +11,7 @@ public class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
         this.b = b;
     }
 
+    @Deprecated
     protected PairUniqueKeyValue<E, A, B> createValue(A a, B b) {
         return new PairUniqueKeyValue<>(this, a, b);
     }
@@ -18,5 +19,9 @@ public class PairUniqueKey<E extends EntityType<E>, A, B> extends UniqueKey<E> {
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b));
+    }
+
+    public Identifier<E> createIdentifier(A a, B b) {
+        return createValue(a, b);
     }
 }

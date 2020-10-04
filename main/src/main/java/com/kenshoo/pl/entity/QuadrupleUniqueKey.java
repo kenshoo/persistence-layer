@@ -16,6 +16,7 @@ public class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends Uni
         this.d = d;
     }
 
+    @Deprecated
     protected QuadrupleUniqueKeyValue<E, A, B, C, D> createValue(A a, B b, C c, D d) {
         return new QuadrupleUniqueKeyValue<>(this, a, b, c, d);
     }
@@ -23,5 +24,9 @@ public class QuadrupleUniqueKey<E extends EntityType<E>, A, B, C, D> extends Uni
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c), fieldsValueMap.get(d));
+    }
+
+    public Identifier<E> createIdentifier(A a, B b, C c, D d) {
+        return createValue(a, b, c, d);
     }
 }

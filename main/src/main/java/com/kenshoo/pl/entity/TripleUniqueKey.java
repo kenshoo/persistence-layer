@@ -14,6 +14,7 @@ public class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey
         this.c = c;
     }
 
+    @Deprecated
     protected TripleUniqueKeyValue<E, A, B, C> createValue(A a, B b, C c) {
         return new TripleUniqueKeyValue<>(this, a, b, c);
     }
@@ -21,5 +22,9 @@ public class TripleUniqueKey<E extends EntityType<E>, A, B, C> extends UniqueKey
     @Override
     public Identifier<E> createValue(FieldsValueMap<E> fieldsValueMap) {
         return createValue(fieldsValueMap.get(a), fieldsValueMap.get(b), fieldsValueMap.get(c));
+    }
+
+    public Identifier<E> createIdentifier(A a, B b, C c) {
+        return createValue(a, b, c);
     }
 }

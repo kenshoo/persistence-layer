@@ -309,7 +309,7 @@ public class DualRunSimulatorTest {
     }
 
     private ActualDatabaseMutator<TestEntity> failAllByNames(String... names) {
-        return () -> Seq.of(names).map(name -> new ActualMutatorError<>(new SingleUniqueKeyValue<>(NAME, name), "please fail")).toList();
+        return () -> Seq.of(names).map(name -> new ActualMutatorError<>(new SingleUniqueKey<>(NAME).createIdentifier(name), "please fail")).toList();
     }
 
     private ActualResultFetcher<TestEntity> emptyFetcher() {
