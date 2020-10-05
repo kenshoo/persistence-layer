@@ -16,7 +16,7 @@ import static org.jooq.lambda.Seq.seq;
  * <p>
  * The instances of this class are immutable.
  */
-public class UniqueKey<E extends EntityType<E>> {
+public class UniqueKey<E extends EntityType<E>> implements IdentifierType<E> {
 
     private final EntityField<E, ?>[] fields;
     private final TableField<Record, ?>[] tableFields;
@@ -34,15 +34,18 @@ public class UniqueKey<E extends EntityType<E>> {
         this(seq(fields).toArray(EntityField[]::new));
     }
 
+    @Override
     public EntityField<E, ?>[] getFields() {
         return fields;
     }
 
+    @Override
     public List<TableField<Record, ?>> getTableFields() {
         //noinspection unchecked
         return ImmutableList.copyOf(tableFields);
     }
 
+    @Override
     public Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap) {
         Object[] values = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -51,6 +54,7 @@ public class UniqueKey<E extends EntityType<E>> {
         return new UniqueKeyValue<>(this, values);
     }
 
+    @Override
     public E getEntityType() {
         if(this.fields.length == 0) {
             throw new IllegalStateException("unique key does not contain any fields.");
