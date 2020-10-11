@@ -45,7 +45,7 @@ public class EntityFetcherByIdTest {
 
     @Before
     public void setup() {
-        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet(Feature.FetchMany));
+        entitiesFetcher = new EntitiesFetcher(dslContext);
         staticDSLContext = dslContext;
         if (!tablesCreated) {
             ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
