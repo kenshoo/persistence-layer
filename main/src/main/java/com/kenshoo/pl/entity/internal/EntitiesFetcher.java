@@ -2,12 +2,17 @@ package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.kenshoo.jooq.*;
+import com.kenshoo.jooq.DataTable;
+import com.kenshoo.jooq.QueryExtension;
+import com.kenshoo.jooq.TempTableHelper;
+import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.fetch.*;
+import com.kenshoo.pl.entity.internal.fetch.AliasedKey;
+import com.kenshoo.pl.entity.internal.fetch.ExecutionPlan;
+import com.kenshoo.pl.entity.internal.fetch.QueryBuilder;
+import com.kenshoo.pl.entity.internal.fetch.RecordReader;
 import org.jooq.*;
 import org.jooq.lambda.Seq;
 
@@ -17,7 +22,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.kenshoo.pl.entity.Feature.FetchMany;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -30,7 +34,6 @@ public class EntitiesFetcher {
 
     private final DSLContext dslContext;
     private final FeatureSet features;
-    private final OldEntityFetcher oldEntityFetcher;
 
     public EntitiesFetcher(DSLContext dslContext) {
         this(dslContext, FeatureSet.EMPTY);
@@ -39,7 +42,6 @@ public class EntitiesFetcher {
     public EntitiesFetcher(DSLContext dslContext, FeatureSet features) {
         this.dslContext = dslContext;
         this.features = features;
-        this.oldEntityFetcher = new OldEntityFetcher(dslContext);
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
@@ -49,10 +51,6 @@ public class EntitiesFetcher {
 
     public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByIds(final Collection<? extends Identifier<E>> ids,
                                                                                                final Collection<? extends EntityField<?, ?>> fieldsToFetch) {
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetchEntitiesByIds(ids, fieldsToFetch);
-        }
-
         if (ids.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -71,9 +69,6 @@ public class EntitiesFetcher {
         requireNonNull(plCondition, "A condition must be provided");
         notEmpty(fieldsToFetch, "There must be at least one field to fetch");
 
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetch(entityType, plCondition, fieldsToFetch);
-        }
         final AliasedKey<E> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());
 
         final List<? extends EntityField<?, ?>> allFieldsToFetch = Seq.concat(Seq.of(fieldsToFetch), seq(plCondition.getFields())).distinct().collect(Collectors.toList());
@@ -90,10 +85,6 @@ public class EntitiesFetcher {
         requireNonNull(plCondition, "A condition must be provided");
         notEmpty(fieldsToFetch, "There must be at least one field to fetch");
 
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetch(entityType, keys, plCondition, fieldsToFetch);
-        }
-
         final AliasedKey<?> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());
 
         final List<? extends EntityField<?, ?>> allFieldsToFetch = Seq.concat(Seq.of(fieldsToFetch), seq(plCondition.getFields()), fieldsOf(keys)).distinct().collect(Collectors.toList());
@@ -102,9 +93,6 @@ public class EntitiesFetcher {
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetchEntitiesByForeignKeys(entityType, foreignUniqueKey, keys, fieldsToFetch);
-        }
 
         try (final TempTableResource<ImpersonatorTable> foreignKeysTable = createForeignKeysTable(entityType.getPrimaryTable(), foreignUniqueKey, keys)) {
             final AliasedKey<E> aliasedKey = new AliasedKey<>(foreignUniqueKey, foreignKeysTable);
@@ -115,9 +103,6 @@ public class EntitiesFetcher {
     }
 
     public <E extends EntityType<E>, PE extends PartialEntity, ID extends Identifier<E>> Map<ID, PE> fetchPartialEntities(E entityType, Collection<ID> ids, final Class<PE> entityIface) {
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetchPartialEntities(entityType, ids, entityIface);
-        }
 
         final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
         Map<Identifier<E>, CurrentEntityState> entitiesMap = fetchEntitiesByIds(ids, entityMethodsMap.values());
@@ -126,9 +111,6 @@ public class EntitiesFetcher {
     }
 
     public <E extends EntityType<E>, PE extends PartialEntity> List<PE> fetchByCondition(E entityType, final Condition condition, final Class<PE> entityIface) {
-        if (!features.isEnabled(FetchMany)) {
-            return oldEntityFetcher.fetchByCondition(entityType, condition, entityIface);
-        }
 
         final Map<Method, EntityField<E, ?>> entityMethodsMap = EntityTypeReflectionUtil.getMethodsMap(entityType, entityIface);
         final AliasedKey<?> aliasedKey = new AliasedKey<>(entityType.getPrimaryKey());

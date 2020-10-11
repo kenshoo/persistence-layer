@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.kenshoo.pl.entity.Feature.FetchMany;
 import static com.kenshoo.pl.one2many.ChildEntity.*;
 import static org.junit.Assert.assertThat;
 
@@ -40,7 +39,7 @@ public class EntitiesFetcherByIdTest {
 
     @Before
     public void setup() {
-        entitiesFetcher = new EntitiesFetcher(dslContext, new FeatureSet(FetchMany));
+        entitiesFetcher = new EntitiesFetcher(dslContext);
         staticDSLContext = dslContext;
         if (!tablesCreated) {
             ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
