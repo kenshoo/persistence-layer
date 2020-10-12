@@ -1,22 +1,12 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.collect.Iterables;
-import com.kenshoo.jooq.DataTable;
-import com.kenshoo.jooq.QueryExtension;
 import com.kenshoo.pl.entity.UniqueKey;
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.fetch.QueryBuilder;
-import org.jooq.*;
-import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
-
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -65,10 +55,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
     }
 
     private <T extends EntityType<T>> Identifier<T> parse(UniqueKey<T> key, CurrentEntityState entity) {
-        final Object[] ids = Seq.of(key.getFields())
-                .map(entity::get)
-                .toArray();
-        return new UniqueKeyValue<>(key, ids);
+        return key.createIdentifier(entity);
     }
 
     private <T> T first(Collection<T> collection) {
