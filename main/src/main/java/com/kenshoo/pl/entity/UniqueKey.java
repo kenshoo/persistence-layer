@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity;
 import com.google.common.collect.ImmutableList;
 import org.jooq.Record;
 import org.jooq.TableField;
+import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +52,14 @@ public class UniqueKey<E extends EntityType<E>> implements IdentifierType<E> {
         for (int i = 0; i < fields.length; i++) {
             values[i] = fieldsValueMap.get(fields[i]);
         }
+        return new UniqueKeyValue<>(this, values);
+    }
+
+    @Override
+    public Identifier<E> createIdentifier(Entity entity) {
+        final Object[] values = Seq.of(fields)
+                .map(entity::get)
+                .toArray();
         return new UniqueKeyValue<>(this, values);
     }
 

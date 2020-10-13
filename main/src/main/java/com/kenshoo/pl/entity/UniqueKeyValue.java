@@ -24,7 +24,7 @@ public class UniqueKeyValue<E extends EntityType<E>> implements Identifier<E> {
     protected final Object[] values;
     private int hashCode;
 
-    public UniqueKeyValue(UniqueKey<E> uniqueKey, Object[] values) {
+    protected UniqueKeyValue(UniqueKey<E> uniqueKey, Object[] values) {
         this.uniqueKey = uniqueKey;
         this.values = values;
     }

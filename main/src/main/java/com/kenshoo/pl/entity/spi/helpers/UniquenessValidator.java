@@ -10,7 +10,6 @@ import com.kenshoo.pl.entity.Identifier;
 import com.kenshoo.pl.entity.PLCondition;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.UniqueKey;
-import com.kenshoo.pl.entity.UniqueKeyValue;
 import com.kenshoo.pl.entity.ValidationError;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
@@ -79,13 +78,11 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     }
 
     private static <E extends EntityType<E>> Identifier<E> createKeyValue(EntityChange<E> cmd, UniqueKey<E> key) {
-        Object[] values = Stream.of(key.getFields()).map(cmd::get).toArray();
-        return new UniqueKeyValue<>(key, values);
+        return key.createIdentifier(cmd);
     }
 
-    private Identifier<E> createKeyValue(CurrentEntityState cmd, UniqueKey<E> key) {
-        Object[] values = Stream.of(key.getFields()).map(cmd::get).toArray();
-        return new UniqueKeyValue<>(key, values);
+    private Identifier<E> createKeyValue(CurrentEntityState currentEntityState, UniqueKey<E> key) {
+        return key.createIdentifier(currentEntityState);
     }
 
     @Override

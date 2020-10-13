@@ -96,8 +96,7 @@ public class EntitiesToContextFetcher {
         Map<? extends ChangeEntityCommand<E>, Identifier<E>> keysByCommand = commands.stream().collect(toMap(
                 Function.identity(),
                 cmd -> concat(cmd.getIdentifier(), cmd.getKeysToParent())));
-        //noinspection ConstantConditions
-        UniqueKey<E> uniqueKey = keysByCommand.values().iterator().next().getUniqueKey();
+
         Map<Identifier<E>, CurrentEntityState> fetchedEntities = entitiesFetcher.fetchEntitiesByIds(keysByCommand.values(), fieldsToFetch);
         addFetchedEntitiesToChangeContext(fetchedEntities, changeContext, keysByCommand);
     }

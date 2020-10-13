@@ -9,6 +9,8 @@ public interface IdentifierType<E extends EntityType<E>> {
 
     Identifier<E> createIdentifier(FieldsValueMap<E> fieldsValueMap);
 
+    Identifier<E> createIdentifier(Entity entity);
+
     E getEntityType();
 
     EntityField<E, ?>[] getFields();
