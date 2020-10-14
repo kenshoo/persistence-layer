@@ -55,7 +55,7 @@ public class EntitiesFetcher {
             return Collections.emptyMap();
         }
 
-        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+        final IdentifierType<E> uniqueKey = ids.iterator().next().getUniqueKey();
         final AliasedKey<E> aliasedKey = new AliasedKey<>(uniqueKey);
 
         return fetchEntities(uniqueKey.getEntityType().getPrimaryTable(), aliasedKey, fieldsToFetch, query -> query.whereIdsIn(ids));

@@ -4,6 +4,7 @@ import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.pl.data.ImpersonatorTable;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.IdentifierType;
 import com.kenshoo.pl.entity.UniqueKey;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -19,7 +20,7 @@ public class AliasedKey <E extends EntityType<E>> {
     private static final String PREFIX = "key_field_";
     private final List<Field<E>> fields;
 
-    public AliasedKey(UniqueKey<E> key) {
+    public AliasedKey(IdentifierType<E> key) {
         this.fields = Seq.of(key.getFields())
                 .map(field -> {
                     TableField<Record, ?> tableField = field.getDbAdapter().getFirstTableField();
@@ -28,7 +29,7 @@ public class AliasedKey <E extends EntityType<E>> {
     }
 
     // foreign key
-    public AliasedKey(UniqueKey<E> key, TempTableResource<ImpersonatorTable> otherTable) {
+    public AliasedKey(IdentifierType<E> key, TempTableResource<ImpersonatorTable> otherTable) {
         this.fields = Seq.of(key.getFields())
                 .map(field -> {
                     TableField<Record, ?> tableField = otherTable.getTable().getField(field.getDbAdapter().getFirstTableField());

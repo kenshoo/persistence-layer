@@ -52,7 +52,7 @@ public class DeletionCommandPopulator {
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
     ChildrenFromDB<PARENT, CHILD> getExistingChildrenFromDB(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
         List<Identifier<PARENT>> parentIds = seq(parents).map(p -> concatenatedId(p)).toList();
-        final UniqueKey<CHILD> childKey = identifierOfFirstChildCmd(parents, childType).orElseGet(childType::getPrimaryKey);
+        final IdentifierType<CHILD> childKey = identifierOfFirstChildCmd(parents, childType).orElseGet(childType::getPrimaryKey);
         return new ChildrenFromDB<>(childrenIdFetcher.fetch(parentIds, childKey));
     }
 
@@ -115,7 +115,7 @@ public class DeletionCommandPopulator {
     }
 
     private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>>
-    Optional<UniqueKey<CHILD>>
+    Optional<IdentifierType<CHILD>>
     identifierOfFirstChildCmd(Collection<? extends ChangeEntityCommand<PARENT>> parents, CHILD childType) {
         return parents.stream()
                 .flatMap(p -> p.getChildren(childType))

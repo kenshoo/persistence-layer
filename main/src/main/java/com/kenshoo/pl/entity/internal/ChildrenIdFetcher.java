@@ -19,7 +19,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
     }
 
     public Stream<FullIdentifier<PARENT, CHILD>>
-    fetch(Collection<? extends Identifier<PARENT>> parentIds, UniqueKey<CHILD> childKey) {
+    fetch(Collection<? extends Identifier<PARENT>> parentIds, IdentifierType<CHILD> childKey) {
 
         if (parentIds.isEmpty()) {
             return Stream.empty();
@@ -28,7 +28,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
         final PARENT parentType = first(parentIds).getUniqueKey().getEntityType();
         final CHILD childType = childKey.getEntityType();
         final EntityType.ForeignKey<CHILD, PARENT> keyToParent = childType.getKeyTo(parentType);
-        final UniqueKey<PARENT> parentKey = first(parentIds).getUniqueKey();
+        final IdentifierType<PARENT> parentKey = first(parentIds).getUniqueKey();
         final UniqueKey<CHILD> childFK = new UniqueKey<>(keyToParent.from());
 
         final EntityField<?, ?>[] requestedFields = Iterables.toArray(Seq.concat(
@@ -44,7 +44,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
         return fullIdentifierOf(entities, parentKey, childKey, childFK);
     }
 
-    private Stream<FullIdentifier<PARENT, CHILD>> fullIdentifierOf(List<CurrentEntityState> entities, UniqueKey<PARENT> parentKey, UniqueKey<CHILD> childKey, UniqueKey<CHILD> childFK) {
+    private Stream<FullIdentifier<PARENT, CHILD>> fullIdentifierOf(List<CurrentEntityState> entities, IdentifierType<PARENT> parentKey, IdentifierType<CHILD> childKey, UniqueKey<CHILD> childFK) {
         return seq(entities)
                 .map(entity ->
                         new FullIdentifier<>(
@@ -54,7 +54,7 @@ public class ChildrenIdFetcher<PARENT extends EntityType<PARENT>, CHILD extends 
                         ));
     }
 
-    private <T extends EntityType<T>> Identifier<T> parse(UniqueKey<T> key, CurrentEntityState entity) {
+    private <T extends EntityType<T>> Identifier<T> parse(IdentifierType<T> key, CurrentEntityState entity) {
         return key.createIdentifier(entity);
     }
 

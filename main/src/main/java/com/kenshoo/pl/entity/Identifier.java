@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toList;
 
 public interface Identifier<E extends EntityType<E>>  extends FieldsValueMap<E> {
 
-    UniqueKey<E> getUniqueKey();
+    IdentifierType<E> getUniqueKey();
 
     default Stream<Object> getValues() {
         return Seq.of(getUniqueKey().getFields()).map(this::get);
@@ -33,7 +33,7 @@ public interface Identifier<E extends EntityType<E>>  extends FieldsValueMap<E> 
     }
 
     static <E extends EntityType<E>> List<FieldAndValues<?>> groupValuesByFields(Collection<? extends Identifier<E>> ids) {
-        final UniqueKey<E> uniqueKey = ids.iterator().next().getUniqueKey();
+        final IdentifierType<E> uniqueKey = ids.iterator().next().getUniqueKey();
         return Stream.of(uniqueKey.getFields())
                 .map(field -> collectValuesOf(field, ids))
                 .collect(toList());
