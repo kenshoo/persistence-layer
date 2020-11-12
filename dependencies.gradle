@@ -1,0 +1,26 @@
+project.ext.set("libraries", "")
+
+ext.jackson_version = "2.7.8"
+ext.jooq_version = project.hasProperty('JOOQ_VERSION') ? "$JOOQ_VERSION" : '3.10.4'
+
+project.ext.libraries = [
+        slf4j                : 'org.slf4j:slf4j-api:1.7.21',
+        junit                : 'junit:junit:4.12',
+        mockito              : 'org.mockito:mockito-core:3.5.0',
+        hamcrest             : 'org.hamcrest:hamcrest-library:1.3',
+        shazamcrest          : dependencies.create('com.shazam:shazamcrest:0.11') {
+            exclude group: 'junit', module: '*'
+        },
+        hamcrestOptional     : 'com.github.npathai:hamcrest-optional:2.0.0',
+        dockerClient         : 'com.spotify:docker-client:7.0.2',
+        trove4j: 'net.sf.trove4j:trove4j:3.0.3',
+        jooq: "org.jooq:jooq:$jooq_version",
+        jool: 'org.jooq:jool:0.9.11',
+        guava: 'com.google.guava:guava:16.0.1',
+        apacheCommons3: 'org.apache.commons:commons-lang3:3.4',
+        mysqlConnector: 'mysql:mysql-connector-java:5.1.35',
+
+        guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
+
+        dockerTest           : 'com.kenshoo:docker-test:4.5.+',
+]

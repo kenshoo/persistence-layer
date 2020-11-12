@@ -1,0 +1,112 @@
+def BUILD_NUMBER = project.hasProperty('BUILD_NUMBER') ? "$BUILD_NUMBER" : 'undef'
+version = "0.1.$BUILD_NUMBER-jooq-$jooq_version"
+group = 'com.kenshoo'
+
+def JAR_BASE_NAME = 'persistence-layer'
+
+dependencies {
+    compile libraries.slf4j
+    compile libraries.trove4j
+    compile libraries.jooq
+    compile libraries.jool
+    compile libraries.guava
+
+    compile libraries.apacheCommons3
+    compile libraries.mysqlConnector
+    compile libraries.guavaRetrying
+
+    testCompile libraries.junit
+    testCompile libraries.mockito
+    testCompile libraries.shazamcrest
+    testCompile libraries.hamcrest
+    testCompile libraries.hamcrestOptional
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Title': JAR_BASE_NAME,
+                'Implementation-Version': project.version)
+    }
+    baseName = JAR_BASE_NAME
+}
+
+signing {
+    required { gradle.taskGraph.hasTask("uploadArchives") }
+    def signingKeyFile = project.hasProperty('signingKeyFile') ? "$signingKeyFile" : ''
+    def signingKeyPassword = project.hasProperty('signingKeyPassword') ? "$signingKeyPassword" : ''
+    if (!signingKeyFile.isAllWhitespace()) {
+        def signingKey = new File(signingKeyFile).text
+        useInMemoryPgpKeys(signingKey, signingKeyPassword)
+    }
+    sign configurations.archives
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+uploadArchives {
+
+    def username = project.hasProperty('ossrhUsername') ? "$ossrhUsername" : ''
+    def password = project.hasProperty('ossrhPassword') ? "$ossrhPassword" : ''
+
+    repositories {
+        mavenDeployer {
+
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
+                authentication(userName: username, password: password)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+                authentication(userName: username, password: password)
+            }
+
+            pom.project {
+                packaging 'jar'
+                name "$project.group:$JAR_BASE_NAME"
+                description 'A Java persistence layer based on JOOQ for high performance and business flow support.'
+                url 'https://github.com/kenshoo/persistence-layer'
+
+                scm {
+                    connection 'scm:git:git@github.com:kenshoo/persistence-layer.git'
+                    developerConnection 'scm:git:git@github.com:kenshoo/persistence-layer.git'
+                    url 'git@github.com:kenshoo/persistence-layer.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'galkoren'
+                        name 'Gal Koren'
+                        email 'gal.koren@kenshoo.com'
+                        url 'https://github.com/galkoren'
+                        organization = 'Kenshoo' // for some weird reason, organization requires equals in order to put organization to pom, otherwise org.apache.maven.model.Organization.toString() is used
+                        organizationUrl 'http://www.kenshoo.com/'
+                        roles {
+                            role 'Software Architect'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

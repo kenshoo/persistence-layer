@@ -1,0 +1,12 @@
+
+dependencies {
+
+    testCompile project(':main')
+    testCompile project(':main').sourceSets.test.output
+
+    testCompile libraries.junit
+    testCompile libraries.mockito
+    testCompile libraries.hamcrest
+
+}
+
