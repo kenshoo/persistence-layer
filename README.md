@@ -1,3 +1,5 @@
+<img src="https://user-images.githubusercontent.com/10692534/99590710-6352da80-29f6-11eb-88bb-caaa3d87e0ee.png" width="150" align="right" /> 
+
 ## High performance Java/MySQL library built on JOOQ
 
 Is Hibernate too slow for you?
