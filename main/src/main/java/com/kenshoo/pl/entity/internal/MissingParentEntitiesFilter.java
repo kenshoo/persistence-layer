@@ -9,9 +9,11 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.ValidationError;
-
 import java.util.Collection;
 import java.util.stream.Stream;
+
+import static org.jooq.lambda.Seq.seq;
+
 
 public class MissingParentEntitiesFilter<E extends EntityType<E>> implements ChangesFilter<E> {
 
@@ -29,7 +31,7 @@ public class MissingParentEntitiesFilter<E extends EntityType<E>> implements Cha
         return Collections2.filter(changes, command -> {
                     CurrentEntityState currentState = changeContext.getEntity(command);
                     if (currentState == CurrentEntityState.EMPTY) {
-                        changeContext.addValidationError(command, new ValidationError(Errors.PARENT_ENTITY_NOT_FOUND));
+                        changeContext.addValidationError(command, new ValidationError(Errors.PARENT_ENTITY_NOT_FOUND, seq(foreignKeys).toMap(Object::toString, f -> command.safeGet(f).toString())));
                         return false;
                     }
                     return true;
