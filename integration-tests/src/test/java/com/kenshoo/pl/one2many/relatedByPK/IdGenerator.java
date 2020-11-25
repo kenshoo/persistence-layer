@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many;
+package com.kenshoo.pl.one2many.relatedByPK;
 
 import java.util.LinkedList;
 import java.util.List;

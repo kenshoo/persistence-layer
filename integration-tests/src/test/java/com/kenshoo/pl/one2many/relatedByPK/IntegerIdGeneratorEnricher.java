@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many;
+package com.kenshoo.pl.one2many.relatedByPK;
 
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;

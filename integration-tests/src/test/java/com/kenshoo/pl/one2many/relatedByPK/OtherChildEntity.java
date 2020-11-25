@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many;
+package com.kenshoo.pl.one2many.relatedByPK;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;

@@ -7,6 +7,7 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.one2many.*;
+import com.kenshoo.pl.one2many.relatedByPK.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -18,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.kenshoo.pl.one2many.ChildEntity.FIELD_1;
-import static com.kenshoo.pl.one2many.ChildEntity.ID;
+import static com.kenshoo.pl.one2many.relatedByPK.ChildEntity.FIELD_1;
+import static com.kenshoo.pl.one2many.relatedByPK.ChildEntity.ID;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertThat;
 

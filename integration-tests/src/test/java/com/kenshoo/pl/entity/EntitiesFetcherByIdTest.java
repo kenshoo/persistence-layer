@@ -6,7 +6,7 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.one2many.*;
+import com.kenshoo.pl.one2many.relatedByPK.*;
 import org.hamcrest.core.Is;
 import org.jooq.DSLContext;
 import org.junit.*;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.kenshoo.pl.one2many.ChildEntity.*;
+import static com.kenshoo.pl.one2many.relatedByPK.ChildEntity.*;
 import static org.junit.Assert.assertThat;
 
 @Ignore
