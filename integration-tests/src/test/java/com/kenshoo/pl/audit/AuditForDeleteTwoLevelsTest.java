@@ -167,7 +167,7 @@ public class AuditForDeleteTwoLevelsTest {
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_AllExist_ShouldCreateRecordForAuditedChildOnly() {
         final DeleteAuditedCommand cmd = new DeleteAuditedCommand(PARENT_ID_1)
             .with(new DeleteAuditedChild1Command(CHILD_ID_11))
-            .with(new DeleteNotAuditedCommand(CHILD_ID_12));
+            .with(new DeleteNotAuditedChildCommand(CHILD_ID_12));
 
         final ChangeFlowConfig<AuditedType> flowConfig =
             flowConfigBuilder(AuditedType.INSTANCE)

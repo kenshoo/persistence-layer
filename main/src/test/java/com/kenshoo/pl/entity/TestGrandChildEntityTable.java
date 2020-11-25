@@ -14,6 +14,7 @@ public class TestGrandChildEntityTable extends AbstractDataTable<TestGrandChildE
     }
 
     public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    public final TableField<Record, Integer> ordinal = createFKField("ordinal", TestChildEntityTable.TABLE.ordinal);
     public final TableField<Record, String>  grand_child_field_1 = createField("field_1", SQLDataType.VARCHAR.length(10));
     public final TableField<Record, String>  grand_child_field_2 = createField("field_2", SQLDataType.VARCHAR.length(10));
     public final TableField<Record, Integer> grand_child_field_3 = createField("field_3", SQLDataType.INTEGER);
