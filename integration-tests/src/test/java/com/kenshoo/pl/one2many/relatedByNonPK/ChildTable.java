@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many.relatedByFK;
+package com.kenshoo.pl.one2many.relatedByNonPK;
 
 import com.kenshoo.jooq.AbstractDataTable;
 import org.jooq.Record;

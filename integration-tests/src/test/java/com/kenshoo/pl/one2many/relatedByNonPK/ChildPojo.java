@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many.relatedByFK;
+package com.kenshoo.pl.one2many.relatedByNonPK;
 
 public class ChildPojo {
     public Type type;

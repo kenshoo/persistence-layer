@@ -1,4 +1,4 @@
-package com.kenshoo.pl.one2many.relatedByFK;
+package com.kenshoo.pl.one2many.relatedByNonPK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
@@ -12,6 +12,7 @@ import com.kenshoo.pl.entity.spi.FieldValidator;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
 import org.jooq.DSLContext;
+import org.jooq.Query;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
 import org.jooq.impl.DSL;
@@ -29,9 +30,9 @@ import java.util.stream.Stream;
 import static com.kenshoo.pl.FluidPersistenceCmdBuilder.fluid;
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE_AND_UPDATE;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
-import static com.kenshoo.pl.one2many.relatedByFK.ChildEntity.FIELD_1;
-import static com.kenshoo.pl.one2many.relatedByFK.ChildEntity.ORDINAL;
-import static com.kenshoo.pl.one2many.relatedByFK.ParentEntity.NAME;
+import static com.kenshoo.pl.one2many.relatedByNonPK.ChildEntity.FIELD_1;
+import static com.kenshoo.pl.one2many.relatedByNonPK.ChildEntity.ORDINAL;
+import static com.kenshoo.pl.one2many.relatedByNonPK.ParentEntity.NAME;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -40,7 +41,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.jooq.lambda.Seq.seq;
 import static org.junit.Assert.*;
 
-public class PersistenceLayerOneToManyRelatedByFKTest {
+public class PersistenceLayerOneToManyRelatedByNonPKTest {
 
     private static TablesSetup tablesSetup = new TablesSetup();
 
@@ -74,8 +75,9 @@ public class PersistenceLayerOneToManyRelatedByFKTest {
 
     @After
     public void clearTables() {
-        jooq.deleteFrom(PARENT).execute();
-        jooq.deleteFrom(CHILD).execute();
+        Stream.of(PARENT, CHILD)
+                .map(jooq::deleteFrom)
+                .forEach(Query::execute);
     }
 
     @AfterClass
@@ -187,36 +189,6 @@ public class PersistenceLayerOneToManyRelatedByFKTest {
         );
 
         update(existingParentWithId(generatedId(results, Type.T1, 11))
-                .with(deleteChild(1))
-                .with(upsertChild(2).with(FIELD_1,  "updated_child2"))
-                .with(upsertChild(3).with(FIELD_1,  "new_child3"))
-        );
-
-        List<ChildPojo> children = childrenInDb();
-
-        assertThat(children, hasSize(2));
-
-        assertThat(children.get(0).type, is(Type.T1));
-        assertThat(children.get(0).idInTarget, is(11));
-        assertThat(children.get(0).ordinal, is(2));
-        assertThat(children.get(0).field1, is("updated_child2"));
-
-        assertThat(children.get(1).type, is(Type.T1));
-        assertThat(children.get(1).idInTarget, is(11));
-        assertThat(children.get(1).ordinal, is(3));
-        assertThat(children.get(1).field1, is("new_child3"));
-    }
-
-    @Test
-    public void parent_is_using_unique_key_children_dont_have() {
-
-        insert(newParent(Type.T1, 11)
-                .with(ParentEntity.ID_IN_TARGET, 11)
-                .with(insertChild().with(ORDINAL, 1).with(FIELD_1, "child1"))
-                .with(insertChild().with(ORDINAL, 2).with(FIELD_1, "child2"))
-        );
-
-        update(existingParentWithUniqueKey(Type.T1, 11)
                 .with(deleteChild(1))
                 .with(upsertChild(2).with(FIELD_1,  "updated_child2"))
                 .with(upsertChild(3).with(FIELD_1,  "new_child3"))
@@ -734,13 +706,13 @@ public class PersistenceLayerOneToManyRelatedByFKTest {
     }
 
     private int generatedId(CreateResult<ParentEntity, ParentEntity.Key> results, Type type, int idInTarget) {
-        var iterator = results.iterator();
-        while(iterator.hasNext()) {
-            var command = iterator.next().getCommand();
-            if(new ParentEntity.UniqueKey(command.get(ParentEntity.TYPE), command.get(ParentEntity.ID_IN_TARGET)).equals(new ParentEntity.UniqueKey(type, idInTarget))) {
-                return command.getIdentifier().get(ParentEntity.ID);
-            }
-        }
-        return -1;
+        ParentEntity.UniqueKey requestedUniqueKey = new ParentEntity.UniqueKey(type, idInTarget);
+        return Seq.seq(results.iterator())
+                .map(EntityChangeResult::getCommand)
+                .filter(cmd -> new ParentEntity.UniqueKey(cmd.get(ParentEntity.TYPE), cmd.get(ParentEntity.ID_IN_TARGET)).equals(requestedUniqueKey))
+                .map(CreateEntityCommand::getIdentifier)
+                .map(identifier -> identifier.get(ParentEntity.ID))
+                .findFirst()
+                .orElse(-1);
     }
 }

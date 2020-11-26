@@ -58,7 +58,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
         final Seq<EntityField<?, ?>> fields = Seq.concat(
                 fieldsConsumedBy(commands, operation, flow, currentStateConsumers),
-                foreignKeyFieldsRelatedByChildrenOf(commands, hierarchy, operation),
+                foreignKeyFieldsRelatedByChildrenOf(commands, flow, hierarchy, operation),
                 fieldsOfIdentifiersOf(commands, operation));
 
         return fields.flatMap(field -> {
@@ -90,9 +90,9 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         }
     }
 
-    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> foreignKeyFieldsRelatedByChildrenOf(Collection<? extends ChangeEntityCommand<E>> commands, Hierarchy hierarchy, ChangeOperation operation) {
+    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> foreignKeyFieldsRelatedByChildrenOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeFlowConfig<E> flow, Hierarchy hierarchy, ChangeOperation operation) {
         if(SupportedChangeOperation.UPDATE_AND_DELETE.supports(operation) && hasAnyChildCommand(commands)) {
-            E entityType = commands.stream().findFirst().get().getEntityType();
+            E entityType = flow.getEntityType();
             Collection<? extends EntityType<?>> children = hierarchy.childrenTypes(entityType);
             return children.stream().map(child -> child.getKeyTo(entityType).to()).flatMap(Collection::stream);
         } else {
