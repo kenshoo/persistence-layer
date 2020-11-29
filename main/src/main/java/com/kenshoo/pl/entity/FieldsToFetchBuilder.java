@@ -4,10 +4,7 @@ import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import com.kenshoo.pl.entity.spi.PostFetchCommandEnricher;
 import org.jooq.lambda.Seq;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,7 +58,7 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
 
         final Seq<EntityField<?, ?>> fields = Seq.concat(
                 fieldsConsumedBy(commands, operation, flow, currentStateConsumers),
-                fieldsRelatedByChildrenOf(commands, operation),
+                foreignKeyFieldsRelatedByChildrenOf(commands, flow, hierarchy, operation),
                 fieldsOfIdentifiersOf(commands, operation));
 
         return fields.flatMap(field -> {
@@ -93,10 +90,11 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         }
     }
 
-    private <E extends EntityType<E>> Stream<EntityField<E, ?>> fieldsRelatedByChildrenOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation operation) {
+    private <E extends EntityType<E>> Stream<? extends EntityField<?, ?>> foreignKeyFieldsRelatedByChildrenOf(Collection<? extends ChangeEntityCommand<E>> commands, ChangeFlowConfig<E> flow, Hierarchy hierarchy, ChangeOperation operation) {
         if(SupportedChangeOperation.UPDATE_AND_DELETE.supports(operation) && hasAnyChildCommand(commands)) {
-            ChangeEntityCommand<E> cmd = commands.stream().findFirst().get();
-            return primaryKeyFields(cmd);
+            E entityType = flow.getEntityType();
+            Collection<? extends EntityType<?>> children = hierarchy.childrenTypes(entityType);
+            return children.stream().map(child -> child.getKeyTo(entityType).to()).flatMap(Collection::stream);
         } else {
             return Stream.empty();
         }
@@ -106,10 +104,6 @@ public class FieldsToFetchBuilder<ROOT extends EntityType<ROOT>> {
         return Arrays.stream(cmd.getIdentifier().getUniqueKey().getFields());
     }
 
-    private <E extends EntityType<E>> Stream<EntityField<E, ?>> primaryKeyFields(ChangeEntityCommand<E> cmd) {
-        EntityType<E> entityType = cmd.getEntityType();
-        return entityType.findFields(entityType.getPrimaryTable().getPrimaryKey().getFields()).stream();
-    }
 
     private <E extends EntityType<E>> boolean hasAnyChildCommand(Collection<? extends ChangeEntityCommand<E>> commands) {
         return commands.stream().flatMap(ChangeEntityCommand::getChildren).findAny().isPresent();

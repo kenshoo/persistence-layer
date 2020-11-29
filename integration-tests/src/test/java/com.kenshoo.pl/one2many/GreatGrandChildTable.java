@@ -1,6 +1,8 @@
 package com.kenshoo.pl.one2many;
 
 import com.kenshoo.jooq.AbstractDataTable;
+import com.kenshoo.pl.one2many.relatedByPK.GrandChildTable;
+import com.kenshoo.pl.one2many.relatedByPK.ParentTable;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;

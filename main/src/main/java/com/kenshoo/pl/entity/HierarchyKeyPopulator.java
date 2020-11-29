@@ -1,7 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
-
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -23,11 +21,14 @@ public class HierarchyKeyPopulator<PARENT extends EntityType<PARENT>> {
     }
 
     public static <E extends EntityType<E>> CommandToValuesStrategy<E> fromContext(ChangeContext ctx) {
-        return (fields, cmd) -> EntityDbUtil.getFieldValues(fields, ctx.getEntity(cmd));
+        return (fields, cmd) -> {
+            CurrentEntityState entity = ctx.getEntity(cmd);
+            return fields.stream().map(field -> entity.get(field)).toArray(Object[]::new);
+        };
     }
 
     public static <E extends EntityType<E>> CommandToValuesStrategy<E> fromCommands() {
-        return (fields, cmd) -> EntityDbUtil.getFieldValues(fields, cmd);
+        return (fields, cmd) -> fields.stream().map(field -> cmd.get(field)).toArray(Object[]::new);
     }
 
     public void populateKeysToChildren(Collection<? extends ChangeEntityCommand<PARENT>> parents) {
