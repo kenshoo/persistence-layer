@@ -6,21 +6,22 @@ import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.jooq.ForeignKey;
-import org.jooq.Record;
-import org.jooq.TableField;
+import org.jooq.*;
+import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
 import static org.jooq.lambda.Seq.seq;
+import static org.jooq.lambda.Seq.toList;
 import static org.jooq.lambda.function.Functions.not;
 
 
@@ -28,10 +29,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
+    private final SecondaryTableMandatoryFieldProvider secondaryTableMandatoryFieldProvider;
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
-        this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
         this.entityType = entityType;
+        this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
+        this.secondaryTableMandatoryFieldProvider = new SecondaryTableMandatoryFieldProvider();
     }
 
     @Override
@@ -59,7 +62,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                                     .with(changeContext.getHierarchy())
                                     .whereParentFieldsAre(autoInc())
                                     .gettingValues(fromContext(changeContext)).build()
-                                    .populateKeysToChildren((Collection<? extends ChangeEntityCommand<E>>)entityChanges);
+                                    .populateKeysToChildren((Collection<? extends ChangeEntityCommand<E>>) entityChanges);
                         }
                     }
             );
@@ -117,12 +120,15 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                 recordCommand = changesContainer.getUpdate(primaryTable, entityChange, () -> new UpdateRecordCommand(primaryTable, getDatabaseId(entityChange)));
             }
         } else {
-            recordCommand = changesContainer.getInsertOnDuplicateUpdate(fieldTable, entityChange, () -> {
-                CreateRecordCommand createRecordCommand = new CreateRecordCommand(fieldTable);
-                populate(foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable), createRecordCommand);
-                return createRecordCommand;
-            });
-
+            if (this.secondaryTableMandatoryFieldProvider.shouldCreateEntity(changeContext.getEntity(entityChange), fieldTable)) {
+                recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
+                    final CreateRecordCommand createRecordCommand = new CreateRecordCommand(fieldTable);
+                    populate(foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable), createRecordCommand);
+                    return createRecordCommand;
+                });
+            } else {
+                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable)));
+            }
         }
         populateFieldChange(change, recordCommand);
     }
@@ -145,13 +151,8 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        // If update, find which secondary tables are affected.
-        // For those secondary tables take their foreign keys to primary, translate referenced fields of primary to EntityFields and add them to fields to fetch
-        if (changeOperation == ChangeOperation.UPDATE) {
-            DataTable primaryTable = entityType.getPrimaryTable();
-            if (isFieldsInSecondaryTables(fieldsToUpdate, primaryTable)) {
-                return getPrimaryKeyFields(entityType);
-            }
+        if (isFieldsInSecondaryTables(fieldsToUpdate, entityType.getPrimaryTable())) {
+            return this.secondaryTableMandatoryFieldProvider.getForeignFields(entityType, fieldsToUpdate);
         }
 
         return Stream.empty();
@@ -159,14 +160,6 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private boolean isFieldsInSecondaryTables(Collection<? extends EntityField<E, ?>> fieldsToUpdate, DataTable primaryTable) {
         return fieldsToUpdate.stream().anyMatch(field -> field.getDbAdapter().getTable() != primaryTable);
-    }
-
-    private Stream<EntityField<?, ?>> getPrimaryKeyFields(E entityType) {
-        DataTable primaryTable = entityType.getPrimaryTable();
-        List<TableField<Record, ?>> primaryKeyFields = primaryTable.getPrimaryKey().getFields();
-        return entityType.getFields()
-                .filter(entityField -> entityField.getDbAdapter().getTableFields().anyMatch(primaryKeyFields::contains))
-                .map(entityField -> (EntityField<?, ?>) entityField);
     }
 
     private void populate(DatabaseId id, AbstractRecordCommand toRecord) {
@@ -178,7 +171,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     private DatabaseId foreignKeyValues(EntityChange<E> cmd, ChangeOperation changeOperation, ChangeContext context, DataTable childTable) {
-        ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(((ChangeEntityCommand) cmd).getEntityType().getPrimaryTable());
+        ForeignKey<Record, Record> foreignKey = childTable.getForeignKey(entityType.getPrimaryTable());
         Collection<EntityField<E, ?>> parentFields = entityType(cmd).findFields(foreignKey.getKey().getFields());
         boolean hasIdentity = entityType.getPrimaryIdentityField().isPresent();
         Object[] values = changeOperation == CREATE && !hasIdentity ? EntityDbUtil.getFieldValues(parentFields, cmd) : EntityDbUtil.getFieldValues(parentFields, context.getEntity(cmd));
@@ -191,7 +184,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     private EntityType<E> entityType(EntityChange<E> cmd) {
-        return ((ChangeEntityCommand)cmd).getEntityType();
+        return ((ChangeEntityCommand) cmd).getEntityType();
     }
 
     private void populateParentKeys(EntityChange<E> entityChange, AbstractRecordCommand recordCommand) {
@@ -204,7 +197,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private DatabaseId getDatabaseId(EntityChange<E> entityChange) {
         DatabaseId databaseId = EntityDbUtil.getDatabaseId(entityChange.getIdentifier());
         Identifier<E> keysToParent = entityChange.getKeysToParent();
-        if(keysToParent != null) {
+        if (keysToParent != null) {
             databaseId = databaseId.append(EntityDbUtil.getDatabaseId(entityChange.getKeysToParent()));
         }
         return databaseId;
@@ -213,7 +206,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private void generateForDelete(final ChangeContext changeContext,
                                    final Iterable<? extends EntityChange<E>> entityChanges) {
         ChangesContainer changesContainer = new ChangesContainer(entityType.onDuplicateKey());
-        entityChanges.forEach( entityChange ->
+        entityChanges.forEach(entityChange ->
                 changesContainer.getDelete(entityType.getPrimaryTable(),
                         entityChange,
                         () -> new DeleteRecordCommand(entityType.getPrimaryTable(),
