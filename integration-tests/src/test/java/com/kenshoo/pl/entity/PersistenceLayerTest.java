@@ -469,9 +469,7 @@ public class PersistenceLayerTest {
 
     @Test
     public void update_secondary_table_without_changing_value_of_non_nullable_field() {
-        // This test used to fail because the Purger removed URL while URL is still required by MySQL when performing ON DUPLICATE UPDATE
-        // because it is not nullable.
-        UpdateTestCommand cmd = new UpdateTestCommand(ID_1).with(URL, GOOGLE_URL).with(URL_PARAM, "abc");
+        UpdateTestCommand cmd = new UpdateTestCommand(ID_1).with(URL_PARAM, "abc");
         persistenceLayer.update(asList(cmd), changeFlowConfig().build());
         CurrentEntityState fromDB = plContext.select(URL_PARAM).from(INSTANCE).where(ID.eq(ID_1)).fetch().get(0);
         assertThat(fromDB.get(URL_PARAM), is("abc"));
