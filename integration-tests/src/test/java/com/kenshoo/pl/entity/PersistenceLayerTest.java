@@ -5,10 +5,8 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.data.*;
-import com.kenshoo.pl.entity.internal.ChangesContainer;
-import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
-import com.kenshoo.pl.entity.internal.Errors;
+import com.kenshoo.pl.entity.converters.IdentityValueConverter;
+import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 import com.kenshoo.pl.entity.spi.helpers.EntitiesTempTableCreator;
@@ -42,6 +40,8 @@ public class PersistenceLayerTest {
 
     public static final String DOODLE_URL = "http://doodle.com";
     public static final String GOOGLE_URL = "http://google.com";
+    public static final String PARAM_1 = "PARAM_1";
+    public static final String PARAM_2 = "PARAM_2";
 
     private static boolean tablesCreated = false;
     private static DSLContext staticDSLContext;
@@ -61,6 +61,7 @@ public class PersistenceLayerTest {
 
     private static final int ID_1 = 1;
     private static final int ID_2 = 2;
+    private static final int ID_3 = 3;
     private static final int PARENT_ID_1 = 10;
     private static final int PARENT_ID_2 = 22;
     private static final int COMPLEX_PARENT_ID_1_1 = 101;
@@ -398,10 +399,10 @@ public class PersistenceLayerTest {
     }
 
     @Test
-    public void updateSecondaryTableWhenEmpty() {
+    public void when_nonNullable_field_configure_on_secondary_table_then_update_other_fields() {
         List<UpdateTestCommand> commands = ImmutableList.of(
-                new UpdateTestCommand(ID_1).with(URL, DOODLE_URL),
-                new UpdateTestCommand(ID_2).with(URL, GOOGLE_URL)
+                new UpdateTestCommand(ID_1).with(URL_PARAM, PARAM_1),
+                new UpdateTestCommand(ID_2).with(URL_PARAM, PARAM_2)
         );
 
         UpdateResult<EntityForTest, EntityForTest.Key> updateResult = persistenceLayer.update(commands, changeFlowConfig().build());
@@ -409,18 +410,44 @@ public class PersistenceLayerTest {
         assertThat(tableStats.getUpdated(), is(2));
         assertThat(tableStats.getInserted(), is(0));
 
-        Result<Record2<Integer, String>> result = dslContext.select(secondaryTable.entityId, secondaryTable.url)
-                .from(secondaryTable)
-                .fetch();
+        final Result<Record> results = dslContext.selectFrom(secondaryTable).fetch();
 
-        assertThat(result, Matchers.hasSize(2));
+        assertThat(results, Matchers.hasSize(2));
 
-        assertThat(result.get(0).value1(), is(ID_1));
-        assertThat(result.get(0).value2(), is(DOODLE_URL));
+        assertThat(results.get(0).get(1), is(ID_1));
+        assertThat(results.get(0).get(2), is(GOOGLE_URL));
+        assertThat(results.get(0).get(3), is(PARAM_1));
 
-        assertThat(result.get(1).value1(), is(ID_2));
-        assertThat(result.get(1).value2(), is(GOOGLE_URL));
+        assertThat(results.get(1).get(1), is(ID_2));
+        assertThat(results.get(1).get(2), is(DOODLE_URL));
+        assertThat(results.get(1).get(3), is(PARAM_2));
     }
+
+    @Test
+    public void when_not_exists_secondary_record_then_create_it_as_expected() {
+        ImmutableList<CreateTestCommand> commands = ImmutableList.of(
+                new CreateTestCommand()
+                        .with(ID, ID_3)
+                        .with(PARENT_ID, PARENT_ID_1)
+                        .with(URL_PARAM, PARAM_1)
+                        .with(URL, GOOGLE_URL)
+        );
+
+        CreateResult<EntityForTest, Identifier<EntityForTest>> createdResults = persistenceLayer.create(commands, changeFlowConfig().build());
+
+        AffectedRows tableStats = createdResults.getStats().getAffectedRowsOf(secondaryTable.getName());
+        assertThat(tableStats.getUpdated(), is(0));
+        assertThat(tableStats.getInserted(), is(1));
+
+        final Result<Record> results = dslContext.selectFrom(secondaryTable).where(secondaryTable.entityId.eq(ID_3)).fetch();
+
+        assertThat(results, Matchers.hasSize(1));
+
+        assertThat(results.get(0).get(1), is(ID_3));
+        assertThat(results.get(0).get(2), is(GOOGLE_URL));
+        assertThat(results.get(0).get(3), is(PARAM_1));
+    }
+
 
     @Test
     public void updateSecondaryTableWhenDuplicateExist() {
@@ -654,7 +681,7 @@ public class PersistenceLayerTest {
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
         Map<Identifier<EntityForTest>, CurrentEntityState> entityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(new EntityForTest.Key(newId)),
-                                                                                              EntityForTest.CREATION_DATE);
+                EntityForTest.CREATION_DATE);
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
         assertThat(Math.abs(actualCreationDate.toEpochMilli() - expectedCreationDate.toEpochMilli()), lessThan(2000L));
@@ -672,7 +699,7 @@ public class PersistenceLayerTest {
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
         Map<Identifier<EntityForTest>, CurrentEntityState> entityMap = entitiesFetcher.fetchEntitiesByIds(singleton(new EntityForTest.Key(newId)),
-                                                                                               singleton(EntityForTest.CREATION_DATE));
+                singleton(EntityForTest.CREATION_DATE));
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
         assertThat(Math.abs(actualCreationDate.toEpochMilli() - expectedCreationDate.toEpochMilli()), lessThan(2000L));
