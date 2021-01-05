@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,12 +32,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
     private final SecondaryTableMandatoryFieldProvider secondaryTableMandatoryFieldProvider;
-    private Map<DataTable, Collection<? extends EntityField<?, ?>>> secondaryTableMandatoryFieldsMap;
+    private Map<DataTable, EntityField<E, ?>> secondaryTableMandatoryFieldMap;
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.entityType = entityType;
         this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
-        this.secondaryTableMandatoryFieldProvider = new SecondaryTableMandatoryFieldProvider(entityType);
+        this.secondaryTableMandatoryFieldProvider = new SecondaryTableMandatoryFieldProvider<>(entityType);
     }
 
     @Override
@@ -136,7 +137,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     }
 
     private boolean shouldCreateSecondaryEntity(CurrentEntityState entity, DataTable table) {
-        return this.secondaryTableMandatoryFieldsMap.get(table).stream().anyMatch(field -> entity.safeGet(field).isAbsent());
+        return entity.safeGet(this.secondaryTableMandatoryFieldMap.get(table)).isAbsent();
     }
 
     private CreateRecordCommand newCreateRecord(EntityChange<E> entityChange) {
@@ -170,16 +171,16 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         return requiredFields;
     }
 
-    private Stream<? extends EntityField<?, ?>> getMandatoryFields(Collection<? extends EntityField<E,?>> fieldsToUpdate) {
-        this.secondaryTableMandatoryFieldsMap = fieldsToUpdate.stream()
+    private Stream<? extends EntityField<?, ?>> getMandatoryFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate) {
+        this.secondaryTableMandatoryFieldMap = fieldsToUpdate.stream()
                 .filter(this::isSecondaryField)
                 .map(field -> field.getDbAdapter().getTable())
                 .distinct()
-                .collect(Collectors.toMap(table -> table, table -> this.secondaryTableMandatoryFieldProvider.get( table)));
-        return this.secondaryTableMandatoryFieldsMap.values().stream().flatMap(Collection::stream);
+                .collect(Collectors.toMap(table -> table, (Function<DataTable, EntityField<E, ?>>) this.secondaryTableMandatoryFieldProvider::get));
+        return this.secondaryTableMandatoryFieldMap.values().stream();
     }
 
-    private boolean isSecondaryField(EntityField<E,?> field) {
+    private boolean isSecondaryField(EntityField<E, ?> field) {
         return !field.getDbAdapter().getTable().equals(entityType.getPrimaryTable());
     }
 

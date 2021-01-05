@@ -19,13 +19,18 @@ public class EntityFieldImpl<E extends EntityType<E>, T> implements EntityField<
     public EntityFieldImpl(EntityType<E> entityType, EntityFieldDbAdapter<T> dbAdapter, ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
         this.entityType = entityType;
         this.dbAdapter = dbAdapter;
-        this.valueEqualityFunction = valueEqualityFunction;
         this.stringValueConverter = stringValueConverter;
+        this.valueEqualityFunction = valueEqualityFunction;
     }
 
     @Override
     public EntityFieldDbAdapter<T> getDbAdapter() {
         return dbAdapter;
+    }
+
+    @Override
+    public EntityValueEqualityFunction<T> getValueEqualityFunction() {
+        return valueEqualityFunction;
     }
 
     @Override

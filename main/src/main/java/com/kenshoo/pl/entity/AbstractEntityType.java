@@ -89,7 +89,7 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
         return addField(new VirtualEntityFieldImpl<>(this, entityFieldDbAdapter, stringValueConverter, valueEqualityFunction));
     }
 
-    public static <T> ValueConverter<T, String> createStringValueConverter(Class<T> valueClass) {
+    private static <T> ValueConverter<T, String> createStringValueConverter(Class<T> valueClass) {
         if (Enum.class.isAssignableFrom(valueClass)) {
             //noinspection unchecked
             return (ValueConverter<T, String>) EnumAsStringValueConverter.create((Class<? extends Enum>) valueClass);
