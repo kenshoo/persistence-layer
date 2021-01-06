@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity;
 
-import com.kenshoo.pl.entity.equalityfunctions.EntityValueEqualityFunction;
 import org.jooq.Record;
 import org.jooq.TableField;
 
@@ -11,8 +10,6 @@ public interface EntityField<E extends EntityType<E>, T> {
     EntityFieldDbAdapter<T> getDbAdapter();
 
     ValueConverter<T, String> getStringValueConverter();
-
-    EntityValueEqualityFunction<T> getValueEqualityFunction();
 
     boolean valuesEqual(T v1, T v2);
 

@@ -6,24 +6,24 @@ import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.OutputGenerator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.jooq.*;
+import org.jooq.ForeignKey;
+import org.jooq.Record;
+import org.jooq.TableField;
 import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
+import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.autoInc;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.fromContext;
+import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
-import static org.jooq.lambda.Seq.toList;
 import static org.jooq.lambda.function.Functions.not;
 
 
@@ -31,13 +31,12 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
-    private final SecondaryTableMandatoryFieldProvider secondaryTableMandatoryFieldProvider;
-    private Map<DataTable, EntityField<E, ?>> secondaryTableMandatoryFieldMap;
+    private final SecondaryTableAlreadyExistChecker<E> secondaryTableAlreadyExistChecker;
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.entityType = entityType;
         this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
-        this.secondaryTableMandatoryFieldProvider = new SecondaryTableMandatoryFieldProvider<>(entityType);
+        this.secondaryTableAlreadyExistChecker = new SecondaryTableAlreadyExistChecker<>(entityType);
     }
 
     @Override
@@ -123,21 +122,18 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
                 recordCommand = changesContainer.getUpdate(primaryTable, entityChange, () -> new UpdateRecordCommand(primaryTable, getDatabaseId(entityChange)));
             }
         } else {
-            if (shouldCreateSecondaryEntity(changeContext.getEntity(entityChange), fieldTable)) {
+            var foreignKeyValues = foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable);
+            if (secondaryTableAlreadyExistChecker.check(fieldTable, changeContext.getEntity(entityChange))) {
                 recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
-                    final CreateRecordCommand createRecordCommand = new CreateRecordCommand(fieldTable);
-                    populate(foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable), createRecordCommand);
+                    var createRecordCommand = new CreateRecordCommand(fieldTable);
+                    populate(foreignKeyValues, createRecordCommand);
                     return createRecordCommand;
                 });
             } else {
-                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable)));
+                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues));
             }
         }
         populateFieldChange(change, recordCommand);
-    }
-
-    private boolean shouldCreateSecondaryEntity(CurrentEntityState entity, DataTable table) {
-        return entity.safeGet(this.secondaryTableMandatoryFieldMap.get(table)).isAbsent();
     }
 
     private CreateRecordCommand newCreateRecord(EntityChange<E> entityChange) {
@@ -158,38 +154,31 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        Stream<? extends EntityField<?, ?>> requiredFields = Stream.empty();
-        if (fieldsToUpdate.stream().anyMatch(this::isSecondaryField)) {
-            requiredFields = getMandatoryFields(fieldsToUpdate);
-            // If update, find which secondary tables are affected.
-            // For those secondary tables take their foreign keys to primary, translate referenced fields of primary to EntityFields and add them to fields to fetch
-            if (changeOperation == ChangeOperation.UPDATE) {
-                requiredFields = Stream.concat(requiredFields, getPrimaryKeyFields(entityType));
-            }
+        if (changeOperation != UPDATE || fieldsToUpdate.stream().noneMatch(this::isSecondaryField)) {
+            return Stream.empty();
         }
-
-        return requiredFields;
+        var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
+        return Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), keysFromPrimaryTableFor(secondaryTables));
     }
 
-    private Stream<? extends EntityField<?, ?>> getMandatoryFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate) {
-        this.secondaryTableMandatoryFieldMap = fieldsToUpdate.stream()
+    private Seq<? extends EntityField<E, ?>> keysFromPrimaryTableFor(List<DataTable> secondaryTables) {
+        return seq(secondaryTables).flatMap(table -> {
+            var foreignKey = table.getForeignKey(entityType.getPrimaryTable());
+            var primaryFields = foreignKey.getKey().getFields();
+            return seq(primaryFields)
+                    .map(field-> entityType.findField(field).get());
+        });
+    }
+
+    private Stream<DataTable> secondaryTables(Collection<? extends EntityField<E, ?>> fieldsToUpdate) {
+        return fieldsToUpdate.stream()
                 .filter(this::isSecondaryField)
                 .map(field -> field.getDbAdapter().getTable())
-                .distinct()
-                .collect(Collectors.toMap(table -> table, (Function<DataTable, EntityField<E, ?>>) this.secondaryTableMandatoryFieldProvider::get));
-        return this.secondaryTableMandatoryFieldMap.values().stream();
+                .distinct();
     }
 
     private boolean isSecondaryField(EntityField<E, ?> field) {
-        return !field.getDbAdapter().getTable().equals(entityType.getPrimaryTable());
-    }
-
-    private Stream<EntityField<?, ?>> getPrimaryKeyFields(E entityType) {
-        DataTable primaryTable = entityType.getPrimaryTable();
-        List<TableField<Record, ?>> primaryKeyFields = primaryTable.getPrimaryKey().getFields();
-        return entityType.getFields()
-                .filter(entityField -> entityField.getDbAdapter().getTableFields().anyMatch(primaryKeyFields::contains))
-                .map(entityField -> (EntityField<?, ?>) entityField);
+        return field.getEntityType() == entityType && !entityType.getPrimaryTable().equals(field.getDbAdapter().getTable());
     }
 
     private void populate(DatabaseId id, AbstractRecordCommand toRecord) {

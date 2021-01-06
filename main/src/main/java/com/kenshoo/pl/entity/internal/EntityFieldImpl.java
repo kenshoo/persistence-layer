@@ -29,11 +29,6 @@ public class EntityFieldImpl<E extends EntityType<E>, T> implements EntityField<
     }
 
     @Override
-    public EntityValueEqualityFunction<T> getValueEqualityFunction() {
-        return valueEqualityFunction;
-    }
-
-    @Override
     public ValueConverter<T, String> getStringValueConverter() {
         return stringValueConverter;
     }
