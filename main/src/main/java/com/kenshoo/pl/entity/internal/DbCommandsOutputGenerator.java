@@ -166,7 +166,8 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             var foreignKey = table.getForeignKey(entityType.getPrimaryTable());
             var primaryFields = foreignKey.getKey().getFields();
             return seq(primaryFields)
-                    .map(field-> entityType.findField(field).get());
+                    .map(field-> entityType.findField(field)
+                            .orElseThrow(() -> new IllegalStateException(String.format("field {} is a FK from table {} to {} but is not defined on entity type {}.", field, table.getName(), entityType.getPrimaryTable().getName(), entityType.getName()))));
         });
     }
 
