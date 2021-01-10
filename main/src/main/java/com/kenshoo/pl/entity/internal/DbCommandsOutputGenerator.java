@@ -1,6 +1,7 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Maps;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
@@ -14,6 +15,7 @@ import org.jooq.lambda.Seq;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -31,12 +33,11 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
-    private final SecondaryTableAlreadyExistChecker<E> secondaryTableAlreadyExistChecker;
+    private Map<DataTable, EntityField<E, ?>> secondaryTableForeignKeys = Maps.newHashMap();
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.entityType = entityType;
         this.commandsExecutor = CommandsExecutor.of(plContext.dslContext());
-        this.secondaryTableAlreadyExistChecker = new SecondaryTableAlreadyExistChecker<>(entityType);
     }
 
     @Override
@@ -123,17 +124,21 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             }
         } else {
             var foreignKeyValues = foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable);
-            if (secondaryTableAlreadyExistChecker.check(fieldTable, changeContext.getEntity(entityChange))) {
-                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues));
-            } else {
+            if (shouldCreateSecondaryEntity(fieldTable, changeContext.getEntity(entityChange))) {
                 recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
                     var createRecordCommand = new CreateRecordCommand(fieldTable);
                     populate(foreignKeyValues, createRecordCommand);
                     return createRecordCommand;
                 });
+            } else {
+                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues));
             }
         }
         populateFieldChange(change, recordCommand);
+    }
+
+    public boolean shouldCreateSecondaryEntity(DataTable table, CurrentEntityState fetchedFields) {
+        return fetchedFields.safeGet(secondaryTableForeignKeys.get(table)).isNullOrAbsent();
     }
 
     private CreateRecordCommand newCreateRecord(EntityChange<E> entityChange) {
@@ -154,9 +159,10 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        if (changeOperation != UPDATE) {
+        if (changeOperation == UPDATE) {
             var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
-            return !secondaryTables.isEmpty() ? Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), primaryTableFieldsReferencedBySecondary(secondaryTables)) : Stream.empty();
+            secondaryTableForeignKeys = SecondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables, entityType);
+            return !secondaryTables.isEmpty() ? Stream.concat(seq(secondaryTableForeignKeys.values()), primaryTableFieldsReferencedBySecondary(secondaryTables)) : Stream.empty();
         }
         return Stream.empty();
     }
