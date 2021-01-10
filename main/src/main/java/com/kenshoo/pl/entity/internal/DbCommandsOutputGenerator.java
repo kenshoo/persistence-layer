@@ -158,10 +158,10 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             return Stream.empty();
         }
         var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
-        return Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), keysFromPrimaryTableFor(secondaryTables));
+        return Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), primaryTableFieldsReferencedBySecondary(secondaryTables));
     }
 
-    private Seq<? extends EntityField<E, ?>> keysFromPrimaryTableFor(List<DataTable> secondaryTables) {
+    private Seq<? extends EntityField<E, ?>> primaryTableFieldsReferencedBySecondary(List<DataTable> secondaryTables) {
         return seq(secondaryTables).flatMap(table -> {
             var foreignKey = table.getForeignKey(entityType.getPrimaryTable());
             var primaryFields = foreignKey.getKey().getFields();
