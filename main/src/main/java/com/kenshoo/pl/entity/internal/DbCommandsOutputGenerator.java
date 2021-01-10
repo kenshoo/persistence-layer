@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Maps;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.data.*;
 import com.kenshoo.pl.entity.*;
@@ -12,10 +11,7 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.lambda.Seq;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -33,7 +29,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     private final E entityType;
     private final CommandsExecutor commandsExecutor;
-    private Map<DataTable, EntityField<E, ?>> secondaryTableForeignKeys = Maps.newHashMap();
+    private Map<DataTable, EntityField<E, ?>> secondaryTableForeignKeys = Collections.emptyMap();
 
     public DbCommandsOutputGenerator(E entityType, PLContext plContext) {
         this.entityType = entityType;
@@ -137,7 +133,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         populateFieldChange(change, recordCommand);
     }
 
-    public boolean shouldCreateSecondaryEntity(DataTable table, CurrentEntityState fetchedFields) {
+    private boolean shouldCreateSecondaryEntity(DataTable table, CurrentEntityState fetchedFields) {
         return fetchedFields.safeGet(secondaryTableForeignKeys.get(table)).isNullOrAbsent();
     }
 
@@ -161,7 +157,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
         if (changeOperation == UPDATE) {
             var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
-            secondaryTableForeignKeys = SecondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables, entityType);
+            secondaryTableForeignKeys = SecondaryTableUtil.foreignKeysOfSecondaryTables(secondaryTables, entityType);
             return !secondaryTables.isEmpty() ? Stream.concat(seq(secondaryTableForeignKeys.values()), primaryTableFieldsReferencedBySecondary(secondaryTables)) : Stream.empty();
         }
         return Stream.empty();

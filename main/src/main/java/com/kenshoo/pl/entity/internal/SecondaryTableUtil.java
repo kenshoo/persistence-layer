@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
 
 import static org.jooq.lambda.Seq.seq;
 
-public class SecondaryTableAlreadyExistChecker {
+public class SecondaryTableUtil {
 
-    public static <E extends EntityType<E>> Map<DataTable, EntityField<E, ?>> fieldsToFetch(Collection<DataTable> secondaryTables, E entityType) {
+    public static <E extends EntityType<E>> Map<DataTable, EntityField<E, ?>> foreignKeysOfSecondaryTables(Collection<DataTable> secondaryTables, E entityType) {
         return seq(secondaryTables)
                 .collect(Collectors.toMap(table -> table, table -> {
                     var foreignKey = table.getForeignKey(entityType.getPrimaryTable());
