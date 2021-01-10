@@ -154,11 +154,11 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-        if (changeOperation != UPDATE || fieldsToUpdate.stream().noneMatch(this::isSecondaryField)) {
-            return Stream.empty();
+        if (changeOperation != UPDATE) {
+            var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
+            return !secondaryTables.isEmpty() ? Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), primaryTableFieldsReferencedBySecondary(secondaryTables)) : Stream.empty();
         }
-        var secondaryTables = secondaryTables(fieldsToUpdate).collect(toList());
-        return Stream.concat(seq(secondaryTableAlreadyExistChecker.fieldsToFetch(secondaryTables)), primaryTableFieldsReferencedBySecondary(secondaryTables));
+        return Stream.empty();
     }
 
     private Seq<? extends EntityField<E, ?>> primaryTableFieldsReferencedBySecondary(List<DataTable> secondaryTables) {
@@ -166,8 +166,8 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             var foreignKey = table.getForeignKey(entityType.getPrimaryTable());
             var primaryFields = foreignKey.getKey().getFields();
             return seq(primaryFields)
-                    .map(field-> entityType.findField(field)
-                            .orElseThrow(() -> new IllegalStateException(String.format("field {} is a FK from table {} to {} but is not defined on entity type {}.", field, table.getName(), entityType.getPrimaryTable().getName(), entityType.getName()))));
+                    .map(field -> entityType.findField(field)
+                            .orElseThrow(() -> new IllegalStateException(String.format("field %s is a FK from table %s to %s but is not defined on entity type %s.", field, table.getName(), entityType.getPrimaryTable().getName(), entityType.getName()))));
         });
     }
 
