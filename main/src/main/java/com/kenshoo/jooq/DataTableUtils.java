@@ -1,5 +1,6 @@
 package com.kenshoo.jooq;
 
+import com.google.common.collect.Lists;
 import org.jooq.*;
 import org.jooq.lambda.Seq;
 
@@ -26,16 +27,20 @@ public class DataTableUtils {
     }
 
     public static void populateTable(DSLContext dslContext, Table<Record> table, Object[][] data) {
-        final List<Field<?>> fields = filterOutAutoIncFields(table);
+        populate(dslContext, table, Lists.newArrayList(table.fields()), data);
+    }
+
+    public static void populateTableWithoutAutoIncFields(DSLContext dslContext, Table<Record> table, Object[][] data) {
+        var fields = Seq.of(table.fields()).filter(field -> !field.getDataType().identity()).collect(Collectors.toList());
+        populate(dslContext, table,fields, data);
+    }
+
+    private static void populate(DSLContext dslContext, Table<Record> table, List<Field<?>> fields, Object[][] data) {
         InsertValuesStepN<Record> insert = dslContext.insertInto(table, fields).values(new Object[fields.size()]);
         BatchBindStep batch = dslContext.batch(insert);
         for (Object[] values : data) {
             batch.bind(values);
         }
         batch.execute();
-    }
-
-    private static List<Field<?>> filterOutAutoIncFields(Table<Record> table) {
-        return Seq.of(table.fields()).filter(field -> !field.getDataType().identity()).collect(Collectors.toList());
     }
 }

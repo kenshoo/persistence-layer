@@ -13,10 +13,10 @@ public class MainEntity extends AbstractEntityType<MainEntity> {
     public static final EntityField<MainEntity, Integer> ID_IN_TARGET = INSTANCE.field(MainTable.INSTANCE.id_in_target);
     public static final EntityField<MainEntity, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
     public static final EntityField<MainEntity, Type> TYPE = INSTANCE.field(MainTable.INSTANCE.type, EnumAsStringValueConverter.create(Type.class));
-    public static final EntityField<MainEntity, String> URL = INSTANCE.field(SecondaryTable2.INSTANCE.url);
-    public static final EntityField<MainEntity, String> URL_PARAM = INSTANCE.field(SecondaryTable2.INSTANCE.url_param);
-    public static final EntityField<MainEntity, Double> BUDGET = INSTANCE.field(SecondaryTable1.INSTANCE.budget);
-    public static final EntityField<MainEntity, String> LOCATION = INSTANCE.field(SecondaryTable3.INSTANCE.location);
+    public static final EntityField<MainEntity, String> URL = INSTANCE.field(Secondary2ByIdInTarget.INSTANCE.url2);
+    public static final EntityField<MainEntity, String> URL_PARAM = INSTANCE.field(Secondary2ByIdInTarget.INSTANCE.url_param2);
+    public static final EntityField<MainEntity, Double> BUDGET = INSTANCE.field(Secondary1ById.INSTANCE.budget1);
+    public static final EntityField<MainEntity, String> LOCATION = INSTANCE.field(Secondary3ByNameAndType.INSTANCE.location3);
 
     private MainEntity() {
         super("main");

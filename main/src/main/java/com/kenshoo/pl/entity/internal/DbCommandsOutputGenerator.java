@@ -124,13 +124,13 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         } else {
             var foreignKeyValues = foreignKeyValues(entityChange, changeOperation, changeContext, fieldTable);
             if (secondaryTableAlreadyExistChecker.check(fieldTable, changeContext.getEntity(entityChange))) {
+                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues));
+            } else {
                 recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
                     var createRecordCommand = new CreateRecordCommand(fieldTable);
                     populate(foreignKeyValues, createRecordCommand);
                     return createRecordCommand;
                 });
-            } else {
-                recordCommand = changesContainer.getUpdate(fieldTable, entityChange, () -> new UpdateRecordCommand(fieldTable, foreignKeyValues));
             }
         }
         populateFieldChange(change, recordCommand);
