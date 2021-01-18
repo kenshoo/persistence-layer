@@ -1,4 +1,4 @@
-package com.kenshoo.pl.secondaryOfParent;
+package com.kenshoo.pl.secondary;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.*;

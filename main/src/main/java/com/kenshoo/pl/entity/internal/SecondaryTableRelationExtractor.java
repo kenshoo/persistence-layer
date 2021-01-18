@@ -2,9 +2,7 @@ package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldDbAdapter;
 import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.ValueConverter;
 import com.kenshoo.pl.entity.converters.IdentityValueConverter;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -50,8 +48,7 @@ class SecondaryTableRelationExtractor {
         var foreignKey = secondaryTable.getForeignKey(entityType.getPrimaryTable());
         var primaryAndSecondaryFieldPairs = seq(foreignKey.getKey().getFields()).zip(foreignKey.getFields());
         return primaryAndSecondaryFieldPairs
-                .map(ps -> entityType.findField(ps.v2).orElseGet(() -> createTemporaryEntityField(entityType, ps.v2, ps.v1)))
-                .map(KeyFieldFromSecondary::new);
+                .map(ps -> entityType.findField(ps.v2).orElseGet(() -> createTemporaryEntityField(entityType, ps.v2, ps.v1)));
     }
 
     private static <T, E extends EntityType<E>> EntityField<E, ?> createTemporaryEntityField(E entityType, TableField<Record, T> secondaryField, TableField<?, ?> primaryTableField) {
@@ -66,19 +63,6 @@ class SecondaryTableRelationExtractor {
         return seq(primaryFields)
                 .map(field -> entityType.findField(field)
                         .orElseThrow(() -> new IllegalStateException(String.format("field %s is a FK from table %s to %s but is not defined on entity type %s.", field, secondaryTable.getName(), entityType.getPrimaryTable().getName(), entityType.getName()))));
-    }
-
-    /**
-     * We use this type as a marker
-     */
-    public static class KeyFieldFromSecondary<E extends EntityType<E>, T> implements EntityField<E, T> {
-        private final EntityField<E, T> delegate;
-
-        private KeyFieldFromSecondary(EntityField<E, T> delegate) { this.delegate = delegate; }
-        @Override public EntityFieldDbAdapter<T> getDbAdapter() { return delegate.getDbAdapter(); }
-        @Override public ValueConverter<T, String> getStringValueConverter() { return delegate.getStringValueConverter(); }
-        @Override public boolean valuesEqual(T v1, T v2) { return delegate.valuesEqual(v1, v2); }
-        @Override public EntityType<E> getEntityType() { return delegate.getEntityType(); }
     }
 
 }

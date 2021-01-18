@@ -121,7 +121,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
             }
         } else {
             var foreignKeyValues = foreignKeyValues(entityChange, operator, ctx, fieldTable);
-            if (operator == CREATE || shouldCreateSecondaryEntity(fieldTable, ctx.getEntity(entityChange), ctx)) {
+            if (operator == CREATE || rowNotYetExistsInSecondary(fieldTable, ctx.getEntity(entityChange), ctx, foreignKeyValues)) {
                 recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
                     var createRecordCommand = new CreateRecordCommand(fieldTable);
                     populate(foreignKeyValues, createRecordCommand);
@@ -134,10 +134,10 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         populateFieldChange(change, recordCommand);
     }
 
-    private boolean shouldCreateSecondaryEntity(DataTable table, CurrentEntityState fetchedFields, ChangeContext ctx) {
+    private boolean rowNotYetExistsInSecondary(DataTable table, CurrentEntityState fetchedFields, ChangeContext ctx, DatabaseId fkToPrimary) {
         var keyFieldFromSecondaryToPrimary = seq(ctx.getFetchRequests())
                 .map(FieldFetchRequest::getEntityField)
-                .filter(field -> field instanceof SecondaryTableRelationExtractor.KeyFieldFromSecondary)
+                .filter(field -> Seq.of(fkToPrimary.getTableFields()).contains(field.getDbAdapter().getFirstTableField()))
                 .findFirst(field -> field.getDbAdapter().getTable() == table).get();
         return fetchedFields.safeGet(keyFieldFromSecondaryToPrimary).isNullOrAbsent();
     }

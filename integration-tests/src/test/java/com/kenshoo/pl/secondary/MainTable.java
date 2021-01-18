@@ -1,4 +1,4 @@
-package com.kenshoo.pl.secondaryOfParent;
+package com.kenshoo.pl.secondary;
 
 import com.kenshoo.jooq.AbstractDataTable;
 import org.jooq.Record;

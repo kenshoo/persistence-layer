@@ -1,4 +1,4 @@
-package com.kenshoo.pl.secondaryOfParent;
+package com.kenshoo.pl.secondary;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.jooq.DataTableUtils;
@@ -11,7 +11,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.kenshoo.pl.secondaryOfParent.MainEntity.*;
+import static com.kenshoo.pl.secondary.MainEntity.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
