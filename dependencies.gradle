@@ -1,7 +1,7 @@
 project.ext.set("libraries", "")
 
 ext.jackson_version = "2.7.8"
-ext.jooq_version = project.hasProperty('JOOQ_VERSION') ? "$JOOQ_VERSION" : '3.10.4'
+ext.jooq_version = project.hasProperty('JOOQ_VERSION') ? "$JOOQ_VERSION" : '3.11.12'
 
 project.ext.libraries = [
         slf4j                : 'org.slf4j:slf4j-api:1.7.21',
