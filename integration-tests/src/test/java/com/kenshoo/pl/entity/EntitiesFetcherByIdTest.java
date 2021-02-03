@@ -18,7 +18,6 @@ import java.util.Set;
 import static com.kenshoo.pl.one2many.relatedByPK.ChildEntity.*;
 import static org.junit.Assert.assertThat;
 
-@Ignore
 public class EntitiesFetcherByIdTest {
 
     private static final ParentTable parentTable = ParentTable.INSTANCE;

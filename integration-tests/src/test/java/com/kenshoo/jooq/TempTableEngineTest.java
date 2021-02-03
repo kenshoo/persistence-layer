@@ -17,7 +17,7 @@ import static org.hamcrest.core.Is.is;
 public class TempTableEngineTest {
 
     private final TestEntityTable table = TestEntityTable.TABLE;
-    private final DSLContext jooq = TestJooqConfig.create(alwaysAllocatingNewConnections());
+    private final DSLContext jooq = TestJooqConfig.create();
 
     @Test
     public void two_temp_tables_can_simultaneously_co_exist_each_one_on_different_thread() throws Exception {
