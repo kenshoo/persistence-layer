@@ -3,12 +3,15 @@ package com.kenshoo.pl.transaction;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
+import com.kenshoo.jooq.TransactionContextImpl;
 import com.kenshoo.pl.TypedFluidPersistenceCmdBuilder;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.one2many.relatedByPK.IdGenerator;
 import com.kenshoo.pl.one2many.relatedByPK.IntegerIdGeneratorEnricher;
 import org.jooq.DSLContext;
 import org.jooq.Query;
+import org.jooq.TransactionContext;
+import org.jooq.TransactionProvider;
 import org.jooq.impl.DSL;
 import org.jooq.lambda.Seq;
 import org.junit.*;
@@ -53,16 +56,20 @@ public class MultipleEntityTypeTransactionTest {
         jooq.alterTable(TABLE_2).add(DSL.constraint("unique_id_2").unique(TABLE_2.id)).execute();
     }
 
-    @Ignore
     @Test
     public void commitTwoUnrelatedTypesInTransaction() {
 
-        var results = jooq.transactionResult(configuration -> {
-            final var result1 = insertEntity1(newEntity1().with(Entity1.NAME, "name1"));
-            final var result2 = insertEntity2(newEntity2().with(Entity2.NAME, "name2"));
-            return List.of(result1.getChangeResults().iterator().next().getCommand().get(Entity1.ID),
-                           result2.getChangeResults().iterator().next().getCommand().get(Entity2.ID));
-        });
+        final TransactionProvider txProvider = jooq.configuration().transactionProvider();
+        TransactionContext trx = new TransactionContextImpl(jooq.configuration(), jooq);
+        txProvider.begin(trx);
+
+
+        final var result1 = insertEntity1(newEntity1().with(Entity1.NAME, "name1"));
+        final var result2 = insertEntity2(newEntity2().with(Entity2.NAME, "name2"));
+        final var results =  List.of(result1.getChangeResults().iterator().next().getCommand().get(Entity1.ID),
+                    result2.getChangeResults().iterator().next().getCommand().get(Entity2.ID));
+
+        txProvider.commit(trx);
 
         List<CurrentEntityState> fetch1 = plContext.select(Entity1.NAME).from(Entity1.INSTANCE).where(Entity1.ID.eq(results.get(0))).fetch();
         List<CurrentEntityState> fetch2 = plContext.select(Entity2.NAME).from(Entity2.INSTANCE).where(Entity2.ID.eq(results.get(1))).fetch();
@@ -70,25 +77,23 @@ public class MultipleEntityTypeTransactionTest {
         assertThat(fetch2.get(0).get(Entity2.NAME), is("name2"));
     }
 
-    @Ignore
     @Test
     public void rollbackTwoUnrelatedTypesInTransaction() {
 
-        var results = jooq.transactionResult(configuration -> {
-            final var result1 = insertEntity1(newEntity1().with(Entity1.NAME, "name1"));
-            final var result2 = insertEntity2(newEntity2().with(Entity2.NAME, "name2"));
-            return List.of(result1.getChangeResults().iterator().next().getCommand().get(Entity1.ID),
-                    result2.getChangeResults().iterator().next().getCommand().get(Entity2.ID));
-        });
 
-        try {
-            jooq.transaction(configuration -> {
-                updateEntity1(updateEntity1(IdentifierType.uniqueKey(Entity1.ID).createIdentifier(results.get(0))).with(Entity1.NAME, "name1_update"));
-                updateEntity2(updateEntity2(IdentifierType.uniqueKey(Entity2.ID).createIdentifier(results.get(1))).with(Entity2.NAME, "name2_update"));
-                throw new RuntimeException("Rollback transaction");
-            });
-        } catch (Exception e){
-        }
+        final var result1 = insertEntity1(newEntity1().with(Entity1.NAME, "name1"));
+        final var result2 = insertEntity2(newEntity2().with(Entity2.NAME, "name2"));
+        final var results =  List.of(result1.getChangeResults().iterator().next().getCommand().get(Entity1.ID),
+                result2.getChangeResults().iterator().next().getCommand().get(Entity2.ID));
+
+        final TransactionProvider txProvider = jooq.configuration().transactionProvider();
+        TransactionContext trx = new TransactionContextImpl(jooq.configuration(), jooq);
+        txProvider.begin(trx);
+
+        updateEntity1(updateEntity1(IdentifierType.uniqueKey(Entity1.ID).createIdentifier(results.get(0))).with(Entity1.NAME, "name1_update"));
+        updateEntity2(updateEntity2(IdentifierType.uniqueKey(Entity2.ID).createIdentifier(results.get(1))).with(Entity2.NAME, "name2_update"));
+
+        txProvider.rollback(trx);
 
 
         List<CurrentEntityState> fetch1 = plContext.select(Entity1.NAME).from(Entity1.INSTANCE).where(Entity1.ID.eq(results.get(0))).fetch();
