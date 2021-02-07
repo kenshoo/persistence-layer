@@ -159,7 +159,6 @@ public class SelectQueryExtenderTest {
         }
     }
 
-    @Ignore("Translate to query extender when it exposes update")
     @Test
     public void testUpdateInWithCondition() {
         TestTable table = TestTable.TABLE;

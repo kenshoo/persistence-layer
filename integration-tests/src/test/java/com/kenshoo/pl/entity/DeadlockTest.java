@@ -28,7 +28,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
-@Ignore
 public class DeadlockTest {
 
     private static final int ID = 1;
