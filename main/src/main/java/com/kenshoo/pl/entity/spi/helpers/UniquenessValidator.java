@@ -41,13 +41,15 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
 
         Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = markDuplicatesInCollectionWithErrors(commands, ctx);
 
-        UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
-        EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
+        if (!commandsByIds.isEmpty()) {
+            UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
+            EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
 
-        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
-                .stream().collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
+            Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
+                    .stream().collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
 
-        duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
+            duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
+        }
     }
 
     private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {

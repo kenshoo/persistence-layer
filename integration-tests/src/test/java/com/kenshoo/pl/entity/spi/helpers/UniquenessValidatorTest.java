@@ -221,13 +221,17 @@ public class UniquenessValidatorTest {
 
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, uniqueness)
-                .setCondition(PLCondition.not(ParentEntity.NAME.eq("moshe")))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
                 .build();
 
-        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
+        create(new CreateParent().with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, null));
 
         List<CreateParent> commands = asList(
-                new CreateParent().with(ParentEntity.ID, 1).with(ParentEntity.NAME, "moshe")
+                new CreateParent().with(ParentEntity.ID, 1)
+                        .with(ParentEntity.NAME, "moshe")
+                        .with(ParentEntity.ID_IN_TARGET, 12345)
         );
 
         CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
