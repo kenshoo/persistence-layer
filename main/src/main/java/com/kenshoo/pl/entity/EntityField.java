@@ -30,7 +30,7 @@ public interface EntityField<E extends EntityType<E>, T> {
         final Object tableValue = getDbAdapter().getFirstDbValue(value);
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.eq(tableValue), this);
+        return new PLCondition(tableField.eq(tableValue), entity -> entity.safeGet(this).equals(Triptional.of(value)), this);
     }
 
     default PLCondition in(T ...values) {
@@ -41,7 +41,7 @@ public interface EntityField<E extends EntityType<E>, T> {
         final Object[] tableValues = Arrays.stream(values).map(value -> getDbAdapter().getFirstDbValue(value)).toArray(Object[]::new);
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.in(tableValues), this);
+        return new PLCondition(tableField.in(tableValues), entity -> Arrays.stream(values).anyMatch(value -> entity.safeGet(this).equals(Triptional.of(value))), this);
     }
 
     default PLCondition isNull() {
@@ -50,6 +50,6 @@ public interface EntityField<E extends EntityType<E>, T> {
         }
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.isNull(), this);
+        return new PLCondition(tableField.isNull(), entity -> entity.safeGet(this).isNull(), this);
     }
 }

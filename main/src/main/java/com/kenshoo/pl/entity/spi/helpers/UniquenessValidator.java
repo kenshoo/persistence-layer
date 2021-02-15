@@ -1,16 +1,6 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.Identifier;
-import com.kenshoo.pl.entity.PLCondition;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.UniqueKey;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import org.apache.commons.lang3.ArrayUtils;
@@ -63,6 +53,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
         return commands
                 .stream()
+                .filter(command -> condition.getPostFetchCondition().test(ctx.getFinalEntity(command)))
                 .collect(toMap(cmd -> createKeyValue(cmd, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
     }
 
