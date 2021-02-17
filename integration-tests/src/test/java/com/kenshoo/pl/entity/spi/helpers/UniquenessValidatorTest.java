@@ -172,7 +172,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void testDontFailBulkCommandsWhenConditionIsUnmatched() {
+    public void testDontFailCommandWhenSameUniqueKeyInBulkButConditionIsUnmatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
                 .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
@@ -194,7 +194,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void testFailBulkCommandsWhenConditionIsMatched() {
+    public void testFailCommandWhenSameUniqueKeyInBulkAndConditionIsMatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
                 .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
@@ -216,7 +216,7 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void testDontFailCommandConditionIsUnmatched() {
+    public void testDontFailCommandWhenSameUniqueKeyInDBButConditionIsUnmatched() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
 
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator
