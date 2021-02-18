@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity;
 
 import org.jooq.Record;
 import org.jooq.TableField;
+import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 
@@ -41,7 +42,9 @@ public interface EntityField<E extends EntityType<E>, T> {
         final Object[] tableValues = Arrays.stream(values).map(value -> getDbAdapter().getFirstDbValue(value)).toArray(Object[]::new);
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.in(tableValues), entity -> Arrays.stream(values).anyMatch(value -> entity.safeGet(this).equals(Triptional.of(value))), this);
+        final var setOfValues = Seq.of(values).toSet();
+        return new PLCondition(tableField.in(tableValues),
+                entity -> setOfValues.contains(entity.safeGet(this).asOptional().orElse(null)), this);
     }
 
     default PLCondition isNull() {
