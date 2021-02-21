@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class EntityFieldConditionsTest {
@@ -20,6 +21,37 @@ public class EntityFieldConditionsTest {
         final PLCondition plCondition = TestEntityType.NAME1.eq("abc");
 
         assertContainsFields(plCondition, TestEntityType.NAME1);
+    }
+
+    @Test
+    public void testFieldEqualInPostFetchCondition() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName");
+
+        assertThat(TestEntityType.NAME1.eq("myName").getPostFetchCondition().test(entity), is(true));
+        assertThat(TestEntityType.NAME1.eq("abcd").getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
+    public void testFieldInValuesInPostFetchCondition() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName");
+
+        assertThat(TestEntityType.NAME1.in("abcd", "myName").getPostFetchCondition().test(entity), is(true));
+        assertThat(TestEntityType.NAME1.in("abcd", "aaaa").getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
+    public void testFieldIsNullInPostFetchCondition() {
+        final var entityWithNullValue = createEntityWith(TestEntityType.NAME1, null);
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName");
+
+        assertThat(TestEntityType.NAME1.isNull().getPostFetchCondition().test(entityWithNullValue), is(true));
+        assertThat(TestEntityType.NAME1.isNull().getPostFetchCondition().test(entity), is(false));
+    }
+
+    private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value) {
+        return new FinalEntityState(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
+            set(field, value);
+        }});
     }
 
     @Test(expected = UnsupportedOperationException.class)

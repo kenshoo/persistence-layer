@@ -172,18 +172,88 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void testDontFailCommandConditionIsUnmatched() {
+    public void testDontFailCommandWhenSameUniqueKeyInBulkButConditionIsUnmatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, null);
+
+        final var entity2 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, 55);
+
+        final var results = parentPersistence.create(List.of(entity1, entity2), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
+
+    @Test
+    public void testFailCommandWhenSameUniqueKeyInBulkAndConditionIsMatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, 44);
+
+        final var entity2 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, 55);
+
+        final var results = parentPersistence.create(List.of(entity1, entity2), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
+    }
+
+    @Test
+    public void testDontFailWhenAllCommandsUnmatchedCondition() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, null);
+
+        final var entity2 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, null);
+
+        final var results = parentPersistence.create(List.of(entity1, entity2), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
+
+    @Test
+    public void testDontFailCommandWhenSameUniqueKeyInDBButConditionIsUnmatched() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
 
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, uniqueness)
-                .setCondition(PLCondition.not(ParentEntity.NAME.eq("moshe")))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
                 .build();
 
-        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
+        create(new CreateParent().with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, null));
 
         List<CreateParent> commands = asList(
-                new CreateParent().with(ParentEntity.ID, 1).with(ParentEntity.NAME, "moshe")
+                new CreateParent().with(ParentEntity.ID, 1)
+                        .with(ParentEntity.NAME, "moshe")
+                        .with(ParentEntity.ID_IN_TARGET, 12345)
         );
 
         CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
