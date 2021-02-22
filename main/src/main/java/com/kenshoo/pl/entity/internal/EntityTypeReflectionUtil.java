@@ -81,22 +81,21 @@ public abstract class EntityTypeReflectionUtil {
         }
     }
 
-    public static <E extends EntityType<E>> BiMap<String, EntityField<E, ?>> getFieldToNameBiMap(Class<? extends AbstractEntityType> entityClass) {
-        Map<String, EntityField<E, ?>> map = Stream.of(entityClass.getFields())
-                .filter(field -> EntityField.class.isAssignableFrom(field.getType()))
-                .collect(Collectors.toMap(
-                                Field::getName,
-                                EntityTypeReflectionUtil::getEntityFieldInstance
-                        )
-                );
+    public static <E extends EntityType<E>> BiMap<String, EntityField<E, ?>> getFieldToNameBiMap(final EntityType<E> entityType) {
+        Map<String, EntityField<E, ?>> map =
+            Stream.of(entityType.getClass().getDeclaredFields())
+                  .filter(field -> EntityField.class.isAssignableFrom(field.getType()))
+                  .collect(Collectors.toMap(Field::getName,
+                                            field -> getEntityFieldInstance(field, entityType)));
 
         return HashBiMap.create(map);
     }
 
-    private static <E extends EntityType<E>, T> EntityField<E, T> getEntityFieldInstance(Field field) {
+    private static <E extends EntityType<E>, T> EntityField<E, T> getEntityFieldInstance(final Field field, final EntityType<E> entityType) {
         try {
+            field.setAccessible(true);
             //noinspection unchecked
-            return (EntityField<E, T>) field.get(null);
+            return (EntityField<E, T>) field.get(entityType);
         } catch (IllegalAccessException e) {
             // Shouldn't happen
             throw Throwables.propagate(e);
@@ -105,7 +104,7 @@ public abstract class EntityTypeReflectionUtil {
 
     public static <E extends EntityType<E>, A extends Annotation> A getFieldAnnotation(EntityType<E> entityType, EntityField<E, ?> entityField, Class<A> annotationType) {
         try {
-            Field field = entityType.getClass().getField(entityType.toFieldName(entityField));
+            Field field = entityType.getClass().getDeclaredField(entityType.toFieldName(entityField));
             return field.getAnnotation(annotationType);
         } catch (NoSuchFieldException e) {
             // Shouldn't happen
