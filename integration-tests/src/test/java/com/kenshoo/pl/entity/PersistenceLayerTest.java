@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.entity.EntityForTest.*;
+import static com.kenshoo.pl.entity.EntityForTest.URL;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
@@ -398,59 +398,6 @@ public class PersistenceLayerTest {
     }
 
     @Test
-    public void updateSecondaryTableWhenEmpty() {
-        List<UpdateTestCommand> commands = ImmutableList.of(
-                new UpdateTestCommand(ID_1).with(URL, DOODLE_URL),
-                new UpdateTestCommand(ID_2).with(URL, GOOGLE_URL)
-        );
-
-        UpdateResult<EntityForTest, EntityForTest.Key> updateResult = persistenceLayer.update(commands, changeFlowConfig().build());
-        AffectedRows tableStats = updateResult.getStats().getAffectedRowsOf(secondaryTable.getName());
-        assertThat(tableStats.getUpdated(), is(2));
-        assertThat(tableStats.getInserted(), is(0));
-
-        Result<Record2<Integer, String>> result = dslContext.select(secondaryTable.entityId, secondaryTable.url)
-                .from(secondaryTable)
-                .fetch();
-
-        assertThat(result, Matchers.hasSize(2));
-
-        assertThat(result.get(0).value1(), is(ID_1));
-        assertThat(result.get(0).value2(), is(DOODLE_URL));
-
-        assertThat(result.get(1).value1(), is(ID_2));
-        assertThat(result.get(1).value2(), is(GOOGLE_URL));
-    }
-
-    @Test
-    public void updateSecondaryTableWhenDuplicateExist() {
-        ArrayList<UpdateTestCommand> commands = new ArrayList<>();
-        commands.add(new UpdateTestCommand(ID_1).with(URL, DOODLE_URL));
-
-        persistenceLayer.update(commands, changeFlowConfig().build());
-
-        Result<Record2<Integer, String>> result = dslContext.select(secondaryTable.entityId, secondaryTable.url)
-                .from(secondaryTable)
-                .where(secondaryTable.entityId.eq(ID_1))
-                .fetch();
-
-        assertThat(result, Matchers.hasSize(1));
-
-        assertThat(result.get(0).value1(), is(ID_1));
-        assertThat(result.get(0).value2(), is(DOODLE_URL));
-    }
-
-    @Test
-    public void update_secondary_table_without_changing_value_of_non_nullable_field() {
-        // This test used to fail because the Purger removed URL while URL is still required by MySQL when performing ON DUPLICATE UPDATE
-        // because it is not nullable.
-        UpdateTestCommand cmd = new UpdateTestCommand(ID_1).with(URL, GOOGLE_URL).with(URL_PARAM, "abc");
-        persistenceLayer.update(asList(cmd), changeFlowConfig().build());
-        CurrentEntityState fromDB = plContext.select(URL_PARAM).from(INSTANCE).where(ID.eq(ID_1)).fetch().get(0);
-        assertThat(fromDB.get(URL_PARAM), is("abc"));
-    }
-
-    @Test
     public void updateVirtualField() {
         UpdateTestCommand command = new UpdateTestCommand(ID_1);
         command.set(EntityForTest.VIRTUAL_FIELD, "Garbage");
@@ -654,7 +601,7 @@ public class PersistenceLayerTest {
         CreateResult<EntityForTest, EntityForTest.Key> results = persistenceLayer.create(ImmutableList.of(command), changeFlowConfig().build(), EntityForTest.Key.DEFINITION);
         assertThat(results.hasErrors(), is(false));
         Map<Identifier<EntityForTest>, CurrentEntityState> entityMap = entitiesFetcher.fetchEntitiesByIds(ImmutableList.of(new EntityForTest.Key(newId)),
-                                                                                              EntityForTest.CREATION_DATE);
+                                                                                               EntityForTest.CREATION_DATE);
         assertThat(entityMap.size(), is(1));
         Instant actualCreationDate = entityMap.values().iterator().next().get(EntityForTest.CREATION_DATE);
         assertThat(Math.abs(actualCreationDate.toEpochMilli() - expectedCreationDate.toEpochMilli()), lessThan(2000L));

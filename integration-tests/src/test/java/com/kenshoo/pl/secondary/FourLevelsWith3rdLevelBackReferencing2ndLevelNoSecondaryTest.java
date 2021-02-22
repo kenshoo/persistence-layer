@@ -1,4 +1,4 @@
-package com.kenshoo.pl.secondaryOfParent;
+package com.kenshoo.pl.secondary;
 
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.AbstractDataTable;
