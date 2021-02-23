@@ -8,7 +8,9 @@ import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE;
@@ -23,17 +25,19 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     private final EntitiesFetcher fetcher;
     private final UniqueKey<E> uniqueKey;
     private final PLCondition condition;
+    private final SupportedChangeOperation operation;
 
-    private UniquenessValidator(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey, PLCondition condition, String errorCode) {
+    private UniquenessValidator(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey, SupportedChangeOperation operation, PLCondition condition, String errorCode) {
         this.errorCode = errorCode;
         this.fetcher = requireNonNull(fetcher, "entity fetcher must be provided");
         this.uniqueKey = requireNonNull(uniqueKey, "unique key must be provided");
         this.condition = requireNonNull(condition, "condition must be provided");
+        this.operation = requireNonNull(operation, "operation must be provided");
     }
 
     @Override
     public SupportedChangeOperation getSupportedChangeOperation() {
-        return CREATE;
+        return operation;
     }
 
     @Override
@@ -44,19 +48,29 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         if (!commandsByIds.isEmpty()) {
             UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
             EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
+            final var updateCommandsPKs = getPrimaryKeysOfUpdateCommands(ctx, commandsByIds, pk);
 
             Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
-                    .stream().collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
+                    .stream()
+                    .filter(entity -> !updateCommandsPKs.contains(pk.createIdentifier(entity)))
+                    .collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
 
             duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
         }
+    }
+
+    private Set<Identifier<E>> getPrimaryKeysOfUpdateCommands(ChangeContext ctx, Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds, UniqueKey<E> pk) {
+        return commandsByIds.values().stream()
+                .filter(cmd -> ChangeOperation.UPDATE.equals(cmd.getChangeOperation()))
+                .map(cmd -> pk.createIdentifier(ctx.getFinalEntity(cmd)))
+                .collect(Collectors.toSet());
     }
 
     private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
         return commands
                 .stream()
                 .filter(command -> condition.getPostFetchCondition().test(ctx.getFinalEntity(command)))
-                .collect(toMap(cmd -> createKeyValue(cmd, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
+                .collect(toMap(cmd -> createKeyValue(cmd, ctx, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
     }
 
     private ValidationError errorForDatabaseConflict(CurrentEntityState dupEntity, UniqueKey<E> pk) {
@@ -70,8 +84,8 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         };
     }
 
-    private static <E extends EntityType<E>> Identifier<E> createKeyValue(EntityChange<E> cmd, UniqueKey<E> key) {
-        return key.createIdentifier(cmd);
+    private static <E extends EntityType<E>> Identifier<E> createKeyValue(EntityChange<E> cmd, ChangeContext ctx, UniqueKey<E> key) {
+        return key.createIdentifier(ctx.getFinalEntity(cmd));
     }
 
     private Identifier<E> createKeyValue(CurrentEntityState currentEntityState, UniqueKey<E> key) {
@@ -89,10 +103,16 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         private final EntitiesFetcher fetcher;
         private final UniqueKey<E> uniqueKey;
         private PLCondition condition = PLCondition.trueCondition();
+        private SupportedChangeOperation operation = CREATE;
 
         public Builder(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey) {
             this.fetcher = fetcher;
             this.uniqueKey = uniqueKey;
+        }
+
+        public Builder<E> setOperation(SupportedChangeOperation operation) {
+            this.operation = operation;
+            return this;
         }
 
         public Builder<E> setCondition(PLCondition condition) {
@@ -106,7 +126,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         }
 
         public UniquenessValidator<E> build() {
-            return new UniquenessValidator<>(fetcher, uniqueKey, condition, errorCode);
+            return new UniquenessValidator<>(fetcher, uniqueKey, operation, condition, errorCode);
         }
     }
 
