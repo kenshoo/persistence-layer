@@ -8,6 +8,7 @@ import com.kenshoo.pl.entity.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -93,7 +94,9 @@ public abstract class EntityTypeReflectionUtil {
 
     private static <E extends EntityType<E>, T> EntityField<E, T> getEntityFieldInstance(final Field field, final EntityType<E> entityType) {
         try {
-            field.setAccessible(true);
+            if (!Modifier.isPublic(field.getModifiers())) {
+                field.setAccessible(true);
+            }
             //noinspection unchecked
             return (EntityField<E, T>) field.get(entityType);
         } catch (IllegalAccessException e) {
