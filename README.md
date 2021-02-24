@@ -87,6 +87,7 @@ class CampaignBudgetValidator implements FieldValidator<Campaign, Integer> {
             ? new ValidationError("budget is too big", Campaign.BUDGET)
             : null;
         }
+        asdf
     }
 }
 ```
