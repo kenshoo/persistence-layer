@@ -151,8 +151,4 @@ PL is licensed under the Apache License, Version 2.0.
 
 ## Credits
 
-PL was originally created at Kenshoo by Victor Bronstein.
-
-
-
-ef
+PL was originally created at Kenshoo by Victor Bronstein. 
