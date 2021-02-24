@@ -18,6 +18,14 @@ public class EntityNameToFieldTest {
     }
 
     @Test
+    public void privateFieldFromName() {
+        final var entity = TestPrivateFieldsEntity.INSTANCE;
+        final var entityField = entity.getFieldByName("FIELD_1");
+
+        assertThat(entityField, is(entity.getFIELD_1()));
+    }
+
+    @Test
     public void prototypeFieldFromName() {
         EntityField<TestEntity, ?> fieldByName = TestEntity.INSTANCE.getFieldByName("FIELD_1");
 

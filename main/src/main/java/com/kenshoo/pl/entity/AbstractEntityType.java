@@ -32,7 +32,7 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     private Collection<EntityField<E, ?>> fields = new ArrayList<>();
     private Collection<PrototypedEntityField<E, ?>> prototypedFields = new ArrayList<>();
 
-    private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this.getClass()));
+    private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this));
 
     protected AbstractEntityType(String name) {
         this.name = name;

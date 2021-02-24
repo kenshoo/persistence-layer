@@ -19,6 +19,14 @@ public class EntityFieldToNameTest {
     }
 
     @Test
+    public void privateFieldToName() {
+        final var entity = TestPrivateFieldsEntity.INSTANCE;
+        String fieldName = entity.toFieldName(entity.getFIELD_1());
+
+        assertThat(fieldName, is("FIELD_1"));
+    }
+
+    @Test
     public void badInput() {
         String fieldName = TestEntity.INSTANCE.toFieldName(null);
 
