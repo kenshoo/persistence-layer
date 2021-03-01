@@ -284,23 +284,56 @@ public class UniquenessValidatorTest {
     }
 
     @Test
-    public void testDontFailUpdateCommandOnItselfInDBForSameUniqueKeyError() {
+    public void testDontFailUpdateCommandOnItselfInDBWhenNoChangeInUniqueKeyFields() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
                 .setOperation(SupportedChangeOperation.CREATE_AND_UPDATE)
                 .build();
 
-        create(new CreateParent().with(ParentEntity.ID, 99)
-                .with(ParentEntity.NAME, "moshe")
-                .with(ParentEntity.ID_IN_TARGET, 333));
+        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
 
-        final var updateCommand =
-                new UpdateParent(99)
-                        .with(ParentEntity.NAME, "moshe")
-                        .with(ParentEntity.ID_IN_TARGET, 333);
+        final var updateCommand = new UpdateParent(99).with(ParentEntity.NAME, "moshe");
 
         final var results = parentPersistence.update(List.of(updateCommand), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
+
+    @Test
+    public void testNullInUniqueKeyIsConsideredAsValueForComparison() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, null);
+
+        final var entity2 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, null);
+
+        final var entity3 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, "moshe");
+
+        final var results = parentPersistence.create(List.of(entity1, entity2, entity3), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
+        assertThat(results.getErrors(entity2).isEmpty(), is(false));
+        assertThat(results.getErrors(entity3).isEmpty(), is(true));
+    }
+
+    @Test
+    public void testNoExceptionsWhenCommandHasNoValueForUniqueKeyField() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 1);
+
+        final var results = parentPersistence.create(List.of(entity1), parentFlow(validator).build());
 
         assertThat(results.hasErrors(), is(false));
     }

@@ -6,13 +6,15 @@ import com.kenshoo.pl.entity.spi.ChangesValidator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jooq.lambda.Seq;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -43,27 +45,23 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     @Override
     public void validate(Collection<? extends EntityChange<E>> commands, ChangeOperation op, ChangeContext ctx) {
 
-        Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = markDuplicatesInCollectionWithErrors(commands, ctx);
+        final var commandsToValidate = commands.stream().filter(hasChangeInUniqueKeyField()).collect(Collectors.toList());
+        Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = markDuplicatesInCollectionWithErrors(commandsToValidate, ctx);
+        if (commandsByIds.isEmpty())
+            return;
 
-        if (!commandsByIds.isEmpty()) {
-            UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
-            EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
-            final var updateCommandsPKs = getPrimaryKeysOfUpdateCommands(ctx, commandsByIds, pk);
+        UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
+        EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
 
-            Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
-                    .stream()
-                    .filter(entity -> !updateCommandsPKs.contains(pk.createIdentifier(entity)))
-                    .collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
+        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
+                .stream()
+                .collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
 
-            duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
-        }
+        duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
     }
 
-    private Set<Identifier<E>> getPrimaryKeysOfUpdateCommands(ChangeContext ctx, Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds, UniqueKey<E> pk) {
-        return commandsByIds.values().stream()
-                .filter(cmd -> ChangeOperation.UPDATE.equals(cmd.getChangeOperation()))
-                .map(cmd -> pk.createIdentifier(ctx.getFinalEntity(cmd)))
-                .collect(Collectors.toSet());
+    private Predicate<EntityChange<E>> hasChangeInUniqueKeyField() {
+        return cmd -> !UPDATE.equals(cmd.getChangeOperation()) || Arrays.stream(uniqueKey.getFields()).anyMatch(cmd::isFieldChanged);
     }
 
     private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
@@ -85,7 +83,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     }
 
     private static <E extends EntityType<E>> Identifier<E> createKeyValue(EntityChange<E> cmd, ChangeContext ctx, UniqueKey<E> key) {
-        return key.createIdentifier(ctx.getFinalEntity(cmd));
+        return key.createIdentifier(new EntityWithNullForMissingField(ctx.getFinalEntity(cmd)));
     }
 
     private Identifier<E> createKeyValue(CurrentEntityState currentEntityState, UniqueKey<E> key) {
@@ -94,7 +92,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation op) {
-        return Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields());
+        return Stream.concat(Stream.of(uniqueKey.getFields()), Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields()));
     }
 
     public static class Builder<E extends EntityType<E>> {
