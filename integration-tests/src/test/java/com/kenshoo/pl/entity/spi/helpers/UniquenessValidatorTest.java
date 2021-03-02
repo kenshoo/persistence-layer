@@ -261,6 +261,82 @@ public class UniquenessValidatorTest {
         assertFalse(results.hasErrors());
     }
 
+    @Test
+    public void testFailCommandWhenSameUniqueKeyInDBAndConditionIsMatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, "moshe")
+                .with(ParentEntity.ID_IN_TARGET, 333));
+
+        final var commands = List.of(
+                new CreateParent().with(ParentEntity.ID, 1)
+                        .with(ParentEntity.NAME, "moshe")
+                        .with(ParentEntity.ID_IN_TARGET, 12345)
+        );
+
+        final var results = parentPersistence.create(commands, parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
+    }
+
+    @Test
+    public void testDontFailUpdateCommandOnItselfInDBWhenNoChangeInUniqueKeyFields() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setOperation(SupportedChangeOperation.CREATE_AND_UPDATE)
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
+
+        final var updateCommand = new UpdateParent(99).with(ParentEntity.NAME, "moshe");
+
+        final var results = parentPersistence.update(List.of(updateCommand), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
+
+    @Test
+    public void testNullInUniqueKeyIsConsideredAsValueForComparison() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, null);
+
+        final var entity2 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, null);
+
+        final var entity3 = new CreateParent()
+                .with(ParentEntity.ID, 1)
+                .with(ParentEntity.NAME, "moshe");
+
+        final var results = parentPersistence.create(List.of(entity1, entity2, entity3), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
+        assertThat(results.getErrors(entity2).isEmpty(), is(false));
+        assertThat(results.getErrors(entity3).isEmpty(), is(true));
+    }
+
+    @Test
+    public void testNoExceptionsWhenCommandHasNoValueForUniqueKeyField() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .build();
+
+        final var entity1 = new CreateParent()
+                .with(ParentEntity.ID, 1);
+
+        final var results = parentPersistence.create(List.of(entity1), parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
 
     private List<CreateEntityCommand<ParentEntity>> failedCommands(CreateResult<ParentEntity, Identifier<ParentEntity>> results) {
         return results.getChangeResults().stream().filter(not(r -> r.isSuccess())).map(r -> r.getCommand()).collect(toList());
@@ -276,6 +352,12 @@ public class UniquenessValidatorTest {
     private static class CreateParent extends CreateEntityCommand<ParentEntity> implements EntityCommandExt<ParentEntity, CreateParent> {
         public CreateParent() {
             super(ParentEntity.INSTANCE);
+        }
+    }
+
+    private static class UpdateParent extends UpdateEntityCommand<ParentEntity, ParentEntity.Key> implements EntityCommandExt<ParentEntity, UpdateParent> {
+        public UpdateParent(int id) {
+            super(ParentEntity.INSTANCE, new ParentEntity.Key(id));
         }
     }
 

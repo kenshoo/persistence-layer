@@ -40,6 +40,13 @@ public class EntityFieldConditionsTest {
     }
 
     @Test
+    public void testFieldInValuesInPostFetchConditionWhenFieldValueIsNull() {
+        final var entity = createEntityWith(TestEntityType.NAME1, null);
+
+        assertThat(TestEntityType.NAME1.in("abcd").getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
     public void testFieldIsNullInPostFetchCondition() {
         final var entityWithNullValue = createEntityWith(TestEntityType.NAME1, null);
         final var entity = createEntityWith(TestEntityType.NAME1, "myName");

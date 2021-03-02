@@ -5,6 +5,8 @@ import org.jooq.TableField;
 import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public interface EntityField<E extends EntityType<E>, T> {
 
@@ -31,7 +33,7 @@ public interface EntityField<E extends EntityType<E>, T> {
         final Object tableValue = getDbAdapter().getFirstDbValue(value);
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.eq(tableValue), entity -> entity.safeGet(this).equals(Triptional.of(value)), this);
+        return new PLCondition(tableField.eq(tableValue), entity -> entity.safeGet(this).equalsValue(value), this);
     }
 
     default PLCondition in(T ...values) {
@@ -42,9 +44,9 @@ public interface EntityField<E extends EntityType<E>, T> {
         final Object[] tableValues = Arrays.stream(values).map(value -> getDbAdapter().getFirstDbValue(value)).toArray(Object[]::new);
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        final var setOfValues = Seq.of(values).toSet();
+        final var setOfValues = Seq.of(values).collect(Collectors.toUnmodifiableSet());
         return new PLCondition(tableField.in(tableValues),
-                entity -> setOfValues.contains(entity.safeGet(this).asOptional().orElse(null)), this);
+                entity -> entity.safeGet(this).filter(Objects::nonNull).matches(setOfValues::contains), this);
     }
 
     default PLCondition isNull() {
