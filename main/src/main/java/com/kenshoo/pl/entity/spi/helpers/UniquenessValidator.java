@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.spi.helpers;
 
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
+import com.kenshoo.pl.entity.internal.EntityWithNullForMissingField;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jooq.lambda.Seq;

@@ -1,4 +1,7 @@
-package com.kenshoo.pl.entity;
+package com.kenshoo.pl.entity.internal;
+
+import com.kenshoo.pl.entity.Entity;
+import com.kenshoo.pl.entity.EntityField;
 
 public class EntityWithNullForMissingField implements Entity {
 

@@ -1,5 +1,6 @@
-package com.kenshoo.pl.entity;
+package com.kenshoo.pl.entity.internal;
 
+import com.kenshoo.pl.entity.Entity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
