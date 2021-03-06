@@ -137,9 +137,15 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
     private boolean rowNotYetExistsInSecondary(DataTable table, CurrentEntityState fetchedFields, ChangeContext ctx, DatabaseId fkToPrimary) {
         var keyFieldFromSecondaryToPrimary = seq(ctx.getFetchRequests())
                 .map(FieldFetchRequest::getEntityField)
-                .filter(field -> Seq.of(fkToPrimary.getTableFields()).contains(field.getDbAdapter().getFirstTableField()))
+                .filter(isTableFieldExistsIn(fkToPrimary))
                 .findFirst(field -> field.getDbAdapter().getTable() == table).get();
         return fetchedFields.safeGet(keyFieldFromSecondaryToPrimary).isNullOrAbsent();
+    }
+
+    private Predicate<EntityField<?, ?>> isTableFieldExistsIn(DatabaseId fkToPrimary) {
+        return field -> field.getDbAdapter().getTableFields().findFirst()
+                .map(tableField -> Seq.of(fkToPrimary.getTableFields()).contains(tableField))
+                .orElse(false);
     }
 
     private CreateRecordCommand newCreateRecord(EntityChange<E> entityChange) {
