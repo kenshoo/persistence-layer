@@ -93,7 +93,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation op) {
-        return Stream.concat(Stream.of(uniqueKey.getFields()), Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields()));
+        return Seq.concat(condition.getFields().stream(), Stream.of(uniqueKey.getFields()), Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields()));
     }
 
     public static class Builder<E extends EntityType<E>> {
