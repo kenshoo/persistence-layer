@@ -4,10 +4,11 @@ import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
-
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
+import com.kenshoo.pl.one2many.relatedByPK.ChildEntity;
+import com.kenshoo.pl.one2many.relatedByPK.ChildTable;
 import com.kenshoo.pl.one2many.relatedByPK.ParentEntity;
 import com.kenshoo.pl.one2many.relatedByPK.ParentTable;
 import org.jooq.DSLContext;
@@ -32,7 +33,8 @@ import static org.junit.Assert.assertTrue;
 public class UniquenessValidatorTest {
 
     private static final ParentTable parentTable = ParentTable.INSTANCE;
-    private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(parentTable);
+    private static final ChildTable childTable = ChildTable.INSTANCE;
+    private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(parentTable, childTable);
 
     private static boolean tablesCreated;
 
@@ -41,7 +43,7 @@ public class UniquenessValidatorTest {
     private PLContext plContext = new PLContext.Builder(dslContext).build();
     private EntitiesFetcher entitiesFetcher = new EntitiesFetcher(dslContext);
     private PersistenceLayer<ParentEntity> parentPersistence = new PersistenceLayer<>(plContext);
-
+    private PersistenceLayer<ChildEntity> childPersistence = new PersistenceLayer<>(plContext);
     @Before
     public void setup() {
         if (!tablesCreated) {
@@ -169,6 +171,54 @@ public class UniquenessValidatorTest {
         CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
 
         assertTrue(results.hasErrors());
+    }
+
+    @Test
+    public void whenConditionChecksFieldsOfOtherRelatedEntities_dontFailBulkCommandsIfItIsUnmatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ChildEntity.PARENT_ID, ChildEntity.ORDINAL)))
+                .setCondition(ParentEntity.NAME.eq("moshe"))
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "aaa"));
+
+        final var child1 = new CreateChild()
+                .with(ChildEntity.ID, 1)
+                .with(ChildEntity.PARENT_ID, 99)
+                .with(ChildEntity.ORDINAL, 22);
+
+        final var child2 = new CreateChild()
+                .with(ChildEntity.ID, 2)
+                .with(ChildEntity.PARENT_ID, 99)
+                .with(ChildEntity.ORDINAL, 22);
+
+        final var results = childPersistence.create(List.of(child1, child2), childFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(false));
+    }
+
+    @Test
+    public void whenConditionChecksFieldsOfOtherRelatedEntities_failBulkCommandsIfItIsMatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ChildEntity.PARENT_ID, ChildEntity.ORDINAL)))
+                .setCondition(ParentEntity.NAME.eq("moshe"))
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
+
+        final var child1 = new CreateChild()
+                .with(ChildEntity.ID, 1)
+                .with(ChildEntity.PARENT_ID, 99)
+                .with(ChildEntity.ORDINAL, 22);
+
+        final var child2 = new CreateChild()
+                .with(ChildEntity.ID, 2)
+                .with(ChildEntity.PARENT_ID, 99)
+                .with(ChildEntity.ORDINAL, 22);
+
+        final var results = childPersistence.create(List.of(child1, child2), childFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
     }
 
     @Test
@@ -349,9 +399,21 @@ public class UniquenessValidatorTest {
                 ;
     }
 
+    private ChangeFlowConfig.Builder<ChildEntity> childFlow(ChangesValidator<ChildEntity>... validators) {
+        return ChangeFlowConfigBuilderFactory
+                .newInstance(plContext, ChildEntity.INSTANCE)
+                .withValidators(Seq.of(validators).toList());
+    }
+
     private static class CreateParent extends CreateEntityCommand<ParentEntity> implements EntityCommandExt<ParentEntity, CreateParent> {
         public CreateParent() {
             super(ParentEntity.INSTANCE);
+        }
+    }
+
+    private static class CreateChild extends CreateEntityCommand<ChildEntity> implements EntityCommandExt<ChildEntity, CreateChild> {
+        public CreateChild() {
+            super(ChildEntity.INSTANCE);
         }
     }
 
