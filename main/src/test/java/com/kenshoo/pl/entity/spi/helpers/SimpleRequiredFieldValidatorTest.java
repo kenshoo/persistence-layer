@@ -14,25 +14,31 @@ public class SimpleRequiredFieldValidatorTest {
 
     @Test
     public void returnRequiredFieldTest() {
-        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error");
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
         assertThat(validator.requiredField(), is(TestEntity.FIELD_1));
     }
 
     @Test
     public void returnErrorCodeTest() {
-        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error");
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
         assertThat(validator.getErrorCode(), is("error"));
     }
 
     @Test
     public void alwaysRunTest() {
-        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error");
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
         assertTrue(validator.requireWhen().test(new CurrentEntityMutableState()));
     }
 
     @Test
     public void fieldsToFetchTest() {
-        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error");
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
         assertThat(validator.fetchFields().count(), is(0L));
+    }
+
+    @Test
+    public void showStopperTest() {
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
+        assertTrue(validator.isShowStopper());
     }
 }

@@ -58,6 +58,11 @@ public class OverridingContext implements ChangeContext {
     }
 
     @Override
+    public boolean containsShowStopperErrorNonRecursive(EntityChange entityChange) {
+        return original.containsShowStopperErrorNonRecursive(entityChange);
+    }
+
+    @Override
     public PersistentLayerStats getStats() {
         return original.getStats();
     }

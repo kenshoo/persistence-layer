@@ -23,8 +23,7 @@ import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInA
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EntityChangeCompositeValidatorTest {
@@ -69,6 +68,9 @@ public class EntityChangeCompositeValidatorTest {
 
     @Mock
     private CurrentEntityState currentState;
+
+    @Mock
+    private ValidationError validationError;
 
     @InjectMocks
     EntityChangeCompositeValidator<TestEntity> validator;
@@ -199,5 +201,52 @@ public class EntityChangeCompositeValidatorTest {
         List<? extends EntityField<?, ?>> fields = validator.requiredFields(Collections.emptyList(), ChangeOperation.UPDATE).collect(Collectors.toList());
         assertThat(fields.size(), is(1));
         assertThat(fields, containsInAnyOrder(TestEntity.FIELD_1));
+    }
+
+    @Test
+    public void applyAllListOfValidatorsWithoutErrorsTest() {
+        when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        validator.register(fieldValidator);
+        when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        validator.register(fieldComplexValidator);
+        validator.register(ancestorsValidator);
+
+        validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(fieldValidator).validate(FIELD_1_VALUE);
+        verify(fieldComplexValidator).validate(FIELD_1_VALUE, currentState);
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+    }
+
+    @Test
+    public void applyAllListOfValidatorsWithErrorsTest() {
+        when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        validator.register(fieldValidator);
+        when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        when(fieldComplexValidator.validate(FIELD_1_VALUE, currentState)).thenReturn(validationError);
+        validator.register(fieldComplexValidator);
+        validator.register(ancestorsValidator);
+
+        validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(fieldValidator).validate(FIELD_1_VALUE);
+        verify(fieldComplexValidator).validate(FIELD_1_VALUE, currentState);
+        verify(ancestorsValidator).validate(any(CurrentEntityState.class));
+        verify(changeContext).addValidationError(eq(entityChange), any(ValidationError.class));
+    }
+
+    @Test
+    public void applyAllListOfValidatorsWithShowStopperErrorTest() {
+        when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        validator.register(fieldValidator);
+        when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        when(validationError.isShowStopper()).thenReturn(true);
+        when(fieldComplexValidator.validate(FIELD_1_VALUE, currentState)).thenReturn(validationError);
+        validator.register(fieldComplexValidator);
+        validator.register(ancestorsValidator);
+
+        validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
+        verify(fieldValidator).validate(FIELD_1_VALUE);
+        verify(fieldComplexValidator).validate(FIELD_1_VALUE, currentState);
+        verify(ancestorsValidator, never()).validate(any(CurrentEntityState.class));
+        verify(changeContext).addValidationError(eq(entityChange), any(ValidationError.class));
     }
 }

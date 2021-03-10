@@ -38,4 +38,9 @@ public interface RequiredFieldValidator<E extends EntityType<E>, T> extends Chan
     default Stream<EntityField<?, ?>> fetchFields() {
         return Stream.of();
     }
+
+    /**
+     * @return an indication whether to proceed to check another validation.
+     */
+    default boolean isShowStopper() { return false; }
 }

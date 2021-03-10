@@ -1,15 +1,10 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldPrototype;
-import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.validators.*;
 import com.kenshoo.pl.entity.spi.*;
+import org.jooq.lambda.Seq;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -85,10 +80,11 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
         entityChanges.forEach(entityChange -> {
             CurrentEntityState currentState = changeContext.getEntity(entityChange);
             Collection<? extends EntityField<E, ?>> fieldsToUpdate = entityChange.getChangedFields().collect(Collectors.toList());
-            findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
-                    .map(validator -> validator.validate(entityChange, currentState))
-                    .filter(Objects::nonNull)
-                    .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
+            Seq.seq(findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation))
+            .map(validator -> validator.validate(entityChange, currentState))
+            .filter(Objects::nonNull)
+            .limitWhileClosed(validationError -> !validationError.isShowStopper())
+            .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
         });
     }
 

@@ -265,7 +265,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
         /* not public */ void withRequiredFields(Stream<EntityField<E, ?>> requiredFields) {
             EntityChangeCompositeValidator<E> compositeValidator = new EntityChangeCompositeValidator<>();
-            requiredFields.forEach(requiredField -> compositeValidator.register(new SimpleRequiredFieldValidator<>(requiredField, Errors.FIELD_IS_REQUIRED)));
+            requiredFields.forEach(requiredField -> compositeValidator.register(new SimpleRequiredFieldValidator<>(requiredField, Errors.FIELD_IS_REQUIRED, true)));
             this.withValidator(compositeValidator);
         }
 

@@ -26,10 +26,11 @@ public interface ChangeContext {
 
     boolean containsErrorNonRecursive(EntityChange entityChange);
 
+    boolean containsShowStopperErrorNonRecursive(EntityChange entityChange);
+
     PersistentLayerStats getStats();
 
     Collection<FieldFetchRequest> getFetchRequests();
 
     Hierarchy getHierarchy();
-
 }
