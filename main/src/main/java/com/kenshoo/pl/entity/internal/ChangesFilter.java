@@ -10,6 +10,6 @@ import java.util.Collection;
 
 public interface ChangesFilter<E extends EntityType<E>> extends CurrentStateConsumer<E> {
 
-    <T extends EntityChange<E>> Collection<T> filter(Collection<T> changes, final ChangeOperation changeOperation, final ChangeContext changeContext);
+    <T extends EntityChange<E>> Iterable<T> filter(Collection<T> changes, final ChangeOperation changeOperation, final ChangeContext changeContext);
 
 }

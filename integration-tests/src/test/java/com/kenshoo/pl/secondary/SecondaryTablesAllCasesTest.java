@@ -7,12 +7,14 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.one2many.relatedByNonPK.Type;
 import org.hamcrest.Matchers;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.kenshoo.pl.secondary.MainEntity.*;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class SecondaryTablesAllCasesTest {
@@ -66,6 +68,10 @@ public class SecondaryTablesAllCasesTest {
     @Before
     public void populateTables() {
         ImmutableList.of(mainTable, secondary1ById, secondary2ByIdInTarget, secondary3ByNameAndType).forEach(table -> DataTableUtils.createTable(dslContext, table));
+        dslContext.alterTable(secondary1ById).add(DSL.constraint("uniqueness").unique(secondary1ById.id1)).execute();
+        dslContext.alterTable(secondary2ByIdInTarget).add(DSL.constraint("uniqueness").unique(secondary2ByIdInTarget.id_in_target2)).execute();
+        dslContext.alterTable(secondary3ByNameAndType).add(DSL.constraint("uniqueness").unique(secondary3ByNameAndType.id3)).execute();
+
         DataTableUtils.populateTable(dslContext, mainTable, MAIN_DATA);
         DataTableUtils.populateTable(dslContext, secondary1ById, SECONDARY1_BY_ID_DATE);
         DataTableUtils.populateTableWithoutAutoIncFields(dslContext, secondary2ByIdInTarget, SECONDARY2_BY_ID_IN_TARGET_DATA);
@@ -93,10 +99,27 @@ public class SecondaryTablesAllCasesTest {
 
         var results = dslContext.selectFrom(secondary1ById).fetch();
 
-        assertThat(results, Matchers.hasSize(1));
+        assertThat(results, hasSize(1));
 
         assertThat(results.get(0).get(0), is(ID_1));
         assertThat(results.get(0).get(1), is(BUDGET_2));
+    }
+
+    @Test
+    public void testWhenBulkContainsCommandsWithDuplicateIdentifierThenAllTheirChangesShallBeApplied() {
+        var commands = ImmutableList.of(
+                new UpdateMainCommand(ID_2).with(URL, "url 1"),
+                new UpdateMainCommand(ID_2).with(URL, "url 2").with(URL_PARAM, "url param"),
+                new UpdateMainCommand(ID_2).with(URL, "url 3")
+        );
+
+        persistenceLayer.update(commands, changeFlowConfig().build());
+
+        var inDb = dslContext.selectFrom(Secondary2ByIdInTarget.INSTANCE).where(Secondary2ByIdInTarget.INSTANCE.id2.eq(ID_2)).fetchOne();
+
+        assertThat(inDb.get(Secondary2ByIdInTarget.INSTANCE.url2), isOneOf("url 1", "url 2", "url 3"));
+        assertThat(inDb.get(Secondary2ByIdInTarget.INSTANCE.url_param2), is("url param"));
+        // unfortunately, order is not guaranteed
     }
 
     @Test
@@ -130,7 +153,7 @@ public class SecondaryTablesAllCasesTest {
 
         var results = dslContext.selectFrom(secondary3ByNameAndType).fetch();
 
-        assertThat(results, Matchers.hasSize(1));
+        assertThat(results, hasSize(1));
 
         assertThat(results.get(0).get(1), is(NAME_1));
         assertThat(results.get(0).get(2), is(TYPE_1.name()));
@@ -169,7 +192,7 @@ public class SecondaryTablesAllCasesTest {
 
         var results = dslContext.selectFrom(secondary2ByIdInTarget).fetch();
 
-        assertThat(results, Matchers.hasSize(1));
+        assertThat(results, hasSize(1));
 
         assertThat(results.get(0).get(1), is(ID_IN_TARGET_1));
         assertThat(results.get(0).get(2), is(GOOGLE_URL));
@@ -190,7 +213,7 @@ public class SecondaryTablesAllCasesTest {
 
         var results = dslContext.selectFrom(secondary2ByIdInTarget).where(secondary2ByIdInTarget.id_in_target2.eq(ID_IN_TARGET_2)).fetch();
 
-        assertThat(results, Matchers.hasSize(1));
+        assertThat(results, hasSize(1));
 
         assertThat(results.get(0).get(1), is(ID_IN_TARGET_2));
         assertThat(results.get(0).get(2), is(GOOGLE_URL));
