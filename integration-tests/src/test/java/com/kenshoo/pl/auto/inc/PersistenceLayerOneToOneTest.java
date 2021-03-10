@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static com.kenshoo.pl.auto.inc.TestEntity.NAME;
-import static com.kenshoo.pl.auto.inc.TestEntity.SECOND_NAME;
+import static com.kenshoo.pl.auto.inc.TestEntity.*;
+import static com.kenshoo.pl.entity.PLCondition.trueCondition;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.equalTo;
@@ -28,6 +28,7 @@ public class PersistenceLayerOneToOneTest {
     private static final TestEntityTable PRIMARY_TABLE = TestEntityTable.INSTANCE;
     private static final TestSecondaryEntityTable SECONDARY_TABLE = TestSecondaryEntityTable.INSTANCE;
 
+    private PLContext plContext;
     private DSLContext dslContext;
     private PersistenceLayer<TestEntity> persistenceLayer;
     private ChangeFlowConfig<TestEntity> flowConfig;
@@ -36,8 +37,8 @@ public class PersistenceLayerOneToOneTest {
     public void setUp() {
 
         dslContext = TestJooqConfig.create();
-        persistenceLayer = new PersistenceLayer<>(dslContext);
-        final PLContext plContext = new PLContext.Builder(dslContext).build();
+        plContext = new PLContext.Builder(dslContext).build();
+        persistenceLayer = new PersistenceLayer<>(plContext);
         flowConfig = ChangeFlowConfigBuilderFactory
             .newInstance(plContext, TestEntity.INSTANCE)
             .build();
@@ -127,6 +128,31 @@ public class PersistenceLayerOneToOneTest {
 
         assertThat(existingItem.getCommand().get(TestEntity.ID), is(fromDB.get("existing item")));
         assertThat(second(upsertResults).getCommand().get(TestEntity.ID), is(fromDB.get("new item")));
+    }
+
+    @Test
+    public void whenBulkContainsUpdatesWithDuplicateIdentifiersThenAllTheirFieldChangesShouldBeApplied() {
+
+        // setup
+        var initialState = new CreateEntityCommand<>(TestEntity.INSTANCE);
+        initialState.set(NAME, "THE ID");
+        persistenceLayer.create(List.of(initialState), flowConfig);
+
+        // execute
+        final var cmd1 = new UpdateEntityCommand<>(TestEntity.INSTANCE, new Name("THE ID"));
+        cmd1.set(SECOND_NAME, "second name 1");
+
+        final var cmd2 = new UpdateEntityCommand<>(TestEntity.INSTANCE, new Name("THE ID"));
+        cmd2.set(TestEntity.FIELD1, "value2");
+
+        persistenceLayer.update(List.of(cmd1, cmd2), flowConfig);
+
+        // assert
+
+        var entitiesByNames = seq(plContext.select(NAME, FIELD1, SECOND_NAME).from(INSTANCE).where(trueCondition()).fetch()).toMap(x -> x.get(NAME));
+
+        assertThat(entitiesByNames.get("THE ID").get(FIELD1), is("value2"));
+        assertThat(entitiesByNames.get("THE ID").get(SECOND_NAME), is("second name 1"));
     }
 
     private EntityChangeResult<TestEntity, Name, InsertOnDuplicateUpdateCommand<TestEntity, Name>> second(InsertOnDuplicateUpdateResult<TestEntity, Name> upsertResults) {

@@ -122,7 +122,7 @@ public class DbCommandsOutputGenerator<E extends EntityType<E>> implements Outpu
         } else {
             var foreignKeyValues = foreignKeyValues(entityChange, operator, ctx, fieldTable);
             if (operator == CREATE || rowNotYetExistsInSecondary(fieldTable, ctx.getEntity(entityChange), ctx, foreignKeyValues)) {
-                recordCommand = changesContainer.getInsert(fieldTable, entityChange, () -> {
+                recordCommand = changesContainer.getInsertOnDuplicateUpdate(fieldTable, entityChange, () -> {
                     var createRecordCommand = new CreateRecordCommand(fieldTable);
                     populate(foreignKeyValues, createRecordCommand);
                     return createRecordCommand;
