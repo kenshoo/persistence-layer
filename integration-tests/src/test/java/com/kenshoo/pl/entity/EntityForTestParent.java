@@ -1,12 +1,15 @@
 package com.kenshoo.pl.entity;
 
 import com.kenshoo.jooq.DataTable;
+import com.kenshoo.pl.entity.annotation.Required;
 
 public class EntityForTestParent extends AbstractEntityType<EntityForTestParent> {
 
     public static final EntityForTestParent INSTANCE = new EntityForTestParent();
 
     public static final EntityField<EntityForTestParent, Integer> ID = INSTANCE.field(EntityForTestParentTable.INSTANCE.id);
+
+    @Required
     public static final EntityField<EntityForTestParent, String> FIELD1 = INSTANCE.field(EntityForTestParentTable.INSTANCE.field1);
 
     private EntityForTestParent() {

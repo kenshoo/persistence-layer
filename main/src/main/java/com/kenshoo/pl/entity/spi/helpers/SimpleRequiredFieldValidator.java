@@ -10,6 +10,10 @@ public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements
     private final String errorCode;
     private final boolean isShowStopper;
 
+    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode) {
+      this(entityField, errorCode, false);
+    }
+
     public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode, boolean isShowStopper) {
         this.entityField = entityField;
         this.errorCode = errorCode;

@@ -6,8 +6,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Predicate;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -22,28 +22,28 @@ public class CollectionViewTest {
 
     @Test
     public void test_count_true_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object());
+        List<Object> objects = List.of(new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, TRUE_PREDICATE);
         assertThat(collectionView.size(), is(1));
     }
 
     @Test
     public void test_count_false_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object());
+        List<Object> objects = List.of(new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, FALSE_PREDICATE);
         assertThat(collectionView.size(), is(0));
     }
 
     @Test
     public void test_isEmpty_true_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object());
+        List<Object> objects = List.of(new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, TRUE_PREDICATE);
         assertThat(collectionView.isEmpty(), is(false));
     }
 
     @Test
     public void test_isEmpty_false_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object());
+        List<Object> objects = List.of(new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, FALSE_PREDICATE);
         assertThat(collectionView.isEmpty(), is(true));
     }
@@ -51,7 +51,7 @@ public class CollectionViewTest {
     @Test
     public void test_iterator_true_predicate() {
         Object element = new Object();
-        ArrayList<Object> objects = Lists.newArrayList(element);
+        List<Object> objects = List.of(element);
         CollectionView<Object> collectionView = new CollectionView<>(objects, TRUE_PREDICATE);
         Iterator<Object> iterator = collectionView.iterator();
         assertThat(iterator.hasNext(), is(true));
@@ -61,7 +61,7 @@ public class CollectionViewTest {
     @Test
     public void test_contains_true_predicate() {
         Object element = new Object();
-        ArrayList<Object> objects = Lists.newArrayList(element);
+        List<Object> objects = List.of(element);
         CollectionView<Object> collectionView = new CollectionView<>(objects, TRUE_PREDICATE);
         assertThat(collectionView.contains(element), is(true));
         assertThat(collectionView.containsAll(objects), is(true));
@@ -70,7 +70,7 @@ public class CollectionViewTest {
     @Test
     public void test_contains_false_predicate() {
         Object element = new Object();
-        ArrayList<Object> objects = Lists.newArrayList(element);
+        List<Object> objects = List.of(element);
         CollectionView<Object> collectionView = new CollectionView<>(objects, FALSE_PREDICATE);
         assertThat(collectionView.contains(element), is(false));
         assertThat(collectionView.containsAll(objects), is(false));
@@ -78,7 +78,7 @@ public class CollectionViewTest {
 
     @Test
     public void test_iterator_false_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object());
+        List<Object> objects = List.of(new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, FALSE_PREDICATE);
         Iterator<Object> iterator = collectionView.iterator();
         assertThat(iterator.hasNext(), is(false));
@@ -86,7 +86,7 @@ public class CollectionViewTest {
 
     @Test
     public void test_toArray_true_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object(), new Object());
+        List<Object> objects = List.of(new Object(), new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, TRUE_PREDICATE);
         Object[] array = collectionView.toArray();
         Assert.assertThat(objects, contains(array));
@@ -94,7 +94,7 @@ public class CollectionViewTest {
 
     @Test
     public void test_toArray_false_predicate() {
-        ArrayList<Object> objects = Lists.newArrayList(new Object(), new Object());
+        List<Object> objects = List.of(new Object(), new Object());
         CollectionView<Object> collectionView = new CollectionView<>(objects, FALSE_PREDICATE);
         Object[] array = collectionView.toArray();
         assertThat(array.length, is(0));
@@ -102,7 +102,7 @@ public class CollectionViewTest {
 
     @Test
     public void test_generic_toArray_true_predicate() {
-        ArrayList<Integer> objects = Lists.newArrayList(1, 2);
+        List<Integer> objects = List.of(1, 2);
         CollectionView<Integer> collectionView = new CollectionView<>(objects, e -> true);
         Object[] array = collectionView.toArray();
         Assert.assertThat(objects, contains(array));
@@ -110,7 +110,7 @@ public class CollectionViewTest {
 
     @Test
     public void test_generic_toArray_false_predicate() {
-        ArrayList<Integer> objects = Lists.newArrayList(1, 2);
+        List<Integer> objects = List.of(1, 2);
         CollectionView<Integer> collectionView = new CollectionView<>(objects, e -> false);
         Object[] array = collectionView.toArray();
         assertThat(array.length, is(0));

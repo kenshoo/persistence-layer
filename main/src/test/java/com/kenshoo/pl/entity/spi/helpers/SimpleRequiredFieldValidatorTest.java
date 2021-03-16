@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SimpleRequiredFieldValidatorTest {
@@ -37,8 +38,14 @@ public class SimpleRequiredFieldValidatorTest {
     }
 
     @Test
-    public void showStopperTest() {
+    public void showStopperTrueTest() {
         RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error", true);
         assertTrue(validator.isShowStopper());
+    }
+
+    @Test
+    public void showStopperFalseTest() {
+        RequiredFieldValidator<TestEntity, String> validator = new SimpleRequiredFieldValidator<>(TestEntity.FIELD_1, "error");
+        assertFalse(validator.isShowStopper());
     }
 }
