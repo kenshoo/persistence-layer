@@ -32,7 +32,7 @@ public class RequiredFieldValidationAdapter<E extends EntityType<E>, T> implemen
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
         if (isFieldNotSpecified(entityChange) && validator.requireWhen().test(currentState)) {
-            return new ValidationError(validator.getErrorCode(), validator.requiredField(), ImmutableMap.of("field", validator.requiredField().toString()), validator.isShowStopper());
+            return new ValidationError(validator.getErrorCode(), validator.requiredField(), ImmutableMap.of("field", validator.requiredField().toString()), validator.showStopper());
         }
         return null;
     }

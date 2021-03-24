@@ -2,22 +2,23 @@ package com.kenshoo.pl.entity.spi.helpers;
 
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.ValidationError;
 import com.kenshoo.pl.entity.spi.RequiredFieldValidator;
 
 public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements RequiredFieldValidator<E, T> {
 
     private final EntityField<E, T> entityField;
     private final String errorCode;
-    private final boolean isShowStopper;
+    private final ValidationError.ShowStopper showStopper;
 
     public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode) {
-      this(entityField, errorCode, false);
+      this(entityField, errorCode, ValidationError.ShowStopper.No);
     }
 
-    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode, boolean isShowStopper) {
+    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode, ValidationError.ShowStopper showStopper) {
         this.entityField = entityField;
         this.errorCode = errorCode;
-        this.isShowStopper = isShowStopper;
+        this.showStopper = showStopper;
     }
 
 
@@ -32,5 +33,5 @@ public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements
     }
 
     @Override
-    public boolean isShowStopper() { return isShowStopper; }
+    public ValidationError.ShowStopper showStopper() { return showStopper; }
 }

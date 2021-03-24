@@ -8,14 +8,14 @@ public class ValidationError {
     private final String errorCode;
     private final EntityField<?, ?> field;
     private final Map<String, String> parameters;
-    private final boolean showStopper;
+    private final ShowStopper showStopper;
 
     public ValidationError(String errorCode) {
-        this(errorCode, null, Collections.<String, String>emptyMap());
+        this(errorCode, null, Collections.emptyMap());
     }
 
     public ValidationError(String errorCode, EntityField<?, ?> field) {
-        this(errorCode, field, Collections.<String, String>emptyMap());
+        this(errorCode, field, Collections.emptyMap());
     }
 
     public ValidationError(String errorCode, Map<String, String> parameters) {
@@ -23,10 +23,10 @@ public class ValidationError {
     }
 
     public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters) {
-        this(errorCode, field, parameters, false);
+        this(errorCode, field, parameters, ShowStopper.No);
     }
 
-    public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters, boolean showStopper) {
+    public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters, ShowStopper showStopper) {
         this.errorCode = errorCode;
         this.field = field;
         this.parameters = parameters;
@@ -45,7 +45,7 @@ public class ValidationError {
         return parameters;
     }
 
-    public boolean isShowStopper() {
+    public ShowStopper showStopper() {
         return showStopper;
     }
 
@@ -57,5 +57,11 @@ public class ValidationError {
                 .append("parameters", parameters)
                 .append("showStopper", showStopper)
                 .toString();
+    }
+
+    public enum ShowStopper {
+        No,
+        Yes
+
     }
 }
