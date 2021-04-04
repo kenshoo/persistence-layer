@@ -35,7 +35,7 @@ public class ValidationFilterTest {
     public void setup() {
         changesValidator = new RecorderValidator();
         additionalChangesValidator = new RecorderValidator();
-        validationFilter = new ValidationFilter<>(ImmutableList.of(changesValidator, new ShowStopperValidator(), additionalChangesValidator));
+        validationFilter = new ValidationFilter<>(ImmutableList.of(changesValidator, new ShowStopperValidator(), additionalChangesValidator), new FeatureSet(Feature.RequiredFieldValidator));
         changeContext = new ChangeContextImpl(null, new FeatureSet());
     }
 

@@ -715,6 +715,7 @@ public class PersistenceLayerTest {
         command.set(EntityForTestParent.FIELD1, "3000");
 
         PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
+                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
                 build();
 
 
@@ -735,6 +736,7 @@ public class PersistenceLayerTest {
         command.set(EntityForTestParent.FIELD1, "3000");
 
         PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
+                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
                 build();
 
 

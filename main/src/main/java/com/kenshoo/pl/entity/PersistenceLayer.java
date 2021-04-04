@@ -198,7 +198,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         commands = filterCommands(commands, getSupportedFilters(flowConfig.getPostSupplyFilters(), changeOperation), changeOperation, changeContext);
         enrichCommandsPostFetch(commands, flowConfig, changeOperation, changeContext);
 
-        return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
+        return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators(), flowConfig.getFeatures()), changeOperation, changeContext);
     }
 
     private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {
