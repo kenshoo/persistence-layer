@@ -313,7 +313,9 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
             final AuditFieldChangesGenerator<E> fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedEntityType.getInternalFields());
 
-            return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator, fieldChangesGenerator);
+            return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
+                                                  fieldChangesGenerator,
+                                                  auditedEntityType.getName());
         }
 
         static private class Labeled<Element> {

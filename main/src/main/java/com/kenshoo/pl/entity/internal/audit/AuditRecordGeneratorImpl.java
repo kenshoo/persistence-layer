@@ -17,21 +17,26 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
     private final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
     private final AuditFieldChangesGenerator<E> fieldChangesGenerator;
     private final EntityIdExtractor entityIdExtractor;
+    private final String entityTypeName;
 
     public AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
-                                    final AuditFieldChangesGenerator<E> fieldChangesGenerator) {
+                                    final AuditFieldChangesGenerator<E> fieldChangesGenerator,
+                                    final String entityTypeName) {
         this(mandatoryFieldValuesGenerator,
              fieldChangesGenerator,
-             EntityIdExtractor.INSTANCE);
+             EntityIdExtractor.INSTANCE,
+             entityTypeName);
     }
 
     @VisibleForTesting
     AuditRecordGeneratorImpl(final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator,
                              final AuditFieldChangesGenerator<E> fieldChangesGenerator,
-                             final EntityIdExtractor entityIdExtractor) {
+                             final EntityIdExtractor entityIdExtractor,
+                             final String entityTypeName) {
         this.mandatoryFieldValuesGenerator = mandatoryFieldValuesGenerator;
         this.fieldChangesGenerator = fieldChangesGenerator;
         this.entityIdExtractor = entityIdExtractor;
+        this.entityTypeName = entityTypeName;
     }
 
     @Override
@@ -65,7 +70,7 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         final Collection<FieldAuditRecord<E>> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 
         return new AuditRecord.Builder<E>()
-            .withEntityType(entityChange.getEntityType().getName())
+            .withEntityType(entityTypeName)
             .withEntityId(entityId)
             .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())
@@ -79,5 +84,11 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         return entityIdExtractor.extract(entityChange, currentState)
                                 .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
                                                                                  "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
+    }
+
+    @VisibleForTesting
+    @Override
+    public String getEntityTypeName() {
+        return entityTypeName;
     }
 }

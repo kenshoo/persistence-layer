@@ -10,7 +10,6 @@ import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -31,6 +30,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class AuditRecordGeneratorImplForUpdateTest {
 
+    private static final String ENTITY_TYPE_NAME = "someEntityType";
     private static final long ID = 1234;
     private static final String STRING_ID = String.valueOf(ID);
     private static final String ANCESTOR_NAME = "ancestorName";
@@ -61,16 +61,19 @@ public class AuditRecordGeneratorImplForUpdateTest {
     @Mock
     private FinalEntityState finalState;
 
-    @InjectMocks
     private AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator;
 
     @Before
     public void setUp() {
-        when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
         when(cmd.getChangeOperation()).thenReturn(UPDATE);
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
         when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
+
+        auditRecordGenerator = new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
+                                                              fieldChangesGenerator,
+                                                              entityIdExtractor,
+                                                              ENTITY_TYPE_NAME);
     }
 
     @Test
@@ -119,7 +122,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE.getName()),
+                                      hasEntityType(ENTITY_TYPE_NAME),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
                                       hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC))));
@@ -141,7 +144,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE.getName()),
+                                      hasEntityType(ENTITY_TYPE_NAME),
                                       hasOperator(UPDATE),
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
@@ -174,7 +177,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         //noinspection unchecked
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE.getName()),
+                                      hasEntityType(ENTITY_TYPE_NAME),
                                       hasOperator(UPDATE),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),

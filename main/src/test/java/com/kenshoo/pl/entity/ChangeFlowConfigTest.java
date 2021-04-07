@@ -30,6 +30,8 @@ public class ChangeFlowConfigTest {
     private final static Label EXCLUDABLE_LABEL_1 = new Label() {};
     private final static Label EXCLUDABLE_LABEL_2 = new Label() {};
 
+    private static final String AUDITED_ENTITY_TYPE_NAME = "SomeEntity";
+
     @Mock
     private AuditedEntityTypeResolver auditedEntityTypeResolver;
 
@@ -215,6 +217,7 @@ public class ChangeFlowConfigTest {
     public void should_create_audit_record_generator_if_audited_fields_defined() {
 
         final AuditedEntityType<TestEntity> auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+                                                                                 .withName(AUDITED_ENTITY_TYPE_NAME)
                                                                                  .withInternalFields(ON_CREATE_OR_UPDATE,
                                                                                                TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                                                  .build();
@@ -224,6 +227,8 @@ public class ChangeFlowConfigTest {
                                                                                        auditedEntityTypeResolver).build();
         assertThat("Audit record generator should exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(true));
+        assertThat("Audit record generator should have correct entity type name: ",
+                   flowConfig.auditRecordGenerator().get().getEntityTypeName(), is(AUDITED_ENTITY_TYPE_NAME));
     }
 
     @Test
