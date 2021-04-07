@@ -21,6 +21,16 @@ import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 public @interface Audited {
 
     /**
+     * @return the name to use for the annotated type (entity or field) when audited.<br>
+     * If empty or missing, will default to the name already defined for this type, as follows:
+     * <ul>
+     *     <li>Entity: {@code EntityType.getName()}</li>
+     *     <li>Field: The result of {@code toString()} on the field, which retrieves the name by reflection</li>
+     * </ul>
+     */
+    String name() default "";
+
+    /**
      * @return the rule by which to trigger auditing for the annotated entity type or field.<br>
      * This attribute is valid for <b>field-level annotations only</b>, and will be ignored if appearing on entities.<br>
      * For the entity-level,{@link AuditTrigger#ON_CREATE_OR_UPDATE} is implied always.
