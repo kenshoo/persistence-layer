@@ -15,6 +15,8 @@ import static org.junit.Assert.assertThat;
 
 public class AuditRecordTest {
 
+    private static final String ENTITY_TYPE = "Audited";
+
     private static final String ENTITY_ID_1 = "123";
     private static final String ENTITY_ID_2 = "456";
 
@@ -30,7 +32,7 @@ public class AuditRecordTest {
     public void hasNoChanges_WithFieldRecords_WithChildRecords_ShouldReturnFalse() {
         final AuditRecord<AuditedType> auditRecord =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .withFieldRecords(singleton(NAME_FIELD_RECORD))
@@ -44,7 +46,7 @@ public class AuditRecordTest {
     public void hasNoChanges_WithFieldRecords_WithoutChildRecords_ShouldReturnFalse() {
         final AuditRecord<AuditedType> auditRecord =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .withFieldRecords(singleton(NAME_FIELD_RECORD))
@@ -57,7 +59,7 @@ public class AuditRecordTest {
     public void hasNoChanges_WithoutFieldRecords_WithChildRecords_ShouldReturnFalse() {
         final AuditRecord<AuditedType> auditRecord =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .withChildRecords(singleton(childRecord))
@@ -70,7 +72,7 @@ public class AuditRecordTest {
     public void hasNoChanges_WithoutFieldRecords_WithoutChildRecords_ShouldReturnTrue() {
         final AuditRecord<AuditedType> auditRecord =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .build();
@@ -82,7 +84,7 @@ public class AuditRecordTest {
     public void testToString_UnlimitedDepth_OneLevel() {
         final String auditRecordStr =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .build()
@@ -96,11 +98,11 @@ public class AuditRecordTest {
     public void testToString_UnlimitedDepth_TwoLevels() {
         final String auditRecordStr =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .withChildRecords(singletonList(new AuditRecord.Builder<AuditedType>()
-                                                    .withEntityType(AuditedType.INSTANCE)
+                                                    .withEntityType(ENTITY_TYPE)
                                                     .withEntityId(ENTITY_ID_2)
                                                     .withOperator(CREATE)
                                                     .build()))
@@ -117,11 +119,11 @@ public class AuditRecordTest {
     public void testToString_MaxDepthOne_OneLevel() {
         final String auditRecordStr =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .withChildRecords(singletonList(new AuditRecord.Builder<AuditedType>()
-                                                    .withEntityType(AuditedType.INSTANCE)
+                                                    .withEntityType(ENTITY_TYPE)
                                                     .withEntityId(ENTITY_ID_2)
                                                     .withOperator(CREATE)
                                                     .build()))
@@ -138,7 +140,7 @@ public class AuditRecordTest {
     public void testToString_MaxDepthOne_TwoLevels() {
         final String auditRecordStr =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .build()
@@ -152,7 +154,7 @@ public class AuditRecordTest {
     public void testToString_MaxDepthZero_ReturnsEmptyString() {
         final String auditRecordStr =
             new AuditRecord.Builder<AuditedType>()
-                .withEntityType(AuditedType.INSTANCE)
+                .withEntityType(ENTITY_TYPE)
                 .withEntityId(ENTITY_ID_1)
                 .withOperator(CREATE)
                 .build()

@@ -3,15 +3,14 @@ package com.kenshoo.pl.entity.matchers.audit;
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityFieldValue;
-import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import org.hamcrest.Matcher;
 
 public class AuditRecordMatchers {
 
-    public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasEntityType(final E expectedEntityType) {
-        return new AuditRecordEntityTypeMatcher<>(expectedEntityType);
+    public static Matcher<AuditRecord<?>> hasEntityType(final String expectedEntityType) {
+        return new AuditRecordEntityTypeMatcher(expectedEntityType);
     }
 
     public static Matcher<AuditRecord<?>> hasEntityId(final String expectedEntityId) {
@@ -30,29 +29,29 @@ public class AuditRecordMatchers {
         return new AuditRecordNoMandatoryFieldsMatcher();
     }
 
-    public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasCreatedFieldRecord(final EntityField<E, ?> field, final Object value) {
+    public static Matcher<AuditRecord<?>> hasCreatedFieldRecord(final EntityField<?, ?> field, final Object value) {
         return hasFieldRecord(FieldAuditRecord.builder(field)
                                               .newValue(value)
                                               .build());
     }
 
-    public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasChangedFieldRecord(final EntityField<E, ?> field,
-                                                                                          final String oldValue,
-                                                                                          final String newValue) {
+    public static Matcher<AuditRecord<?>> hasChangedFieldRecord(final EntityField<?, ?> field,
+                                                                final String oldValue,
+                                                                final String newValue) {
         return hasFieldRecord(FieldAuditRecord.builder(field)
                                               .oldValue(oldValue)
                                               .newValue(newValue)
                                               .build());
     }
 
-    public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasDeletedFieldRecord(final EntityField<E, ?> field, final Object value) {
+    public static  Matcher<AuditRecord<?>> hasDeletedFieldRecord(final EntityField<?, ?> field, final Object value) {
         return hasFieldRecord(FieldAuditRecord.builder(field)
                                               .oldValue(value)
                                               .build());
     }
 
-    public static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasFieldRecordFor(final EntityField<E, ?> expectedField) {
-        return new AuditRecordFieldRecordExistsMatcher<>(expectedField);
+    public static Matcher<AuditRecord<?>> hasFieldRecordFor(final EntityField<?, ?> expectedField) {
+        return new AuditRecordFieldRecordExistsMatcher(expectedField);
     }
 
     public static Matcher<AuditRecord<?>> hasNoFieldRecords() {
@@ -63,16 +62,16 @@ public class AuditRecordMatchers {
         return new AuditRecordSameChildRecordMatcher(expectedChildRecord);
     }
 
-    public static <C extends EntityType<C>> Matcher<AuditRecord<?>> hasChildRecordThat(final Matcher<AuditRecord<C>> childRecordMatcher) {
-        return new AuditRecordHasChildRecordMatcher<>(childRecordMatcher);
+    public static Matcher<AuditRecord<?>> hasChildRecordThat(final Matcher<AuditRecord<?>> childRecordMatcher) {
+        return new AuditRecordHasChildRecordMatcher(childRecordMatcher);
     }
 
     public static Matcher<AuditRecord<?>> hasNoChildRecords() {
         return new AuditRecordNoChildRecordsMatcher();
     }
 
-    private static <E extends EntityType<E>> Matcher<AuditRecord<E>> hasFieldRecord(final FieldAuditRecord<E> expectedFieldRecord) {
-        return new AuditRecordFieldRecordMatcher<>(expectedFieldRecord);
+    private static Matcher<AuditRecord<?>> hasFieldRecord(final FieldAuditRecord<?> expectedFieldRecord) {
+        return new AuditRecordFieldRecordMatcher(expectedFieldRecord);
     }
 
 }

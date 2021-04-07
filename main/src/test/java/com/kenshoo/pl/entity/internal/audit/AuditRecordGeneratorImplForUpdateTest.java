@@ -119,7 +119,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE),
+                                      hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.NAME, OLD_NAME, NEW_NAME),
                                       hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC))));
@@ -141,7 +141,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE),
+                                      hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasOperator(UPDATE),
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
@@ -174,7 +174,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         //noinspection unchecked
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasEntityId(STRING_ID),
-                                      hasEntityType(AuditedType.INSTANCE),
+                                      hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasOperator(UPDATE),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),

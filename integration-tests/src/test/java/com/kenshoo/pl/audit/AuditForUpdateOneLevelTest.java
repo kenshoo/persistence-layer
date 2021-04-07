@@ -103,7 +103,7 @@ public class AuditForUpdateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
@@ -124,7 +124,7 @@ public class AuditForUpdateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
@@ -157,7 +157,7 @@ public class AuditForUpdateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
@@ -195,7 +195,7 @@ public class AuditForUpdateOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE),
                                        hasChangedFieldRecord(AuditedType.NAME, "nameA", "newNameA"),
@@ -203,7 +203,7 @@ public class AuditForUpdateOneLevelTest {
                                        hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(UPDATE),
                                        hasChangedFieldRecord(AuditedType.NAME, "nameB", "newNameB"),
@@ -227,7 +227,7 @@ public class AuditForUpdateOneLevelTest {
                    auditRecords, hasSize(1));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE)));
     }
@@ -245,7 +245,7 @@ public class AuditForUpdateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(InclusiveAuditedType.NAME, "nameA", "newNameA"),
@@ -264,7 +264,7 @@ public class AuditForUpdateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
                                       not(hasFieldRecordFor(InclusiveAuditedType.NAME)),

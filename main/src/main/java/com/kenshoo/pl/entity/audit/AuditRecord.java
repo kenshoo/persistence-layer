@@ -14,14 +14,14 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class AuditRecord<E extends EntityType<E>> {
-    private final E entityType;
+    private final String entityType;
     private final String entityId;
     private final Collection<? extends EntityFieldValue> mandatoryFieldValues;
     private final ChangeOperation operator;
     private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
     private final Collection<? extends AuditRecord<?>> childRecords;
 
-    private AuditRecord(final E entityType,
+    private AuditRecord(final String entityType,
                         final String entityId,
                         final Collection<? extends EntityFieldValue> mandatoryFieldValues,
                         final ChangeOperation operator,
@@ -35,7 +35,7 @@ public class AuditRecord<E extends EntityType<E>> {
         this.childRecords = childRecords;
     }
 
-    public E getEntityType() {
+    public String getEntityType() {
         return entityType;
     }
 
@@ -81,7 +81,7 @@ public class AuditRecord<E extends EntityType<E>> {
             return StringUtils.EMPTY;
         }
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-            .append("entityType", entityType.getName())
+            .append("entityType", entityType)
             .append("entityId", entityId)
             .append("mandatoryFieldValues", mandatoryFieldValues)
             .append("operator", operator)
@@ -98,14 +98,14 @@ public class AuditRecord<E extends EntityType<E>> {
     }
 
     public static class Builder<E extends EntityType<E>> {
-        private E entityType;
+        private String entityType;
         private String entityId;
         private Collection<? extends EntityFieldValue> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
         private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptyList();
         private Collection<? extends AuditRecord<?>> childRecords = emptyList();
 
-        public Builder<E> withEntityType(E entityType) {
+        public Builder<E> withEntityType(String entityType) {
             this.entityType = entityType;
             return this;
         }

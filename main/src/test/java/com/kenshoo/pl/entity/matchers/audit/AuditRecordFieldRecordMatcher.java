@@ -6,16 +6,16 @@ import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-class AuditRecordFieldRecordMatcher<E extends EntityType<E>> extends TypeSafeMatcher<AuditRecord<E>> {
+class AuditRecordFieldRecordMatcher extends TypeSafeMatcher<AuditRecord<?>> {
 
-    private final FieldAuditRecord<E> expectedFieldRecord;
+    private final FieldAuditRecord<?> expectedFieldRecord;
 
-    AuditRecordFieldRecordMatcher(final FieldAuditRecord<E> expectedFieldRecord) {
+    AuditRecordFieldRecordMatcher(final FieldAuditRecord<?> expectedFieldRecord) {
         this.expectedFieldRecord = expectedFieldRecord;
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<E> actualAuditRecord) {
+    protected boolean matchesSafely(final AuditRecord<?> actualAuditRecord) {
         return actualAuditRecord.getFieldRecords().contains(expectedFieldRecord);
     }
 

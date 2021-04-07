@@ -76,7 +76,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE),
+                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(STRING_ID),
                                       hasOperator(DELETE))));
     }

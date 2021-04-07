@@ -97,7 +97,7 @@ public class AuditForUpsertOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                       hasOperator(CREATE),
                                       hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
@@ -117,7 +117,7 @@ public class AuditForUpsertOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(EXISTING_ID_1)),
                                       hasOperator(UPDATE),
                                       not(hasFieldRecordFor(AuditedType.NAME)),
@@ -155,7 +155,7 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
                                        hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
@@ -163,7 +163,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_2))),
                                        hasOperator(CREATE),
                                        hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_2),
@@ -189,7 +189,7 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_1)),
                                        hasOperator(UPDATE),
                                        not(hasFieldRecordFor(AuditedType.NAME)),
@@ -197,7 +197,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
                                        not(hasFieldRecordFor(AuditedType.NAME)),
@@ -223,7 +223,7 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
                                        hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
@@ -231,7 +231,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
                                        not(hasFieldRecordFor(AuditedType.NAME)),
