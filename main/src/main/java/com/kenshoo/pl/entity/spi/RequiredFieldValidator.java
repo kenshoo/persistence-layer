@@ -44,5 +44,5 @@ public interface RequiredFieldValidator<E extends EntityType<E>, T> extends Chan
     /**
      * @return an indication whether to proceed to check another validation.
      */
-    default ValidationError.ShowStopper showStopper() { return ValidationError.ShowStopper.No; }
+    default ValidationError.IsShowStopper isShowStopper() { return ValidationError.IsShowStopper.No; }
 }

@@ -11,7 +11,7 @@ public class ChangeContextImplTest {
     @Test
     public void containsShowStopperErrorTest() {
         EntityChange<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
-        changeContext.addValidationError(entityChange, new ValidationError(null, null, null, ValidationError.ShowStopper.Yes));
+        changeContext.addValidationError(entityChange, new ValidationError(null, null, null, ValidationError.IsShowStopper.Yes));
         assertTrue(changeContext.containsShowStopperErrorNonRecursive(entityChange));
     }
 

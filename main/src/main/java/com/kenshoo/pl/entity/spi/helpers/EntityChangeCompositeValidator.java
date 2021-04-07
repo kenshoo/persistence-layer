@@ -83,7 +83,7 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
             Seq.seq(findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation))
             .map(validator -> validator.validate(entityChange, currentState))
             .filter(Objects::nonNull)
-            .limitWhileClosed(validationError -> validationError.showStopper() == ValidationError.ShowStopper.No)
+            .limitWhileClosed(validationError -> validationError.isShowStopper() == ValidationError.IsShowStopper.No)
             .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
         });
     }

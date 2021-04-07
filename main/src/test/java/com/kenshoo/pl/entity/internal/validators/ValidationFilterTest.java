@@ -35,8 +35,8 @@ public class ValidationFilterTest {
     public void setup() {
         changesValidator = new RecorderValidator();
         additionalChangesValidator = new RecorderValidator();
-        validationFilter = new ValidationFilter<>(ImmutableList.of(changesValidator, new ShowStopperValidator(), additionalChangesValidator), new FeatureSet(Feature.RequiredFieldValidator));
-        changeContext = new ChangeContextImpl(null, new FeatureSet());
+        validationFilter = new ValidationFilter<>(ImmutableList.of(changesValidator, new ShowStopperValidator(), additionalChangesValidator));
+        changeContext = new ChangeContextImpl(null, new FeatureSet(Feature.RequiredFieldValidator));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class ValidationFilterTest {
         public void validate(Collection<? extends EntityChange<TestEntity>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
             entityChanges.forEach(cmd -> {
                 if (cmd.containsField(TestEntity.FIELD_1) && cmd.get(TestEntity.FIELD_1).equals(SHOW_STOPPER_VALUE)) {
-                    changeContext.addValidationError(cmd, new ValidationError("show stopper error", TestEntity.FIELD_1, ImmutableMap.of(), ValidationError.ShowStopper.Yes));
+                    changeContext.addValidationError(cmd, new ValidationError("show stopper error", TestEntity.FIELD_1, ImmutableMap.of(), ValidationError.IsShowStopper.Yes));
                 }});
         }
     }

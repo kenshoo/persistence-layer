@@ -13,17 +13,15 @@ import java.util.stream.Stream;
 public class ValidationFilter<E extends EntityType<E>> implements ChangesFilter<E> {
 
     private final List<ChangesValidator<E>> validators;
-    private final FeatureSet featureSet;
 
-    public ValidationFilter(List<ChangesValidator<E>> validators, FeatureSet featureSet) {
+    public ValidationFilter(List<ChangesValidator<E>> validators) {
         this.validators = validators;
-        this.featureSet = featureSet;
     }
 
     public <T extends EntityChange<E>> Collection<T> filter(Collection<T> commands, final ChangeOperation changeOperation, final ChangeContext changeContext) {
         validators.stream().filter(CurrentStateConsumer.supporting(changeOperation)).
                 forEach(validator -> {
-                    final Collection<T> collection = featureSet.isEnabled(Feature.RequiredFieldValidator) ?
+                    final Collection<T> collection = changeContext.isEnabled(Feature.RequiredFieldValidator) ?
                             Collections2.filter(commands, entityChange -> !changeContext.containsShowStopperErrorNonRecursive(entityChange))
                             : commands;
                     validator.validate(collection, changeOperation, changeContext);

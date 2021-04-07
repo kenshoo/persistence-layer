@@ -8,7 +8,7 @@ public class ValidationError {
     private final String errorCode;
     private final EntityField<?, ?> field;
     private final Map<String, String> parameters;
-    private final ShowStopper showStopper;
+    private final IsShowStopper isShowStopper;
 
     public ValidationError(String errorCode) {
         this(errorCode, null, Collections.emptyMap());
@@ -23,14 +23,14 @@ public class ValidationError {
     }
 
     public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters) {
-        this(errorCode, field, parameters, ShowStopper.No);
+        this(errorCode, field, parameters, IsShowStopper.No);
     }
 
-    public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters, ShowStopper showStopper) {
+    public ValidationError(String errorCode, EntityField<?, ?> field, Map<String, String> parameters, IsShowStopper isShowStopper) {
         this.errorCode = errorCode;
         this.field = field;
         this.parameters = parameters;
-        this.showStopper = showStopper;
+        this.isShowStopper = isShowStopper;
     }
 
     public String getErrorCode() {
@@ -45,8 +45,8 @@ public class ValidationError {
         return parameters;
     }
 
-    public ShowStopper showStopper() {
-        return showStopper;
+    public IsShowStopper isShowStopper() {
+        return isShowStopper;
     }
 
     @Override
@@ -55,13 +55,12 @@ public class ValidationError {
                 .append("errorCode", errorCode)
                 .append("errorField", field)
                 .append("parameters", parameters)
-                .append("showStopper", showStopper)
+                .append("isShowStopper", isShowStopper)
                 .toString();
     }
 
-    public enum ShowStopper {
+    public enum IsShowStopper {
         No,
         Yes
-
     }
 }

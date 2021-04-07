@@ -9,16 +9,16 @@ public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements
 
     private final EntityField<E, T> entityField;
     private final String errorCode;
-    private final ValidationError.ShowStopper showStopper;
+    private final ValidationError.IsShowStopper isShowStopper;
 
     public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode) {
-      this(entityField, errorCode, ValidationError.ShowStopper.No);
+      this(entityField, errorCode, ValidationError.IsShowStopper.No);
     }
 
-    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode, ValidationError.ShowStopper showStopper) {
+    public SimpleRequiredFieldValidator(EntityField<E, T> entityField, String errorCode, ValidationError.IsShowStopper isShowStopper) {
         this.entityField = entityField;
         this.errorCode = errorCode;
-        this.showStopper = showStopper;
+        this.isShowStopper = isShowStopper;
     }
 
 
@@ -33,5 +33,5 @@ public class SimpleRequiredFieldValidator<E extends EntityType<E>, T> implements
     }
 
     @Override
-    public ValidationError.ShowStopper showStopper() { return showStopper; }
+    public ValidationError.IsShowStopper isShowStopper() { return isShowStopper; }
 }

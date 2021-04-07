@@ -77,7 +77,7 @@ public class ChangeContextImpl implements ChangeContext {
     public boolean containsShowStopperErrorNonRecursive(EntityChange entityChange) {
         if(this.validationErrors.containsKey(entityChange)) {
             return this.validationErrors.get(entityChange).stream().
-                    anyMatch(validationError -> validationError.showStopper() == ValidationError.ShowStopper.Yes);
+                    anyMatch(validationError -> validationError.isShowStopper() == ValidationError.IsShowStopper.Yes);
         }
         return false;
     }

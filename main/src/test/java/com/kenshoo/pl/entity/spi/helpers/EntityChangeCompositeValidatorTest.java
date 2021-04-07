@@ -223,7 +223,7 @@ public class EntityChangeCompositeValidatorTest {
         validator.register(fieldValidator);
         when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
         when(fieldComplexValidator.validate(FIELD_1_VALUE, currentState)).thenReturn(validationError);
-        when(validationError.showStopper()).thenReturn(ValidationError.ShowStopper.No);
+        when(validationError.isShowStopper()).thenReturn(ValidationError.IsShowStopper.No);
         validator.register(fieldComplexValidator);
         validator.register(ancestorsValidator);
 
@@ -239,7 +239,7 @@ public class EntityChangeCompositeValidatorTest {
         when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
         validator.register(fieldValidator);
         when(fieldComplexValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
-        when(validationError.showStopper()).thenReturn(ValidationError.ShowStopper.Yes);
+        when(validationError.isShowStopper()).thenReturn(ValidationError.IsShowStopper.Yes);
         when(fieldComplexValidator.validate(FIELD_1_VALUE, currentState)).thenReturn(validationError);
         validator.register(fieldComplexValidator);
         validator.register(ancestorsValidator);

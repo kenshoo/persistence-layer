@@ -720,7 +720,7 @@ public class PersistenceLayerTest {
 
 
         ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentShowStopperValidator(ValidationError.ShowStopper.Yes)).
+                withValidator(new ParentShowStopperValidator(ValidationError.IsShowStopper.Yes)).
                 withValidator(new ParentIsNotSupportedValidator()).
                 build();
 
@@ -741,7 +741,7 @@ public class PersistenceLayerTest {
 
 
         ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentShowStopperValidator(ValidationError.ShowStopper.No)).
+                withValidator(new ParentShowStopperValidator(ValidationError.IsShowStopper.No)).
                 withValidator(new ParentIsNotSupportedValidator()).
                 build();
 
@@ -1476,12 +1476,12 @@ public class PersistenceLayerTest {
 
     private static class ParentShowStopperValidator implements ChangesValidator<EntityForTestParent> {
 
-        private final ValidationError.ShowStopper showStopper;
+        private final ValidationError.IsShowStopper showStopper;
         private final String errorCode;
 
-        private ParentShowStopperValidator(ValidationError.ShowStopper showStopper) {
+        private ParentShowStopperValidator(ValidationError.IsShowStopper showStopper) {
             this.showStopper = showStopper;
-            this.errorCode = showStopper == ValidationError.ShowStopper.Yes ? SHOW_STOPPER : NO_SHOW_STOPPER;
+            this.errorCode = showStopper == ValidationError.IsShowStopper.Yes ? SHOW_STOPPER : NO_SHOW_STOPPER;
         }
 
         @Override
