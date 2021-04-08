@@ -10,10 +10,7 @@ import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import com.kenshoo.pl.entity.internal.EntityDbUtil;
 import com.kenshoo.pl.entity.internal.Errors;
 import com.kenshoo.pl.entity.spi.*;
-import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
-import com.kenshoo.pl.entity.spi.helpers.EntitiesTempTableCreator;
-import com.kenshoo.pl.entity.spi.helpers.EntityChangeCompositeValidator;
-import com.kenshoo.pl.entity.spi.helpers.FixedFieldValueSupplier;
+import com.kenshoo.pl.entity.spi.helpers.*;
 import org.hamcrest.Matchers;
 import org.jooq.*;
 import org.jooq.impl.DSL;
@@ -26,6 +23,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -389,8 +387,17 @@ public class PersistenceLayerTest {
     }
 
 
+    private ChangeFlowConfig.Builder<EntityForTestParent> parentFlowConfig(Feature feature) {
+        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
+                withFeaturePredicate(__ -> feature.equals(Feature.RequiredFieldValidator)).
+                build();
+
+        return ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE);
+    }
+
     private ChangeFlowConfig.Builder<EntityForTest> changeFlowConfig() {
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, EntityForTest.INSTANCE);
+
     }
 
     private UpdateTestCommand createChangeCommand(int id, TestEnum field1Value, int field2Value) {
@@ -630,7 +637,7 @@ public class PersistenceLayerTest {
 
     @Test
     public void createEntityWithoutParents() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
+        CreateEntityCommand<EntityForTestParent> command = emptyCmd();
         int newId = 1001;
         command.set(EntityForTestParent.ID, newId);
         command.set(EntityForTestParent.FIELD1, "3000");
@@ -649,105 +656,51 @@ public class PersistenceLayerTest {
     }
 
     @Test
-    public void createEntityWithoutRequiredFieldsFeatureOff() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1001);
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, EntityForTestParent.INSTANCE).build();
+    public void whenCreateEntityWithRequiredFieldAnnotationWhereFieldValueIsNotInTheCommandThenFail__FeatureOff() {
+        var command = emptyCmd();
+        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), emptyFlow(), EntityForTestParent.Key.DEFINITION);
+        assertThat(results.hasErrors(), is(true));
+        assertThat(results.getErrors(command).stream().findAny().get().getErrorCode(), is(Errors.FIELD_IS_REQUIRED));
+    }
+
+    @Test
+    public void whenCreateEntityWithRequiredFieldAnnotationWhereFieldValueIsNotInTheCommandThenFail__FeatureOn() {
+        var command = emptyCmd();
+        var flowConfig = parentFlowConfig(Feature.RequiredFieldValidator).build();
         CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
         assertThat(results.hasErrors(), is(true));
         assertThat(results.getErrors(command).stream().findAny().get().getErrorCode(), is(Errors.FIELD_IS_REQUIRED));
     }
 
     @Test
-    public void createEntityWithoutRequiredFieldFeatureOn() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1002);
-        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).build();
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).build();
-        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
-        assertThat(results.hasErrors(), is(true));
-        assertThat(results.getErrors(command).stream().findAny().get().getErrorCode(), is(Errors.FIELD_IS_REQUIRED));
-    }
+    public void dontRunOtherValidatorsIfShowStopperErrorAlreadyOccured_FeatureOn() {
+        var command = emptyCmd();
+        command.set(EntityForTestParent.FIELD1, "required field value");
 
-    @Test
-    public void createEntityWithoutRequiredFieldAndFailValidatorFeatureOn() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1003);
+        var flowConfig = parentFlowConfig(Feature.RequiredFieldValidator)
+                .withValidator(new ParentShowStopperValidator(ValidationError.IsShowStopper.Yes))
+                .withValidator(new ParentIsNotSupportedValidator())
+                .build();
 
-        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
-                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
-                build();
+        var results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
 
-
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentIsNotSupportedValidator()).
-                build();
-
-        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
-        assertThat(results.hasErrors(), is(true));
-        assertThat(results.getErrors(command).stream().map(ValidationError::getErrorCode).collect(Collectors.toList()), contains(Errors.FIELD_IS_REQUIRED));
-    }
-
-    @Test
-    public void createEntityWithRequiredFieldAndFailingValidatorFeatureOn() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1003);
-        command.set(EntityForTestParent.FIELD1, "3000");
-
-        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
-                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
-                build();
-
-
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentIsNotSupportedValidator()).
-                build();
-
-        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
-        assertThat(results.hasErrors(), is(true));
-        assertThat(results.getErrors(command).stream().map(ValidationError::getErrorCode).collect(Collectors.toList()), contains(CANNOT_CREATE_IN_PARENT));
-    }
-
-    @Test
-    public void createEntityWithRequiredFieldAndShowStopperValidator() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1003);
-        command.set(EntityForTestParent.FIELD1, "3000");
-
-        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
-                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
-                build();
-
-
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentShowStopperValidator(ValidationError.IsShowStopper.Yes)).
-                withValidator(new ParentIsNotSupportedValidator()).
-                build();
-
-        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
         assertThat(results.hasErrors(), is(true));
         assertThat(results.getErrors(command).stream().map(ValidationError::getErrorCode).collect(Collectors.toList()), contains(SHOW_STOPPER));
     }
 
     @Test
-    public void createEntityWithRequiredFieldAndNoShowStopperValidator() {
-        CreateEntityCommand<EntityForTestParent> command = new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
-        command.set(EntityForTestParent.ID, 1003);
-        command.set(EntityForTestParent.FIELD1, "3000");
+    public void testThatValidatorsRunInSameOrderAsListedInTheFlow() {
+        var log = new ArrayList<String>();
 
-        PLContext plContextSupportRequiredFieldValidator = new PLContext.Builder(dslContext).
-                withFeaturePredicate(feature -> feature.equals(Feature.RequiredFieldValidator)).
-                build();
+        var flowConfig = parentFlowConfig(Feature.ForTest)
+                .withValidator(new DelegateValidator(cmds -> log.add("validator1 was running")))
+                .withValidator(new DelegateValidator(cmds -> log.add("validator2 was running")))
+                .withValidator(new DelegateValidator(cmds -> log.add("validator3 was running")))
+                .build();
 
+        persistenceLayerParent.create(List.of(emptyCmd()), flowConfig, EntityForTestParent.Key.DEFINITION);
 
-        ChangeFlowConfig<EntityForTestParent> flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContextSupportRequiredFieldValidator, EntityForTestParent.INSTANCE).
-                withValidator(new ParentShowStopperValidator(ValidationError.IsShowStopper.No)).
-                withValidator(new ParentIsNotSupportedValidator()).
-                build();
-
-        CreateResult<EntityForTestParent, EntityForTestParent.Key> results = persistenceLayerParent.create(ImmutableList.of(command), flowConfig, EntityForTestParent.Key.DEFINITION);
-        assertThat(results.hasErrors(), is(true));
-        assertThat(results.getErrors(command).stream().map(ValidationError::getErrorCode).collect(Collectors.toList()), containsInAnyOrder(NO_SHOW_STOPPER, CANNOT_CREATE_IN_PARENT));
+        assertThat(log, contains("validator1 was running", "validator2 was running", "validator3 was running"));
     }
 
     @Test
@@ -1179,6 +1132,14 @@ public class PersistenceLayerTest {
         assertThat(result.get(initId + 1).value2(), is(TestEnum.Charlie.name()));
     }
 
+    private ChangeFlowConfig<EntityForTestParent> emptyFlow() {
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, EntityForTestParent.INSTANCE).build();
+    }
+
+    private CreateEntityCommand<EntityForTestParent> emptyCmd() {
+        return new CreateEntityCommand<>(EntityForTestParent.INSTANCE);
+    }
+
     private static class TestEnricherWithParent implements PostFetchCommandEnricher<EntityForTest> {
         @Override
         public void enrich(Collection<? extends ChangeEntityCommand<EntityForTest>> changeEntityCommands, ChangeOperation changeOperation, ChangeContext changeContext) {
@@ -1492,4 +1453,16 @@ public class PersistenceLayerTest {
     }
 
 
+    private static class DelegateValidator implements ChangesValidator<EntityForTestParent> {
+        final Consumer<Collection<? extends EntityChange<EntityForTestParent>>> delegate;
+
+        public DelegateValidator(Consumer<Collection<? extends EntityChange<EntityForTestParent>>> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void validate(Collection<? extends EntityChange<EntityForTestParent>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
+            delegate.accept(entityChanges);
+        }
+    }
 }

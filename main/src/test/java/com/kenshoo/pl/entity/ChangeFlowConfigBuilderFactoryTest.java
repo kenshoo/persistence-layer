@@ -5,18 +5,20 @@ import com.kenshoo.pl.entity.annotation.DontPurge;
 import com.kenshoo.pl.entity.annotation.Required;
 import com.kenshoo.pl.entity.annotation.RequiredFieldType;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
+import com.kenshoo.pl.entity.spi.ChangesValidator;
+import com.kenshoo.pl.entity.spi.helpers.CompoundChangesValidator;
 import org.jooq.Record;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.*;
 import static org.jooq.lambda.Seq.seq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class ChangeFlowConfigBuilderFactoryTest {
 
@@ -34,15 +36,52 @@ public class ChangeFlowConfigBuilderFactoryTest {
 
     @Test
     public void testFieldsAnnotatedWithRequired_UfOn() {
-        ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(new FeatureSet(Feature.RequiredFieldValidator));
+        ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(featureSet(Feature.RequiredFieldValidator));
         assertThat(flowConfig.getRequiredFields(), empty());
         assertThat(flowConfig.getRequiredRelationFields(), containsInAnyOrder(MockedEntity.INSTANCE.field3));
     }
 
-    private ChangeFlowConfig<MockedEntity> buildFlow(FeatureSet featureSet) {
+    @Test
+    public void testValidatorAddedByRequiredFieldAnnotation_UfOn() {
+        ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(featureSet(Feature.RequiredFieldValidator));
+        ChangeContext changeContext = new ChangeContextImpl(null, flowConfig.getFeatures());
+        CreateEntityCommand<MockedEntity> emptyCmd = emptyCreateCmd();
+        flowConfig.getValidators().forEach(v -> v.validate(List.of(emptyCmd), ChangeOperation.CREATE, changeContext));
+        assertThat(changeContext.containsShowStopperErrorNonRecursive(emptyCmd), is(true));
+    }
+
+    @Test
+    public void testValidatorAddedByRequiredFieldAnnotationShouldComeFirstInOrder_UfOn() {
+        ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(featureSet(Feature.RequiredFieldValidator), emptyValidator());
+        ChangeContext changeContext = new ChangeContextImpl(null,flowConfig.getFeatures());
+        ChangesValidator<MockedEntity> changesValidator = getFirstValidatorFromFlow(flowConfig);
+        CreateEntityCommand<MockedEntity> emptyCmd = emptyCreateCmd();
+        changesValidator.validate(List.of(emptyCmd), ChangeOperation.CREATE, changeContext);
+        assertThat(changeContext.containsShowStopperErrorNonRecursive(emptyCmd), is(true));
+    }
+
+    private ChangesValidator<MockedEntity> getFirstValidatorFromFlow(ChangeFlowConfig<MockedEntity> flowConfig) {
+        return flowConfig.getValidators().get(0);
+    }
+
+    private CompoundChangesValidator<MockedEntity> emptyValidator() {
+        return new CompoundChangesValidator<>();
+    }
+
+    private FeatureSet featureSet(Feature feature) {
+        return new FeatureSet(feature);
+    }
+
+    private CreateEntityCommand<MockedEntity> emptyCreateCmd() {
+        return new CreateEntityCommand<>(MockedEntity.INSTANCE);
+    }
+
+    private ChangeFlowConfig<MockedEntity> buildFlow(FeatureSet featureSet, ChangesValidator<MockedEntity> ... validator) {
         PLContext plContext = mock(PLContext.class);
         when(plContext.generateFeatureSet()).thenReturn(featureSet);
-        return ChangeFlowConfigBuilderFactory.newInstance(plContext, MockedEntity.INSTANCE).build();
+        return ChangeFlowConfigBuilderFactory.newInstance(plContext, MockedEntity.INSTANCE).
+                withValidators(List.of(validator)).
+                build();
     }
 
     private FalseUpdatesPurger<MockedEntity> getPurger(ChangeFlowConfig<MockedEntity> flow) {
