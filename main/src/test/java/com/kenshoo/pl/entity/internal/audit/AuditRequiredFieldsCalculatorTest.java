@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
-import static com.kenshoo.pl.entity.internal.audit.AuditedFieldSet.builder;
+import static com.kenshoo.pl.entity.internal.audit.AuditedEntityType.builder;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.CoreMatchers.is;
@@ -25,14 +25,14 @@ public class AuditRequiredFieldsCalculatorTest {
 
     @Test
     public void requiredFields_FieldSetHasIdOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID).build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.NAME,
                                                                                           AuditedType.DESC,
                                                                                           AuditedType.DESC2);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(toSet()),
                    is(Collections.<EntityField<?, ?>>singleton(AuditedType.ID)));
@@ -40,7 +40,7 @@ public class AuditRequiredFieldsCalculatorTest {
 
     @Test
     public void requiredFields_FieldSetHasIdOnly_FieldsToChangeIncludeIdAndOthers_ShouldReturnIdOnly() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID).build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.ID,
@@ -48,7 +48,7 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.DESC,
                                                                                           AuditedType.DESC2);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(toSet()),
                    is(Collections.<EntityField<?, ?>>singleton(AuditedType.ID)));
@@ -56,7 +56,7 @@ public class AuditRequiredFieldsCalculatorTest {
 
     @Test
     public void requiredFields_FieldSetHasIdAndExternalMandatoryOnly_FieldsToChangeNotEmpty_ShouldReturnFieldSet() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withExternalFields(NotAuditedAncestorType.NAME,
                                     NotAuditedAncestorType.DESC)
@@ -64,32 +64,32 @@ public class AuditRequiredFieldsCalculatorTest {
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.NAME);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangeAreDifferent_ShouldReturnFieldSet() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
 
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = singleton(AuditedType.DESC2);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangeAreTheSame_ShouldReturnFieldsToChange() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -98,14 +98,14 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.NAME,
                                                                                           AuditedType.DESC);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(fieldsToChange));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndSelfMandatoryOnly_FieldsToChangePartiallyIntersect_ShouldReturnFieldSet() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ALWAYS, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -113,16 +113,16 @@ public class AuditRequiredFieldsCalculatorTest {
         final Set<? extends EntityField<AuditedType, ?>> fieldsToChange = ImmutableSet.of(AuditedType.DESC,
                                                                                           AuditedType.DESC2);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -131,14 +131,14 @@ public class AuditRequiredFieldsCalculatorTest {
 
         final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = singleton(AuditedType.ID);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeAreSame_ShouldReturnFieldsToChange() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -147,16 +147,16 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.NAME,
                                                                                           AuditedType.DESC);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeIncludedInOnCreateOrUpdate_ShouldReturnIdAndFieldsToChange() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_CREATE_OR_UPDATE,
                                     AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
@@ -169,14 +169,14 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                        AuditedType.DESC,
                                                                                        AuditedType.DESC2);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangeContainOnCreateOrUpdate_ShouldReturnFieldSet() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_CREATE_OR_UPDATE,
                                     AuditedType.NAME, AuditedType.DESC)
@@ -186,16 +186,16 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.DESC,
                                                                                           AuditedType.DESC2);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnCreateOrUpdateOnly_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndIntersection() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_CREATE_OR_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -206,14 +206,14 @@ public class AuditRequiredFieldsCalculatorTest {
         final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = ImmutableSet.of(AuditedType.ID,
                                                                                        AuditedType.DESC);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeAreDifferent_ShouldReturnIdOnly() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -222,14 +222,14 @@ public class AuditRequiredFieldsCalculatorTest {
 
         final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = singleton(AuditedType.ID);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeAreSame_ShouldReturnFieldsToChange() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -238,16 +238,16 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.NAME,
                                                                                           AuditedType.DESC);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeIncludedInOnCreateOrUpdate_ShouldReturnIdAndFieldsToChange() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_UPDATE,
                                     AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2)
@@ -260,14 +260,14 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                        AuditedType.DESC,
                                                                                        AuditedType.DESC2);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnUpdateOnly_FieldsToChangeContainOnCreateOrUpdate_ShouldReturnFieldSet() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -276,16 +276,16 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                           AuditedType.DESC,
                                                                                           AuditedType.DESC2);
 
-        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedFieldSet.getAllFields().collect(toSet());
+        final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = auditedEntityType.getAllFields().collect(toSet());
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasIdAndOnUpdateOnly_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndIntersection() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withInternalFields(ON_UPDATE, AuditedType.NAME, AuditedType.DESC)
                 .build();
@@ -296,14 +296,14 @@ public class AuditRequiredFieldsCalculatorTest {
         final Set<? extends EntityField<?, ?>> expectedFieldsToFetch = ImmutableSet.of(AuditedType.ID,
                                                                                        AuditedType.DESC);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasEverything_FieldsToChangePartiallyIntersectOnCreateOrUpdate_ShouldReturnIdAndMandatoriesAndIntersection() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
                 .withInternalFields(ALWAYS, singleton(AuditedType.NAME))
@@ -319,14 +319,14 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                        AuditedType.NAME,
                                                                                        AuditedType.DESC);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
 
     @Test
     public void requiredFields_FieldSetHasEverything_FieldsToChangePartiallyIntersectOnUpdate_ShouldReturnIdAndMandatoriesAndIntersection() {
-        final AuditedFieldSet<AuditedType> auditedFieldSet =
+        final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID)
                 .withExternalFields(ImmutableSet.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
                 .withInternalFields(ALWAYS, singleton(AuditedType.NAME))
@@ -342,13 +342,13 @@ public class AuditRequiredFieldsCalculatorTest {
                                                                                        AuditedType.NAME,
                                                                                        AuditedType.DESC);
 
-        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedFieldSet, fieldsToChange);
+        final Stream<? extends EntityField<?, ?>> actualRequiredFields = calculate(auditedEntityType, fieldsToChange);
 
         assertThat(actualRequiredFields.collect(Collectors.<EntityField<?, ?>>toSet()), is(expectedFieldsToFetch));
     }
     
-    private Stream<? extends EntityField<?, ?>> calculate(final AuditedFieldSet<AuditedType> auditedFieldSet,
+    private Stream<? extends EntityField<?, ?>> calculate(final AuditedEntityType<AuditedType> auditedEntityType,
                                                           Set<? extends EntityField<AuditedType, ?>> fieldsToChange) {
-        return new AuditRequiredFieldsCalculator<>(auditedFieldSet).requiredFields(fieldsToChange, OPERATOR);
+        return new AuditRequiredFieldsCalculator<>(auditedEntityType).requiredFields(fieldsToChange, OPERATOR);
     }
 }

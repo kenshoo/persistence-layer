@@ -142,19 +142,19 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-        private final AuditedFieldsResolver auditedFieldsResolver;
+        private final AuditedEntityTypeResolver auditedEntityTypeResolver;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
             this(entityType,
-                 AuditedFieldsResolver.INSTANCE);
+                 AuditedEntityTypeResolver.INSTANCE);
         }
 
         @VisibleForTesting
         Builder(final E entityType,
-                final AuditedFieldsResolver auditedFieldsResolver) {
+                final AuditedEntityTypeResolver auditedEntityTypeResolver) {
             this.entityType = entityType;
-            this.auditedFieldsResolver = auditedFieldsResolver;
+            this.auditedEntityTypeResolver = auditedEntityTypeResolver;
         }
 
         public Builder<E> with(FeatureSet features) {
@@ -287,11 +287,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
 
-            final Optional<AuditedFieldSet<E>> optionalAuditedFieldSet = auditedFieldsResolver.resolve(entityType);
+            final Optional<AuditedEntityType<E>> optionalAuditedEntityType = auditedEntityTypeResolver.resolve(entityType);
             final AuditRequiredFieldsCalculator<E> auditRequiredFieldsCalculator =
-                optionalAuditedFieldSet.map(AuditRequiredFieldsCalculator::new).orElse(null);
+                optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
             final AuditRecordGenerator<E> auditRecordGenerator =
-                optionalAuditedFieldSet.map(this::createAuditRecordGenerator).orElse(null);
+                optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
 
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
@@ -307,11 +307,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             );
         }
 
-        private AuditRecordGenerator<E> createAuditRecordGenerator(final AuditedFieldSet<E> auditedFieldSet) {
+        private AuditRecordGenerator<E> createAuditRecordGenerator(final AuditedEntityType<E> auditedEntityType) {
             final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator =
-                new AuditMandatoryFieldValuesGenerator(auditedFieldSet.getMandatoryFields());
+                new AuditMandatoryFieldValuesGenerator(auditedEntityType.getMandatoryFields());
 
-            final AuditFieldChangesGenerator<E> fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedFieldSet.getInternalFields());
+            final AuditFieldChangesGenerator<E> fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedEntityType.getInternalFields());
 
             return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator, fieldChangesGenerator);
         }
