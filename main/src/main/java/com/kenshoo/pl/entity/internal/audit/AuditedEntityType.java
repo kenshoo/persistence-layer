@@ -25,6 +25,8 @@ public class AuditedEntityType<E extends EntityType<E>> {
 
     private final EntityField<E, ? extends Number> idField;
 
+    private final String name;
+
     // Fields from other entities which are included always in the audit record with their current values
     private final Set<? extends EntityField<?, ?>> externalFields;
 
@@ -32,15 +34,21 @@ public class AuditedEntityType<E extends EntityType<E>> {
     private final SetMultimap<AuditTrigger, ? extends EntityField<E, ?>> internalFields;
 
     private AuditedEntityType(final EntityField<E, ? extends Number> idField,
+                              final String name,
                               final Set<? extends EntityField<?, ?>> externalFields,
                               final SetMultimap<AuditTrigger, ? extends EntityField<E, ?>> internalFields) {
         this.idField = idField;
+        this.name = name;
         this.externalFields = externalFields;
         this.internalFields = internalFields;
     }
 
     public EntityField<E, ? extends Number> getIdField() {
         return idField;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Set<? extends EntityField<?, ?>> getExternalFields() {
@@ -78,13 +86,20 @@ public class AuditedEntityType<E extends EntityType<E>> {
 
     public static class Builder<E extends EntityType<E>> {
         private final EntityField<E, ? extends Number> idField;
+        private String name;
         private Set<? extends EntityField<?, ?>> externalFields = emptySet();
         private final SetMultimap<AuditTrigger, EntityField<E, ?>> internalFields = HashMultimap.create();
 
         public Builder(final EntityField<E, ? extends Number> idField) {
             this.idField = requireNonNull(idField, "idField is required");
+            this.name = idField.getEntityType().getName();
             Stream.of(ALWAYS, ON_CREATE_OR_UPDATE, ON_UPDATE)
                   .forEach(trigger -> internalFields.putAll(trigger, emptySet()));
+        }
+
+        public Builder<E> withName(final String name) {
+            this.name = requireNonNull(name, "A name must be provided");
+            return this;
         }
 
         public Builder<E> withExternalFields(final EntityField<?, ?>... externalFields) {
@@ -123,6 +138,7 @@ public class AuditedEntityType<E extends EntityType<E>> {
 
         public AuditedEntityType<E> build() {
             return new AuditedEntityType<>(idField,
+                                           name,
                                            externalFields,
                                            internalFields);
         }
@@ -142,6 +158,7 @@ public class AuditedEntityType<E extends EntityType<E>> {
 
         return new EqualsBuilder()
             .append(idField, that.idField)
+            .append(name, that.name)
             .append(externalFields, that.externalFields)
             .append(internalFields, that.internalFields)
             .isEquals();
@@ -151,6 +168,7 @@ public class AuditedEntityType<E extends EntityType<E>> {
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
             .append(idField)
+            .append(name)
             .append(externalFields)
             .append(internalFields)
             .toHashCode();
@@ -160,6 +178,7 @@ public class AuditedEntityType<E extends EntityType<E>> {
     public String toString() {
         return new ToStringBuilder(this, SHORT_PREFIX_STYLE)
             .append("idField", idField)
+            .append("name", name)
             .append("externalFields", externalFields)
             .append("internalFields", internalFields)
             .toString();

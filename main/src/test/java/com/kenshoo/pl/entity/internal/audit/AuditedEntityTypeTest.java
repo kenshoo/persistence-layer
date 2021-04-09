@@ -19,6 +19,25 @@ import static org.junit.Assert.assertThat;
 public class AuditedEntityTypeTest {
 
     @Test
+    public void getName_Default() {
+        final AuditedEntityType<AuditedType> auditedEntityType =
+            builder(AuditedType.ID).build();
+
+        assertThat(auditedEntityType.getName(), is(AuditedType.INSTANCE.getName()));
+    }
+
+    @Test
+    public void setAndGetName() {
+        final String name = "someName";
+        final AuditedEntityType<AuditedType> auditedEntityType =
+            builder(AuditedType.ID)
+                .withName(name)
+                .build();
+
+        assertThat(auditedEntityType.getName(), is(name));
+    }
+
+    @Test
     public void getAllFields_IdOnly() {
         final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID).build();
