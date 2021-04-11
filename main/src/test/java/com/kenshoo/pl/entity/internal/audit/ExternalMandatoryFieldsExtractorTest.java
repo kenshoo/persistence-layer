@@ -1,15 +1,17 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.junit.Test;
 
+import java.util.Set;
+import java.util.stream.Stream;
+
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
 
 public class ExternalMandatoryFieldsExtractorTest {
 
@@ -17,9 +19,13 @@ public class ExternalMandatoryFieldsExtractorTest {
 
     @Test
     public void resolve_WhenAudited_AndHasExternalMandatory_ShouldReturnThem() {
-        assertThat(EXTRACTOR.extract(AuditedWithAncestorMandatoryType.INSTANCE).collect(toSet()),
-                   equalTo(ImmutableSet.<EntityField<?, ?>>of(NotAuditedAncestorType.NAME,
-                                                              NotAuditedAncestorType.DESC)));
+        final Set<AuditedField<?, ?>> expectedAuditedFields = Stream.of(NotAuditedAncestorType.NAME,
+                                                                        NotAuditedAncestorType.DESC)
+                                                                    .map(AuditedField::new)
+                                                                    .collect(toUnmodifiableSet());
+
+        assertThat(EXTRACTOR.extract(AuditedWithAncestorMandatoryType.INSTANCE).collect(toUnmodifiableSet()),
+                   equalTo(expectedAuditedFields));
     }
 
     @Test

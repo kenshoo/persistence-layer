@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
@@ -17,11 +16,12 @@ public class ExternalMandatoryFieldsExtractor {
 
     static final ExternalMandatoryFieldsExtractor INSTANCE = new ExternalMandatoryFieldsExtractor();
 
-    public Stream<? extends EntityField<?, ?>> extract(final EntityType<?> entityType) {
+    public Stream<? extends AuditedField<?, ?>> extract(final EntityType<?> entityType) {
         return Optional.ofNullable(entityType.getClass().getAnnotation(Audited.class))
                        .map(Audited::extensions)
                        .flatMap(this::createExtensions)
                        .map(AuditExtensions::externalMandatoryFields)
+                       .map(fields -> fields.map(AuditedField::new))
                        .orElse(Stream.empty());
     }
 

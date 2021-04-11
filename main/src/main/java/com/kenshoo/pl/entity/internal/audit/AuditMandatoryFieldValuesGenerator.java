@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.FinalEntityState;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -15,9 +14,9 @@ import static org.jooq.lambda.Seq.seq;
 
 public class AuditMandatoryFieldValuesGenerator {
 
-    private final Collection<EntityField<?, ?>> mandatoryFields;
+    private final Collection<AuditedField<?, ?>> mandatoryFields;
 
-    public AuditMandatoryFieldValuesGenerator(final Stream<? extends EntityField<?, ?>> mandatoryFields) {
+    public AuditMandatoryFieldValuesGenerator(final Stream<? extends AuditedField<?, ?>> mandatoryFields) {
         requireNonNull(mandatoryFields, "mandatoryFields must not be null (can be empty)");
         this.mandatoryFields = mandatoryFields.collect(toList());
     }
@@ -25,9 +24,9 @@ public class AuditMandatoryFieldValuesGenerator {
     Collection<Entry<String, ?>> generate(final FinalEntityState finalState) {
         requireNonNull(finalState, "finalState is required");
         return seq(mandatoryFields)
-            .map(field -> ImmutablePair.of(field, finalState.safeGet(field)))
+            .map(field -> ImmutablePair.of(field, field.getValue(finalState)))
             .filter(pair -> pair.getValue().isNotNull())
-            .map(pair -> entry(pair.getKey().toString(), pair.getValue().get()))
+            .map(pair -> entry(pair.getKey().getName(), pair.getValue().get()))
             .collect(toList());
     }
 }

@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
-import static org.jooq.lambda.Seq.seq;
 
 public class AuditedEntityTypeResolver {
 
@@ -46,13 +45,13 @@ public class AuditedEntityTypeResolver {
     private <E extends EntityType<E>> Optional<AuditedEntityType<E>> resolve(final E entityType, final EntityField<E, ? extends Number> idField) {
         final boolean entityLevelAudited = entityType.getClass().isAnnotationPresent(Audited.class);
 
-        final Stream<? extends EntityField<?, ?>> externalFields = externalMandatoryFieldsExtractor.extract(entityType);
+        final Stream<? extends AuditedField<?, ?>> externalFields = externalMandatoryFieldsExtractor.extract(entityType);
 
-        final Map<AuditTrigger, List<EntityField<E, ?>>> internalFields = resolveInternalFieldsByTriggers(entityType, idField, entityLevelAudited);
+        final Map<AuditTrigger, List<AuditedField<E, ?>>> internalFields = resolveInternalFieldsByTriggers(entityType, idField, entityLevelAudited);
 
         final AuditedEntityType<E> auditedEntityType = AuditedEntityType.builder(idField)
                                                                         .withName(auditedEntityTypeNameResolver.resolve(entityType))
-                                                                        .withExternalFields(seq(externalFields))
+                                                                        .withExternalFields(externalFields)
                                                                         .withInternalFields(internalFields)
                                                                         .build();
 
@@ -62,9 +61,9 @@ public class AuditedEntityTypeResolver {
         return empty();
     }
 
-    private <E extends EntityType<E>> Map<AuditTrigger, List<EntityField<E, ?>>> resolveInternalFieldsByTriggers(final E entityType,
-                                                                                                                 final EntityField<E, ? extends Number> idField,
-                                                                                                                 final boolean entityLevelAudited) {
+    private <E extends EntityType<E>> Map<AuditTrigger, List<AuditedField<E, ?>>> resolveInternalFieldsByTriggers(final E entityType,
+                                                                                                                  final EntityField<E, ? extends Number> idField,
+                                                                                                                  final boolean entityLevelAudited) {
         return entityType.getFields()
                          .filter(field -> !idField.equals(field))
                          .filter(field -> !isAnnotatedWith(field.getEntityType(), NotAudited.class, field))
@@ -77,12 +76,13 @@ public class AuditedEntityTypeResolver {
 
     private <E extends EntityType<E>> Optional<AuditedFieldTrigger<E>> resolveFieldTrigger(final EntityField<E, ?> field,
                                                                                            final boolean entityLevelAudited) {
+        final var auditedField = new AuditedField<>(field);
         final Optional<AuditTrigger> optionalEntityTrigger = entityLevelAudited ? Optional.of(ON_CREATE_OR_UPDATE) : Optional.empty();
         return Stream.of(extractFieldTrigger(field),
                          optionalEntityTrigger)
                      .filter(Optional::isPresent)
                      .map(Optional::get)
-                     .map(trigger -> new AuditedFieldTrigger<>(field, trigger))
+                     .map(trigger -> new AuditedFieldTrigger<>(auditedField, trigger))
                      .findFirst();
     }
 
