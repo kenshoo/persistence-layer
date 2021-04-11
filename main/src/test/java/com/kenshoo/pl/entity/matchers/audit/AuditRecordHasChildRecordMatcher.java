@@ -1,16 +1,15 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
-import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-class AuditRecordHasChildRecordMatcher<C extends EntityType<C>> extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordHasChildRecordMatcher extends TypeSafeMatcher<AuditRecord<?>> {
 
-    private final Matcher<? extends AuditRecord<C>> childRecordMatcher;
+    private final Matcher<AuditRecord<?>> childRecordMatcher;
 
-    AuditRecordHasChildRecordMatcher(final Matcher<? extends AuditRecord<C>> childRecordMatcher) {
+    AuditRecordHasChildRecordMatcher(final Matcher<AuditRecord<?>> childRecordMatcher) {
         this.childRecordMatcher = childRecordMatcher;
     }
 

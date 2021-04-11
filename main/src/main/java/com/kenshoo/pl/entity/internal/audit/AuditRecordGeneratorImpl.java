@@ -65,7 +65,7 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         final Collection<FieldAuditRecord<E>> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 
         return new AuditRecord.Builder<E>()
-            .withEntityType(entityChange.getEntityType())
+            .withEntityType(entityChange.getEntityType().getName())
             .withEntityId(entityId)
             .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())

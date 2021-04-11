@@ -99,10 +99,10 @@ public class AuditForDeleteTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(DELETE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
     }
@@ -127,10 +127,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -155,10 +155,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -183,10 +183,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE))));
+        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
     }
 
     @Test
@@ -208,10 +208,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -270,10 +270,10 @@ public class AuditForDeleteTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedWithoutDataFieldsType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedWithoutDataFieldsType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedWithoutDataFieldsType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(DELETE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
     }
@@ -300,12 +300,12 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(DELETE))));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(DELETE))));
     }

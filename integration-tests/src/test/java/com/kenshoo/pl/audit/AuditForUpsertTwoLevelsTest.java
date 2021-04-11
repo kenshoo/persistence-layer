@@ -128,12 +128,12 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(parentId)),
                                       hasOperator(CREATE),
                                       hasCreatedFieldRecord(AuditedType.NAME, NEW_PARENT_NAME_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
@@ -161,11 +161,11 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
                                                          hasChangedFieldRecord(AuditedChild1Type.DESC,
@@ -197,11 +197,11 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child11Id)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child12Id)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_12))));
@@ -234,13 +234,13 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
                                                          hasChangedFieldRecord(AuditedChild1Type.DESC,
                                                                                CHILD_DESC_11,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
                                                          hasChangedFieldRecord(AuditedChild1Type.DESC,
@@ -277,12 +277,12 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(newChildId)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.DESC,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
                                                          hasChangedFieldRecord(AuditedChild1Type.DESC,
@@ -314,11 +314,11 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(auditedChildId)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE))));
+        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
     }
 
     @Test
@@ -349,10 +349,10 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
-        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE))));
+        assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
     }
 
     @Test
@@ -378,7 +378,7 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -407,12 +407,12 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
                                       hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
@@ -481,10 +481,10 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE)))));
+                                      not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName())))));
     }
 
     @Test
@@ -510,10 +510,10 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
     }
@@ -541,10 +541,10 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasChildRecordThat(hasEntityType(AuditedChild1Type.INSTANCE)))));
+                                      not(hasChildRecordThat(hasEntityType(AuditedChild1Type.INSTANCE.getName())))));
     }
 
     @Test
@@ -575,11 +575,11 @@ public class AuditForUpsertTwoLevelsTest {
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
 
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child1Id)),
                                                           hasOperator(CREATE),
                                                           hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child2Id)),
                                                           hasOperator(CREATE),
                                                           hasCreatedFieldRecord(AuditedChild2Type.NAME, NEW_CHILD_NAME_21))));
@@ -616,12 +616,12 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(UPDATE))));
 
         final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE),
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(UPDATE))));
     }

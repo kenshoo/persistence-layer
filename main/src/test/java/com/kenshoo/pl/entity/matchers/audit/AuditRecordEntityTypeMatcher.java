@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
-import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -9,16 +8,16 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-class AuditRecordEntityTypeMatcher<E extends EntityType<E>> extends TypeSafeMatcher<AuditRecord<E>> {
+class AuditRecordEntityTypeMatcher extends TypeSafeMatcher<AuditRecord<?>> {
 
-    private final E expectedEntityType;
+    private final String expectedEntityType;
 
-    AuditRecordEntityTypeMatcher(final E expectedEntityType) {
+    AuditRecordEntityTypeMatcher(final String expectedEntityType) {
         this.expectedEntityType = requireNonNull(expectedEntityType, "There must be an expected entity type");
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<E> actualRecord) {
+    protected boolean matchesSafely(final AuditRecord<?> actualRecord) {
         if (actualRecord == null) {
             return false;
         }
@@ -27,6 +26,6 @@ class AuditRecordEntityTypeMatcher<E extends EntityType<E>> extends TypeSafeMatc
 
     @Override
     public void describeTo(final Description description) {
-        description.appendValue("an AuditRecord with entity type " + expectedEntityType.getName());
+        description.appendValue("an AuditRecord with entity type " + expectedEntityType);
     }
 }
