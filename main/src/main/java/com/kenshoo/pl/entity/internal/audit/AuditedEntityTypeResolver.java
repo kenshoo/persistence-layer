@@ -24,12 +24,16 @@ import static org.jooq.lambda.Seq.seq;
 
 public class AuditedEntityTypeResolver {
 
-    public static final AuditedEntityTypeResolver INSTANCE = new AuditedEntityTypeResolver(ExternalMandatoryFieldsExtractor.INSTANCE);
+    public static final AuditedEntityTypeResolver INSTANCE = new AuditedEntityTypeResolver(AuditedEntityTypeNameResolver.INSTANCE,
+                                                                                           ExternalMandatoryFieldsExtractor.INSTANCE);
 
+    private final AuditedEntityTypeNameResolver auditedEntityTypeNameResolver;
     private final ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor;
 
     @VisibleForTesting
-    AuditedEntityTypeResolver(ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor) {
+    AuditedEntityTypeResolver(final AuditedEntityTypeNameResolver auditedEntityTypeNameResolver,
+                              final ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor) {
+        this.auditedEntityTypeNameResolver = auditedEntityTypeNameResolver;
         this.externalMandatoryFieldsExtractor = externalMandatoryFieldsExtractor;
     }
 
@@ -47,6 +51,7 @@ public class AuditedEntityTypeResolver {
         final Map<AuditTrigger, List<EntityField<E, ?>>> internalFields = resolveInternalFieldsByTriggers(entityType, idField, entityLevelAudited);
 
         final AuditedEntityType<E> auditedEntityType = AuditedEntityType.builder(idField)
+                                                                        .withName(auditedEntityTypeNameResolver.resolve(entityType))
                                                                         .withExternalFields(seq(externalFields))
                                                                         .withInternalFields(internalFields)
                                                                         .build();

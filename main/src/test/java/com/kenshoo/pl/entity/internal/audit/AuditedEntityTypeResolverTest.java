@@ -24,6 +24,11 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class AuditedEntityTypeResolverTest {
 
+    private static final String ENTITY_TYPE_NAME = "SomeEntity";
+
+    @Mock
+    private AuditedEntityTypeNameResolver auditedEntityTypeNameResolver;
+
     @Mock
     private ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor;
 
@@ -32,10 +37,12 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenAudited_AndHasId_AndOnCreateAndUpdate_ShouldReturnIdAndOnCreateOrUpdate() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(AuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedEntityType<AuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE,
                                                AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2, AuditedType.AMOUNT)
                              .build();
@@ -46,10 +53,12 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenAudited_AndHasId_AndOnUpdate_ShouldReturnIdAndOnUpdate() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithOnUpdateType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(AuditedWithOnUpdateType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedEntityType<AuditedWithOnUpdateType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithOnUpdateType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_UPDATE,
                                                AuditedWithOnUpdateType.NAME,
                                                AuditedWithOnUpdateType.DESC,
@@ -62,10 +71,12 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenAudited_AndHasId_AndInternalMandatoryFields_ShouldReturnIdAndInternalMandatoryFields() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithInternalMandatoryOnlyType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(AuditedWithInternalMandatoryOnlyType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedEntityType<AuditedWithInternalMandatoryOnlyType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithInternalMandatoryOnlyType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ALWAYS, AuditedWithInternalMandatoryOnlyType.NAME)
                              .build();
 
@@ -75,11 +86,13 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenAudited_AndHasId_AndExternalMandatoryFields_AndOtherFields_ShouldReturnIdAndExternalMandatoryAndOnChange() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(externalMandatoryFieldsExtractor).extract(AuditedWithAncestorMandatoryType.INSTANCE);
 
         final AuditedEntityType<AuditedWithAncestorMandatoryType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithAncestorMandatoryType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE,
                                                AuditedWithAncestorMandatoryType.NAME,
                                                AuditedWithAncestorMandatoryType.DESC,
@@ -93,11 +106,13 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenAudited_AndHasEverything_ShouldReturnEverything() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithAllVariationsType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
             .when(externalMandatoryFieldsExtractor).extract(AuditedWithAllVariationsType.INSTANCE);
 
         final AuditedEntityType<AuditedWithAllVariationsType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithAllVariationsType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                              .withInternalFields(ALWAYS, AuditedWithAllVariationsType.NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE, AuditedWithAllVariationsType.DESC)
@@ -110,10 +125,12 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenInclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForIncludedFields() {
+        when(auditedEntityTypeNameResolver.resolve(InclusiveAuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(InclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedEntityType<InclusiveAuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(InclusiveAuditedType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE,
                                                InclusiveAuditedType.NAME, InclusiveAuditedType.DESC)
                              .build();
@@ -124,10 +141,12 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenExclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForNotExcludedFields() {
+        when(auditedEntityTypeNameResolver.resolve(ExclusiveAuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(ExclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
 
         final AuditedEntityType<ExclusiveAuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(ExclusiveAuditedType.ID)
+                             .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(ExclusiveAuditedType.NAME))
                              .build();
 
@@ -142,6 +161,7 @@ public class AuditedEntityTypeResolverTest {
 
     @Test
     public void resolve_WhenNotAudited_AndHasId_ShouldReturnEmpty() {
+        when(auditedEntityTypeNameResolver.resolve(NotAuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         assertThat(auditedEntityTypeResolver.resolve(NotAuditedType.INSTANCE), isEmpty());
     }
 

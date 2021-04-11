@@ -10,7 +10,6 @@ import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -30,6 +29,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class AuditRecordGeneratorImplForCreateTest {
 
+    private static final String ENTITY_TYPE_NAME = "someEntityType";
     private static final long ID = 1234;
     private static final String STRING_ID = String.valueOf(ID);
     private static final String NAME = "name";
@@ -58,16 +58,19 @@ public class AuditRecordGeneratorImplForCreateTest {
     @Mock
     private FinalEntityState finalState;
 
-    @InjectMocks
     private AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator;
 
     @Before
     public void setUp() {
-        when(cmd.getEntityType()).thenReturn(AuditedType.INSTANCE);
         when(cmd.getChangeOperation()).thenReturn(CREATE);
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
         when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
         when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
+
+        auditRecordGenerator = new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
+                                                              fieldChangesGenerator,
+                                                              entityIdExtractor,
+                                                              ENTITY_TYPE_NAME);
     }
 
     @Test
@@ -79,7 +82,7 @@ public class AuditRecordGeneratorImplForCreateTest {
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+                   isPresentAnd(allOf(hasEntityType(ENTITY_TYPE_NAME),
                                       hasEntityId(STRING_ID),
                                       hasOperator(CREATE))));
     }
