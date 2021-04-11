@@ -131,7 +131,7 @@ public class AuditFieldChangeGeneratorTest {
         assertThat(generate(NAME), isEmpty());
     }
 
-    private Optional<? extends FieldAuditRecord<AuditedType>> generate(final EntityField<AuditedType, ?> field) {
+    private Optional<? extends FieldAuditRecord> generate(final EntityField<AuditedType, ?> field) {
         return generator.generate(currentState, finalState, field);
     }
 }

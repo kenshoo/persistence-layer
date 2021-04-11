@@ -107,11 +107,11 @@ public class AuditForCreateOneLevelWithMandatoryTest {
                                                        .with(AUD_WITH_ANC_DESC_FIELD, DESC)),
                                      auditedWithAncestorConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC),
                                       hasCreatedFieldRecord(AUD_WITH_ANC_NAME_FIELD, NAME),
@@ -125,11 +125,11 @@ public class AuditForCreateOneLevelWithMandatoryTest {
                                                    .with(AUD_WITH_INTERNAL_DESC_FIELD, DESC)),
                                      auditedWithInternalConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NAME),
                                       hasCreatedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME),
                                       hasCreatedFieldRecord(AUD_WITH_INTERNAL_DESC_FIELD, DESC)));
@@ -143,11 +143,11 @@ public class AuditForCreateOneLevelWithMandatoryTest {
                                                    .with(AUD_WITH_BOTH_DESC_FIELD, DESC)),
                                  auditedWithBothConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithInternalAndAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_BOTH_NAME_FIELD, NAME),
                                       hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC),
@@ -161,11 +161,11 @@ public class AuditForCreateOneLevelWithMandatoryTest {
                                                        .with(AUD_WITH_ANC_FK_FIELD, ANCESTOR_ID)),
                                      auditedWithAncestorConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
                                       hasNoFieldRecords()));
@@ -177,11 +177,11 @@ public class AuditForCreateOneLevelWithMandatoryTest {
                                                    .with(AUD_WITH_INTERNAL_NAME_FIELD, NAME)),
                                      auditedWithInternalConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NAME),
                                       hasCreatedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME)));
     }
@@ -204,10 +204,5 @@ public class AuditForCreateOneLevelWithMandatoryTest {
 
     private CreateAuditedWithInternalAndAncestorMandatoryCommand createAuditedWithBothCommand() {
         return new CreateAuditedWithInternalAndAncestorMandatoryCommand();
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

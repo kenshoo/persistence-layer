@@ -12,9 +12,9 @@ import static java.util.Objects.requireNonNull;
 
 public class AuditFieldChangeGenerator {
 
-    <E extends EntityType<E>> Optional<FieldAuditRecord<E>> generate(final CurrentEntityState currentState,
-                                                                     final FinalEntityState finalState,
-                                                                     final EntityField<E, ?> field) {
+    <E extends EntityType<E>> Optional<FieldAuditRecord> generate(final CurrentEntityState currentState,
+                                                                  final FinalEntityState finalState,
+                                                                  final EntityField<E, ?> field) {
         requireNonNull(currentState, "A current state is required");
         requireNonNull(finalState, "A final state is required");
         requireNonNull(field, "A field is required");
@@ -36,10 +36,10 @@ public class AuditFieldChangeGenerator {
         return currentState.safeGet(field).equals(finalState.safeGet(field), field::valuesEqual);
     }
 
-    private <E extends EntityType<E>> FieldAuditRecord<E> buildFieldRecord(final CurrentEntityState currentState,
-                                                                           final FinalEntityState finalState,
-                                                                           final EntityField<E, ?> field) {
-        final FieldAuditRecord.Builder<E> fieldRecordBuilder = FieldAuditRecord.builder(field);
+    private <E extends EntityType<E>> FieldAuditRecord buildFieldRecord(final CurrentEntityState currentState,
+                                                                        final FinalEntityState finalState,
+                                                                        final EntityField<E, ?> field) {
+        final FieldAuditRecord.Builder fieldRecordBuilder = FieldAuditRecord.builder(field.toString());
         currentState.safeGet(field).ifNotNull(fieldRecordBuilder::oldValue);
         finalState.safeGet(field).ifNotNull(fieldRecordBuilder::newValue);
         return fieldRecordBuilder.build();

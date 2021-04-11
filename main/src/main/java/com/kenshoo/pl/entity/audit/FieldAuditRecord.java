@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.audit;
 
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -11,12 +10,12 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class FieldAuditRecord<E extends EntityType<E>> {
-    private final EntityField<E, ?> field;
+public class FieldAuditRecord {
+    private final String field;
     private final Object oldValue;
     private final Object newValue;
 
-    private FieldAuditRecord(final EntityField<E, ?> field,
+    private FieldAuditRecord(final String field,
                              final Object oldValue,
                              final Object newValue) {
         this.field = field;
@@ -24,7 +23,7 @@ public class FieldAuditRecord<E extends EntityType<E>> {
         this.newValue = newValue;
     }
 
-    public EntityField<E, ?> getField() {
+    public String getField() {
         return field;
     }
 
@@ -36,8 +35,12 @@ public class FieldAuditRecord<E extends EntityType<E>> {
         return Optional.ofNullable(newValue);
     }
 
-    public static <E extends EntityType<E>> Builder<E> builder(final EntityField<E, ?> field) {
-        return new Builder<>(field);
+    public static Builder builder(final EntityField<?, ?> field) {
+        return new Builder(field.toString());
+    }
+
+    public static Builder builder(final String field) {
+        return new Builder(field);
     }
 
     @Override
@@ -46,8 +49,7 @@ public class FieldAuditRecord<E extends EntityType<E>> {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        @SuppressWarnings("unchecked")
-        final FieldAuditRecord<E> that = (FieldAuditRecord<E>) o;
+        final FieldAuditRecord that = (FieldAuditRecord) o;
 
         return new EqualsBuilder()
             .append(field, that.field)
@@ -68,33 +70,33 @@ public class FieldAuditRecord<E extends EntityType<E>> {
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-            .append("field", field.getEntityType().getName() + "." + field)
+            .append("field", field)
             .append("oldValue", oldValue)
             .append("newValue", newValue)
             .toString();
     }
 
-    public static class Builder<E extends EntityType<E>> {
-        private final EntityField<E, ?> field;
+    public static class Builder {
+        private final String field;
         private Object oldValue;
         private Object newValue;
 
-        private Builder(final EntityField<E, ?> field) {
+        private Builder(final String field) {
             this.field = requireNonNull(field, "A field is required");
         }
 
-        public Builder<E> oldValue(Object oldValue) {
+        public Builder oldValue(Object oldValue) {
             this.oldValue = oldValue;
             return this;
         }
 
-        public Builder<E> newValue(Object newValue) {
+        public Builder newValue(Object newValue) {
             this.newValue = newValue;
             return this;
         }
 
-        public FieldAuditRecord<E> build() {
-            return new FieldAuditRecord<>(field, oldValue, newValue);
+        public FieldAuditRecord build() {
+            return new FieldAuditRecord(field, oldValue, newValue);
         }
     }
 }

@@ -1,32 +1,31 @@
 package com.kenshoo.pl.entity.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.EntityFieldValue;
-import com.kenshoo.pl.entity.EntityType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-public class AuditRecord<E extends EntityType<E>> {
+public class AuditRecord {
     private final String entityType;
     private final String entityId;
-    private final Collection<? extends EntityFieldValue> mandatoryFieldValues;
+    private final Collection<? extends Entry<String, ?>> mandatoryFieldValues;
     private final ChangeOperation operator;
-    private final Collection<? extends FieldAuditRecord<E>> fieldRecords;
-    private final Collection<? extends AuditRecord<?>> childRecords;
+    private final Collection<? extends FieldAuditRecord> fieldRecords;
+    private final Collection<? extends AuditRecord> childRecords;
 
     private AuditRecord(final String entityType,
                         final String entityId,
-                        final Collection<? extends EntityFieldValue> mandatoryFieldValues,
+                        final Collection<? extends Entry<String, ?>> mandatoryFieldValues,
                         final ChangeOperation operator,
-                        final Collection<? extends FieldAuditRecord<E>> fieldRecords,
-                        final Collection<? extends AuditRecord<?>> childRecords) {
+                        final Collection<? extends FieldAuditRecord> fieldRecords,
+                        final Collection<? extends AuditRecord> childRecords) {
         this.entityType = requireNonNull(entityType, "entityType is required");
         this.entityId = requireNonNull(entityId, "entityId is required");
         this.mandatoryFieldValues = mandatoryFieldValues;
@@ -43,7 +42,7 @@ public class AuditRecord<E extends EntityType<E>> {
         return entityId;
     }
 
-    public Collection<? extends EntityFieldValue> getMandatoryFieldValues() {
+    public Collection<? extends Entry<String, ?>> getMandatoryFieldValues() {
         return mandatoryFieldValues;
     }
 
@@ -51,11 +50,11 @@ public class AuditRecord<E extends EntityType<E>> {
         return operator;
     }
 
-    public Collection<? extends FieldAuditRecord<E>> getFieldRecords() {
+    public Collection<? extends FieldAuditRecord> getFieldRecords() {
         return fieldRecords;
     }
 
-    public Collection<? extends AuditRecord<?>> getChildRecords() {
+    public Collection<? extends AuditRecord> getChildRecords() {
         return childRecords;
     }
 
@@ -97,51 +96,51 @@ public class AuditRecord<E extends EntityType<E>> {
             .toString();
     }
 
-    public static class Builder<E extends EntityType<E>> {
+    public static class Builder {
         private String entityType;
         private String entityId;
-        private Collection<? extends EntityFieldValue> mandatoryFieldValues = emptyList();
+        private Collection<? extends Entry<String, ?>> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
-        private Collection<? extends FieldAuditRecord<E>> fieldRecords = emptyList();
-        private Collection<? extends AuditRecord<?>> childRecords = emptyList();
+        private Collection<? extends FieldAuditRecord> fieldRecords = emptyList();
+        private Collection<? extends AuditRecord> childRecords = emptyList();
 
-        public Builder<E> withEntityType(String entityType) {
+        public Builder withEntityType(String entityType) {
             this.entityType = entityType;
             return this;
         }
 
-        public Builder<E> withEntityId(String entityId) {
+        public Builder withEntityId(String entityId) {
             this.entityId = entityId;
             return this;
         }
 
-        public Builder<E> withOperator(ChangeOperation operator) {
+        public Builder withOperator(ChangeOperation operator) {
             this.operator = operator;
             return this;
         }
 
-        public Builder<E> withMandatoryFieldValues(final Collection<? extends EntityFieldValue> fieldValues) {
+        public Builder withMandatoryFieldValues(final Collection<? extends Entry<String, ?>> fieldValues) {
             this.mandatoryFieldValues = fieldValues == null ? emptyList() : fieldValues;
             return this;
         }
 
-        public Builder<E> withFieldRecords(Collection<? extends FieldAuditRecord<E>> fieldRecords) {
+        public Builder withFieldRecords(Collection<? extends FieldAuditRecord> fieldRecords) {
             this.fieldRecords = fieldRecords == null ? emptyList() : fieldRecords;
             return this;
         }
 
-        public Builder<E> withChildRecords(Collection<? extends AuditRecord<?>> childRecords) {
+        public Builder withChildRecords(Collection<? extends AuditRecord> childRecords) {
             this.childRecords = childRecords == null ? emptyList() : childRecords;
             return this;
         }
 
-        public AuditRecord<E> build() {
-            return new AuditRecord<>(entityType,
-                                     entityId,
-                                     mandatoryFieldValues,
-                                     operator,
-                                     fieldRecords,
-                                     childRecords);
+        public AuditRecord build() {
+            return new AuditRecord(entityType,
+                                   entityId,
+                                   mandatoryFieldValues,
+                                   operator,
+                                   fieldRecords,
+                                   childRecords);
         }
     }
 }

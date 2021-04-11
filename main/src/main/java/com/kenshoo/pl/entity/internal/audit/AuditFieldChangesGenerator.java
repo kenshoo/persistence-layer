@@ -32,8 +32,8 @@ public class AuditFieldChangesGenerator<E extends EntityType<E>> {
         this.singleGenerator = singleGenerator;
     }
 
-    Collection<FieldAuditRecord<E>> generate(final CurrentEntityState currentState,
-                                             final FinalEntityState finalState) {
+    Collection<FieldAuditRecord> generate(final CurrentEntityState currentState,
+                                          final FinalEntityState finalState) {
         return seq(onChangeFields)
             .map(field -> singleGenerator.generate(currentState, finalState, field))
             .filter(Optional::isPresent)

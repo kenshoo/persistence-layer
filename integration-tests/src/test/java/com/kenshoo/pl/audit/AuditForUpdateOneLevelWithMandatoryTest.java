@@ -115,11 +115,11 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
                                                        .with(AUD_WITH_ANC_DESC_FIELD, NEW_DESC)),
                                      auditedWithAncestorConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC),
                                       hasChangedFieldRecord(AUD_WITH_ANC_NAME_FIELD, NAME, NEW_NAME),
@@ -131,7 +131,7 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
         auditedWithAncestorPL.update(singletonList(updateAuditedWithAncestorCommand()
                                                        .with(ANCESTOR_FK_FIELD, ANCESTOR_ID)),
                                      auditedWithAncestorConfig);
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("There should not be any published audit records",
                    auditRecords, is(empty()));
@@ -142,11 +142,11 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
         auditedWithSelfPL.update(singletonList(updateAuditedWithSelfCommand()
                                                    .with(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME)),
                                  auditedWithInternalConfig);
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME),
                                       hasChangedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME, NEW_NAME)));
     }
@@ -157,11 +157,11 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
                                                    .with(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME)
                                                    .with(AUD_WITH_INTERNAL_DESC_FIELD, NEW_DESC)),
                                  auditedWithInternalConfig);
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithInternalMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(AUD_WITH_INTERNAL_NAME_FIELD, NEW_NAME),
                                       hasChangedFieldRecord(AUD_WITH_INTERNAL_NAME_FIELD, NAME, NEW_NAME),
                                       hasChangedFieldRecord(AUD_WITH_INTERNAL_DESC_FIELD, DESC, NEW_DESC)));
@@ -181,10 +181,5 @@ public class AuditForUpdateOneLevelWithMandatoryTest {
 
     private UpdateAuditedWithInternalMandatoryCommand updateAuditedWithSelfCommand() {
         return new UpdateAuditedWithInternalMandatoryCommand(ID);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

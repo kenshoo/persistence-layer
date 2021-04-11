@@ -9,7 +9,7 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-class AuditRecordOperatorMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordOperatorMatcher extends TypeSafeMatcher<AuditRecord> {
 
     private final ChangeOperation expectedOperator;
 
@@ -18,7 +18,7 @@ class AuditRecordOperatorMatcher extends TypeSafeMatcher<AuditRecord<?>> {
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<?> actualRecord) {
+    protected boolean matchesSafely(final AuditRecord actualRecord) {
         if (actualRecord == null) {
             return false;
         }

@@ -67,7 +67,7 @@ public class AuditWithNameOverridesTest {
     public void overrideNameInStandalone() {
         pl.create(singletonList(parentCreateCmd()), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
@@ -81,7 +81,7 @@ public class AuditWithNameOverridesTest {
                                           .with(child2CreateCmd())),
                   flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));

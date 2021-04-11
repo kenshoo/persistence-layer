@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
-class AuditRecordEntityTypeMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordEntityTypeMatcher extends TypeSafeMatcher<AuditRecord> {
 
     private final String expectedEntityType;
 
@@ -17,7 +17,7 @@ class AuditRecordEntityTypeMatcher extends TypeSafeMatcher<AuditRecord<?>> {
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<?> actualRecord) {
+    protected boolean matchesSafely(final AuditRecord actualRecord) {
         if (actualRecord == null) {
             return false;
         }

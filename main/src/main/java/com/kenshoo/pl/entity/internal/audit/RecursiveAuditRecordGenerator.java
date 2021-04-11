@@ -14,40 +14,40 @@ import static java.util.stream.Collectors.toList;
 
 public class RecursiveAuditRecordGenerator {
 
-    public <E extends EntityType<E>> Stream<? extends AuditRecord<E>> generateMany(
+    public <E extends EntityType<E>> Stream<? extends AuditRecord> generateMany(
         final ChangeFlowConfig<E> flowConfig,
         final Stream<? extends EntityChange<E>> entityChanges,
         final ChangeContext changeContext) {
 
         return flowConfig.auditRecordGenerator()
-                         .map(auditRecordGenerator -> this.<E>generateMany(flowConfig,
-                                                                           auditRecordGenerator,
-                                                                           entityChanges,
-                                                                           changeContext))
+                         .map(auditRecordGenerator -> this.generateMany(flowConfig,
+                                                                        auditRecordGenerator,
+                                                                        entityChanges,
+                                                                        changeContext))
                          .orElse(Stream.empty());
     }
 
-    private <E extends EntityType<E>> Stream<? extends AuditRecord<E>> generateMany(
+    private <E extends EntityType<E>> Stream<? extends AuditRecord> generateMany(
         final ChangeFlowConfig<E> flowConfig,
         final AuditRecordGenerator<E> auditRecordGenerator,
         final Stream<? extends EntityChange<E>> entityChanges,
         final ChangeContext changeContext) {
 
-        return entityChanges.map(entityChange -> this.<E>generateOne(flowConfig,
-                                                                     auditRecordGenerator,
-                                                                     entityChange,
-                                                                     changeContext))
+        return entityChanges.map(entityChange -> this.generateOne(flowConfig,
+                                                                  auditRecordGenerator,
+                                                                  entityChange,
+                                                                  changeContext))
                             .filter(Optional::isPresent)
                             .map(Optional::get);
     }
 
-    private <E extends EntityType<E>> Optional<? extends AuditRecord<E>> generateOne(
+    private <E extends EntityType<E>> Optional<? extends AuditRecord> generateOne(
         final ChangeFlowConfig<E> flowConfig,
         final AuditRecordGenerator<E> auditRecordGenerator,
         final EntityChange<E> entityChange,
         final ChangeContext changeContext) {
 
-        final Collection<? extends AuditRecord<?>> childAuditRecords =
+        final Collection<? extends AuditRecord> childAuditRecords =
             flowConfig.childFlows().stream()
                       .flatMap(childFlowConfig -> generateChildrenUntyped(childFlowConfig,
                                                                           entityChange,
@@ -59,7 +59,7 @@ public class RecursiveAuditRecordGenerator {
                                              childAuditRecords);
     }
 
-    private <E extends EntityType<E>> Stream<? extends AuditRecord<? extends EntityType<?>>> generateChildrenUntyped(
+    private <E extends EntityType<E>> Stream<? extends AuditRecord> generateChildrenUntyped(
         final ChangeFlowConfig<? extends EntityType<?>> childFlowConfig,
         final EntityChange<E> entityChange,
         final ChangeContext changeContext) {
@@ -69,7 +69,7 @@ public class RecursiveAuditRecordGenerator {
                                      changeContext);
     }
 
-    private <P extends EntityType<P>, C extends EntityType<C>> Stream<? extends AuditRecord<C>> generateChildrenTyped(
+    private <P extends EntityType<P>, C extends EntityType<C>> Stream<? extends AuditRecord> generateChildrenTyped(
         final ChangeFlowConfig<C> childFlowConfig,
         final EntityChange<P> entityChange,
         final ChangeContext changeContext) {
