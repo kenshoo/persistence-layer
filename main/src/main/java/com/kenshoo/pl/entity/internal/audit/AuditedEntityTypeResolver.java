@@ -22,37 +22,37 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
-public class AuditedFieldsResolver {
+public class AuditedEntityTypeResolver {
 
-    public static final AuditedFieldsResolver INSTANCE = new AuditedFieldsResolver(ExternalMandatoryFieldsExtractor.INSTANCE);
+    public static final AuditedEntityTypeResolver INSTANCE = new AuditedEntityTypeResolver(ExternalMandatoryFieldsExtractor.INSTANCE);
 
     private final ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor;
 
     @VisibleForTesting
-    AuditedFieldsResolver(ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor) {
+    AuditedEntityTypeResolver(ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor) {
         this.externalMandatoryFieldsExtractor = externalMandatoryFieldsExtractor;
     }
 
-    public <E extends EntityType<E>> Optional<AuditedFieldSet<E>> resolve(final E entityType) {
+    public <E extends EntityType<E>> Optional<AuditedEntityType<E>> resolve(final E entityType) {
         requireNonNull(entityType, "entityType is required");
         return entityType.getIdField()
                          .flatMap(idField -> resolve(entityType, idField));
     }
 
-    private <E extends EntityType<E>> Optional<AuditedFieldSet<E>> resolve(final E entityType, final EntityField<E, ? extends Number> idField) {
+    private <E extends EntityType<E>> Optional<AuditedEntityType<E>> resolve(final E entityType, final EntityField<E, ? extends Number> idField) {
         final boolean entityLevelAudited = entityType.getClass().isAnnotationPresent(Audited.class);
 
         final Stream<? extends EntityField<?, ?>> externalFields = externalMandatoryFieldsExtractor.extract(entityType);
 
         final Map<AuditTrigger, List<EntityField<E, ?>>> internalFields = resolveInternalFieldsByTriggers(entityType, idField, entityLevelAudited);
 
-        final AuditedFieldSet<E> fieldSet = AuditedFieldSet.builder(idField)
-                                                           .withExternalFields(seq(externalFields))
-                                                           .withInternalFields(internalFields)
-                                                           .build();
+        final AuditedEntityType<E> auditedEntityType = AuditedEntityType.builder(idField)
+                                                                        .withExternalFields(seq(externalFields))
+                                                                        .withInternalFields(internalFields)
+                                                                        .build();
 
-        if (entityLevelAudited || fieldSet.hasInternalFields()) {
-            return Optional.of(fieldSet);
+        if (entityLevelAudited || auditedEntityType.hasInternalFields()) {
+            return Optional.of(auditedEntityType);
         }
         return empty();
     }

@@ -21,7 +21,7 @@ import static java.util.Collections.singleton;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.builder.ToStringStyle.SHORT_PREFIX_STYLE;
 
-public class AuditedFieldSet<E extends EntityType<E>> {
+public class AuditedEntityType<E extends EntityType<E>> {
 
     private final EntityField<E, ? extends Number> idField;
 
@@ -31,9 +31,9 @@ public class AuditedFieldSet<E extends EntityType<E>> {
     // Fields from current entity (besides id), keyed by audit trigger type
     private final SetMultimap<AuditTrigger, ? extends EntityField<E, ?>> internalFields;
 
-    private AuditedFieldSet(final EntityField<E, ? extends Number> idField,
-                            final Set<? extends EntityField<?, ?>> externalFields,
-                            final SetMultimap<AuditTrigger, ? extends EntityField<E, ?>> internalFields) {
+    private AuditedEntityType(final EntityField<E, ? extends Number> idField,
+                              final Set<? extends EntityField<?, ?>> externalFields,
+                              final SetMultimap<AuditTrigger, ? extends EntityField<E, ?>> internalFields) {
         this.idField = idField;
         this.externalFields = externalFields;
         this.internalFields = internalFields;
@@ -121,10 +121,10 @@ public class AuditedFieldSet<E extends EntityType<E>> {
             return this;
         }
 
-        public AuditedFieldSet<E> build() {
-            return new AuditedFieldSet<>(idField,
-                                         externalFields,
-                                         internalFields);
+        public AuditedEntityType<E> build() {
+            return new AuditedEntityType<>(idField,
+                                           externalFields,
+                                           internalFields);
         }
     }
 
@@ -138,7 +138,7 @@ public class AuditedFieldSet<E extends EntityType<E>> {
             return false;
         }
 
-        final AuditedFieldSet<?> that = (AuditedFieldSet<?>) o;
+        final AuditedEntityType<?> that = (AuditedEntityType<?>) o;
 
         return new EqualsBuilder()
             .append(idField, that.idField)
