@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
+import com.kenshoo.pl.entity.audit.ExternalAuditedField;
 import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
 
 public class ExternalMandatoryFieldsExtractor {
 
@@ -39,9 +37,9 @@ public class ExternalMandatoryFieldsExtractor {
         }
     }
 
-    private AuditedField<?, ?> toAuditedField(final EntityField<?, ?> field) {
-        return AuditedField.builder(field)
-                           .withTrigger(ALWAYS)
+    private AuditedField<?, ?> toAuditedField(final ExternalAuditedField<?, ?> externalAuditedField) {
+        return AuditedField.builder(externalAuditedField.getField())
+                           .withName(externalAuditedField.getName())
                            .build();
     }
 }
