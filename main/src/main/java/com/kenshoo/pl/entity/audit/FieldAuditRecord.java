@@ -12,12 +12,12 @@ import static java.util.Objects.requireNonNull;
 
 public class FieldAuditRecord {
     private final String field;
-    private final Object oldValue;
-    private final Object newValue;
+    private final String oldValue;
+    private final String newValue;
 
     private FieldAuditRecord(final String field,
-                             final Object oldValue,
-                             final Object newValue) {
+                             final String oldValue,
+                             final String newValue) {
         this.field = field;
         this.oldValue = oldValue;
         this.newValue = newValue;
@@ -27,11 +27,11 @@ public class FieldAuditRecord {
         return field;
     }
 
-    public Optional<?> getOldValue() {
+    public Optional<String> getOldValue() {
         return Optional.ofNullable(oldValue);
     }
 
-    public Optional<?> getNewValue() {
+    public Optional<String> getNewValue() {
         return Optional.ofNullable(newValue);
     }
 
@@ -78,19 +78,19 @@ public class FieldAuditRecord {
 
     public static class Builder {
         private final String field;
-        private Object oldValue;
-        private Object newValue;
+        private String oldValue;
+        private String newValue;
 
         private Builder(final String field) {
             this.field = requireNonNull(field, "A field is required");
         }
 
-        public Builder oldValue(Object oldValue) {
+        public Builder oldValue(final String oldValue) {
             this.oldValue = oldValue;
             return this;
         }
 
-        public Builder newValue(Object newValue) {
+        public Builder newValue(final String newValue) {
             this.newValue = newValue;
             return this;
         }

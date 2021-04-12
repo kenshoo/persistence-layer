@@ -98,7 +98,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
 
     @Test
     public void generate_WithMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
@@ -128,7 +128,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
 
     @Test
     public void generate_WithMandatoryAndChildRecords_ShouldGenerateMandatoryFieldValuesAndChildRecords() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 

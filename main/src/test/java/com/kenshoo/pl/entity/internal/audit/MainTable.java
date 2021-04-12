@@ -14,6 +14,7 @@ public class MainTable extends AbstractDataTable<MainTable> {
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
     public final TableField<Record, Double> amount = createField("amount", SQLDataType.DOUBLE);
+    public final TableField<Record, Double> amount2 = createField("amount2", SQLDataType.DOUBLE);
 
     private MainTable(final String name) {
         super(name);

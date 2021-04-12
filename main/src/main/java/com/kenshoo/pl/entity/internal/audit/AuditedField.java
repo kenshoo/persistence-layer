@@ -1,9 +1,8 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.Triptional;
+import com.kenshoo.pl.entity.ValueConverter;
 import com.kenshoo.pl.entity.audit.AuditTrigger;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -38,9 +37,10 @@ public class AuditedField<E extends EntityType<E>, T> {
         return trigger;
     }
 
-    public Triptional<T> getValue(final Entity entity) {
-        return entity.safeGet(field);
+    public ValueConverter<T, String> getStringValueConverter() {
+        return field.getStringValueConverter();
     }
+
 
     public boolean valuesEqual(final T v1, final T v2) {
         return field.valuesEqual(v1, v2);

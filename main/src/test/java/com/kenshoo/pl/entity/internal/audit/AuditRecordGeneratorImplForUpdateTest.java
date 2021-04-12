@@ -94,7 +94,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithMandatoryOnly_ShouldReturnEmpty() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
@@ -135,7 +135,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithChildRecordsOnly_ShouldReturnBasicDataAndChildRecords() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             ImmutableList.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                              entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
@@ -157,7 +157,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithEverything_ShouldGenerateEverything() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 

@@ -94,7 +94,7 @@ public class AuditRecordGeneratorImplForCreateTest {
 
     @Test
     public void generate_WithMandatoryOnly_ShouldReturnMandatoryFieldValues() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
@@ -147,7 +147,7 @@ public class AuditRecordGeneratorImplForCreateTest {
 
     @Test
     public void generate_WithMandatoryAndFieldChangesOnly_ShouldReturnMandatoryFieldValuesAndFieldChanges() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
@@ -174,7 +174,7 @@ public class AuditRecordGeneratorImplForCreateTest {
 
     @Test
     public void generate_WithEverything_ShouldReturnEverything() {
-        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+        final Collection<Entry<String, String>> expectedMandatoryFieldValues =
             List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 

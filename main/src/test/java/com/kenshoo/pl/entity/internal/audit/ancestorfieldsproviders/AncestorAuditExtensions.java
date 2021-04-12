@@ -10,7 +10,10 @@ public class AncestorAuditExtensions implements AuditExtensions {
 
     @Override
     public Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() {
-        return Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-            .map(ExternalAuditedField::new);
+        return Stream.of(NotAuditedAncestorType.NAME,
+                         NotAuditedAncestorType.DESC,
+                         NotAuditedAncestorType.AMOUNT,
+                         NotAuditedAncestorType.AMOUNT2)
+                     .map(ExternalAuditedField::new);
     }
 }

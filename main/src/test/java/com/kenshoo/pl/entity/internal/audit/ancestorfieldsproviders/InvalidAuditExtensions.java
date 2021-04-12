@@ -15,6 +15,6 @@ public class InvalidAuditExtensions implements AuditExtensions {
     @Override
     public Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() {
         return Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-            .map(ExternalAuditedField::new);
+                     .map(ExternalAuditedField::new);
     }
 }

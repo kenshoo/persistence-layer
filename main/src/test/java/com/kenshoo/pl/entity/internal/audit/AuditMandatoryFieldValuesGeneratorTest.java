@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.FinalEntityState;
 import com.kenshoo.pl.entity.Triptional;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
@@ -25,35 +24,51 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class AuditMandatoryFieldValuesGeneratorTest {
 
-    private static final String ANCESTOR_NAME = "ancestorName";
-    private static final String ANCESTOR_DESC = "ancestorDesc";
+    private static final String ANCESTOR_NAME = "SomeAncestorName";
+    private static final String ANCESTOR_DESC = "SomeAncestorDesc";
+
+    private static final String ANCESTOR_NAME_FIELD_NAME = "ancestor_name";
+    private static final String ANCESTOR_DESC_FIELD_NAME = "ancestor_desc";
+
+    private static final AuditedField<NotAuditedAncestorType, String> ANCESTOR_NAME_AUDITED_FIELD =
+        AuditedField.builder(NotAuditedAncestorType.NAME)
+                    .withName(ANCESTOR_NAME_FIELD_NAME)
+                    .build();
+
+    private static final AuditedField<NotAuditedAncestorType, String> ANCESTOR_DESC_AUDITED_FIELD =
+        AuditedField.builder(NotAuditedAncestorType.DESC)
+                    .withName(ANCESTOR_DESC_FIELD_NAME)
+                    .build();
 
     @Mock
     private FinalEntityState finalState;
 
+    @Mock
+    private AuditFieldValueResolver auditFieldValueResolver;
+
     @Test
     public void generate_twoFields_BothNotNull_ShouldReturnBothFieldValues() {
-        when(finalState.safeGet(NotAuditedAncestorType.NAME)).thenReturn(Triptional.of(ANCESTOR_NAME));
-        when(finalState.safeGet(NotAuditedAncestorType.DESC)).thenReturn(Triptional.of(ANCESTOR_DESC));
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_NAME_AUDITED_FIELD, finalState)).thenReturn(Triptional.of(ANCESTOR_NAME));
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_DESC_AUDITED_FIELD, finalState)).thenReturn(Triptional.of(ANCESTOR_DESC));
 
-        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
-                                                                                    NotAuditedAncestorType.DESC));
+        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(ANCESTOR_NAME_AUDITED_FIELD,
+                                                                                    ANCESTOR_DESC_AUDITED_FIELD));
 
         final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
-        final Set<Entry<String, ?>> expectedFieldValues = Set.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
-                                                                 entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
+        final Set<Entry<String, ?>> expectedFieldValues = Set.of(entry(ANCESTOR_NAME_FIELD_NAME, ANCESTOR_NAME),
+                                                                 entry(ANCESTOR_DESC_FIELD_NAME, ANCESTOR_DESC));
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(expectedFieldValues));
     }
 
     @Test
     public void generate_twoFields_BothNull_ShouldReturnEmpty() {
-        Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-              .forEach(field -> when(finalState.safeGet(field)).thenReturn(Triptional.nullInstance()));
+        Stream.of(ANCESTOR_NAME_AUDITED_FIELD, ANCESTOR_DESC_AUDITED_FIELD)
+              .forEach(field -> when(auditFieldValueResolver.resolveToString(field, finalState)).thenReturn(Triptional.nullInstance()));
 
-        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
-                                                                                    NotAuditedAncestorType.DESC));
+        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(ANCESTOR_NAME_AUDITED_FIELD,
+                                                                                    ANCESTOR_DESC_AUDITED_FIELD));
 
         final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
@@ -62,11 +77,11 @@ public class AuditMandatoryFieldValuesGeneratorTest {
 
     @Test
     public void generate_twoFields_BothAbsentShouldReturnEmpty() {
-        Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-              .forEach(field -> when(finalState.safeGet(field)).thenReturn(Triptional.absent()));
+        Stream.of(ANCESTOR_NAME_AUDITED_FIELD, ANCESTOR_DESC_AUDITED_FIELD)
+              .forEach(field -> when(auditFieldValueResolver.resolveToString(field, finalState)).thenReturn(Triptional.absent()));
 
-        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
-                                                                                    NotAuditedAncestorType.DESC));
+        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(ANCESTOR_NAME_AUDITED_FIELD,
+                                                                                    ANCESTOR_DESC_AUDITED_FIELD));
 
         final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
@@ -75,14 +90,14 @@ public class AuditMandatoryFieldValuesGeneratorTest {
 
     @Test
     public void generate_twoFields_FirstNotNull_SecondNull_ShouldReturnFirstFieldValue() {
-        when(finalState.safeGet(NotAuditedAncestorType.NAME)).thenReturn(Triptional.of(ANCESTOR_NAME));
-        when(finalState.safeGet(NotAuditedAncestorType.DESC)).thenReturn(Triptional.nullInstance());
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_NAME_AUDITED_FIELD, finalState)).thenReturn(Triptional.of(ANCESTOR_NAME));
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_DESC_AUDITED_FIELD, finalState)).thenReturn(Triptional.nullInstance());
 
-        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
-                                                                                    NotAuditedAncestorType.DESC));
+        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(ANCESTOR_NAME_AUDITED_FIELD,
+                                                                                    ANCESTOR_DESC_AUDITED_FIELD));
 
 
-        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME));
+        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(ANCESTOR_NAME_FIELD_NAME, ANCESTOR_NAME));
 
         final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
@@ -91,14 +106,14 @@ public class AuditMandatoryFieldValuesGeneratorTest {
 
     @Test
     public void generate_twoFields_FirstAbsent_SecondNull_ShouldReturnSecondFieldValue() {
-        when(finalState.safeGet(NotAuditedAncestorType.NAME)).thenReturn(Triptional.absent());
-        when(finalState.safeGet(NotAuditedAncestorType.DESC)).thenReturn(Triptional.of(ANCESTOR_DESC));
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_NAME_AUDITED_FIELD, finalState)).thenReturn(Triptional.absent());
+        when(auditFieldValueResolver.resolveToString(ANCESTOR_DESC_AUDITED_FIELD, finalState)).thenReturn(Triptional.of(ANCESTOR_DESC));
 
-        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
-                                                                                    NotAuditedAncestorType.DESC));
+        final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(ANCESTOR_NAME_AUDITED_FIELD,
+                                                                                    ANCESTOR_DESC_AUDITED_FIELD));
 
 
-        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
+        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(ANCESTOR_DESC_FIELD_NAME, ANCESTOR_DESC));
 
         final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
@@ -112,7 +127,7 @@ public class AuditMandatoryFieldValuesGeneratorTest {
         assertThat(generator.generate(finalState), is(empty()));
     }
 
-    private AuditMandatoryFieldValuesGenerator newGenerator(final Stream<? extends EntityField<?, ?>> mandatoryFields) {
-        return new AuditMandatoryFieldValuesGenerator(mandatoryFields.map(f -> AuditedField.builder(f).build()));
+    private AuditMandatoryFieldValuesGenerator newGenerator(final Stream<? extends AuditedField<?, ?>> mandatoryFields) {
+        return new AuditMandatoryFieldValuesGenerator(mandatoryFields, auditFieldValueResolver);
     }
 }
