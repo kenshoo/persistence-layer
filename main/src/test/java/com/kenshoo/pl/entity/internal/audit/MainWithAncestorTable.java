@@ -14,6 +14,7 @@ public class MainWithAncestorTable extends AbstractDataTable<MainWithAncestorTab
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> desc3 = createField("desc3", SQLDataType.VARCHAR(50));
 
     private MainWithAncestorTable(final String name) {
         super(name);

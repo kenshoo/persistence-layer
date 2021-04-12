@@ -36,6 +36,12 @@ public class AuditRecordMatchers {
                                               .build());
     }
 
+    public static Matcher<AuditRecord> hasCreatedFieldRecord(final String fieldName, final Object value) {
+        return hasFieldRecord(FieldAuditRecord.builder(fieldName)
+                                              .newValue(value)
+                                              .build());
+    }
+
     public static Matcher<AuditRecord> hasChangedFieldRecord(final EntityField<?, ?> field,
                                                              final String oldValue,
                                                              final String newValue) {
