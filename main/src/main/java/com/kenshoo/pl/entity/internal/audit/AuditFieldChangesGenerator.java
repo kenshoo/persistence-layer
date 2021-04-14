@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FinalEntityState;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
@@ -17,15 +16,15 @@ import static org.jooq.lambda.Seq.seq;
 
 public class AuditFieldChangesGenerator<E extends EntityType<E>> {
 
-    private final Collection<EntityField<E, ?>> onChangeFields;
+    private final Collection<AuditedField<E, ?>> onChangeFields;
     private final AuditFieldChangeGenerator singleGenerator;
 
-    public AuditFieldChangesGenerator(final Stream<? extends EntityField<E, ?>> onChangeFields) {
+    public AuditFieldChangesGenerator(final Stream<? extends AuditedField<E, ?>> onChangeFields) {
         this(onChangeFields, new AuditFieldChangeGenerator());
     }
 
     @VisibleForTesting
-    AuditFieldChangesGenerator(final Stream<? extends EntityField<E, ?>> onChangeFields,
+    AuditFieldChangesGenerator(final Stream<? extends AuditedField<E, ?>> onChangeFields,
                                final AuditFieldChangeGenerator singleGenerator) {
         requireNonNull(onChangeFields, "onChangeFields must not be null (can be empty)");
         this.onChangeFields = onChangeFields.collect(toList());

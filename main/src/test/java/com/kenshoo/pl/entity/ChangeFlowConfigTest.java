@@ -179,8 +179,8 @@ public class ChangeFlowConfigTest {
     public void audit_required_fields_calculator_should_be_in_state_consumers_if_audited_fields_defined() {
 
         final AuditedEntityType<TestEntity> auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
-                                                                                 .withInternalFields(ON_CREATE_OR_UPDATE,
-                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                                                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                                                  .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
@@ -218,8 +218,8 @@ public class ChangeFlowConfigTest {
 
         final AuditedEntityType<TestEntity> auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
                                                                                  .withName(AUDITED_ENTITY_TYPE_NAME)
-                                                                                 .withInternalFields(ON_CREATE_OR_UPDATE,
-                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                                                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                                                  .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 

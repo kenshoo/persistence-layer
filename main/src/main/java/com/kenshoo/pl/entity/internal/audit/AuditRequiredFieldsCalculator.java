@@ -26,13 +26,13 @@ public class AuditRequiredFieldsCalculator<E extends EntityType<E>> implements C
     public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToChange,
                                                               final ChangeOperation changeOperation) {
 
-        final Set<? extends EntityField<E, ?>> onChangeFields = auditedEntityType.getOnChangeFields().collect(toSet());
+        final Set<? extends EntityField<E, ?>> onChangeFields = auditedEntityType.getUnderlyingOnChangeFields().collect(toSet());
 
         final Seq<? extends EntityField<E, ?>> intersectedChangeFields =
             seq(fieldsToChange).filter(onChangeFields::contains);
 
         return Seq.<EntityField<?, ?>>of(auditedEntityType.getIdField())
-            .append(auditedEntityType.getMandatoryFields())
+            .append(auditedEntityType.getUnderlyingMandatoryFields())
             .append(intersectedChangeFields);
     }
 }

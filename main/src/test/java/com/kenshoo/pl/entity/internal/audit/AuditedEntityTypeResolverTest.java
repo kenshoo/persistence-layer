@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
@@ -43,8 +42,8 @@ public class AuditedEntityTypeResolverTest {
         final AuditedEntityType<AuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ON_CREATE_OR_UPDATE,
-                                               AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2, AuditedType.AMOUNT)
+                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                           AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2, AuditedType.AMOUNT)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedType.INSTANCE),
@@ -59,10 +58,10 @@ public class AuditedEntityTypeResolverTest {
         final AuditedEntityType<AuditedWithOnUpdateType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithOnUpdateType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ON_UPDATE,
-                                               AuditedWithOnUpdateType.NAME,
-                                               AuditedWithOnUpdateType.DESC,
-                                               AuditedWithOnUpdateType.DESC2)
+                             .withUnderlyingInternalFields(ON_UPDATE,
+                                                           AuditedWithOnUpdateType.NAME,
+                                                           AuditedWithOnUpdateType.DESC,
+                                                           AuditedWithOnUpdateType.DESC2)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedWithOnUpdateType.INSTANCE),
@@ -77,7 +76,7 @@ public class AuditedEntityTypeResolverTest {
         final AuditedEntityType<AuditedWithInternalMandatoryOnlyType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithInternalMandatoryOnlyType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ALWAYS, AuditedWithInternalMandatoryOnlyType.NAME)
+                             .withUnderlyingInternalFields(ALWAYS, AuditedWithInternalMandatoryOnlyType.NAME)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedWithInternalMandatoryOnlyType.INSTANCE),
@@ -87,17 +86,17 @@ public class AuditedEntityTypeResolverTest {
     @Test
     public void resolve_WhenAudited_AndHasId_AndExternalMandatoryFields_AndOtherFields_ShouldReturnIdAndExternalMandatoryAndOnChange() {
         when(auditedEntityTypeNameResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC).map(AuditedField::new))
             .when(externalMandatoryFieldsExtractor).extract(AuditedWithAncestorMandatoryType.INSTANCE);
 
         final AuditedEntityType<AuditedWithAncestorMandatoryType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithAncestorMandatoryType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ON_CREATE_OR_UPDATE,
-                                               AuditedWithAncestorMandatoryType.NAME,
-                                               AuditedWithAncestorMandatoryType.DESC,
-                                               AuditedWithAncestorMandatoryType.DESC2)
-                             .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                           AuditedWithAncestorMandatoryType.NAME,
+                                                           AuditedWithAncestorMandatoryType.DESC,
+                                                           AuditedWithAncestorMandatoryType.DESC2)
+                             .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE),
@@ -107,16 +106,16 @@ public class AuditedEntityTypeResolverTest {
     @Test
     public void resolve_WhenAudited_AndHasEverything_ShouldReturnEverything() {
         when(auditedEntityTypeNameResolver.resolve(AuditedWithAllVariationsType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC))
+        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC).map(AuditedField::new))
             .when(externalMandatoryFieldsExtractor).extract(AuditedWithAllVariationsType.INSTANCE);
 
         final AuditedEntityType<AuditedWithAllVariationsType> expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedWithAllVariationsType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                             .withInternalFields(ALWAYS, AuditedWithAllVariationsType.NAME)
-                             .withInternalFields(ON_CREATE_OR_UPDATE, AuditedWithAllVariationsType.DESC)
-                             .withInternalFields(ON_UPDATE, AuditedWithAllVariationsType.DESC2)
+                             .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+                             .withUnderlyingInternalFields(ALWAYS, AuditedWithAllVariationsType.NAME)
+                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedWithAllVariationsType.DESC)
+                             .withUnderlyingInternalFields(ON_UPDATE, AuditedWithAllVariationsType.DESC2)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedWithAllVariationsType.INSTANCE),
@@ -131,8 +130,8 @@ public class AuditedEntityTypeResolverTest {
         final AuditedEntityType<InclusiveAuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(InclusiveAuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ON_CREATE_OR_UPDATE,
-                                               InclusiveAuditedType.NAME, InclusiveAuditedType.DESC)
+                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                           InclusiveAuditedType.NAME, InclusiveAuditedType.DESC)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(InclusiveAuditedType.INSTANCE),
@@ -147,7 +146,7 @@ public class AuditedEntityTypeResolverTest {
         final AuditedEntityType<ExclusiveAuditedType> expectedAuditedEntityType =
             AuditedEntityType.builder(ExclusiveAuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withInternalFields(ON_CREATE_OR_UPDATE, ImmutableSet.of(ExclusiveAuditedType.NAME))
+                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, ExclusiveAuditedType.NAME)
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(ExclusiveAuditedType.INSTANCE),

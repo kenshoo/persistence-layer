@@ -113,6 +113,6 @@ public class AuditMandatoryFieldValuesGeneratorTest {
     }
 
     private AuditMandatoryFieldValuesGenerator newGenerator(final Stream<? extends EntityField<?, ?>> mandatoryFields) {
-        return new AuditMandatoryFieldValuesGenerator(mandatoryFields);
+        return new AuditMandatoryFieldValuesGenerator(mandatoryFields.map(AuditedField::new));
     }
 }
