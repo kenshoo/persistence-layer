@@ -4,16 +4,16 @@ import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-class AuditRecordSameChildRecordMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordSameChildRecordMatcher extends TypeSafeMatcher<AuditRecord> {
 
-    private final AuditRecord<?> expectedChildRecord;
+    private final AuditRecord expectedChildRecord;
 
-    AuditRecordSameChildRecordMatcher(final AuditRecord<?> expectedChildRecord) {
+    AuditRecordSameChildRecordMatcher(final AuditRecord expectedChildRecord) {
         this.expectedChildRecord = expectedChildRecord;
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<?> actualAuditRecord) {
+    protected boolean matchesSafely(final AuditRecord actualAuditRecord) {
         return actualAuditRecord.getChildRecords().contains(expectedChildRecord);
     }
 

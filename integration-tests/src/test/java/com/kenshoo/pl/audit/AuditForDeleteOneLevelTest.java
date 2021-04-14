@@ -85,11 +85,11 @@ public class AuditForDeleteOneLevelTest {
         auditedPL.delete(singletonList(new DeleteAuditedCommand(ID_1)),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(DELETE)));
@@ -100,7 +100,7 @@ public class AuditForDeleteOneLevelTest {
         auditedPL.delete(singletonList(new DeleteAuditedCommand(INVALID_ID)),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -113,17 +113,17 @@ public class AuditForDeleteOneLevelTest {
 
         auditedPL.delete(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(DELETE)));
@@ -137,12 +137,12 @@ public class AuditForDeleteOneLevelTest {
 
         auditedPL.delete(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
@@ -153,11 +153,11 @@ public class AuditForDeleteOneLevelTest {
         auditedWithoutDataFieldsPL.delete(singletonList(new DeleteAuditedWithoutDataFieldsCommand(ID_1)),
                                           auditedWithoutDataFieldsConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithoutDataFieldsType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedWithoutDataFieldsType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(DELETE)));
@@ -168,7 +168,7 @@ public class AuditForDeleteOneLevelTest {
         notAuditedPL.delete(singletonList(new DeleteNotAuditedCommand(ID_1)),
                             notAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -179,10 +179,5 @@ public class AuditForDeleteOneLevelTest {
 
     private <E extends EntityType<E>> PersistenceLayer<E> persistenceLayer() {
         return new PersistenceLayer<>(plContext);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

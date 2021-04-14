@@ -92,11 +92,11 @@ public class AuditForUpsertOneLevelTest {
                                            .with(AuditedType.DESC2, "desc2")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                       hasOperator(CREATE),
@@ -112,11 +112,11 @@ public class AuditForUpsertOneLevelTest {
                                            .with(AuditedType.DESC2, "newDesc2A")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(EXISTING_ID_1)),
                                       hasOperator(UPDATE),
@@ -132,7 +132,7 @@ public class AuditForUpsertOneLevelTest {
                                            .with(AuditedType.DESC2, "desc2A")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -149,12 +149,12 @@ public class AuditForUpsertOneLevelTest {
 
         auditedPL.upsert(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
@@ -162,7 +162,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasCreatedFieldRecord(AuditedType.DESC, "newDescA"),
                                        hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_2))),
                                        hasOperator(CREATE),
@@ -183,12 +183,12 @@ public class AuditForUpsertOneLevelTest {
 
         auditedPL.upsert(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_1)),
                                        hasOperator(UPDATE),
@@ -196,7 +196,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
                                        hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
@@ -217,12 +217,12 @@ public class AuditForUpsertOneLevelTest {
 
         auditedPL.upsert(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
@@ -230,7 +230,7 @@ public class AuditForUpsertOneLevelTest {
                                        hasCreatedFieldRecord(AuditedType.DESC, "newDescA"),
                                        hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
@@ -244,7 +244,7 @@ public class AuditForUpsertOneLevelTest {
         notAuditedPL.upsert(singletonList(new UpsertNotAuditedCommand("name")),
                             notAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -255,7 +255,7 @@ public class AuditForUpsertOneLevelTest {
                                               .with(NotAuditedType.DESC, "newDescA")),
                             notAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("There should not be any published audit records",
                    auditRecords, is(empty()));
@@ -275,10 +275,5 @@ public class AuditForUpsertOneLevelTest {
                          .where(MainTable.INSTANCE.name.eq(name))
                          .fetchOptional(MainTable.INSTANCE.id)
                          .orElseThrow(() -> new IllegalStateException("Could not fetch the id of the entity named '" + name + "'"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

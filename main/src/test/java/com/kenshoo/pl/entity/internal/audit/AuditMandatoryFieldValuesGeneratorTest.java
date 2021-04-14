@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldValue;
 import com.kenshoo.pl.entity.FinalEntityState;
 import com.kenshoo.pl.entity.Triptional;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
@@ -12,10 +11,12 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singleton;
+import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.assertThat;
@@ -38,10 +39,10 @@ public class AuditMandatoryFieldValuesGeneratorTest {
         final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
                                                                                     NotAuditedAncestorType.DESC));
 
-        final Collection<? extends EntityFieldValue> actualFieldValues = generator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
-        final Set<EntityFieldValue> expectedFieldValues = ImmutableSet.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                                                                          new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
+        final Set<Entry<String, ?>> expectedFieldValues = Set.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                                                                 entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(expectedFieldValues));
     }
@@ -54,7 +55,7 @@ public class AuditMandatoryFieldValuesGeneratorTest {
         final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
                                                                                     NotAuditedAncestorType.DESC));
 
-        final Collection<? extends EntityFieldValue> actualFieldValues = generator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(empty()));
     }
@@ -67,7 +68,7 @@ public class AuditMandatoryFieldValuesGeneratorTest {
         final AuditMandatoryFieldValuesGenerator generator = newGenerator(Stream.of(NotAuditedAncestorType.NAME,
                                                                                     NotAuditedAncestorType.DESC));
 
-        final Collection<? extends EntityFieldValue> actualFieldValues = generator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(empty()));
     }
@@ -81,9 +82,9 @@ public class AuditMandatoryFieldValuesGeneratorTest {
                                                                                     NotAuditedAncestorType.DESC));
 
 
-        final Set<EntityFieldValue> expectedFieldValues = singleton(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME));
+        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME));
 
-        final Collection<? extends EntityFieldValue> actualFieldValues = generator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(expectedFieldValues));
     }
@@ -97,9 +98,9 @@ public class AuditMandatoryFieldValuesGeneratorTest {
                                                                                     NotAuditedAncestorType.DESC));
 
 
-        final Set<EntityFieldValue> expectedFieldValues = singleton(new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
+        final Set<Entry<String, ?>> expectedFieldValues = singleton(entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
-        final Collection<? extends EntityFieldValue> actualFieldValues = generator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> actualFieldValues = generator.generate(finalState);
 
         assertThat(ImmutableSet.copyOf(actualFieldValues), is(expectedFieldValues));
     }

@@ -122,11 +122,11 @@ public class AuditForUpsertTwoLevelsTest {
         final long parentId = fetchNewParent1IdByName();
         final long childId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(parentId)),
@@ -156,11 +156,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
@@ -191,11 +191,11 @@ public class AuditForUpsertTwoLevelsTest {
         final long child11Id = fetchChildIdByName(NEW_CHILD_NAME_11);
         final long child12Id = fetchChildIdByName(NEW_CHILD_NAME_12);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child11Id)),
@@ -228,11 +228,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
@@ -271,11 +271,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         final long newChildId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(newChildId)),
@@ -308,11 +308,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         final long auditedChildId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(auditedChildId)),
@@ -343,11 +343,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
@@ -372,11 +372,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(cmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
@@ -401,11 +401,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         final long childId = fetchChildIdByName(NEW_CHILD_NAME_11);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
@@ -431,7 +431,7 @@ public class AuditForUpsertTwoLevelsTest {
 
         notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -453,7 +453,7 @@ public class AuditForUpsertTwoLevelsTest {
 
         notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -475,11 +475,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
 
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
@@ -505,11 +505,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE)));
@@ -536,11 +536,11 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
@@ -568,12 +568,12 @@ public class AuditForUpsertTwoLevelsTest {
         final long child1Id = fetchChildIdByName(NEW_CHILD_NAME_11);
         final long child2Id = fetchChildIdByName(NEW_CHILD_NAME_21);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
+        final AuditRecord auditRecord2 = auditRecords.get(1);
 
         assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child1Id)),
@@ -610,17 +610,17 @@ public class AuditForUpsertTwoLevelsTest {
 
         auditedParentPL.upsert(cmds, flowConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(UPDATE))));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(UPDATE))));
@@ -650,10 +650,5 @@ public class AuditForUpsertTwoLevelsTest {
                          .fetchOptional()
                          .map(rec -> rec.get(child_table.id))
                          .orElseThrow(() -> new IllegalStateException("Could not fetch child id by name '" + childName + "'"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

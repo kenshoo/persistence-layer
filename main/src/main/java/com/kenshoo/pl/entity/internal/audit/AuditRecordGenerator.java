@@ -10,9 +10,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface AuditRecordGenerator<E extends EntityType<E>> {
-    Optional<AuditRecord<E>> generate(EntityChange<E> entityChange,
-                                      ChangeContext context,
-                                      Collection<? extends AuditRecord<?>> childRecords);
+    Optional<AuditRecord> generate(EntityChange<E> entityChange,
+                                   ChangeContext context,
+                                   Collection<? extends AuditRecord> childRecords);
 
     @VisibleForTesting
     String getEntityTypeName();

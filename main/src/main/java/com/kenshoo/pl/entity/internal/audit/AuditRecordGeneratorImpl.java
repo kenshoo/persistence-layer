@@ -7,6 +7,7 @@ import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
@@ -40,14 +41,14 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
     }
 
     @Override
-    public Optional<AuditRecord<E>> generate(final EntityChange<E> entityChange,
-                                             final ChangeContext context,
-                                             final Collection<? extends AuditRecord<?>> childRecords) {
+    public Optional<AuditRecord> generate(final EntityChange<E> entityChange,
+                                          final ChangeContext context,
+                                          final Collection<? extends AuditRecord> childRecords) {
         requireNonNull(entityChange, "entityChange is required");
 
-        final AuditRecord<E> auditRecord = generateInner(entityChange,
-                                                         context,
-                                                         childRecords);
+        final AuditRecord auditRecord = generateInner(entityChange,
+                                                      context,
+                                                      childRecords);
 
         if (entityChange.getChangeOperation() == UPDATE && auditRecord.hasNoChanges()) {
             return Optional.empty();
@@ -55,9 +56,9 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         return Optional.of(auditRecord);
     }
 
-    private AuditRecord<E> generateInner(final EntityChange<E> entityChange,
-                                         final ChangeContext context,
-                                         final Collection<? extends AuditRecord<?>> childRecords) {
+    private AuditRecord generateInner(final EntityChange<E> entityChange,
+                                      final ChangeContext context,
+                                      final Collection<? extends AuditRecord> childRecords) {
         requireNonNull(context, "context is required");
 
         final CurrentEntityState currentState = context.getEntity(entityChange);
@@ -65,11 +66,11 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
 
         final String entityId = extractEntityId(entityChange, currentState);
 
-        final Collection<EntityFieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
+        final Collection<? extends Entry<String, ?>> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
-        final Collection<FieldAuditRecord<E>> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
+        final Collection<FieldAuditRecord> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 
-        return new AuditRecord.Builder<E>()
+        return new AuditRecord.Builder()
             .withEntityType(entityTypeName)
             .withEntityId(entityId)
             .withMandatoryFieldValues(mandatoryFieldValues)

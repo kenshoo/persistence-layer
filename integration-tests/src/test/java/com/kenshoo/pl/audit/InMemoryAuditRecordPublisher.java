@@ -11,16 +11,16 @@ import static java.util.stream.Collectors.toList;
 
 class InMemoryAuditRecordPublisher implements AuditRecordPublisher {
 
-    private final List<AuditRecord<?>> auditRecords = new ArrayList<>();
+    private final List<AuditRecord> auditRecords = new ArrayList<>();
 
     @Override
-    public void publish(Stream<? extends AuditRecord<?>> auditRecords) {
+    public void publish(Stream<? extends AuditRecord> auditRecords) {
         if (auditRecords != null) {
             this.auditRecords.addAll(auditRecords.collect(toList()));
         }
     }
 
-    public Stream<? extends AuditRecord<?>> getAuditRecords() {
+    public Stream<? extends AuditRecord> getAuditRecords() {
         return auditRecords.stream();
     }
 }

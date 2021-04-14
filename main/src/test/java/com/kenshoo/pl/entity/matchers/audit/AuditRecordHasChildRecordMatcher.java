@@ -5,16 +5,16 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-class AuditRecordHasChildRecordMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordHasChildRecordMatcher extends TypeSafeMatcher<AuditRecord> {
 
-    private final Matcher<AuditRecord<?>> childRecordMatcher;
+    private final Matcher<AuditRecord> childRecordMatcher;
 
-    AuditRecordHasChildRecordMatcher(final Matcher<AuditRecord<?>> childRecordMatcher) {
+    AuditRecordHasChildRecordMatcher(final Matcher<AuditRecord> childRecordMatcher) {
         this.childRecordMatcher = childRecordMatcher;
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<?> actualAuditRecord) {
+    protected boolean matchesSafely(final AuditRecord actualAuditRecord) {
         return actualAuditRecord.getChildRecords().stream()
                                 .anyMatch(childRecordMatcher::matches);
     }

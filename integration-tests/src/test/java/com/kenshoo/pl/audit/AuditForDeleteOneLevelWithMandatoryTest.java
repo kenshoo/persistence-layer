@@ -100,11 +100,11 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
         auditedWithAncestorPL.delete(singletonList(deleteWithAncestorCommand()),
                                      auditedWithAncestorConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasMandatoryFieldValue(ANCESTOR_NAME_FIELD, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(ANCESTOR_DESC_FIELD, ANCESTOR_DESC)));
     }
@@ -114,11 +114,11 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
         auditedWithInternalPL.delete(singletonList(deleteWithInternalCommand()),
                                  auditedWithInternalConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedWithAncestorMandatoryType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, hasMandatoryFieldValue(AuditedWithInternalMandatoryType.NAME, NAME));
     }
 
@@ -136,10 +136,5 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
 
     private <E extends EntityType<E>> PersistenceLayer<E> persistenceLayer() {
         return new PersistenceLayer<>(plContext);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

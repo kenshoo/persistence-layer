@@ -4,10 +4,10 @@ import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-public class AuditRecordNoMandatoryFieldsMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+public class AuditRecordNoMandatoryFieldsMatcher extends TypeSafeMatcher<AuditRecord> {
 
     @Override
-    protected boolean matchesSafely(AuditRecord<?> actualAuditRecord) {
+    protected boolean matchesSafely(AuditRecord actualAuditRecord) {
         return actualAuditRecord.getMandatoryFieldValues().isEmpty();
     }
 

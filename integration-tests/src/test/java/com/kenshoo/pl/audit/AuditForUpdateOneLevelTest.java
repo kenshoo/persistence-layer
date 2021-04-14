@@ -98,11 +98,11 @@ public class AuditForUpdateOneLevelTest {
                                                  .with(AuditedType.DESC2, "newDesc2A")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
@@ -119,11 +119,11 @@ public class AuditForUpdateOneLevelTest {
                                                  .with(AuditedType.DESC2, "desc2A")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
@@ -140,7 +140,7 @@ public class AuditForUpdateOneLevelTest {
                                                  .with(AuditedType.DESC2, "desc2A")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -152,11 +152,11 @@ public class AuditForUpdateOneLevelTest {
                                                  .with(AuditedType.DESC, "newDescA")),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<AuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
@@ -170,7 +170,7 @@ public class AuditForUpdateOneLevelTest {
         auditedPL.update(singletonList(new UpdateAuditedCommand(INVALID_ID)),
                          auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -189,12 +189,12 @@ public class AuditForUpdateOneLevelTest {
 
         auditedPL.update(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(2));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE),
@@ -202,7 +202,7 @@ public class AuditForUpdateOneLevelTest {
                                        hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
                                        hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
 
-        final AuditRecord<AuditedType> auditRecord2 = typed(auditRecords.get(1));
+        final AuditRecord auditRecord2 = auditRecords.get(1);
         assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(UPDATE),
@@ -221,12 +221,12 @@ public class AuditForUpdateOneLevelTest {
 
         auditedPL.update(cmds, auditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
 
-        final AuditRecord<AuditedType> auditRecord1 = typed(auditRecords.get(0));
+        final AuditRecord auditRecord1 = auditRecords.get(0);
         assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(UPDATE)));
@@ -240,11 +240,11 @@ public class AuditForUpdateOneLevelTest {
                                                  .with(InclusiveAuditedType.DESC2, "newDesc2A")),
                                   inclusiveAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
@@ -259,11 +259,11 @@ public class AuditForUpdateOneLevelTest {
                                                            .with(InclusiveAuditedType.DESC, "newDescA")),
                                   inclusiveAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        final AuditRecord<InclusiveAuditedType> auditRecord = typed(auditRecords.get(0));
+        final AuditRecord auditRecord = auditRecords.get(0);
         assertThat(auditRecord, allOf(hasEntityType(InclusiveAuditedType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(UPDATE),
@@ -277,7 +277,7 @@ public class AuditForUpdateOneLevelTest {
         auditedWithoutDataFieldsPL.update(singletonList(new UpdateAuditedWithoutDataFieldsCommand(ID_1)),
                                           auditedWithoutDataFieldsConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat(auditRecords, is(empty()));
     }
@@ -288,7 +288,7 @@ public class AuditForUpdateOneLevelTest {
                                                     .with(NotAuditedType.NAME, "newNameA")),
                             notAuditedConfig);
 
-        final List<? extends AuditRecord<?>> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("There should not be any published audit records",
                    auditRecords, is(empty()));
@@ -300,10 +300,5 @@ public class AuditForUpdateOneLevelTest {
 
     private <E extends EntityType<E>> PersistenceLayer<E> persistenceLayer() {
         return new PersistenceLayer<>(plContext);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <E extends EntityType<E>> AuditRecord<E> typed(final AuditRecord<?> auditRecord) {
-        return (AuditRecord<E>) auditRecord;
     }
 }

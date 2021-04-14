@@ -1,7 +1,10 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.ChangeContext;
+import com.kenshoo.pl.entity.CurrentEntityState;
+import com.kenshoo.pl.entity.EntityChange;
+import com.kenshoo.pl.entity.FinalEntityState;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
@@ -15,6 +18,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
@@ -22,6 +26,7 @@ import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static com.kenshoo.pl.entity.matchers.audit.AuditRecordMatchers.*;
 import static java.util.Collections.emptyList;
+import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -81,7 +86,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord, isEmpty());
@@ -89,14 +94,14 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithMandatoryOnly_ShouldReturnEmpty() {
-        final Collection<EntityFieldValue> expectedMandatoryFieldValues =
-            ImmutableList.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                             new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
+        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+            List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                    entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord, isEmpty());
@@ -104,7 +109,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithFieldChangesOnly_ShouldReturnBasicDataAndFieldChanges() {
-        final Collection<FieldAuditRecord<AuditedType>> expectedFieldChanges =
+        final Collection<FieldAuditRecord> expectedFieldChanges =
             ImmutableList.of(FieldAuditRecord.builder(AuditedType.NAME)
                                              .oldValue(OLD_NAME)
                                              .newValue(NEW_NAME)
@@ -117,7 +122,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
@@ -130,16 +135,16 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithChildRecordsOnly_ShouldReturnBasicDataAndChildRecords() {
-        final Collection<EntityFieldValue> expectedMandatoryFieldValues =
-            ImmutableList.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                             new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
+        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+            ImmutableList.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                             entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
-        final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
+        final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         assertThat(actualOptionalAuditRecord,
@@ -152,11 +157,11 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithEverything_ShouldGenerateEverything() {
-        final Collection<EntityFieldValue> expectedMandatoryFieldValues =
-            ImmutableList.of(new EntityFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
-                             new EntityFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC));
+        final Collection<Entry<String, ?>> expectedMandatoryFieldValues =
+            List.of(entry(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                    entry(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
-        final Collection<FieldAuditRecord<AuditedType>> expectedFieldChanges =
+        final Collection<FieldAuditRecord> expectedFieldChanges =
             ImmutableList.of(FieldAuditRecord.builder(AuditedType.NAME)
                                              .oldValue(OLD_NAME)
                                              .newValue(NEW_NAME)
@@ -169,9 +174,9 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
-        final List<AuditRecord<?>> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
+        final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
 
-        final Optional<? extends AuditRecord<AuditedType>> actualOptionalAuditRecord =
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, childRecords);
 
         //noinspection unchecked
@@ -187,7 +192,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
                                       hasSameChildRecord(childRecords.get(1)))));
     }
 
-    private AuditRecord<?> mockChildRecord() {
+    private AuditRecord mockChildRecord() {
         return mock(AuditRecord.class);
     }
 }

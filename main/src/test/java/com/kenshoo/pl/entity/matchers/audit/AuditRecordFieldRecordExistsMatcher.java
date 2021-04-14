@@ -1,20 +1,19 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
-import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-class AuditRecordFieldRecordExistsMatcher extends TypeSafeMatcher<AuditRecord<?>> {
+class AuditRecordFieldRecordExistsMatcher extends TypeSafeMatcher<AuditRecord> {
 
-    private final EntityField<?, ?> expectedField;
+    private final String expectedField;
 
-    AuditRecordFieldRecordExistsMatcher(final EntityField<?, ?> expectedField) {
+    AuditRecordFieldRecordExistsMatcher(final String expectedField) {
         this.expectedField = expectedField;
     }
 
     @Override
-    protected boolean matchesSafely(final AuditRecord<?> actualAuditRecord) {
+    protected boolean matchesSafely(final AuditRecord actualAuditRecord) {
         return hasFieldRecordFor(actualAuditRecord, expectedField);
     }
 
@@ -24,7 +23,7 @@ class AuditRecordFieldRecordExistsMatcher extends TypeSafeMatcher<AuditRecord<?>
     }
 
 
-    private boolean hasFieldRecordFor(final AuditRecord<?> auditRecord, final EntityField<?, ?> field) {
+    private boolean hasFieldRecordFor(final AuditRecord auditRecord, final String field) {
         return auditRecord.getFieldRecords().stream()
                           .anyMatch(fieldRecord -> fieldRecord.getField().equals(field));
     }
