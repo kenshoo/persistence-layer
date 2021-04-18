@@ -11,11 +11,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAndIs;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
+import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.AUDITED;
+import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.NOT_AUDITED;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -29,21 +34,37 @@ public class AuditedEntityTypeResolverTest {
     private AuditedEntityTypeNameResolver auditedEntityTypeNameResolver;
 
     @Mock
+    private AuditedFieldResolver auditedFieldResolver;
+
+    @Mock
     private ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor;
 
     @InjectMocks
     private AuditedEntityTypeResolver auditedEntityTypeResolver;
 
     @Test
-    public void resolve_WhenAudited_AndHasId_AndOnCreateAndUpdate_ShouldReturnIdAndOnCreateOrUpdate() {
+    public void resolve_WhenAudited_AndHasId_AndOneInternalType_ShouldReturnAllFields() {
         when(auditedEntityTypeNameResolver.resolve(AuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(AuditedType.INSTANCE)).thenReturn(Stream.empty());
 
-        final AuditedEntityType<AuditedType> expectedAuditedEntityType =
+        final var expectedAuditedFieldMap = Map.of(AuditedType.NAME,
+                                                   AuditedField.builder(AuditedType.NAME)
+                                                               .withName("name")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build(),
+                                                   AuditedType.DESC,
+                                                   AuditedField.builder(AuditedType.DESC)
+                                                               .withName("desc")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build());
+
+        expectedAuditedFieldMap.forEach((field, expectedAuditedField) ->
+                                            when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
             AuditedEntityType.builder(AuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
-                                                           AuditedType.NAME, AuditedType.DESC, AuditedType.DESC2, AuditedType.AMOUNT)
+                             .withInternalFields(ON_CREATE_OR_UPDATE, expectedAuditedFieldMap.values())
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(AuditedType.INSTANCE),
@@ -51,105 +72,107 @@ public class AuditedEntityTypeResolverTest {
     }
 
     @Test
-    public void resolve_WhenAudited_AndHasId_AndOnUpdate_ShouldReturnIdAndOnUpdate() {
-        when(auditedEntityTypeNameResolver.resolve(AuditedWithOnUpdateType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        when(externalMandatoryFieldsExtractor.extract(AuditedWithOnUpdateType.INSTANCE)).thenReturn(Stream.empty());
+    public void resolve_WhenAudited_AndHasId_AndTwoInternalTypes_ShouldReturnAllFields() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
+        when(externalMandatoryFieldsExtractor.extract(AuditedType.INSTANCE)).thenReturn(Stream.empty());
 
-        final AuditedEntityType<AuditedWithOnUpdateType> expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedWithOnUpdateType.ID)
+        final var expectedAuditedFieldMap = Map.of(AuditedType.NAME,
+                                                   AuditedField.builder(AuditedType.NAME)
+                                                               .withName("name")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build(),
+                                                   AuditedType.DESC,
+                                                   AuditedField.builder(AuditedType.DESC)
+                                                               .withName("desc")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build(),
+                                                   AuditedType.DESC2,
+                                                   AuditedField.builder(AuditedType.DESC2)
+                                                               .withName("desc2")
+                                                               .withTrigger(ON_UPDATE)
+                                                               .build());
+
+        expectedAuditedFieldMap.forEach((field, expectedAuditedField) ->
+                                            when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
+            AuditedEntityType.builder(AuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ON_UPDATE,
-                                                           AuditedWithOnUpdateType.NAME,
-                                                           AuditedWithOnUpdateType.DESC,
-                                                           AuditedWithOnUpdateType.DESC2)
+                             .withInternalFields(ON_CREATE_OR_UPDATE, Set.of(expectedAuditedFieldMap.get(AuditedType.NAME),
+                                                                             expectedAuditedFieldMap.get(AuditedType.DESC)))
+                             .withInternalFields(ON_UPDATE, Set.of(expectedAuditedFieldMap.get(AuditedType.DESC2)))
                              .build();
 
-        assertThat(auditedEntityTypeResolver.resolve(AuditedWithOnUpdateType.INSTANCE),
+        assertThat(auditedEntityTypeResolver.resolve(AuditedType.INSTANCE),
                    isPresentAndIs(expectedAuditedEntityType));
     }
 
     @Test
-    public void resolve_WhenAudited_AndHasId_AndInternalMandatoryFields_ShouldReturnIdAndInternalMandatoryFields() {
-        when(auditedEntityTypeNameResolver.resolve(AuditedWithInternalMandatoryOnlyType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        when(externalMandatoryFieldsExtractor.extract(AuditedWithInternalMandatoryOnlyType.INSTANCE)).thenReturn(Stream.empty());
+    public void resolve_WhenAudited_AndHasId_AndInternalFields_AndExternalFields_ShouldReturnAllFields() {
+        final var expectedAuditedInternalFieldMap = Map.of(AuditedType.NAME,
+                                                           AuditedField.builder(AuditedType.NAME)
+                                                                       .withName("name")
+                                                                       .withTrigger(ON_CREATE_OR_UPDATE)
+                                                                       .build(),
+                                                           AuditedType.DESC,
+                                                           AuditedField.builder(AuditedType.DESC)
+                                                                       .withName("desc")
+                                                                       .withTrigger(ON_CREATE_OR_UPDATE)
+                                                                       .build());
 
-        final AuditedEntityType<AuditedWithInternalMandatoryOnlyType> expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedWithInternalMandatoryOnlyType.ID)
+        final var expectedAuditedExternalFields = Set.of(AuditedField.builder(AuditedWithAncestorMandatoryType.NAME)
+                                                                     .withName("ancestor_name")
+                                                                     .withTrigger(ALWAYS)
+                                                                     .build(),
+                                                         AuditedField.builder(AuditedWithAncestorMandatoryType.DESC)
+                                                                     .withName("ancestor_desc")
+                                                                     .withTrigger(ALWAYS)
+                                                                     .build());
+
+        when(auditedEntityTypeNameResolver.resolve(AuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
+        doReturn(expectedAuditedExternalFields.stream()).when(externalMandatoryFieldsExtractor).extract(AuditedType.INSTANCE);
+
+        expectedAuditedInternalFieldMap.forEach((field, expectedAuditedField) ->
+                                                    when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
+            AuditedEntityType.builder(AuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ALWAYS, AuditedWithInternalMandatoryOnlyType.NAME)
+                             .withExternalFields(expectedAuditedExternalFields)
+                             .withInternalFields(ON_CREATE_OR_UPDATE, Set.of(expectedAuditedInternalFieldMap.get(AuditedType.NAME),
+                                                                             expectedAuditedInternalFieldMap.get(AuditedType.DESC)))
                              .build();
 
-        assertThat(auditedEntityTypeResolver.resolve(AuditedWithInternalMandatoryOnlyType.INSTANCE),
+        assertThat(auditedEntityTypeResolver.resolve(AuditedType.INSTANCE),
                    isPresentAndIs(expectedAuditedEntityType));
     }
 
     @Test
-    public void resolve_WhenAudited_AndHasId_AndExternalMandatoryFields_AndOtherFields_ShouldReturnIdAndExternalMandatoryAndOnChange() {
-        when(auditedEntityTypeNameResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC).map(AuditedField::new))
-            .when(externalMandatoryFieldsExtractor).extract(AuditedWithAncestorMandatoryType.INSTANCE);
-
-        final AuditedEntityType<AuditedWithAncestorMandatoryType> expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedWithAncestorMandatoryType.ID)
-                             .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
-                                                           AuditedWithAncestorMandatoryType.NAME,
-                                                           AuditedWithAncestorMandatoryType.DESC,
-                                                           AuditedWithAncestorMandatoryType.DESC2)
-                             .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                             .build();
-
-        assertThat(auditedEntityTypeResolver.resolve(AuditedWithAncestorMandatoryType.INSTANCE),
-                   isPresentAndIs(expectedAuditedEntityType));
-    }
-
-    @Test
-    public void resolve_WhenAudited_AndHasEverything_ShouldReturnEverything() {
-        when(auditedEntityTypeNameResolver.resolve(AuditedWithAllVariationsType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        doReturn(Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC).map(AuditedField::new))
-            .when(externalMandatoryFieldsExtractor).extract(AuditedWithAllVariationsType.INSTANCE);
-
-        final AuditedEntityType<AuditedWithAllVariationsType> expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedWithAllVariationsType.ID)
-                             .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                             .withUnderlyingInternalFields(ALWAYS, AuditedWithAllVariationsType.NAME)
-                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedWithAllVariationsType.DESC)
-                             .withUnderlyingInternalFields(ON_UPDATE, AuditedWithAllVariationsType.DESC2)
-                             .build();
-
-        assertThat(auditedEntityTypeResolver.resolve(AuditedWithAllVariationsType.INSTANCE),
-                   isPresentAndIs(expectedAuditedEntityType));
-    }
-
-    @Test
-    public void resolve_WhenInclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForIncludedFields() {
+    public void resolve_WhenNotAudited_AndHasId_AndInternalFields_ShouldReturnPopulatedObject() {
         when(auditedEntityTypeNameResolver.resolve(InclusiveAuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         when(externalMandatoryFieldsExtractor.extract(InclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
 
-        final AuditedEntityType<InclusiveAuditedType> expectedAuditedEntityType =
+        final var expectedAuditedFieldMap = Map.of(InclusiveAuditedType.NAME,
+                                                   AuditedField.builder(InclusiveAuditedType.NAME)
+                                                               .withName("name")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build(),
+                                                   InclusiveAuditedType.DESC,
+                                                   AuditedField.builder(InclusiveAuditedType.DESC)
+                                                               .withName("desc")
+                                                               .withTrigger(ON_CREATE_OR_UPDATE)
+                                                               .build());
+
+        expectedAuditedFieldMap.forEach((field, expectedAuditedField) ->
+                                            when(auditedFieldResolver.resolve(field, NOT_AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
             AuditedEntityType.builder(InclusiveAuditedType.ID)
                              .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
-                                                           InclusiveAuditedType.NAME, InclusiveAuditedType.DESC)
+                             .withInternalFields(ON_CREATE_OR_UPDATE, expectedAuditedFieldMap.values())
                              .build();
 
         assertThat(auditedEntityTypeResolver.resolve(InclusiveAuditedType.INSTANCE),
-                   isPresentAndIs(expectedAuditedEntityType));
-    }
-
-    @Test
-    public void resolve_WhenExclusiveAudited_AndHasId_ShouldReturnIdAndOnCreateOrUpdateForNotExcludedFields() {
-        when(auditedEntityTypeNameResolver.resolve(ExclusiveAuditedType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
-        when(externalMandatoryFieldsExtractor.extract(ExclusiveAuditedType.INSTANCE)).thenReturn(Stream.empty());
-
-        final AuditedEntityType<ExclusiveAuditedType> expectedAuditedEntityType =
-            AuditedEntityType.builder(ExclusiveAuditedType.ID)
-                             .withName(ENTITY_TYPE_NAME)
-                             .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, ExclusiveAuditedType.NAME)
-                             .build();
-
-        assertThat(auditedEntityTypeResolver.resolve(ExclusiveAuditedType.INSTANCE),
                    isPresentAndIs(expectedAuditedEntityType));
     }
 

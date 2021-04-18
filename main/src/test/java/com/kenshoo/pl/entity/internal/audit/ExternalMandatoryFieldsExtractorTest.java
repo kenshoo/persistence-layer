@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -21,7 +22,9 @@ public class ExternalMandatoryFieldsExtractorTest {
     public void resolve_WhenAudited_AndHasExternalMandatory_ShouldReturnThem() {
         final Set<AuditedField<?, ?>> expectedAuditedFields = Stream.of(NotAuditedAncestorType.NAME,
                                                                         NotAuditedAncestorType.DESC)
-                                                                    .map(AuditedField::new)
+                                                                    .map(f -> AuditedField.builder(f)
+                                                                                          .withTrigger(ALWAYS)
+                                                                                          .build())
                                                                     .collect(toUnmodifiableSet());
 
         assertThat(EXTRACTOR.extract(AuditedWithAncestorMandatoryType.INSTANCE).collect(toUnmodifiableSet()),

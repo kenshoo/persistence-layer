@@ -48,7 +48,7 @@ public class AuditedEntityTypeTest {
         final Set<AuditedField<?, ?>> expectedInternalFields =
             Stream.<EntityField<?, ?>>of(AuditedType.NAME,
                                          AuditedType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(expectedInternalFields));
@@ -64,7 +64,7 @@ public class AuditedEntityTypeTest {
         final Set<AuditedField<?, ?>> expectedInternalFields =
             Stream.<EntityField<?, ?>>of(AuditedType.NAME,
                                          AuditedType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(expectedInternalFields));
@@ -80,7 +80,7 @@ public class AuditedEntityTypeTest {
         final Set<AuditedField<?, ?>> expectedInternalFields =
             Stream.<EntityField<?, ?>>of(AuditedType.NAME,
                                          AuditedType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(expectedInternalFields));
@@ -98,7 +98,7 @@ public class AuditedEntityTypeTest {
             Stream.<EntityField<?, ?>>of(AuditedType.NAME,
                                          AuditedType.DESC,
                                          AuditedType.DESC2)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(expectedInternalFields));
@@ -116,7 +116,7 @@ public class AuditedEntityTypeTest {
             Stream.<EntityField<?, ?>>of(AuditedType.NAME,
                                          AuditedType.DESC,
                                          AuditedType.DESC2)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(expectedInternalFields));
@@ -276,7 +276,7 @@ public class AuditedEntityTypeTest {
 
         final Set<AuditedField<?, ?>> expectedAllFields =
             Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getMandatoryFields().collect(toSet()), is(expectedAllFields));
@@ -291,7 +291,7 @@ public class AuditedEntityTypeTest {
 
         final Set<AuditedField<?, ?>> expectedAllFields =
             Stream.of(AuditedType.NAME, AuditedType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getMandatoryFields().collect(toSet()), is(expectedAllFields));
@@ -310,7 +310,7 @@ public class AuditedEntityTypeTest {
                                          NotAuditedAncestorType.DESC,
                                          AuditedType.NAME,
                                          AuditedType.DESC)
-                  .map(AuditedField::new)
+                  .map(f -> AuditedField.builder(f).build())
                   .collect(toUnmodifiableSet());
 
         assertThat(auditedEntityType.getMandatoryFields().collect(toSet()), is(expectedAllFields));

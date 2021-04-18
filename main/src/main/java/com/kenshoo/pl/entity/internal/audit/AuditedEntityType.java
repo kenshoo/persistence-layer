@@ -114,8 +114,13 @@ public class AuditedEntityType<E extends EntityType<E>> {
                 this.externalFields = emptySet();
                 return this;
             } else {
-                return withExternalFields(externalFields.map(AuditedField::new));
+                return withExternalFields(externalFields.map(f -> AuditedField.builder(f).build()));
             }
+        }
+
+        public Builder<E> withExternalFields(final Collection<? extends AuditedField<?, ?>> externalFields) {
+            this.externalFields = externalFields == null ? emptySet() : Set.copyOf(externalFields);
+            return this;
         }
 
         public Builder<E> withExternalFields(final Stream<? extends AuditedField<?, ?>> externalFields) {
@@ -127,9 +132,17 @@ public class AuditedEntityType<E extends EntityType<E>> {
         public final Builder<E> withUnderlyingInternalFields(final AuditTrigger trigger,
                                                              final EntityField<E, ?>... internalFields) {
             final var auditedFields = Arrays.stream(internalFields)
-                                            .map(AuditedField::new)
+                                            .map(f -> AuditedField.builder(f).build())
                                             .collect(toUnmodifiableSet());
             this.internalFields.putAll(trigger, auditedFields);
+            return this;
+        }
+
+        public final Builder<E> withInternalFields(final AuditTrigger trigger,
+                                                   final Collection<? extends AuditedField<E, ?>> internalFields) {
+            if (trigger != null && internalFields != null) {
+                this.internalFields.putAll(trigger, internalFields);
+            }
             return this;
         }
 

@@ -46,7 +46,7 @@ public class AuditFieldChangesGeneratorTest {
         Seq.of(AuditedType.NAME, AuditedType.DESC)
            .zipWithIndex()
            .forEach(fieldWithIdx ->
-                        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(fieldWithIdx.v1)))
+                        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(fieldWithIdx.v1).build()))
                             .thenReturn(Optional.of(expectedFieldChanges.get(fieldWithIdx.v2.intValue())))
                    );
 
@@ -65,8 +65,10 @@ public class AuditFieldChangesGeneratorTest {
     public void generate_twoFields_OnlyFirstGenerated_ShouldReturnFirstFieldChange() {
         final FieldAuditRecord expectedFieldChange = mockFieldChange();
 
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.NAME))).thenReturn(Optional.of(expectedFieldChange));
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.DESC))).thenReturn(Optional.empty());
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.NAME).build()))
+            .thenReturn(Optional.of(expectedFieldChange));
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.DESC).build()))
+            .thenReturn(Optional.empty());
 
         final Collection<FieldAuditRecord> actualFieldChanges =
             newGenerator(Stream.of(AuditedType.NAME, AuditedType.DESC)).generate(currentState, finalState);
@@ -78,8 +80,10 @@ public class AuditFieldChangesGeneratorTest {
     public void generate_twoFields_OnlySecondGenerated_ShouldReturnSecondFieldChange() {
         final FieldAuditRecord expectedFieldChange = mockFieldChange();
 
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.NAME))).thenReturn(Optional.empty());
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.DESC))).thenReturn(Optional.of(expectedFieldChange));
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.NAME).build()))
+            .thenReturn(Optional.empty());
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.DESC).build()))
+            .thenReturn(Optional.of(expectedFieldChange));
 
         final Collection<FieldAuditRecord> actualFieldChanges =
             newGenerator(Stream.of(AuditedType.NAME, AuditedType.DESC)).generate(currentState, finalState);
@@ -89,8 +93,10 @@ public class AuditFieldChangesGeneratorTest {
 
     @Test
     public void generate_twoFields_NoneGenerated_ShouldReturnEmpty() {
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.NAME))).thenReturn(Optional.empty());
-        when(singleGenerator.generate(currentState, finalState, new AuditedField<>(AuditedType.DESC))).thenReturn(Optional.empty());
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.NAME).build()))
+            .thenReturn(Optional.empty());
+        when(singleGenerator.generate(currentState, finalState, AuditedField.builder(AuditedType.DESC).build()))
+            .thenReturn(Optional.empty());
 
         final Collection<FieldAuditRecord> actualFieldChanges =
             newGenerator(Stream.of(AuditedType.NAME, AuditedType.DESC)).generate(currentState, finalState);
@@ -107,7 +113,7 @@ public class AuditFieldChangesGeneratorTest {
     }
 
     private AuditFieldChangesGenerator<AuditedType> newGenerator(final Stream<? extends EntityField<AuditedType, ?>> onChangeFields) {
-        return new AuditFieldChangesGenerator<>(onChangeFields.map(AuditedField::new), singleGenerator);
+        return new AuditFieldChangesGenerator<>(onChangeFields.map(f -> AuditedField.builder(f).build()), singleGenerator);
     }
 
     private FieldAuditRecord mockFieldChange() {

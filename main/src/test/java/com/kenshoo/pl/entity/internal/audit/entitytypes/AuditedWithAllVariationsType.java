@@ -12,8 +12,7 @@ import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorAuditExtensions;
 
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
-import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_UPDATE;
+import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
 
 @Audited(extensions = AncestorAuditExtensions.class)
 public class AuditedWithAllVariationsType extends AbstractEntityType<AuditedWithAllVariationsType> {
@@ -30,6 +29,8 @@ public class AuditedWithAllVariationsType extends AbstractEntityType<AuditedWith
     public static final EntityField<AuditedWithAllVariationsType, String> DESC = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc);
     @Audited(trigger = ON_UPDATE)
     public static final EntityField<AuditedWithAllVariationsType, String> DESC2 = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc2);
+    @Audited(trigger = ON_CREATE_OR_UPDATE)
+    public static final EntityField<AuditedWithAllVariationsType, String> DESC3 = INSTANCE.field(MainWithAncestorTable.INSTANCE.desc3);
 
     private AuditedWithAllVariationsType() {
         super("AuditedWithAllVariations");
