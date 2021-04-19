@@ -7,7 +7,6 @@ import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
 
 import java.util.Collection;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
@@ -66,7 +65,7 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
 
         final String entityId = extractEntityId(entityChange, currentState);
 
-        final Collection<? extends Entry<String, String>> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
+        final Collection<? extends FieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
         final Collection<FieldAuditRecord> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 

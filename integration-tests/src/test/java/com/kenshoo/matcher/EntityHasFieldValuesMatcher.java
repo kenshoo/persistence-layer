@@ -1,10 +1,9 @@
 package com.kenshoo.matcher;
 
 import com.google.common.collect.ImmutableSet;
-import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldValue;
+import com.kenshoo.pl.entity.internal.EntityFieldValue;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;

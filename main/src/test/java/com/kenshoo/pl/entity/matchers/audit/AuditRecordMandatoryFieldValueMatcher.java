@@ -1,18 +1,17 @@
 package com.kenshoo.pl.entity.matchers.audit;
 
+import com.kenshoo.pl.entity.FieldValue;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-
-import java.util.Map.Entry;
 
 import static java.util.Objects.requireNonNull;
 
 class AuditRecordMandatoryFieldValueMatcher extends TypeSafeMatcher<AuditRecord> {
 
-    private final Entry<String, ?> expectedFieldValue;
+    private final FieldValue expectedFieldValue;
 
-    AuditRecordMandatoryFieldValueMatcher(final Entry<String, ?> expectedFieldValue) {
+    AuditRecordMandatoryFieldValueMatcher(final FieldValue expectedFieldValue) {
         this.expectedFieldValue = requireNonNull(expectedFieldValue, "expectedFieldValue is required");
     }
 
