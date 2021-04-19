@@ -26,6 +26,10 @@ public class AuditRecordMatchers {
         return new AuditRecordMandatoryFieldValueMatcher(entry(field.toString(), value));
     }
 
+    public static Matcher<AuditRecord> hasMandatoryFieldValue(final String fieldName, final Object value) {
+        return new AuditRecordMandatoryFieldValueMatcher(entry(fieldName, value));
+    }
+
     public static Matcher<AuditRecord> hasNoMandatoryFieldValues() {
         return new AuditRecordNoMandatoryFieldsMatcher();
     }

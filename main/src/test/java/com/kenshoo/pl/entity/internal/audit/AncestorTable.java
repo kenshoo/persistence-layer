@@ -12,6 +12,9 @@ public class AncestorTable extends AbstractDataTable<AncestorTable> {
     public final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT.identity(true));
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
+    public final TableField<Record, Double> amount = createField("amount", SQLDataType.DOUBLE);
+    public final TableField<Record, Double> amount2 = createField("amount2", SQLDataType.DOUBLE);
 
     private AncestorTable(final String name) {
         super(name);

@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders;
 
-import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.audit.ExternalAuditedField;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
 
@@ -13,7 +13,8 @@ public class InvalidAuditExtensions implements AuditExtensions {
     }
 
     @Override
-    public Stream<? extends EntityField<?, ?>> externalMandatoryFields() {
-        return Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC);
+    public Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() {
+        return Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+            .map(ExternalAuditedField::new);
     }
 }
