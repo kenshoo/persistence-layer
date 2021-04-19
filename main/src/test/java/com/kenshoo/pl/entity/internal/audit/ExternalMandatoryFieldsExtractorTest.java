@@ -37,7 +37,9 @@ public class ExternalMandatoryFieldsExtractorTest {
     public void resolve_WhenAudited_AndHasExternalMandatory_WithDefaultNames_ShouldReturnThem() {
         final Set<AuditedField<?, ?>> expectedAuditedFields =
             Set.of(AuditedField.builder(NotAuditedAncestorType.NAME).build(),
-                   AuditedField.builder(NotAuditedAncestorType.DESC).build());
+                   AuditedField.builder(NotAuditedAncestorType.DESC).build(),
+                   AuditedField.builder(NotAuditedAncestorType.AMOUNT).build(),
+                   AuditedField.builder(NotAuditedAncestorType.AMOUNT2).build());
 
         assertThat(extractor.extract(AuditedWithAncestorMandatoryType.INSTANCE).collect(toUnmodifiableSet()),
                    equalTo(expectedAuditedFields));

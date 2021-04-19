@@ -66,7 +66,7 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
 
         final String entityId = extractEntityId(entityChange, currentState);
 
-        final Collection<? extends Entry<String, ?>> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
+        final Collection<? extends Entry<String, String>> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
         final Collection<FieldAuditRecord> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 

@@ -22,11 +22,11 @@ public class AuditRecordMatchers {
         return new AuditRecordOperatorMatcher(expectedOperator);
     }
 
-    public static Matcher<AuditRecord> hasMandatoryFieldValue(final EntityField<?, ?> field, final Object value) {
+    public static Matcher<AuditRecord> hasMandatoryFieldValue(final EntityField<?, ?> field, final String value) {
         return new AuditRecordMandatoryFieldValueMatcher(entry(field.toString(), value));
     }
 
-    public static Matcher<AuditRecord> hasMandatoryFieldValue(final String fieldName, final Object value) {
+    public static Matcher<AuditRecord> hasMandatoryFieldValue(final String fieldName, final String value) {
         return new AuditRecordMandatoryFieldValueMatcher(entry(fieldName, value));
     }
 
@@ -34,13 +34,13 @@ public class AuditRecordMatchers {
         return new AuditRecordNoMandatoryFieldsMatcher();
     }
 
-    public static Matcher<AuditRecord> hasCreatedFieldRecord(final EntityField<?, ?> field, final Object value) {
+    public static Matcher<AuditRecord> hasCreatedFieldRecord(final EntityField<?, ?> field, final String value) {
         return hasFieldRecord(FieldAuditRecord.builder(field)
                                               .newValue(value)
                                               .build());
     }
 
-    public static Matcher<AuditRecord> hasCreatedFieldRecord(final String fieldName, final Object value) {
+    public static Matcher<AuditRecord> hasCreatedFieldRecord(final String fieldName, final String value) {
         return hasFieldRecord(FieldAuditRecord.builder(fieldName)
                                               .newValue(value)
                                               .build());
@@ -55,7 +55,7 @@ public class AuditRecordMatchers {
                                               .build());
     }
 
-    public static  Matcher<AuditRecord> hasDeletedFieldRecord(final EntityField<?, ?> field, final Object value) {
+    public static  Matcher<AuditRecord> hasDeletedFieldRecord(final EntityField<?, ?> field, final String value) {
         return hasFieldRecord(FieldAuditRecord.builder(field.toString())
                                               .oldValue(value)
                                               .build());

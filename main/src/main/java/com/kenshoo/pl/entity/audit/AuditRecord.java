@@ -15,14 +15,14 @@ import static java.util.stream.Collectors.toList;
 public class AuditRecord {
     private final String entityType;
     private final String entityId;
-    private final Collection<? extends Entry<String, ?>> mandatoryFieldValues;
+    private final Collection<? extends Entry<String, String>> mandatoryFieldValues;
     private final ChangeOperation operator;
     private final Collection<? extends FieldAuditRecord> fieldRecords;
     private final Collection<? extends AuditRecord> childRecords;
 
     private AuditRecord(final String entityType,
                         final String entityId,
-                        final Collection<? extends Entry<String, ?>> mandatoryFieldValues,
+                        final Collection<? extends Entry<String, String>> mandatoryFieldValues,
                         final ChangeOperation operator,
                         final Collection<? extends FieldAuditRecord> fieldRecords,
                         final Collection<? extends AuditRecord> childRecords) {
@@ -42,7 +42,7 @@ public class AuditRecord {
         return entityId;
     }
 
-    public Collection<? extends Entry<String, ?>> getMandatoryFieldValues() {
+    public Collection<? extends Entry<String, String>> getMandatoryFieldValues() {
         return mandatoryFieldValues;
     }
 
@@ -99,7 +99,7 @@ public class AuditRecord {
     public static class Builder {
         private String entityType;
         private String entityId;
-        private Collection<? extends Entry<String, ?>> mandatoryFieldValues = emptyList();
+        private Collection<? extends Entry<String, String>> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
         private Collection<? extends FieldAuditRecord> fieldRecords = emptyList();
         private Collection<? extends AuditRecord> childRecords = emptyList();
@@ -119,7 +119,7 @@ public class AuditRecord {
             return this;
         }
 
-        public Builder withMandatoryFieldValues(final Collection<? extends Entry<String, ?>> fieldValues) {
+        public Builder withMandatoryFieldValues(final Collection<? extends Entry<String, String>> fieldValues) {
             this.mandatoryFieldValues = fieldValues == null ? emptyList() : fieldValues;
             return this;
         }
