@@ -1,5 +1,6 @@
-package com.kenshoo.pl.entity;
+package com.kenshoo.pl.entity.internal;
 
+import com.kenshoo.pl.entity.EntityField;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 

@@ -1,12 +1,12 @@
 package com.kenshoo.pl.entity.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
+import com.kenshoo.pl.entity.FieldValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Collection;
-import java.util.Map.Entry;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -15,14 +15,14 @@ import static java.util.stream.Collectors.toList;
 public class AuditRecord {
     private final String entityType;
     private final String entityId;
-    private final Collection<? extends Entry<String, String>> mandatoryFieldValues;
+    private final Collection<? extends FieldValue> mandatoryFieldValues;
     private final ChangeOperation operator;
     private final Collection<? extends FieldAuditRecord> fieldRecords;
     private final Collection<? extends AuditRecord> childRecords;
 
     private AuditRecord(final String entityType,
                         final String entityId,
-                        final Collection<? extends Entry<String, String>> mandatoryFieldValues,
+                        final Collection<? extends FieldValue> mandatoryFieldValues,
                         final ChangeOperation operator,
                         final Collection<? extends FieldAuditRecord> fieldRecords,
                         final Collection<? extends AuditRecord> childRecords) {
@@ -42,7 +42,7 @@ public class AuditRecord {
         return entityId;
     }
 
-    public Collection<? extends Entry<String, String>> getMandatoryFieldValues() {
+    public Collection<? extends FieldValue> getMandatoryFieldValues() {
         return mandatoryFieldValues;
     }
 
@@ -99,7 +99,7 @@ public class AuditRecord {
     public static class Builder {
         private String entityType;
         private String entityId;
-        private Collection<? extends Entry<String, String>> mandatoryFieldValues = emptyList();
+        private Collection<? extends FieldValue> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
         private Collection<? extends FieldAuditRecord> fieldRecords = emptyList();
         private Collection<? extends AuditRecord> childRecords = emptyList();
@@ -119,7 +119,7 @@ public class AuditRecord {
             return this;
         }
 
-        public Builder withMandatoryFieldValues(final Collection<? extends Entry<String, String>> fieldValues) {
+        public Builder withMandatoryFieldValues(final Collection<? extends FieldValue> fieldValues) {
             this.mandatoryFieldValues = fieldValues == null ? emptyList() : fieldValues;
             return this;
         }

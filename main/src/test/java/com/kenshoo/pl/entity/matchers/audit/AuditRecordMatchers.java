@@ -2,11 +2,10 @@ package com.kenshoo.pl.entity.matchers.audit;
 
 import com.kenshoo.pl.entity.ChangeOperation;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.FieldValue;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import org.hamcrest.Matcher;
-
-import static java.util.Map.entry;
 
 public class AuditRecordMatchers {
 
@@ -23,11 +22,11 @@ public class AuditRecordMatchers {
     }
 
     public static Matcher<AuditRecord> hasMandatoryFieldValue(final EntityField<?, ?> field, final String value) {
-        return new AuditRecordMandatoryFieldValueMatcher(entry(field.toString(), value));
+        return new AuditRecordMandatoryFieldValueMatcher(new FieldValue(field.toString(), value));
     }
 
     public static Matcher<AuditRecord> hasMandatoryFieldValue(final String fieldName, final String value) {
-        return new AuditRecordMandatoryFieldValueMatcher(entry(fieldName, value));
+        return new AuditRecordMandatoryFieldValueMatcher(new FieldValue(fieldName, value));
     }
 
     public static Matcher<AuditRecord> hasNoMandatoryFieldValues() {
