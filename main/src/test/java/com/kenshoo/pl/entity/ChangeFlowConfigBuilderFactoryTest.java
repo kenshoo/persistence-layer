@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
 import static org.jooq.lambda.Seq.seq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -26,18 +25,12 @@ public class ChangeFlowConfigBuilderFactoryTest {
     }
 
     @Test
-    public void testFieldsAnnotatedWithRequired_UfOff() {
+    public void testFieldsAnnotatedWithRequired() {
         ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(FeatureSet.EMPTY);
         assertThat(flowConfig.getRequiredFields(), containsInAnyOrder(MockedEntity.INSTANCE.field2, MockedEntity.INSTANCE.field3));
         assertThat(flowConfig.getRequiredRelationFields(), containsInAnyOrder(MockedEntity.INSTANCE.field3));
     }
 
-    @Test
-    public void testFieldsAnnotatedWithRequired_UfOn() {
-        ChangeFlowConfig<MockedEntity> flowConfig = buildFlow(new FeatureSet(Feature.RequiredFieldValidator));
-        assertThat(flowConfig.getRequiredFields(), empty());
-        assertThat(flowConfig.getRequiredRelationFields(), containsInAnyOrder(MockedEntity.INSTANCE.field3));
-    }
 
     private ChangeFlowConfig<MockedEntity> buildFlow(FeatureSet featureSet) {
         PLContext plContext = mock(PLContext.class);

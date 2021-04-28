@@ -30,11 +30,8 @@ public class ChangeFlowConfigBuilderFactory {
         builder.withRequiredRelationFields(entityType.getFields()
                  .filter(annotatedWith(entityType, Required.class, required -> required != null && required.value() == RequiredFieldType.RELATION)));
 
-        if(plContext.generateFeatureSet().isEnabled(Feature.RequiredFieldValidator)) {
-            builder.withRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class, required -> required != null && required.value() == RequiredFieldType.REGULAR)));
-        } else {
-            builder.withDeprecatedRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class)));
-        }
+        builder.withRequiredFields(entityType.getFields().filter(annotatedWith(entityType, Required.class)));
+
 
         builder.withImmutableFields(entityType.getFields().filter(annotatedWith(entityType, Immutable.class)));
         Optional<EntityField<E, ?>> creationDateField = entityType.getFields()
