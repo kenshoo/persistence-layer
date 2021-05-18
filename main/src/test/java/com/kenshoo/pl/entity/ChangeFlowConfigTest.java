@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity;
 
 
 import com.google.common.collect.ImmutableList;
+import com.kenshoo.pl.entity.internal.DbCommandsOutputGenerator;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.internal.audit.AuditRequiredFieldsCalculator;
 import com.kenshoo.pl.entity.internal.audit.AuditedEntityType;
@@ -34,6 +35,9 @@ public class ChangeFlowConfigTest {
 
     @Mock
     private AuditedEntityTypeResolver auditedEntityTypeResolver;
+
+    @Mock
+    private DbCommandsOutputGenerator<TestEntity> dbCommandsOutputGenerator;
 
     @Test
     public void add_single_enricher_to_flow_config() {
@@ -176,16 +180,18 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void audit_required_fields_calculator_should_be_in_state_consumers_if_audited_fields_defined() {
+    public void audit_required_fields_calculator_should_be_in_state_consumers_if_db_output_generator_and_audited_fields_defined() {
 
-        final AuditedEntityType<TestEntity> auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
-                                                                                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
-                                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
-                                                                                 .build();
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+                                                       .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                     TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                       .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       auditedEntityTypeResolver).build();
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver)
+            .withOutputGenerator(dbCommandsOutputGenerator)
+            .build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
                                                                   .map(Object::getClass)
@@ -197,9 +203,7 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_audited_fields_defined() {
-
-        when(auditedEntityTypeResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_db_output_generator() {
 
         final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                                                        auditedEntityTypeResolver).build();
@@ -214,17 +218,39 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_create_audit_record_generator_if_audited_fields_defined() {
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_audited_fields_defined() {
 
-        final AuditedEntityType<TestEntity> auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
-                                                                                 .withName(AUDITED_ENTITY_TYPE_NAME)
-                                                                                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
-                                                                                                               TestEntity.FIELD_1, TestEntity.FIELD_2)
-                                                                                 .build();
+        when(auditedEntityTypeResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
+
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver)
+            .withOutputGenerator(dbCommandsOutputGenerator)
+            .build();
+
+        final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
+                                                                  .map(Object::getClass)
+                                                                  .collect(Collectors.toSet());
+
+        assertThat("AuditRequiredFieldsCalculator should NOT be included in state consumers",
+                   currentStateConsumerTypes,
+                   not(hasItem(AuditRequiredFieldsCalculator.class)));
+    }
+
+    @Test
+    public void should_create_audit_record_generator_if_db_commands_output_generator_and_audited_fields_defined() {
+
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+                                                       .withName(AUDITED_ENTITY_TYPE_NAME)
+                                                       .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                     TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                       .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       auditedEntityTypeResolver).build();
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver)
+            .withOutputGenerator(dbCommandsOutputGenerator)
+            .build();
+
         assertThat("Audit record generator should exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(true));
         assertThat("Audit record generator should have correct entity type name: ",
@@ -232,12 +258,25 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
+    public void should_not_create_audit_record_generator_if_no_db_commands_output_generator() {
+
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver).build();
+
+        assertThat("Audit record generator should not exist",
+                   flowConfig.auditRecordGenerator().isPresent(), is(false));
+    }
+
+    @Test
     public void should_not_create_audit_record_generator_if_no_audited_fields_defined() {
 
         doReturn(Optional.empty()).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       auditedEntityTypeResolver).build();
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver)
+            .withOutputGenerator(dbCommandsOutputGenerator)
+            .build();
+
         assertThat("Audit record generator should not exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(false));
     }

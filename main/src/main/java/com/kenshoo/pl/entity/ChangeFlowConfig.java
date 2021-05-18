@@ -280,11 +280,13 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
 
-            final Optional<AuditedEntityType<E>> optionalAuditedEntityType = auditedEntityTypeResolver.resolve(entityType);
-            final AuditRequiredFieldsCalculator<E> auditRequiredFieldsCalculator =
-                optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
-            final AuditRecordGenerator<E> auditRecordGenerator =
-                optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
+            boolean hasDbOutputGenerator = outputGenerators.stream()
+                                                           .anyMatch(outputGenerator -> outputGenerator instanceof DbCommandsOutputGenerator);
+
+            final var optionalAuditedEntityType =
+                hasDbOutputGenerator ? auditedEntityTypeResolver.resolve(entityType) : Optional.<AuditedEntityType<E>>empty();
+            final var auditRequiredFieldsCalculator = optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
+            final var auditRecordGenerator = optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
 
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
