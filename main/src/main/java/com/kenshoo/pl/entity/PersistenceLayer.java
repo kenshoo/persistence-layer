@@ -123,7 +123,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
         ChangeContext overridingCtx = new OverridingContext(context);
         if (!validCmds.isEmpty()) {
-            flowConfig.retryer().run((() -> dslContext().transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
+            flowConfig.retryer().run((() -> dslContext().transaction(() -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
         }
         final Stream<? extends AuditRecord> auditRecords =
             recursiveAuditRecordGenerator.generateMany(flowConfig,
