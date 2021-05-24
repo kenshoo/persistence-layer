@@ -180,7 +180,7 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void audit_required_fields_calculator_should_be_in_state_consumers_if_db_output_generator_and_audited_fields_defined() {
+    public void audit_required_fields_calculator_should_be_in_state_consumers_if_audited_fields_defined() {
 
         final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
                                                        .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
@@ -189,9 +189,7 @@ public class ChangeFlowConfigTest {
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
         final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver)
-            .withOutputGenerator(dbCommandsOutputGenerator)
-            .build();
+                                                              auditedEntityTypeResolver).build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
                                                                   .map(Object::getClass)
@@ -203,10 +201,12 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_db_output_generator() {
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_audited_fields_defined() {
 
-        final ChangeFlowConfig<TestEntity> flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                                                       auditedEntityTypeResolver).build();
+        when(auditedEntityTypeResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
+
+        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
+                                                              auditedEntityTypeResolver).build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
                                                                   .map(Object::getClass)
@@ -218,13 +218,11 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_no_audited_fields_defined() {
-
-        when(auditedEntityTypeResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_auditing_disabled() {
 
         final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                               auditedEntityTypeResolver)
-            .withOutputGenerator(dbCommandsOutputGenerator)
+            .disableAuditing()
             .build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
@@ -237,7 +235,7 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_create_audit_record_generator_if_db_commands_output_generator_and_audited_fields_defined() {
+    public void should_create_audit_record_generator_if_audited_fields_defined() {
 
         final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
                                                        .withName(AUDITED_ENTITY_TYPE_NAME)
@@ -247,9 +245,7 @@ public class ChangeFlowConfigTest {
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
         final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver)
-            .withOutputGenerator(dbCommandsOutputGenerator)
-            .build();
+                                                              auditedEntityTypeResolver).build();
 
         assertThat("Audit record generator should exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(true));
@@ -258,7 +254,9 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_not_create_audit_record_generator_if_no_db_commands_output_generator() {
+    public void should_not_create_audit_record_generator_if_no_audited_fields_defined() {
+
+        doReturn(Optional.empty()).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
         final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                               auditedEntityTypeResolver).build();
@@ -268,13 +266,11 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
-    public void should_not_create_audit_record_generator_if_no_audited_fields_defined() {
-
-        doReturn(Optional.empty()).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
+    public void should_not_create_audit_record_generator_if_auditing_is_disabled() {
 
         final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
                                                               auditedEntityTypeResolver)
-            .withOutputGenerator(dbCommandsOutputGenerator)
+            .disableAuditing()
             .build();
 
         assertThat("Audit record generator should not exist",

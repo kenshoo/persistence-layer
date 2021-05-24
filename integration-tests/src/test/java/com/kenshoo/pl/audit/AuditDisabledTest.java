@@ -9,7 +9,6 @@ import com.kenshoo.pl.entity.PersistenceLayer;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
-import com.kenshoo.pl.simulation.internal.FakeAutoIncGenerator;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -50,10 +49,9 @@ public class AuditDisabledTest {
     }
 
     @Test
-    public void shouldNotGenerateAuditRecordWhenNoDbCommandsOutputGenerator() {
+    public void shouldNotGenerateAuditRecordWhenAuditingDisabled() {
         var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
-                                                       .withoutOutputGenerators()
-                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedType.INSTANCE))
+                                                       .disableAuditing()
                                                        .build();
 
         pl.create(singletonList(new CreateAuditedCommand()

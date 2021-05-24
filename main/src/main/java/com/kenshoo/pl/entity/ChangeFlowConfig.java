@@ -142,6 +142,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
         private final AuditedEntityTypeResolver auditedEntityTypeResolver;
+        private boolean auditingEnabled = true;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
@@ -248,6 +249,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return this;
         }
 
+        public Builder<E> disableAuditing() {
+            auditingEnabled = false;
+            return this;
+        }
+
         public Builder<E> withChildFlowBuilder(ChangeFlowConfig.Builder<? extends EntityType<?>> flowConfigBuilder) {
             this.flowConfigBuilders.add(flowConfigBuilder);
             return this;
@@ -280,11 +286,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
 
-            boolean hasDbOutputGenerator = outputGenerators.stream()
-                                                           .anyMatch(outputGenerator -> outputGenerator instanceof DbCommandsOutputGenerator);
-
             final var optionalAuditedEntityType =
-                hasDbOutputGenerator ? auditedEntityTypeResolver.resolve(entityType) : Optional.<AuditedEntityType<E>>empty();
+                auditingEnabled ? auditedEntityTypeResolver.resolve(entityType) : Optional.<AuditedEntityType<E>>empty();
             final var auditRequiredFieldsCalculator = optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
             final var auditRecordGenerator = optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
 
