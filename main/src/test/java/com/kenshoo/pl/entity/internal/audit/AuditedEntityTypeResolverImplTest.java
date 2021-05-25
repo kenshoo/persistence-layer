@@ -26,7 +26,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AuditedEntityTypeResolverTest {
+public class AuditedEntityTypeResolverImplTest {
 
     private static final String ENTITY_TYPE_NAME = "SomeEntity";
 
@@ -40,7 +40,7 @@ public class AuditedEntityTypeResolverTest {
     private ExternalMandatoryFieldsExtractor externalMandatoryFieldsExtractor;
 
     @InjectMocks
-    private AuditedEntityTypeResolver auditedEntityTypeResolver;
+    private AuditedEntityTypeResolverImpl auditedEntityTypeResolver;
 
     @Test
     public void resolve_WhenAudited_AndHasId_AndOneInternalType_ShouldReturnAllFields() {

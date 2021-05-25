@@ -141,19 +141,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-        private final AuditedEntityTypeResolver auditedEntityTypeResolver;
+        private AuditedEntityTypeResolver auditedEntityTypeResolver;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
-            this(entityType,
-                 AuditedEntityTypeResolver.INSTANCE);
-        }
-
-        @VisibleForTesting
-        Builder(final E entityType,
-                final AuditedEntityTypeResolver auditedEntityTypeResolver) {
             this.entityType = entityType;
-            this.auditedEntityTypeResolver = auditedEntityTypeResolver;
+            enableAuditing();
         }
 
         public Builder<E> with(FeatureSet features) {
@@ -245,6 +238,17 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         public Builder<E> withoutOutputGenerators() {
             this.outputGenerators.clear();
             this.flowConfigBuilders.forEach(Builder::withoutOutputGenerators);
+            disableAuditing();
+            return this;
+        }
+
+        public Builder<E> enableAuditing() {
+            auditedEntityTypeResolver = regularAuditedEntityTypeResolver();
+            return this;
+        }
+
+        public Builder<E> disableAuditing() {
+            auditedEntityTypeResolver = AuditedEntityTypeResolver.EMPTY;
             return this;
         }
 
@@ -309,6 +313,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
                                                   fieldChangesGenerator,
                                                   auditedEntityType.getName());
+        }
+
+        @VisibleForTesting
+        AuditedEntityTypeResolver regularAuditedEntityTypeResolver() {
+            return AuditedEntityTypeResolverImpl.INSTANCE;
         }
 
         static private class Labeled<Element> {
