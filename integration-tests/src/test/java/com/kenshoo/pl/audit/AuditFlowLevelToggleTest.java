@@ -9,6 +9,7 @@ import com.kenshoo.pl.entity.PersistenceLayer;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.simulation.internal.FakeAutoIncGenerator;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -18,10 +19,11 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertThat;
 
-public class AuditDisabledTest {
+public class AuditFlowLevelToggleTest {
 
     private PLContext plContext;
 
@@ -62,5 +64,40 @@ public class AuditDisabledTest {
 
         assertThat("There should be no published records",
                    auditRecords, empty());
+    }
+
+    @Test
+    public void shouldNotGenerateAuditRecordWhenOutputGeneratorsRemoved() {
+        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
+                                                       .withoutOutputGenerators()
+                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedType.INSTANCE))
+                                                       .build();
+
+        pl.create(singletonList(new CreateAuditedCommand()
+                                    .with(AuditedType.NAME, "name")),
+                  flowConfig);
+
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+
+        assertThat("There should be no published records",
+                   auditRecords, empty());
+    }
+
+    @Test
+    public void shouldGenerateAuditRecordWhenOutputGeneratorsRemovedAndAuditingReEnabled() {
+        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
+                                                       .withoutOutputGenerators()
+                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedType.INSTANCE))
+                                                       .enableAuditing()
+                                                       .build();
+
+        pl.create(singletonList(new CreateAuditedCommand()
+                                    .with(AuditedType.NAME, "name")),
+                  flowConfig);
+
+        final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+
+        assertThat("There should be published records",
+                   auditRecords, not(empty()));
     }
 }

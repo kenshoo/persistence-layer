@@ -141,20 +141,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         private Optional<PostFetchCommandEnricher<E>> falseUpdatesPurger = Optional.empty();
         private final List<ChangeFlowConfig.Builder<? extends EntityType<?>>> flowConfigBuilders = new ArrayList<>();
         private PersistenceLayerRetryer retryer = JUST_RUN_WITHOUT_CHECKING_DEADLOCKS;
-        private final AuditedEntityTypeResolver auditedEntityTypeResolver;
-        private boolean auditingEnabled = true;
+        private AuditedEntityTypeResolver auditedEntityTypeResolver;
         private FeatureSet features = FeatureSet.EMPTY;
 
         public Builder(E entityType) {
-            this(entityType,
-                 AuditedEntityTypeResolver.INSTANCE);
-        }
-
-        @VisibleForTesting
-        Builder(final E entityType,
-                final AuditedEntityTypeResolver auditedEntityTypeResolver) {
             this.entityType = entityType;
-            this.auditedEntityTypeResolver = auditedEntityTypeResolver;
+            enableAuditing();
         }
 
         public Builder<E> with(FeatureSet features) {
@@ -246,11 +238,17 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         public Builder<E> withoutOutputGenerators() {
             this.outputGenerators.clear();
             this.flowConfigBuilders.forEach(Builder::withoutOutputGenerators);
+            disableAuditing();
+            return this;
+        }
+
+        public Builder<E> enableAuditing() {
+            auditedEntityTypeResolver = regularAuditedEntityTypeResolver();
             return this;
         }
 
         public Builder<E> disableAuditing() {
-            auditingEnabled = false;
+            auditedEntityTypeResolver = AuditedEntityTypeResolver.EMPTY;
             return this;
         }
 
@@ -286,10 +284,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
 
-            final var optionalAuditedEntityType =
-                auditingEnabled ? auditedEntityTypeResolver.resolve(entityType) : Optional.<AuditedEntityType<E>>empty();
-            final var auditRequiredFieldsCalculator = optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
-            final var auditRecordGenerator = optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
+            final Optional<AuditedEntityType<E>> optionalAuditedEntityType = auditedEntityTypeResolver.resolve(entityType);
+            final AuditRequiredFieldsCalculator<E> auditRequiredFieldsCalculator =
+                optionalAuditedEntityType.map(AuditRequiredFieldsCalculator::new).orElse(null);
+            final AuditRecordGenerator<E> auditRecordGenerator =
+                optionalAuditedEntityType.map(this::createAuditRecordGenerator).orElse(null);
 
             return new ChangeFlowConfig<>(entityType,
                                           enrichers.build(),
@@ -314,6 +313,11 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
             return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
                                                   fieldChangesGenerator,
                                                   auditedEntityType.getName());
+        }
+
+        @VisibleForTesting
+        AuditedEntityTypeResolver regularAuditedEntityTypeResolver() {
+            return AuditedEntityTypeResolverImpl.INSTANCE;
         }
 
         static private class Labeled<Element> {

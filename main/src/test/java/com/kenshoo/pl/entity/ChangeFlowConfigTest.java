@@ -2,7 +2,6 @@ package com.kenshoo.pl.entity;
 
 
 import com.google.common.collect.ImmutableList;
-import com.kenshoo.pl.entity.internal.DbCommandsOutputGenerator;
 import com.kenshoo.pl.entity.internal.FalseUpdatesPurger;
 import com.kenshoo.pl.entity.internal.audit.AuditRequiredFieldsCalculator;
 import com.kenshoo.pl.entity.internal.audit.AuditedEntityType;
@@ -36,14 +35,11 @@ public class ChangeFlowConfigTest {
     @Mock
     private AuditedEntityTypeResolver auditedEntityTypeResolver;
 
-    @Mock
-    private DbCommandsOutputGenerator<TestEntity> dbCommandsOutputGenerator;
-
     @Test
     public void add_single_enricher_to_flow_config() {
         PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                 withPostFetchCommandEnricher(enricher).
                 build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher));
@@ -54,7 +50,7 @@ public class ChangeFlowConfigTest {
         PostFetchCommandEnricher<TestEntity> enricher1 = mock(PostFetchCommandEnricher.class);
         PostFetchCommandEnricher<TestEntity> enricher2 = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2)).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher1, enricher2));
@@ -65,7 +61,7 @@ public class ChangeFlowConfigTest {
     public void add_excludable_enricher_to_flow_config() {
         PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledPostFetchCommandEnricher(enricher, EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher));
@@ -76,7 +72,7 @@ public class ChangeFlowConfigTest {
         PostFetchCommandEnricher<TestEntity> enricher1 = mock(PostFetchCommandEnricher.class);
         PostFetchCommandEnricher<TestEntity> enricher2 = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledPostFetchCommandEnrichers(ImmutableList.of(enricher1, enricher2), EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(enricher1, enricher2));
@@ -86,7 +82,7 @@ public class ChangeFlowConfigTest {
     public void add_excludable_validator_to_flow_config() {
         ChangesValidator validator = mock(ChangesValidator.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledValidator(validator, EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator));
@@ -97,7 +93,7 @@ public class ChangeFlowConfigTest {
         ChangesValidator validator1 = mock(ChangesValidator.class);
         ChangesValidator validator2 = mock(ChangesValidator.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledValidators(ImmutableList.of(validator1, validator2), EXCLUDABLE_LABEL_1).
                         build();
         Assert.assertEquals(flow.getValidators(), ImmutableList.of(validator1, validator2));
@@ -110,7 +106,7 @@ public class ChangeFlowConfigTest {
         ChangesValidator nonExcludableValidator = mock(ChangesValidator.class);
         PostFetchCommandEnricher<TestEntity> nonExcludableEnricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
                         withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_1).
                         withValidator(nonExcludableValidator).
@@ -126,7 +122,7 @@ public class ChangeFlowConfigTest {
         ChangesValidator excludableValidator= mock(ChangesValidator.class);
         PostFetchCommandEnricher<TestEntity> excludableEnricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig<TestEntity> flow =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE).
+                changeFlowConfigBuilder(TestEntity.INSTANCE).
                         withLabeledValidator(excludableValidator, EXCLUDABLE_LABEL_1).
                         withLabeledPostFetchCommandEnricher(excludableEnricher, EXCLUDABLE_LABEL_2).
                         withoutLabeledElements(ImmutableList.of(EXCLUDABLE_LABEL_1, EXCLUDABLE_LABEL_2)).
@@ -140,7 +136,7 @@ public class ChangeFlowConfigTest {
     public void add_false_update_purger_to_flow_config() {
         FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger.Builder<TestEntity>().build();
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE);
+            changeFlowConfigBuilder(TestEntity.INSTANCE);
         flowBuilder.withFalseUpdatesPurger(purger);
         ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
         Assert.assertEquals(flow.getPostFetchCommandEnrichers(), ImmutableList.of(purger));
@@ -151,7 +147,7 @@ public class ChangeFlowConfigTest {
         FalseUpdatesPurger<TestEntity> purger = new FalseUpdatesPurger.Builder<TestEntity>().build();
         PostFetchCommandEnricher<TestEntity> enricher = mock(PostFetchCommandEnricher.class);
         ChangeFlowConfig.Builder<TestEntity> flowBuilder =
-                ChangeFlowConfig.builder(TestEntity.INSTANCE);
+            changeFlowConfigBuilder(TestEntity.INSTANCE);
         flowBuilder.withFalseUpdatesPurger(purger);
         flowBuilder.withPostFetchCommandEnricher(enricher);
         ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
@@ -162,7 +158,7 @@ public class ChangeFlowConfigTest {
     public void get_primary_identity_field_returns_it_when_exists() {
 
         final ChangeFlowConfig.Builder<TestEntityAutoInc> flowBuilder =
-            ChangeFlowConfig.builder(TestEntityAutoInc.INSTANCE);
+            changeFlowConfigBuilder(TestEntityAutoInc.INSTANCE);
 
         final ChangeFlowConfig<TestEntityAutoInc> flow = flowBuilder.build();
 
@@ -172,7 +168,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void get_primary_identity_field_returns_empty_when_doesnt_exist() {
         final ChangeFlowConfig.Builder<TestEntity> flowBuilder =
-            ChangeFlowConfig.builder(TestEntity.INSTANCE);
+            changeFlowConfigBuilder(TestEntity.INSTANCE);
 
         final ChangeFlowConfig<TestEntity> flow = flowBuilder.build();
 
@@ -188,8 +184,7 @@ public class ChangeFlowConfigTest {
                                                        .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver).build();
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE).build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
                                                                   .map(Object::getClass)
@@ -205,8 +200,7 @@ public class ChangeFlowConfigTest {
 
         when(auditedEntityTypeResolver.resolve(TestEntity.INSTANCE)).thenReturn(Optional.empty());
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver).build();
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE).build();
 
         final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
                                                                   .map(Object::getClass)
@@ -220,8 +214,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_auditing_disabled() {
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver)
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
             .disableAuditing()
             .build();
 
@@ -235,6 +228,45 @@ public class ChangeFlowConfigTest {
     }
 
     @Test
+    public void audit_required_fields_calculator_should_not_be_in_state_consumers_if_output_generators_removed() {
+
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
+            .withoutOutputGenerators()
+            .build();
+
+        final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
+                                                                  .map(Object::getClass)
+                                                                  .collect(Collectors.toSet());
+
+        assertThat("AuditRequiredFieldsCalculator should NOT be included in state consumers",
+                   currentStateConsumerTypes,
+                   not(hasItem(AuditRequiredFieldsCalculator.class)));
+    }
+
+    @Test
+    public void audit_required_fields_calculator_should_be_in_state_consumers_if_reenabled_and_audited_fields_defined() {
+
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+                                                       .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                     TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                       .build();
+
+        doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
+            .withoutOutputGenerators()
+            .enableAuditing()
+            .build();
+
+        final Set<Class<?>> currentStateConsumerTypes = flowConfig.currentStateConsumers()
+                                                                  .map(Object::getClass)
+                                                                  .collect(Collectors.toSet());
+
+        assertThat("AuditRequiredFieldsCalculator should be included in state consumers",
+                   currentStateConsumerTypes,
+                   hasItem(AuditRequiredFieldsCalculator.class));
+    }
+
+    @Test
     public void should_create_audit_record_generator_if_audited_fields_defined() {
 
         final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
@@ -244,8 +276,7 @@ public class ChangeFlowConfigTest {
                                                        .build();
         doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver).build();
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE).build();
 
         assertThat("Audit record generator should exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(true));
@@ -258,8 +289,7 @@ public class ChangeFlowConfigTest {
 
         doReturn(Optional.empty()).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver).build();
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE).build();
 
         assertThat("Audit record generator should not exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(false));
@@ -268,12 +298,53 @@ public class ChangeFlowConfigTest {
     @Test
     public void should_not_create_audit_record_generator_if_auditing_is_disabled() {
 
-        final var flowConfig = new ChangeFlowConfig.Builder<>(TestEntity.INSTANCE,
-                                                              auditedEntityTypeResolver)
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
             .disableAuditing()
             .build();
 
         assertThat("Audit record generator should not exist",
                    flowConfig.auditRecordGenerator().isPresent(), is(false));
+    }
+
+    @Test
+    public void should_not_create_audit_record_generator_if_output_generators_removed() {
+
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
+            .withoutOutputGenerators()
+            .build();
+
+        assertThat("Audit record generator should not exist",
+                   flowConfig.auditRecordGenerator().isPresent(), is(false));
+    }
+
+    @Test
+    public void should_create_audit_record_generator_if_reenabled_and_audited_fields_defined() {
+
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+                                                       .withName(AUDITED_ENTITY_TYPE_NAME)
+                                                       .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
+                                                                                     TestEntity.FIELD_1, TestEntity.FIELD_2)
+                                                       .build();
+        doReturn(Optional.of(auditedEntityType)).when(auditedEntityTypeResolver).resolve(TestEntity.INSTANCE);
+
+        final var flowConfig = changeFlowConfigBuilder(TestEntity.INSTANCE)
+            .withoutOutputGenerators()
+            .enableAuditing()
+            .build();
+
+        assertThat("Audit record generator should exist",
+                   flowConfig.auditRecordGenerator().isPresent(), is(true));
+        assertThat("Audit record generator should have correct entity type name: ",
+                   flowConfig.auditRecordGenerator().get().getEntityTypeName(), is(AUDITED_ENTITY_TYPE_NAME));
+    }
+
+    private <E extends EntityType<E>> ChangeFlowConfig.Builder<E> changeFlowConfigBuilder(final E entityType) {
+        return new ChangeFlowConfig.Builder<>(entityType) {
+
+            @Override
+            AuditedEntityTypeResolver regularAuditedEntityTypeResolver() {
+                return auditedEntityTypeResolver;
+            }
+        };
     }
 }
