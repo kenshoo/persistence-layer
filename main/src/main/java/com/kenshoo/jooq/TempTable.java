@@ -49,7 +49,7 @@ class TempTable<T extends Table<Record>> {
         CreateTableFinalStep createTableFinalStep = createTableColumnStep;
         UniqueKey<Record> primaryKey = table.getPrimaryKey();
         if (primaryKey != null) {
-            createTableFinalStep = createTableColumnStep.constraint(DSL.constraint().primaryKey(primaryKey.getFields().toArray(new TableField[0])));
+            createTableFinalStep = createTableColumnStep.constraint(DSL.constraint().unique(primaryKey.getFields().toArray(new TableField[0])));
         }
         //noinspection ConstantConditions
         String tableCreateSql = createTableFinalStep.getSQL();
