@@ -12,7 +12,7 @@ If so, then PL may be the library you need.
 
 PL is a Java mutation layer for business entities where you can define a flow to be executed upon every mutation.
 The flow can contain enrichments and validations.
-PL was designed to be fast for bulk operations and do every SQL operation in bulks, including fetching of all fields required by the flow.
+PL was designed to be fast for bulk operations and do every SQL operation in bulks, including fetching of all fields required by the flow.  
 
 ## How fast is it
 
