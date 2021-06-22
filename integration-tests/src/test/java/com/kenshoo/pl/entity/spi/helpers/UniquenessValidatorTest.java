@@ -95,6 +95,43 @@ public class UniquenessValidatorTest {
     }
 
     @Test
+    public void testSuccessCommandWhenDuplicationIsWithinTheBulk() {
+        UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
+        UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness)
+                .setMaxCount(2)
+                .build();
+
+        List<CreateParent> commands = asList(
+                new CreateParent().with(ParentEntity.ID, 1).with(ParentEntity.NAME, "moshe"),
+                new CreateParent().with(ParentEntity.ID, 2).with(ParentEntity.NAME, "david"),
+                new CreateParent().with(ParentEntity.ID, 3).with(ParentEntity.NAME, "moshe")
+        );
+
+        CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
+
+        assertFalse(results.hasErrors());
+    }
+
+    @Test
+    public void testSuccessCommandWhenKeyAlreadyExistsInDb() {
+        UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
+        UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness)
+                .setMaxCount(2)
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
+
+        List<CreateParent> commands = asList(
+                new CreateParent().with(ParentEntity.ID, 1).with(ParentEntity.NAME, "moshe"),
+                new CreateParent().with(ParentEntity.ID, 2).with(ParentEntity.NAME, "david")
+        );
+
+        CreateResult<ParentEntity, Identifier<ParentEntity>> results = parentPersistence.create(commands, parentFlow(validator).build());
+
+        assertFalse(results.hasErrors());
+    }
+
+    @Test
     public void testFailCommandWhenKeyAlreadyExistsInDb() {
         UniqueKey<ParentEntity> uniqueness = new UniqueKey<>(asList(ParentEntity.NAME));
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator.Builder<>(entitiesFetcher, uniqueness)

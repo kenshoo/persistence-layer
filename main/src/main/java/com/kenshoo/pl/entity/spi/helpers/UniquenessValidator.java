@@ -9,6 +9,7 @@ import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
@@ -18,8 +19,9 @@ import java.util.stream.Stream;
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
 import static com.kenshoo.pl.entity.SupportedChangeOperation.CREATE;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static org.jooq.lambda.Seq.seq;
 
 
 public class UniquenessValidator<E extends EntityType<E>> implements ChangesValidator<E> {
@@ -29,13 +31,15 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     private final UniqueKey<E> uniqueKey;
     private final PLCondition condition;
     private final SupportedChangeOperation operation;
+    private final int maxCount;
 
-    private UniquenessValidator(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey, SupportedChangeOperation operation, PLCondition condition, String errorCode) {
+    private UniquenessValidator(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey, SupportedChangeOperation operation, PLCondition condition, String errorCode, int maxCount) {
         this.errorCode = errorCode;
         this.fetcher = requireNonNull(fetcher, "entity fetcher must be provided");
         this.uniqueKey = requireNonNull(uniqueKey, "unique key must be provided");
         this.condition = requireNonNull(condition, "condition must be provided");
         this.operation = requireNonNull(operation, "operation must be provided");
+        this.maxCount = maxCount;
     }
 
     @Override
@@ -43,33 +47,45 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         return operation;
     }
 
+
     @Override
     public void validate(Collection<? extends EntityChange<E>> commands, ChangeOperation op, ChangeContext ctx) {
 
         final var commandsToValidate = commands.stream().filter(hasChangeInUniqueKeyField()).collect(Collectors.toList());
-        Map<Identifier<E>, ? extends EntityChange<E>> commandsByIds = markDuplicatesInCollectionWithErrors(commandsToValidate, ctx);
-        if (commandsByIds.isEmpty())
+        var groupedCommands = groupByUniqueKey(commandsToValidate, ctx);
+
+        groupedCommands.forEach((eIdentifier, entityChanges) ->
+                entityChanges.stream()
+                        .skip(maxCount)
+                        .forEach(eEntityChange -> ctx.addValidationError(eEntityChange, new ValidationError(errorCode))));
+        if (groupedCommands.isEmpty())
             return;
 
         UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
         EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
 
-        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
+        Map<Identifier<E>, List<CurrentEntityState>> duplicates = fetcher.fetch(uniqueKey.getEntityType(), groupedCommands.keySet(), condition, uniqueKeyAndPK)
                 .stream()
-                .collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
+                .collect(groupingBy(e -> createKeyValue(e, uniqueKey), toList()));
 
-        duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
+        duplicates.forEach((eIdentifier, currentEntityStates) -> {
+            List<? extends EntityChange<E>> identifierCommands = groupedCommands.get(eIdentifier);
+            if (currentEntityStates.size() + identifierCommands.size() > maxCount) {
+                currentEntityStates.forEach(currentEntityState -> {
+                    identifierCommands.forEach(eEntityChange -> ctx.addValidationError(eEntityChange, errorForDatabaseConflict(currentEntityState, pk)));
+                });
+            }
+        });
     }
 
     private Predicate<EntityChange<E>> hasChangeInUniqueKeyField() {
         return cmd -> !UPDATE.equals(cmd.getChangeOperation()) || Arrays.stream(uniqueKey.getFields()).anyMatch(cmd::isFieldChanged);
     }
 
-    private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
-        return commands
-                .stream()
+    private <CMD extends EntityChange<E>> Map<Identifier<E>, List<CMD>> groupByUniqueKey(Collection<CMD> commands, ChangeContext ctx) {
+        return seq(commands)
                 .filter(command -> condition.getPostFetchCondition().test(ctx.getFinalEntity(command)))
-                .collect(toMap(cmd -> createKeyValue(cmd, ctx, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
+                .groupBy(cmd -> uniqueKey.createIdentifier(new EntityWithNullForMissingField(ctx.getFinalEntity(cmd))));
     }
 
     private ValidationError errorForDatabaseConflict(CurrentEntityState dupEntity, UniqueKey<E> pk) {
@@ -103,10 +119,16 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         private final UniqueKey<E> uniqueKey;
         private PLCondition condition = PLCondition.trueCondition();
         private SupportedChangeOperation operation = CREATE;
+        private int maxCount = 1;
 
         public Builder(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey) {
             this.fetcher = fetcher;
             this.uniqueKey = uniqueKey;
+        }
+
+        public Builder<E> setMaxCount(int maxCount) {
+            this.maxCount = maxCount;
+            return this;
         }
 
         public Builder<E> setOperation(SupportedChangeOperation operation) {
@@ -125,7 +147,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         }
 
         public UniquenessValidator<E> build() {
-            return new UniquenessValidator<>(fetcher, uniqueKey, operation, condition, errorCode);
+            return new UniquenessValidator<>(fetcher, uniqueKey, operation, condition, errorCode, maxCount);
         }
     }
 
