@@ -12,6 +12,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
+import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,12 +23,16 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
+import static com.kenshoo.pl.entity.IdentifierType.uniqueKey;
 import static com.kenshoo.pl.entity.PLCondition.not;
+import static com.kenshoo.pl.entity.PLCondition.trueCondition;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.isNull;
 
 public class EntitiesFetcherByPLConditionTest {
 
@@ -368,7 +373,7 @@ public class EntitiesFetcherByPLConditionTest {
 
         final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
-                PLCondition.trueCondition(),
+                trueCondition(),
                 TestEntityType.TYPE, TestEntityType.FIELD1);
 
         final List<CurrentEntityState> sortedEntities = entities.stream()
@@ -461,6 +466,40 @@ public class EntitiesFetcherByPLConditionTest {
         assertThat(entities.get(0),
                 hasFieldValues(fieldValue(TestEntityType.ID, 1),
                         fieldValue(TestEntityType.FIELD1, "Alpha")));
+    }
+
+    @Test
+    public void fetchCountGroupingByFieldsOfPrimaryTable() {
+
+        final var type1 = uniqueKey(TestEntityType.TYPE).createIdentifier(1);
+        final var type2 = uniqueKey(TestEntityType.TYPE).createIdentifier(2);
+        final var type3 = uniqueKey(TestEntityType.TYPE).createIdentifier(3);
+
+        var countByType = entitiesFetcher.fetchCount(
+                TestEntityType.INSTANCE,
+                List.of(type1, type2, type3),
+                trueCondition());
+
+        assertThat(countByType.get(type1), is(2));
+        assertThat(countByType.get(type2), is(1));
+        assertThat(countByType.get(type3), is(1));
+    }
+
+    @Test
+    public void fetchCountGroupingByFieldsOfParentWithConditionOnParent() {
+
+        final var parentAlpha = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentAlpha");
+        final var parentBravo = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentBravo");
+        final var parentCharlie = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentCharlie");
+
+        var countByType = entitiesFetcher.fetchCount(
+                TestEntityType.INSTANCE,
+                List.of(parentAlpha, parentBravo, parentCharlie),
+                TestParentEntityType.SECONDARY_FIELD1.in("ParentSecondaryAlpha", "ParentSecondaryBravo"));
+
+        assertThat(countByType.get(parentAlpha), is(2));
+        assertThat(countByType.get(parentBravo), is(1));
+        assertFalse(countByType.containsKey(parentCharlie));
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {
