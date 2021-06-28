@@ -35,6 +35,7 @@ public class UniquenessValidatorTest {
     private static final ParentTable parentTable = ParentTable.INSTANCE;
     private static final ChildTable childTable = ChildTable.INSTANCE;
     private static final Set<DataTable> ALL_TABLES = ImmutableSet.of(parentTable, childTable);
+    private static final String UNIQUE_NAME = "Moshe";
 
     private static boolean tablesCreated;
 
@@ -44,6 +45,8 @@ public class UniquenessValidatorTest {
     private EntitiesFetcher entitiesFetcher = new EntitiesFetcher(dslContext);
     private PersistenceLayer<ParentEntity> parentPersistence = new PersistenceLayer<>(plContext);
     private PersistenceLayer<ChildEntity> childPersistence = new PersistenceLayer<>(plContext);
+
+
     @Before
     public void setup() {
         if (!tablesCreated) {
@@ -325,6 +328,32 @@ public class UniquenessValidatorTest {
         final var commands = List.of(
                 new CreateParent().with(ParentEntity.ID, 1)
                         .with(ParentEntity.NAME, "moshe")
+                        .with(ParentEntity.ID_IN_TARGET, 12345)
+        );
+
+        final var results = parentPersistence.create(commands, parentFlow(validator).build());
+
+        assertThat(results.hasErrors(), is(true));
+    }
+
+    @Test
+    public void testFailCommandWhenSameUniqueKeyInDBExistsMoreAndAlreadyDuplicateAndConditionIsMatched() {
+        final var validator = new UniquenessValidator
+                .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
+                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .build();
+
+        create(new CreateParent().with(ParentEntity.ID, 99)
+                .with(ParentEntity.NAME, UNIQUE_NAME) .with(ParentEntity.ID_IN_TARGET, 333),
+
+                new CreateParent().with(ParentEntity.ID, 98)
+                .with(ParentEntity.NAME, UNIQUE_NAME).with(ParentEntity.ID_IN_TARGET, 4444));
+
+
+
+        final var commands = List.of(
+                new CreateParent().with(ParentEntity.ID, 1)
+                        .with(ParentEntity.NAME, UNIQUE_NAME)
                         .with(ParentEntity.ID_IN_TARGET, 12345)
         );
 

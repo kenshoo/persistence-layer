@@ -56,7 +56,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
 
         Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
                 .stream()
-                .collect(toMap(e -> createKeyValue(e, uniqueKey), identity()));
+                .collect(toMap(e -> createKeyValue(e, uniqueKey), identity() , (a,b)-> {return a;}));
 
         duplicates.forEach((dupKey, dupEntity) -> ctx.addValidationError(commandsByIds.get(dupKey), errorForDatabaseConflict(dupEntity, pk)));
     }
