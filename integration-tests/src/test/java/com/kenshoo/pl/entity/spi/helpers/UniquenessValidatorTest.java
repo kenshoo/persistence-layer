@@ -344,12 +344,11 @@ public class UniquenessValidatorTest {
                 .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99)
-                .with(ParentEntity.NAME, UNIQUE_NAME)
-                .with(ParentEntity.ID_IN_TARGET, 333));
+                .with(ParentEntity.NAME, UNIQUE_NAME) .with(ParentEntity.ID_IN_TARGET, 333),
 
-        create(new CreateParent().with(ParentEntity.ID, 98)
-                .with(ParentEntity.NAME, UNIQUE_NAME)
-                .with(ParentEntity.ID_IN_TARGET, 4444));
+                new CreateParent().with(ParentEntity.ID, 98)
+                .with(ParentEntity.NAME, UNIQUE_NAME).with(ParentEntity.ID_IN_TARGET, 4444));
+
 
 
         final var commands = List.of(
