@@ -95,29 +95,29 @@ public class EntitiesFetcher {
     }
 
     public <E extends EntityType<E>> Map<Identifier<?>, Integer> fetchCount(final E entityType,
-                                                                            final Collection<? extends Identifier<?>> ids,
+                                                                            final Collection<? extends Identifier<?>> groupingIdentifiers,
                                                                             final PLCondition plCondition) {
         requireNonNull(entityType, "An entity type must be provided");
-        notEmpty(ids, "There must be at least one id to fetch");
+        notEmpty(groupingIdentifiers, "There must be at least one field in the groupingFields");
         requireNonNull(plCondition, "A condition must be provided");
 
-        final var uniqueKey = ids.iterator().next().getUniqueKey();
-        final var aliasedKey = new AliasedKey<>(uniqueKey);
-        final var allFieldsToFetch = Seq.concat(seq(plCondition.getFields()), Stream.of(uniqueKey.getFields())).distinct().toList();
-        final var executionPlan = new ExecutionPlan(entityType.getPrimaryTable(), allFieldsToFetch).getOneToOnePlan();
+        final var groupKey = groupingIdentifiers.iterator().next().getUniqueKey();
+        final var aliasedGroupKey = new AliasedKey<>(groupKey);
+        final var fieldsForExecutionPlan = Seq.concat(seq(plCondition.getFields()), Stream.of(groupKey.getFields())).distinct().toList();
+        final var executionPlan = new ExecutionPlan(entityType.getPrimaryTable(), fieldsForExecutionPlan).getOneToOnePlan();
         final Field<Integer> countField = count();
 
         final var queryBuilder = new QueryBuilder<E>(dslContext)
-                .selecting(dbFieldsOf(allFieldsToFetch).concat(countField).concat(aliasedKey.aliasedFields()).toList())
+                .selecting(Seq.<SelectField<?>>seq(aliasedGroupKey.aliasedFields()).append(countField).toList())
                 .from(entityType.getPrimaryTable())
                 .innerJoin(executionPlan.getPaths())
                 .leftJoin(executionPlan.getSecondaryTableRelations())
-                .whereIdsIn(ids)
+                .whereIdsIn(groupingIdentifiers)
                 .withCondition(plCondition.getJooqCondition())
-                .with(q -> q.groupBy(uniqueKey.getTableFields()));
+                .with(q -> q.groupBy(groupKey.getTableFields()));
 
         try (var queryExtender = queryBuilder.build()) {
-            return fetchCount(queryExtender.getQuery(), aliasedKey, countField);
+            return fetchCount(queryExtender.getQuery(), aliasedGroupKey, countField);
         }
     }
 

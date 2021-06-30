@@ -7,12 +7,12 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.annotation.Required;
+import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
-import org.jooq.lambda.Seq;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -26,13 +26,14 @@ import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
 import static com.kenshoo.pl.entity.IdentifierType.uniqueKey;
 import static com.kenshoo.pl.entity.PLCondition.not;
 import static com.kenshoo.pl.entity.PLCondition.trueCondition;
+import static com.kenshoo.pl.entity.TestEnum.*;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.isNull;
+
 
 public class EntitiesFetcherByPLConditionTest {
 
@@ -73,11 +74,11 @@ public class EntitiesFetcherByPLConditionTest {
                   .execute();
 
         dslContext.insertInto(table)
-                  .columns(table.type, table.id, table.field1, table.parent_id)
-                  .values(1, 1, "Alpha", 1)
-                  .values(1, 2, "Bravo", 1)
-                  .values(2, 1, "Charlie", 2)
-                  .values(3, 3, "Delta", 3)
+                  .columns(table.type, table.id, table.field1, table.parent_id, table.enum_field)
+                  .values(1, 1, "Alpha", 1, Alpha.name())
+                  .values(1, 2, "Bravo", 1, Bravo.name())
+                  .values(2, 1, "Charlie", 2, Charlie.name())
+                  .values(3, 3, "Delta", 3, Delta.name())
                   .execute();
 
     }
@@ -180,7 +181,7 @@ public class EntitiesFetcherByPLConditionTest {
     @Test
     public void fetchByEqualsConditionWhereConditionOnChildAndBothParentAndSecondaryRequested() {
         final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
-                                                            TestEntityType.FIELD1.eq("Charlie"),
+                                                            TestEntityType.ENUM_FIELD.eq(Charlie),
                                                             TestParentEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(1));
@@ -508,6 +509,7 @@ public class EntitiesFetcherByPLConditionTest {
         private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER);
         private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, String> enum_field = createField("enum_field", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, Integer> parent_id = createFKField("parent_id", TestParentTable.INSTANCE.id);
 
         public TestTable(String name) {
@@ -574,6 +576,7 @@ public class EntitiesFetcherByPLConditionTest {
         public static final EntityField<TestEntityType, Integer> ID = INSTANCE.field(table.id);
         public static final EntityField<TestEntityType, String> FIELD1 = INSTANCE.field(table.field1);
         public static final EntityField<TestEntityType, Integer> TYPE = INSTANCE.field(table.type);
+        public static final EntityField<TestEntityType, TestEnum> ENUM_FIELD = INSTANCE.field(table.enum_field, new EnumAsStringValueConverter<>(TestEnum.class));
         @Required(RELATION)
         public static final EntityField<TestEntityType, Integer> PARENT_ID = INSTANCE.field(table.parent_id);
 

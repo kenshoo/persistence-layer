@@ -3,6 +3,7 @@ package com.kenshoo.pl.one2many.relatedByPK;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.annotation.Id;
+import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
 
 
 public class ParentEntity extends AbstractEntityType<ParentEntity> {
@@ -15,6 +16,8 @@ public class ParentEntity extends AbstractEntityType<ParentEntity> {
     public static final EntityField<ParentEntity, Integer> ID_IN_TARGET = INSTANCE.field(ParentTable.INSTANCE.idInTarget);
 
     public static final EntityField<ParentEntity, String> NAME = INSTANCE.field(ParentTable.INSTANCE.name);
+
+    public static final EntityField<ParentEntity, TestEnum> ENUM_FIELD = INSTANCE.field(ParentTable.INSTANCE.enum_field, new EnumAsStringValueConverter<>(TestEnum.class));
 
     private ParentEntity() {
         super("parent");
