@@ -12,6 +12,7 @@ public class ParentTable extends AbstractDataTable<ParentTable> {
     public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
     public final TableField<Record, Integer> idInTarget = createField("idInTarget", SQLDataType.INTEGER);
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(40));
+    public final TableField<Record, String> enum_field = createField("enum_field", SQLDataType.VARCHAR(40));
 
     public ParentTable(String name) {
         super(name);

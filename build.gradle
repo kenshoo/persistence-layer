@@ -26,7 +26,11 @@ allprojects {
     apply from: "${rootProject.projectDir}/dependencies.gradle"
 }
 
-
 dependencies {
     compile project(':main')
 }
+
+task cleanDocker(type: Exec) {
+    commandLine ("docker", "rm", "-f", "pl_test_db").setIgnoreExitValue(true)
+}
+

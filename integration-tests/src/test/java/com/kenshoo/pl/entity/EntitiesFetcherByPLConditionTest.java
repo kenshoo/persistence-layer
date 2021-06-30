@@ -7,6 +7,7 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.annotation.Required;
+import com.kenshoo.pl.entity.converters.EnumAsStringValueConverter;
 import com.kenshoo.pl.entity.internal.EntitiesFetcher;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -22,12 +23,17 @@ import java.util.Set;
 
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.fieldValue;
 import static com.kenshoo.matcher.EntityHasFieldValuesMatcher.hasFieldValues;
+import static com.kenshoo.pl.entity.IdentifierType.uniqueKey;
 import static com.kenshoo.pl.entity.PLCondition.not;
+import static com.kenshoo.pl.entity.PLCondition.trueCondition;
+import static com.kenshoo.pl.entity.TestEnum.*;
 import static com.kenshoo.pl.entity.annotation.RequiredFieldType.RELATION;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+
 
 public class EntitiesFetcherByPLConditionTest {
 
@@ -68,11 +74,11 @@ public class EntitiesFetcherByPLConditionTest {
                   .execute();
 
         dslContext.insertInto(table)
-                  .columns(table.type, table.id, table.field1, table.parent_id)
-                  .values(1, 1, "Alpha", 1)
-                  .values(1, 2, "Bravo", 1)
-                  .values(2, 1, "Charlie", 2)
-                  .values(3, 3, "Delta", 3)
+                  .columns(table.type, table.id, table.field1, table.parent_id, table.enum_field)
+                  .values(1, 1, "Alpha", 1, Alpha.name())
+                  .values(1, 2, "Bravo", 1, Bravo.name())
+                  .values(2, 1, "Charlie", 2, Charlie.name())
+                  .values(3, 3, "Delta", 3, Delta.name())
                   .execute();
 
     }
@@ -175,7 +181,7 @@ public class EntitiesFetcherByPLConditionTest {
     @Test
     public void fetchByEqualsConditionWhereConditionOnChildAndBothParentAndSecondaryRequested() {
         final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
-                                                            TestEntityType.FIELD1.eq("Charlie"),
+                                                            TestEntityType.ENUM_FIELD.eq(Charlie),
                                                             TestParentEntityType.FIELD1, TestParentEntityType.SECONDARY_FIELD1);
         assertThat("Incorrect number of entities fetched: ",
                    entities.size(), is(1));
@@ -368,7 +374,7 @@ public class EntitiesFetcherByPLConditionTest {
 
         final List<CurrentEntityState> entities = entitiesFetcher.fetch(TestEntityType.INSTANCE,
                 ImmutableList.of(uniqueKey.createValue(1, 1), uniqueKey.createValue(2, 1)),
-                PLCondition.trueCondition(),
+                trueCondition(),
                 TestEntityType.TYPE, TestEntityType.FIELD1);
 
         final List<CurrentEntityState> sortedEntities = entities.stream()
@@ -463,12 +469,47 @@ public class EntitiesFetcherByPLConditionTest {
                         fieldValue(TestEntityType.FIELD1, "Alpha")));
     }
 
+    @Test
+    public void fetchCountGroupingByFieldsOfPrimaryTable() {
+
+        final var type1 = uniqueKey(TestEntityType.TYPE).createIdentifier(1);
+        final var type2 = uniqueKey(TestEntityType.TYPE).createIdentifier(2);
+        final var type3 = uniqueKey(TestEntityType.TYPE).createIdentifier(3);
+
+        var countByType = entitiesFetcher.fetchCount(
+                TestEntityType.INSTANCE,
+                List.of(type1, type2, type3),
+                trueCondition());
+
+        assertThat(countByType.get(type1), is(2));
+        assertThat(countByType.get(type2), is(1));
+        assertThat(countByType.get(type3), is(1));
+    }
+
+    @Test
+    public void fetchCountGroupingByFieldsOfParentWithConditionOnParent() {
+
+        final var parentAlpha = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentAlpha");
+        final var parentBravo = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentBravo");
+        final var parentCharlie = uniqueKey(TestParentEntityType.FIELD1).createIdentifier("ParentCharlie");
+
+        var countByType = entitiesFetcher.fetchCount(
+                TestEntityType.INSTANCE,
+                List.of(parentAlpha, parentBravo, parentCharlie),
+                TestParentEntityType.SECONDARY_FIELD1.in("ParentSecondaryAlpha", "ParentSecondaryBravo"));
+
+        assertThat(countByType.get(parentAlpha), is(2));
+        assertThat(countByType.get(parentBravo), is(1));
+        assertFalse(countByType.containsKey(parentCharlie));
+    }
+
     private static class TestTable extends AbstractDataTable<TestTable> {
         private static final TestTable INSTANCE = new TestTable("test");
 
         private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER);
         private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
+        private final TableField<Record, String> enum_field = createField("enum_field", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, Integer> parent_id = createFKField("parent_id", TestParentTable.INSTANCE.id);
 
         public TestTable(String name) {
@@ -535,6 +576,7 @@ public class EntitiesFetcherByPLConditionTest {
         public static final EntityField<TestEntityType, Integer> ID = INSTANCE.field(table.id);
         public static final EntityField<TestEntityType, String> FIELD1 = INSTANCE.field(table.field1);
         public static final EntityField<TestEntityType, Integer> TYPE = INSTANCE.field(table.type);
+        public static final EntityField<TestEntityType, TestEnum> ENUM_FIELD = INSTANCE.field(table.enum_field, new EnumAsStringValueConverter<>(TestEnum.class));
         @Required(RELATION)
         public static final EntityField<TestEntityType, Integer> PARENT_ID = INSTANCE.field(table.parent_id);
 

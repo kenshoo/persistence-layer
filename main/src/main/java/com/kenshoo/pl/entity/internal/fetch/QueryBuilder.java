@@ -5,11 +5,9 @@ import com.google.common.collect.Sets;
 import com.kenshoo.jooq.*;
 import com.kenshoo.pl.entity.*;
 import org.jooq.*;
-
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
 import static org.jooq.impl.DSL.trueCondition;
 import static org.jooq.lambda.function.Functions.not;
 
@@ -26,6 +24,7 @@ public class QueryBuilder<E extends EntityType<E>> {
     private Condition condition = trueCondition();
     private Partitioner partitioner = this::addPartitionToCondition;
     private QueryExtender queryExtender = DONT_EXTEND_WITH_IDS;
+    private Consumer<SelectJoinStep<Record>> customStep = __ -> {};
 
 
     public QueryBuilder(DSLContext dslContext) {
@@ -57,6 +56,11 @@ public class QueryBuilder<E extends EntityType<E>> {
         return this;
     }
 
+    public QueryBuilder<E> with(Consumer<SelectJoinStep<Record>> customStep) {
+        this.customStep = customStep;
+        return this;
+    }
+
     public QueryBuilder<E> whereIdsIn(Collection<? extends Identifier<? extends EntityType<?>>> ids) {
         if (queryExtender != DONT_EXTEND_WITH_IDS) {
             throw new IllegalStateException("We currently support only a single query extension");
@@ -82,7 +86,7 @@ public class QueryBuilder<E extends EntityType<E>> {
         joinSecondaryTables(query, joinedTables, oneToOneTableRelations);
         condition = partitioner.transform(startingTable, condition);
         query.where(condition);
-
+        customStep.accept(query);
         return queryExtender.transform(query);
     }
 

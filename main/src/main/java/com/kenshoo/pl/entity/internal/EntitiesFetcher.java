@@ -21,12 +21,14 @@ import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.Validate.notEmpty;
+import static org.jooq.impl.DSL.count;
 import static org.jooq.lambda.Seq.seq;
 
 
@@ -90,6 +92,33 @@ public class EntitiesFetcher {
         final List<? extends EntityField<?, ?>> allFieldsToFetch = Seq.concat(Seq.of(fieldsToFetch), seq(plCondition.getFields()), fieldsOf(keys)).distinct().collect(Collectors.toList());
 
         return Lists.newArrayList(fetchEntities(entityType.getPrimaryTable(), aliasedKey, allFieldsToFetch, query -> query.whereIdsIn(keys).withCondition(plCondition.getJooqCondition())).values());
+    }
+
+    public <E extends EntityType<E>> Map<Identifier<?>, Integer> fetchCount(final E entityType,
+                                                                            final Collection<? extends Identifier<?>> groupingIdentifiers,
+                                                                            final PLCondition plCondition) {
+        requireNonNull(entityType, "An entity type must be provided");
+        notEmpty(groupingIdentifiers, "There must be at least one field in the groupingFields");
+        requireNonNull(plCondition, "A condition must be provided");
+
+        final var groupKey = groupingIdentifiers.iterator().next().getUniqueKey();
+        final var aliasedGroupKey = new AliasedKey<>(groupKey);
+        final var fieldsForExecutionPlan = Seq.concat(seq(plCondition.getFields()), Stream.of(groupKey.getFields())).distinct().toList();
+        final var executionPlan = new ExecutionPlan(entityType.getPrimaryTable(), fieldsForExecutionPlan).getOneToOnePlan();
+        final Field<Integer> countField = count();
+
+        final var queryBuilder = new QueryBuilder<E>(dslContext)
+                .selecting(Seq.<SelectField<?>>seq(aliasedGroupKey.aliasedFields()).append(countField).toList())
+                .from(entityType.getPrimaryTable())
+                .innerJoin(executionPlan.getPaths())
+                .leftJoin(executionPlan.getSecondaryTableRelations())
+                .whereIdsIn(groupingIdentifiers)
+                .withCondition(plCondition.getJooqCondition())
+                .with(q -> q.groupBy(groupKey.getTableFields()));
+
+        try (var queryExtender = queryBuilder.build()) {
+            return fetchCount(queryExtender.getQuery(), aliasedGroupKey, countField);
+        }
     }
 
     public <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesByForeignKeys(E entityType, UniqueKey<E> foreignUniqueKey, Collection<? extends Identifier<E>> keys, Collection<EntityField<?, ?>> fieldsToFetch) {
@@ -169,6 +198,10 @@ public class EntitiesFetcher {
 
     private <E extends EntityType<E>> Map<Identifier<E>, CurrentEntityState> fetchEntitiesMap(ResultQuery<Record> query, AliasedKey<E> aliasedKey, List<? extends EntityField<?, ?>> fields) {
         return query.fetchMap(record -> RecordReader.createKey(record, aliasedKey), record -> RecordReader.createEntity(record, fields));
+    }
+
+    private <E extends EntityType<E>> Map<Identifier<?>, Integer> fetchCount(ResultQuery<Record> query, AliasedKey<?> key, Field<Integer> count) {
+        return query.fetchMap(record -> RecordReader.createKey(record, key), record -> record.get(count));
     }
 
     private <MAIN extends EntityType<MAIN>, SUB extends EntityType<SUB>> Map<Identifier<MAIN>, List<FieldsValueMap<SUB>>> fetchMultiValuesMap(ResultQuery<Record> query, AliasedKey<MAIN> aliasedKey, List<? extends EntityField<SUB, ?>> fields) {
