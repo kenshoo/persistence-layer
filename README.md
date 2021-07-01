@@ -87,6 +87,7 @@ class CampaignBudgetValidator implements FieldValidator<Campaign, Integer> {
             ? new ValidationError("budget is too big", Campaign.BUDGET)
             : null;
         }
+        asdf
     }
 }
 ```
@@ -130,6 +131,9 @@ There are multiple features in this examples:
 
 There you can find a full tutorial with theory and examples.
 
+
+## bla
+
 ## Download
 
 From maven
@@ -147,5 +151,4 @@ PL is licensed under the Apache License, Version 2.0.
 
 ## Credits
 
-PL was originally created at Kenshoo by Victor Bronstein.
-
+PL was originally created at Kenshoo by Victor Bronstein. 
