@@ -7,8 +7,7 @@ import org.jooq.*;
 import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.lambda.tuple.Tuple2;
-import org.jooq.lambda.tuple.Tuple3;
+import org.jooq.lambda.tuple.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -31,10 +30,12 @@ public class SelectQueryExtenderTest {
         dslContext.createTable(testTable).column(testTable.id, testTable.id.getDataType())
                 .column(testTable.field, testTable.field.getDataType())
                 .column(testTable.id_in_target, testTable.id_in_target.getDataType())
+                .column(testTable.field1, testTable.field1.getDataType())
+                .column(testTable.field2, testTable.field2.getDataType())
                 .execute();
         BatchBindStep batch = dslContext.batch(dslContext.insertInto(testTable, testTable.fields()).values(new Object[testTable.fields().length]));
         for (int i = 0; i < 1000; i++) {
-            batch.bind(i, i * 100, Integer.toString(i));
+            batch.bind(i, i * 100, Integer.toString(i), "1", TestE.test1);
         }
         batch.execute();
     }
@@ -160,6 +161,40 @@ public class SelectQueryExtenderTest {
     }
 
     @Test
+    public void testFourFieldsLookup() {
+        TestTable table = TestTable.TABLE;
+        List<Tuple4<Integer, String, Integer, TestE>> ids = new ArrayList<>();
+        ids.add(new Tuple4<>(5, "5", 500, TestE.test1));
+        ids.add(new Tuple4<>(30, "3", 3000, TestE.test1));
+        ids.add(new Tuple4<>(6, "5", 500, TestE.test1));
+        ids.add(new Tuple4<>(3, "3", 200,TestE.test1));
+        ids.add(new Tuple4<>(30, "30", 3000, TestE.test1));
+        SelectJoinStep<Record2<Integer, Integer>> step = dslContext.select(table.id, table.field).from(table);
+        try (QueryExtension<SelectJoinStep<Record2<Integer, Integer>>> queryExtension = SelectQueryExtender.of(dslContext, step).withCondition(table.id, table.id_in_target, table.field, table.field2).in(ids)) {
+            List<Integer> values = queryExtension.getQuery().fetch(table.id);
+            assertThat(values.size(), is(2));
+            assertThat(values, containsInAnyOrder(5, 30));
+        }
+    }
+
+    @Test
+    public void testFiveFieldsLookup() {
+        TestTable table = TestTable.TABLE;
+        List<Tuple5<Integer, String, Integer, String, TestE>> ids = new ArrayList<>();
+        ids.add(new Tuple5<>(5, "5", 500, "1", TestE.test1));
+        ids.add(new Tuple5<>(30, "3", 3000, "1", TestE.test1));
+        ids.add(new Tuple5<>(6, "5", 500, "1", TestE.test1));
+        ids.add(new Tuple5<>(3, "3", 200, "1",TestE.test1));
+        ids.add(new Tuple5<>(30, "30", 3000, "1", TestE.test1));
+        SelectJoinStep<Record2<Integer, Integer>> step = dslContext.select(table.id, table.field).from(table);
+        try (QueryExtension<SelectJoinStep<Record2<Integer, Integer>>> queryExtension = SelectQueryExtender.of(dslContext, step).withCondition(table.id, table.id_in_target, table.field, table.field1, table.field2).in(ids)) {
+            List<Integer> values = queryExtension.getQuery().fetch(table.id);
+            assertThat(values.size(), is(2));
+            assertThat(values, containsInAnyOrder(5, 30));
+        }
+    }
+
+    @Test
     public void testUpdateInWithCondition() {
         TestTable table = TestTable.TABLE;
         try (IntIdsList idsList = new IntIdsList(dslContext)) {
@@ -187,10 +222,24 @@ public class SelectQueryExtenderTest {
         final Field<Integer> id = createField("id", SQLDataType.INTEGER);
         final Field<Integer> field = createField("field", SQLDataType.INTEGER);
         final Field<String> id_in_target = createField("id_in_target", SQLDataType.VARCHAR.length(255));
+        final Field<String> field1 = createField("field1", SQLDataType.VARCHAR.length(10));
+        final Field<TestE> field2 = createField("field2", SQLDataType.VARCHAR.length(10).asConvertedDataType(new TestEConverter()));
+
 
         private TestTable() {
             super("ids_list_test");
         }
     }
 
+    public enum TestE {
+        test1,
+        test2
+    }
+
+    private static class TestEConverter implements Converter<String, TestE> {
+        public TestE from(String s) { return s == null ? null :  Enum.valueOf(TestE.class, s); }
+        public String to(TestE e) { return e != null? e.toString() : null; }
+        public Class<String> fromType() { return String.class; }
+        public Class<TestE> toType() { return TestE.class; }
+    }
 }
