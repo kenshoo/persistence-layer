@@ -64,6 +64,10 @@ public class AuditRecordMatchers {
         return new AuditRecordFieldRecordExistsMatcher(expectedField.toString());
     }
 
+    public static Matcher<AuditRecord> hasNoFieldRecordFor(final EntityField<?, ?> field) {
+        return new AuditRecordFieldRecordMissingMatcher(field.toString());
+    }
+
     public static Matcher<AuditRecord> hasNoFieldRecords() {
         return new AuditRecordNoFieldRecordsMatcher();
     }

@@ -148,14 +148,11 @@ public class AuditFieldChangeGeneratorTest {
     }
 
     @Test
-    public void generate_CurrentAbsent_FinalNull_ShouldReturnFieldChangeWithEmptyContents() {
+    public void generate_CurrentAbsent_FinalNull_ShouldReturnEmpty() {
         when(auditFieldValueResolver.resolve(NAME_AUDITED_FIELD, currentState)).thenReturn(Triptional.absent());
         when(auditFieldValueResolver.resolve(NAME_AUDITED_FIELD, finalState)).thenReturn(Triptional.nullInstance());
 
-        when(auditFieldValueResolver.resolveToString(NAME_AUDITED_FIELD, currentState)).thenReturn(Triptional.absent());
-        when(auditFieldValueResolver.resolveToString(NAME_AUDITED_FIELD, finalState)).thenReturn(Triptional.nullInstance());
-
-        assertThat(generate(NAME_AUDITED_FIELD), isPresentAnd(is(FieldAuditRecord.builder(NAME_FIELD_NAME).build())));
+        assertThat(generate(NAME_AUDITED_FIELD), isEmpty());
     }
 
     @Test

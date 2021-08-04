@@ -117,6 +117,28 @@ public class AuditForCreateOneLevelTest {
     }
 
     @Test
+    public void oneAuditedEntity_SomeNullFieldValues_ShouldCreateRecordWithoutThem() {
+        final var createResult = auditedPL.create(singletonList(new CreateAuditedCommand()
+                                                                    .with(AuditedType.NAME, "name")
+                                                                    .with(AuditedType.DESC, null)
+                                                                    .with(AuditedType.DESC2, null)),
+                                                  auditedConfig);
+        final long id = extractIdFromResult(createResult, AuditedType.ID);
+
+        final var auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
+
+        assertThat("Incorrect number of published records",
+                   auditRecords, hasSize(1));
+        final var auditRecord = auditRecords.get(0);
+        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+                                      hasEntityId(String.valueOf(id)),
+                                      hasOperator(CREATE),
+                                      hasCreatedFieldRecord(AuditedType.NAME, "name"),
+                                      hasNoFieldRecordFor(AuditedType.DESC),
+                                      hasNoFieldRecordFor(AuditedType.DESC2)));
+    }
+
+    @Test
     public void twoAuditedEntities_AllFieldsInCommands_ShouldCreateFieldRecordsForAll() {
         final List<CreateAuditedCommand> cmds =
             ImmutableList.of(new CreateAuditedCommand()

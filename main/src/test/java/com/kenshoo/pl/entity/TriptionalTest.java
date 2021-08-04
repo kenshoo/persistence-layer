@@ -493,6 +493,75 @@ public class TriptionalTest {
         assertThat(Triptional.nullInstance().equals(Triptional.absent(), Objects::equals),
                    is(false));
     }
+
+    @Test
+    public void equalsAsOptional_ForTwoDoublesCloseEnough_ShouldReturnTrue() {
+        assertThat(Triptional.of(2.001).equalsAsOptional(Triptional.of(2.0), (x, y) -> Math.abs(x - y) < 0.01),
+                   is(true));
+    }
+
+    @Test
+    public void equalsAsOptional_ForTwoDoublesNotCloseEnough_ShouldReturnFalse() {
+        assertThat(Triptional.of(2.1).equalsAsOptional(Triptional.of(2.0), (x, y) -> Math.abs(x - y) < 0.01),
+                   is(false));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNotNullAndOtherNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
+        assertThat(Triptional.of(EMPTY).equalsAsOptional(Triptional.nullInstance(),
+                                                         (s1, s2) -> defaultIfEmpty(s1, "bla").equals(defaultIfEmpty(s2, "bla"))),
+                   is(true));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNotNullAndOtherNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equalsAsOptional(Triptional.nullInstance(), Objects::equals),
+                   is(false));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNotNullAndOtherAbsent_ShouldReturnFalse() {
+        assertThat(Triptional.of(2).equalsAsOptional(Triptional.absent(), Objects::equals),
+                   is(false));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNullAndOtherNotNull_AndEqualityFunctionTrue_ShouldReturnTrue() {
+        assertThat(Triptional.<String>nullInstance().equalsAsOptional(Triptional.of(EMPTY),
+                                                                      (s1, s2) -> defaultIfEmpty(s1, "bla").equals(defaultIfEmpty(s2, "bla"))),
+                   is(true));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNullAndOtherNotNull_AndEqualityFunctionFalse_ShouldReturnFalse() {
+        assertThat(Triptional.nullInstance().equalsAsOptional(Triptional.of(3), Objects::equals),
+                   is(false));
+    }
+    
+    @Test
+    public void equalsAsOptional_WhenBothNull_ShouldReturnTrue() {
+        assertThat(Triptional.nullInstance().equalsAsOptional(Triptional.of(null), Objects::equals),
+                   is(true));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisNullAndOtherAbsent_ShouldReturnTrue() {
+        assertThat(Triptional.nullInstance().equalsAsOptional(Triptional.absent(), Objects::equals),
+                   is(true));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisAbsentAndOtherNotNull_ShouldReturnFalse() {
+        assertThat(Triptional.absent().equalsAsOptional(Triptional.of(3), Objects::equals),
+                   is(false));
+    }
+
+    @Test
+    public void equalsAsOptional_WhenThisAbsentAndOtherNull_ShouldReturnTrue() {
+        assertThat(Triptional.absent().equalsAsOptional(Triptional.nullInstance(), Objects::equals),
+                   is(true));
+    }
+    
     private Triptional<String> toTriptionalString(final Object val) {
         return Triptional.of(String.valueOf(val));
     }

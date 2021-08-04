@@ -49,7 +49,7 @@ public class AuditFieldChangeGenerator {
                                                                     final AuditedField<E, T> field) {
         final var triptionalCurrentValue = auditFieldValueResolver.resolve(field, currentState);
         final var triptionalFinalValue = auditFieldValueResolver.resolve(field, finalState);
-        return triptionalCurrentValue.equals(triptionalFinalValue, field::valuesEqual);
+        return triptionalCurrentValue.equalsAsOptional(triptionalFinalValue, field::valuesEqual);
     }
 
     private <E extends EntityType<E>> FieldAuditRecord buildFieldRecord(final CurrentEntityState currentState,
