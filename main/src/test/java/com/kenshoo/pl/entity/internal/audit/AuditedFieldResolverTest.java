@@ -1,6 +1,8 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAllVariationsType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithVirtualType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.InclusiveAuditedWithVirtualType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -131,4 +133,17 @@ public class AuditedFieldResolverTest {
         assertThat(maybeActualAuditedField, isPresentAndIs(expectedAuditedField));
     }
 
+    @Test
+    public void resolveWhenEntityAuditedAndFieldIsVirtualShouldReturnEmpty() {
+        final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithVirtualType.VIRTUAL_DESC_1, AUDITED);
+
+        assertThat(maybeActualAuditedField, isEmpty());
+    }
+
+    @Test
+    public void resolveWhenEntityNotAuditedAndFieldIsVirtualAndAuditedShouldReturnEmpty() {
+        final var maybeActualAuditedField = fieldResolver.resolve(InclusiveAuditedWithVirtualType.VIRTUAL_DESC, AUDITED);
+
+        assertThat(maybeActualAuditedField, isEmpty());
+    }
 }
