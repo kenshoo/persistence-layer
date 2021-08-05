@@ -13,6 +13,7 @@ import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAn
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.isAnnotatedWith;
 import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.AUDITED;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 
 public class AuditedFieldResolver {
 
@@ -31,6 +32,7 @@ public class AuditedFieldResolver {
         requireNonNull(entityAuditIndicator, "entityAuditIndicator is required");
 
         return Optional.of(field)
+                       .filter(not(EntityField::isVirtual))
                        .filter(f -> !isAnnotatedWith(f.getEntityType(), NotAudited.class, f))
                        .filter(f -> isAnnotatedWith(f.getEntityType(), Audited.class, f) || entityAuditIndicator == AUDITED)
                        .map(this::toAuditedField);
