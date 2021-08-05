@@ -458,6 +458,40 @@ public class Triptional<T> {
     }
 
     /**
+     * Indicates whether some other object is "equal to" this {@code Triptional}, while comparing them as {@code Optional}-s,
+     * and also using the input function to test equality.<br>
+     * The other object is considered equal if it is also a {@code Triptional}, and <i>also</i> one of the following applies:
+     * <ul>
+     * <li>Both instances have no value present
+     * <li>One of the instances has no value present and the other is {@code null}
+     * <li>Both instances have a value present (possibly {@code null}),
+     * and when the <i>valueEqualityFunction</i> is applied to both values - it returns {@code true}
+     * </ul>
+     *
+     * @param obj an object to be tested for equality
+     * @param valueEqualityFunction the function to use for testing equality of values, when present
+     * @return {@code true} if the other object is "equal to" this object
+     * otherwise {@code false}
+     * @throws NullPointerException if <i>valueEqualityFunction</i> is {@code null}
+     */
+    public boolean equalsAsOptional(final Object obj, final BiFunction<T, T, Boolean> valueEqualityFunction) {
+        requireNonNull(valueEqualityFunction, "A value equality function must be provided");
+
+        if (this == obj) {
+            return true;
+        }
+
+        if (!(obj instanceof Triptional)) {
+            return false;
+        }
+
+        //noinspection unchecked
+        final Triptional<T> other = (Triptional<T>) obj;
+
+        return valueEqualityFunction.apply(value, other.value);
+    }
+
+    /**
      * Returns a hash code value which is the combination of:
      * <ul>
      *     <li>The present value, if any, or 0 (zero) if no value is present.</li>
