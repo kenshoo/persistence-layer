@@ -1,17 +1,18 @@
 package com.kenshoo.jooq;
 
 import com.google.common.collect.ImmutableList;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import org.hamcrest.Matchers;
 import org.jooq.*;
-import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.lambda.tuple.*;
+import org.jooq.lambda.tuple.Tuple2;
+import org.jooq.lambda.tuple.Tuple3;
+import org.jooq.lambda.tuple.Tuple4;
+import org.jooq.lambda.tuple.Tuple5;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -223,7 +224,7 @@ public class SelectQueryExtenderTest {
         final Field<Integer> field = createField("field", SQLDataType.INTEGER);
         final Field<String> id_in_target = createField("id_in_target", SQLDataType.VARCHAR.length(255));
         final Field<String> field1 = createField("field1", SQLDataType.VARCHAR.length(10));
-        final Field<TestE> field2 = createField("field2", SQLDataType.VARCHAR.length(10).asConvertedDataType(new TestEConverter()));
+        final Field<TestE> field2 = createField("field2", SQLDataType.INTEGER.asConvertedDataType(new TestEConverter()));
 
 
         private TestTable() {
@@ -236,10 +237,21 @@ public class SelectQueryExtenderTest {
         test2
     }
 
-    private static class TestEConverter implements Converter<String, TestE> {
-        public TestE from(String s) { return s == null ? null :  Enum.valueOf(TestE.class, s); }
-        public String to(TestE e) { return e != null? e.toString() : null; }
-        public Class<String> fromType() { return String.class; }
-        public Class<TestE> toType() { return TestE.class; }
+    private static class TestEConverter implements Converter<Integer, TestE> {
+        public TestE from(Integer ordinal) {
+            return ordinal == null ? null : TestE.values()[ordinal];
+        }
+
+        public Integer to(TestE e) {
+            return e != null ? e.ordinal() : null;
+        }
+
+        public Class<Integer> fromType() {
+            return Integer.class;
+        }
+
+        public Class<TestE> toType() {
+            return TestE.class;
+        }
     }
 }
