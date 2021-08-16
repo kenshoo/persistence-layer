@@ -77,8 +77,8 @@ public class PersistenceLayerTest {
             {ID_2, TestEnum.Bravo.name(), FIELD2_2_ORIGINAL_VALUE, new Timestamp(Instant.now().toEpochMilli()), "key2", "value2", PARENT_ID_2, COMPLEX_PARENT_ID_2_1, COMPLEX_PARENT_ID_2_2, IGNORABLE_2_ORIGINAL_VALUE},
     };
     private static final Object[][] SECONDARY_DATA = {
-            {ID_1, GOOGLE_URL, ""},
-            {ID_2, DOODLE_URL, ""},
+            {ID_1, GOOGLE_URL},
+            {ID_2, DOODLE_URL},
     };
     private static final Object[][] PARENT_DATA = {
             {PARENT_ID_1, "1000"},
