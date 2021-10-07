@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -37,6 +38,7 @@ public class CommonTypesStringConverter<T> implements ValueConverter<T, String> 
             .put(Double.class, Double::parseDouble)
             .put(Float.class, Float::parseFloat)
             .put(Boolean.class, s -> BooleanUtils.toBoolean(s, Boolean.TRUE.toString(), Boolean.FALSE.toString()))
+            .put(BigInteger.class, BigInteger::new)
             .put(BigDecimal.class, BigDecimal::new)
             .put(Timestamp.class, s -> new Timestamp(Long.parseLong(s)))
             .put(Instant.class, s -> Instant.ofEpochMilli(Long.parseLong(s)))

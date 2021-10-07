@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -93,6 +94,27 @@ public class CommonTypesStringConverterTest {
         CommonTypesStringConverter<Boolean> onTest = new CommonTypesStringConverter<>(Boolean.class);
 
         onTest.convertFrom("garbage");
+    }
+
+    @Test
+    public void bigIntegerValid() {
+        CommonTypesStringConverter<BigInteger> onTest = new CommonTypesStringConverter<>(BigInteger.class);
+
+        testToAndFromString(onTest, new BigInteger("12345678901234567890"));
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void bigIntegerWithDecimalPoint() {
+        CommonTypesStringConverter<BigInteger> onTest = new CommonTypesStringConverter<>(BigInteger.class);
+
+        onTest.convertFrom("12.34");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void bigIntegerWithLetters() {
+        CommonTypesStringConverter<BigInteger> onTest = new CommonTypesStringConverter<>(BigInteger.class);
+
+        onTest.convertFrom("12AB");
     }
 
     @Test
