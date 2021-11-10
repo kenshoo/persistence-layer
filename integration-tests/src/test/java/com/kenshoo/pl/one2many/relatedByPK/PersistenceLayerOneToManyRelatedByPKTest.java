@@ -650,9 +650,26 @@ public class PersistenceLayerOneToManyRelatedByPKTest {
         assertThat(grandChildrenColorsInDB(), containsInAnyOrder("red", "blue"));
     }
 
+    @Test
+    public void create_parent_with_child_which_require_optional_field_from_parent() {
+
+        final ChangeFlowConfig.Builder<ParentEntity> flow = parentFlow(childFlow(
+                enrichWithValueFrom(NAME, (child, parentName) -> child.set(FIELD_1, child.get(FIELD_1) + " (child of " + parentName + ")"))
+        ));
+
+        insert(flow, newParent().with(
+                insertChild().with(ORDINAL, 0).with(FIELD_1, "izak")
+                )
+        );
+
+        List<String> actualChildren = seq(childrenInDb()).map(rec -> rec.field1).collect(toList());
+
+        assertThat(actualChildren, contains("izak (child of None)"));
+    }
+
 
     private PostFetchCommandEnricher<ChildEntity> enrichWithValueFrom(EntityField otherField, BiConsumer<ChangeEntityCommand<ChildEntity>, Object> enrichment) {
-        return new PostFetchCommandEnricher<ChildEntity>() {
+        return new PostFetchCommandEnricher<>() {
 
             @Override
             public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<ChildEntity, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
@@ -666,12 +683,22 @@ public class PersistenceLayerOneToManyRelatedByPKTest {
 
             @Override
             public void enrich(Collection<? extends ChangeEntityCommand<ChildEntity>> commands, ChangeOperation op, ChangeContext ctx) {
-                commands.forEach(cmd -> enrichment.accept(cmd, cmd.containsField(otherField) ? cmd.get(otherField) : ctx.getEntity(cmd).get(otherField)));
+                commands.forEach(cmd -> enrichment.accept(cmd, getFieldValue(ctx, cmd)));
             }
 
             @Override
             public Stream<EntityField<ChildEntity, ?>> fieldsToEnrich() {
                 return Stream.of(otherField);
+            }
+
+            private Object getFieldValue(ChangeContext ctx, ChangeEntityCommand<ChildEntity> cmd) {
+                if(cmd.containsField(otherField))
+                    return cmd.get(otherField);
+                else if (ctx.getEntity(cmd).containsField(otherField)) {
+                    return ctx.getEntity(cmd).get(otherField);
+                } else {
+                    return "None";
+                }
             }
 
         };

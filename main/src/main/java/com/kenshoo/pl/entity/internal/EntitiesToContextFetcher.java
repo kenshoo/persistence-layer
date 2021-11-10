@@ -48,7 +48,7 @@ public class EntitiesToContextFetcher {
 
         seq(context.getFetchRequests())
                 .filter(askedBy(currentLevel).and(not(queriedOn(currentLevel))))
-                .groupBy(r -> r.getWhereToQuery())
+                .groupBy(FieldFetchRequest::getWhereToQuery)
                 .forEach((level, requestedFields) -> {
                     final List<EntityField> parentFields = seq(requestedFields).map(f -> (EntityField)f.getEntityField()).toList();
                     commands.forEach(cmd -> populateFieldsFromOneLevel(context, level, parentFields, cmd));
@@ -63,11 +63,16 @@ public class EntitiesToContextFetcher {
 
         final ChangeEntityCommand ancestor = getAncestor(cmd, parentLevel);
         final CurrentEntityMutableState currentState = (CurrentEntityMutableState)context.getEntity(cmd);
-        seq(parentFields).forEach(field ->  currentState.set(field, getValue(context, ancestor, field)));
+        parentFields.forEach(field -> {
+            Triptional triptional = getValue(context, ancestor, field);
+            if(triptional.isPresent()) {
+                currentState.set(field, triptional.get());
+            }
+        });
     }
 
 
-    ChangeEntityCommand getAncestor(ChangeEntityCommand cmd, EntityType level) {
+    private ChangeEntityCommand getAncestor(ChangeEntityCommand cmd, EntityType level) {
         for (ChangeEntityCommand parent = cmd.getParent(); parent != null; parent = parent.getParent()) {
             if (parent.getEntityType().equals(level)) {
                 return parent;
@@ -76,8 +81,8 @@ public class EntitiesToContextFetcher {
         throw new RuntimeException("didn't find ancestor of level " + level.getName() + " for command with entity " + cmd.getEntityType().getName());
     }
 
-    private Object getValue(ChangeContext context, ChangeEntityCommand cmd, EntityField field) {
-        return cmd.containsField(field) ? cmd.get(field) : context.getEntity(cmd).get(field);
+    private Triptional<?> getValue(ChangeContext context, ChangeEntityCommand cmd, EntityField field) {
+        return cmd.containsField(field) ? Triptional.of(cmd.get(field)) : context.getEntity(cmd).safeGet(field);
     }
 
     private Predicate<FieldFetchRequest> askedBy(EntityType e) {
