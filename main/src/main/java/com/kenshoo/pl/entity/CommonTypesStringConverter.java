@@ -37,6 +37,7 @@ public class CommonTypesStringConverter<T> implements ValueConverter<T, String> 
             .put(Long.class, Long::parseLong)
             .put(Double.class, Double::parseDouble)
             .put(Float.class, Float::parseFloat)
+            .put(Byte.class, Byte::parseByte)
             .put(Boolean.class, s -> BooleanUtils.toBoolean(s, Boolean.TRUE.toString(), Boolean.FALSE.toString()))
             .put(BigInteger.class, BigInteger::new)
             .put(BigDecimal.class, BigDecimal::new)
