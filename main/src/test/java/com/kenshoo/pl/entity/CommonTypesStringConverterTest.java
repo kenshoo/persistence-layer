@@ -179,4 +179,17 @@ public class CommonTypesStringConverterTest {
 
         onTest.convertFrom("2020-01");
     }
+
+    @Test
+    public void byteValid() {
+        CommonTypesStringConverter<Byte> onTest = new CommonTypesStringConverter<>(Byte.class);
+        testToAndFromString(onTest, (byte) 0);
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void byteInvalid() {
+        CommonTypesStringConverter<Byte> onTest = new CommonTypesStringConverter<>(Byte.class);
+
+        onTest.convertFrom("abc");
+    }
 }
