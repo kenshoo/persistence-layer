@@ -50,4 +50,14 @@ public interface IdentifierType<E extends EntityType<E>> {
             EntityField<E, T5> f5) {
         return new QuintupleUniqueKey<>(f1, f2, f3, f4, f5);
     }
+
+    static <E extends EntityType<E>, T1, T2, T3, T4, T5, T6> SextupleUniqueKey<E, T1, T2, T3, T4, T5, T6> uniqueKey(
+            EntityField<E, T1> f1,
+            EntityField<E, T2> f2,
+            EntityField<E, T3> f3,
+            EntityField<E, T4> f4,
+            EntityField<E, T5> f5,
+            EntityField<E, T6> f6) {
+        return new SextupleUniqueKey<>(f1, f2, f3, f4, f5, f6);
+    }
 }
