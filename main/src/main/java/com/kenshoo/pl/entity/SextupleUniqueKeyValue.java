@@ -1,8 +1,5 @@
 package com.kenshoo.pl.entity;
 
-/**
-*
-*/
 public class SextupleUniqueKeyValue<E extends EntityType<E>, T1, T2, T3, T4, T5, T6> extends UniqueKeyValue<E> {
 
     protected SextupleUniqueKeyValue(SextupleUniqueKey<E, T1, T2, T3, T4, T5, T6> uniqueKey,
