@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 public interface FieldsCombinationValidator<E extends EntityType<E>> extends ChangeValidator {
 
     /**
-     * @return the list of fields whose combination is being validated
+     * @return the list of fields whose combination is being validated; May contain fields of the current entity only.
      */
     Stream<EntityField<E, ?>> validatedFields();
 
@@ -33,14 +33,14 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
     ValidationError validate(FieldsValueMap<E> fieldsValueMap);
 
     /**
-     * @return a list of fields to fetch.
+     * @return a list of fields to fetch. May contain fields of parent entities only
      */
     default Stream<EntityField<?, ?>> fetchFields() {
         return Stream.of();
     }
 
     /**
-     * @return Predicate when should validate fields.
+     * @return Predicate when should validate fields. It is used together with fetchFields(), so only parent fields can be referenced here.
      */
     default Predicate<CurrentEntityState> validateWhen() {
         return e -> true;
