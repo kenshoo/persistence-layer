@@ -19,7 +19,7 @@ public interface FieldValidator<E extends EntityType<E>, T> extends ChangeValida
     EntityField<E, T> validatedField();
 
     /**
-     * Validates the value.
+     * Validates the new field value.
      *
      * @param fieldValue new value of the field
      * @return validation error or <code>null</code> if none
