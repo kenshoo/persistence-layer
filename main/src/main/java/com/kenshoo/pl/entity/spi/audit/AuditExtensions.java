@@ -15,17 +15,17 @@ public interface AuditExtensions {
      * @return fields from different entity types, which must always be added to {@link com.kenshoo.pl.entity.audit.AuditRecord}-s of the current type.<br>
      * These fields can be used (for example) to filter / group audit records in queries later on.
      */
-    Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields();
+    default Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() { return Stream.empty(); }
+
+    /**
+     * @return a custom formatter for the field values that will be included in the audit record.<br>
+     * Defaults to {@link DefaultAuditFieldValueFormatter}.
+     */
+    default AuditFieldValueFormatter fieldValueFormatter() { return DefaultAuditFieldValueFormatter.INSTANCE; }
 
 
     /**
      * Empty implementation in case no extensions are needed
      */
-    final class EmptyAuditExtensions implements AuditExtensions {
-
-        @Override
-        public Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() {
-            return Stream.empty();
-        }
-    }
+    final class EmptyAuditExtensions implements AuditExtensions {}
 }

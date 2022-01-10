@@ -1,15 +1,26 @@
 package com.kenshoo.pl.entity.internal.audit;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.Triptional;
-
-import java.util.Optional;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
 
 import static java.util.Objects.requireNonNull;
 
 public class AuditFieldValueResolver {
 
     public static final AuditFieldValueResolver INSTANCE = new AuditFieldValueResolver();
+
+    private final AuditFieldValueFormatter fieldValueFormatter;
+
+    private AuditFieldValueResolver() {
+        this(CompositeAuditFieldValueFormatter.INSTANCE);
+    }
+
+    @VisibleForTesting
+    AuditFieldValueResolver(final AuditFieldValueFormatter fieldValueFormatter) {
+        this.fieldValueFormatter = fieldValueFormatter;
+    }
 
     public <T> Triptional<T> resolve(final AuditedField<?, T> auditedField,
                                      final Entity entity) {
@@ -21,17 +32,6 @@ public class AuditFieldValueResolver {
                                                   final Entity entity) {
 
         return resolve(auditedField, entity)
-            .map(value -> valueToString(auditedField, value));
-    }
-
-    private <T> String valueToString(final AuditedField<?, T> auditedField,
-                                     final T value) {
-        return Optional.ofNullable(auditedField.getStringValueConverter())
-                       .map(converter -> converter.convertTo(value))
-                       .orElse(String.valueOf(value));
-    }
-
-    private AuditFieldValueResolver() {
-        // singleton
+            .map(value -> fieldValueFormatter.format(auditedField, value));
     }
 }

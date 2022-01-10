@@ -29,6 +29,10 @@ public class AuditedField<E extends EntityType<E>, T> {
         return field;
     }
 
+    public EntityType<E> getEntityType() {
+        return field.getEntityType();
+    }
+
     public String getName() {
         return name;
     }
