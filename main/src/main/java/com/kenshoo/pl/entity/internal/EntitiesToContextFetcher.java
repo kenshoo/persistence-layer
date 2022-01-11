@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static com.kenshoo.pl.entity.UniqueKeyValue.concat;
+import static com.kenshoo.pl.entity.internal.EntityCommandUtil.getAncestor;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
 import static org.jooq.lambda.Seq.seq;
@@ -69,16 +70,6 @@ public class EntitiesToContextFetcher {
                 currentState.set(field, triptional.get());
             }
         });
-    }
-
-
-    private ChangeEntityCommand getAncestor(ChangeEntityCommand cmd, EntityType level) {
-        for (ChangeEntityCommand parent = cmd.getParent(); parent != null; parent = parent.getParent()) {
-            if (parent.getEntityType().equals(level)) {
-                return parent;
-            }
-        }
-        throw new RuntimeException("didn't find ancestor of level " + level.getName() + " for command with entity " + cmd.getEntityType().getName());
     }
 
     private Triptional<?> getValue(ChangeContext context, ChangeEntityCommand cmd, EntityField field) {

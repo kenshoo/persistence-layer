@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import com.kenshoo.pl.entity.spi.EnrichmentEvent;
 import org.jooq.lambda.Seq;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -70,6 +71,11 @@ public class OverridingContext implements ChangeContext {
     @Override
     public Hierarchy getHierarchy() {
         return original.getHierarchy();
+    }
+
+    @Override
+    public void publish(EnrichmentEvent enrichmentEvent, ChangeContext changeContext) {
+        original.publish(enrichmentEvent, changeContext);
     }
 
     private static class OverridingEntity implements CurrentEntityState {

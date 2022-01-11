@@ -3,12 +3,11 @@ package com.kenshoo.pl.entity;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.kenshoo.pl.entity.internal.PostFetchCommandEnrichmentListenersManager;
+import com.kenshoo.pl.entity.spi.EnrichmentEvent;
 import org.jooq.lambda.Seq;
 
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.jooq.lambda.Seq.seq;
@@ -21,10 +20,16 @@ public class ChangeContextImpl implements ChangeContext {
     private final Set<FieldFetchRequest> fieldsToFetchRequests = Sets.newHashSet();
     private final Hierarchy hierarchy;
     private final FeatureSet features;
+    private final PostFetchCommandEnrichmentListenersManager listnersManager;
 
     public ChangeContextImpl(Hierarchy hierarchy, FeatureSet features) {
+        this(hierarchy, features, null);
+    }
+
+    public ChangeContextImpl(Hierarchy hierarchy, FeatureSet features, PostFetchCommandEnrichmentListenersManager listnersManager) {
         this.hierarchy = hierarchy;
         this.features = features;
+        this.listnersManager = listnersManager;
     }
 
     @Override
@@ -90,5 +95,12 @@ public class ChangeContextImpl implements ChangeContext {
     @Override
     public Hierarchy getHierarchy() {
         return hierarchy;
+    }
+
+    @Override
+    public void publish(EnrichmentEvent enrichmentEvent, ChangeContext changeContext) {
+      if(listnersManager != null) {
+          listnersManager.publish(enrichmentEvent, changeContext);
+      }
     }
 }

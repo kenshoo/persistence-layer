@@ -1,10 +1,11 @@
 package com.kenshoo.pl.entity;
 
+import com.kenshoo.pl.entity.internal.PostFetchCommandEnrichmentPublisher;
 import org.jooq.lambda.Seq;
 
 import java.util.Collection;
 
-public interface ChangeContext {
+public interface ChangeContext extends PostFetchCommandEnrichmentPublisher {
 
     boolean isEnabled(Feature feature);
 
@@ -31,5 +32,4 @@ public interface ChangeContext {
     Collection<FieldFetchRequest> getFetchRequests();
 
     Hierarchy getHierarchy();
-
 }
