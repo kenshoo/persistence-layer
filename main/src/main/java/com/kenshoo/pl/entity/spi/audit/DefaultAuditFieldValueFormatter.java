@@ -18,6 +18,10 @@ public class DefaultAuditFieldValueFormatter implements AuditFieldValueFormatter
 
     public static final AuditFieldValueFormatter INSTANCE = new DefaultAuditFieldValueFormatter();
 
+    private DefaultAuditFieldValueFormatter() {
+        // singleton
+    }
+
     @Override
     public <T> String format(AuditedField<?, T> auditedField, T value) {
         requireNonNull(auditedField, "An AuditedField is required");

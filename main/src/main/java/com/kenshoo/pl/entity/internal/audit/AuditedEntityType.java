@@ -47,6 +47,10 @@ public class AuditedEntityType<E extends EntityType<E>> {
         return idField;
     }
 
+    public EntityType<E> getEntityType() {
+        return idField.getEntityType();
+    }
+
     public String getName() {
         return name;
     }

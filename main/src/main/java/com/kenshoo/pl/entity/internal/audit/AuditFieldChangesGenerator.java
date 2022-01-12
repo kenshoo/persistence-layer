@@ -19,8 +19,9 @@ public class AuditFieldChangesGenerator<E extends EntityType<E>> {
     private final Collection<AuditedField<E, ?>> onChangeFields;
     private final AuditFieldChangeGenerator singleGenerator;
 
-    public AuditFieldChangesGenerator(final Stream<? extends AuditedField<E, ?>> onChangeFields) {
-        this(onChangeFields, new AuditFieldChangeGenerator());
+    public AuditFieldChangesGenerator(final Stream<? extends AuditedField<E, ?>> onChangeFields,
+                                      final AuditFieldValueResolver fieldValueResolver) {
+        this(onChangeFields, new AuditFieldChangeGenerator(fieldValueResolver));
     }
 
     @VisibleForTesting

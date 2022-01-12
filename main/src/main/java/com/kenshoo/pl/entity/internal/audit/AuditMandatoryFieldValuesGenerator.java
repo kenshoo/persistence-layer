@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.FieldValue;
 import com.kenshoo.pl.entity.FinalEntityState;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -17,16 +16,11 @@ public class AuditMandatoryFieldValuesGenerator {
     private final Collection<AuditedField<?, ?>> mandatoryFields;
     private final AuditFieldValueResolver auditFieldValueResolver;
 
-    public AuditMandatoryFieldValuesGenerator(final Stream<? extends AuditedField<?, ?>> mandatoryFields) {
-        this(mandatoryFields, AuditFieldValueResolver.INSTANCE);
-    }
-
-    @VisibleForTesting
-    AuditMandatoryFieldValuesGenerator(final Stream<? extends AuditedField<?, ?>> mandatoryFields,
-                                       final AuditFieldValueResolver auditFieldValueResolver) {
+    public AuditMandatoryFieldValuesGenerator(final Stream<? extends AuditedField<?, ?>> mandatoryFields,
+                                              final AuditFieldValueResolver auditFieldValueResolver) {
         requireNonNull(mandatoryFields, "mandatoryFields must not be null (can be empty)");
         this.mandatoryFields = mandatoryFields.collect(toList());
-        this.auditFieldValueResolver = auditFieldValueResolver;
+        this.auditFieldValueResolver = requireNonNull(auditFieldValueResolver, "auditFieldValueResolver is required");
     }
 
     Collection<FieldValue> generate(final FinalEntityState finalState) {

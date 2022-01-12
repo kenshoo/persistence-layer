@@ -20,6 +20,12 @@ import static org.junit.Assert.assertThat;
 public class AuditedEntityTypeTest {
 
     @Test
+    public void getEntityType() {
+        final var auditedEntityType = builder(AuditedType.ID).build();
+        assertThat(auditedEntityType.getEntityType(), is(AuditedType.INSTANCE));
+    }
+
+    @Test
     public void getName_Default() {
         final AuditedEntityType<AuditedType> auditedEntityType =
             builder(AuditedType.ID).build();

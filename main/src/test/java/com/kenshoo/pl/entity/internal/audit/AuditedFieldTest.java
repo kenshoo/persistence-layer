@@ -34,11 +34,6 @@ public class AuditedFieldTest {
     }
 
     @Test
-    public void getEntityType() {
-        assertThat(fullAuditedDescField.getEntityType(), is(AuditedType.INSTANCE));
-    }
-
-    @Test
     public void minimalObjGetNameShouldReturnDefaultName() {
         assertThat(minimalAuditedDescField.getName(), is(DESC.toString()));
     }

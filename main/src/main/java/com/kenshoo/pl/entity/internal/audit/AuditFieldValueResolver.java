@@ -9,17 +9,10 @@ import static java.util.Objects.requireNonNull;
 
 public class AuditFieldValueResolver {
 
-    public static final AuditFieldValueResolver INSTANCE = new AuditFieldValueResolver();
-
     private final AuditFieldValueFormatter fieldValueFormatter;
 
-    private AuditFieldValueResolver() {
-        this(CompositeAuditFieldValueFormatter.INSTANCE);
-    }
-
-    @VisibleForTesting
-    AuditFieldValueResolver(final AuditFieldValueFormatter fieldValueFormatter) {
-        this.fieldValueFormatter = fieldValueFormatter;
+    public AuditFieldValueResolver(final AuditFieldValueFormatter fieldValueFormatter) {
+        this.fieldValueFormatter = requireNonNull(fieldValueFormatter, "fieldValueFormatter is required");
     }
 
     public <T> Triptional<T> resolve(final AuditedField<?, T> auditedField,
@@ -33,5 +26,10 @@ public class AuditFieldValueResolver {
 
         return resolve(auditedField, entity)
             .map(value -> fieldValueFormatter.format(auditedField, value));
+    }
+
+    @VisibleForTesting
+    AuditFieldValueFormatter getFieldValueFormatter() {
+        return fieldValueFormatter;
     }
 }

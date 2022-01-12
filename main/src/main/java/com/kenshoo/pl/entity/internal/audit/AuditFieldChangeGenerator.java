@@ -1,6 +1,5 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FinalEntityState;
@@ -12,18 +11,10 @@ import static java.util.Objects.requireNonNull;
 
 public class AuditFieldChangeGenerator {
 
-    public static final AuditFieldChangeGenerator INSTANCE = new AuditFieldChangeGenerator(AuditFieldValueResolver.INSTANCE);
-
     private final AuditFieldValueResolver auditFieldValueResolver;
 
-    AuditFieldChangeGenerator() {
-        this(AuditFieldValueResolver.INSTANCE);
-    }
-
-    @VisibleForTesting
     AuditFieldChangeGenerator(final AuditFieldValueResolver auditFieldValueResolver) {
-        // singleton
-        this.auditFieldValueResolver = auditFieldValueResolver;
+        this.auditFieldValueResolver = requireNonNull(auditFieldValueResolver, "auditFieldValueResolver is required");
     }
 
     <E extends EntityType<E>> Optional<FieldAuditRecord> generate(final CurrentEntityState currentState,

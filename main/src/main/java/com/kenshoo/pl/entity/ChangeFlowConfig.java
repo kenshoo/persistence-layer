@@ -305,10 +305,12 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         }
 
         private AuditRecordGenerator<E> createAuditRecordGenerator(final AuditedEntityType<E> auditedEntityType) {
-            final AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator =
-                new AuditMandatoryFieldValuesGenerator(auditedEntityType.getMandatoryFields());
+            final var fieldValueResolver = AuditFieldValueResolverFactory.INSTANCE.create(auditedEntityType.getEntityType());
 
-            final AuditFieldChangesGenerator<E> fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedEntityType.getInternalFields());
+            final var mandatoryFieldValuesGenerator = new AuditMandatoryFieldValuesGenerator(auditedEntityType.getMandatoryFields(),
+                                                                                             fieldValueResolver);
+
+            final var fieldChangesGenerator = new AuditFieldChangesGenerator<>(auditedEntityType.getInternalFields(), fieldValueResolver);
 
             return new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
                                                   fieldChangesGenerator,
