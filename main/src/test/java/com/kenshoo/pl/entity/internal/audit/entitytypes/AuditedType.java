@@ -5,6 +5,7 @@ import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.converters.IdentityValueConverter;
 import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.converters.DoubleToIntegerValueConverter;
 import com.kenshoo.pl.entity.internal.audit.converters.DoubleToStringValueConverter;
 
 import static java.lang.Math.abs;
@@ -24,6 +25,8 @@ public class AuditedType extends AbstractType<AuditedType> {
                                                                                   IdentityValueConverter.getInstance(Double.class),
                                                                                   new DoubleToStringValueConverter(),
                                                                                   (a1, a2) -> abs(a1 - a2) < 0.01);
+    public static final EntityField<AuditedType, Double> AMOUNT3 = INSTANCE.field(MainTable.INSTANCE.amount3,
+                                                                                  new DoubleToIntegerValueConverter());
 
     private AuditedType() {
         super("Audited");

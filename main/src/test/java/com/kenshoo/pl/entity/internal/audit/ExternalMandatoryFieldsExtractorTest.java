@@ -1,12 +1,15 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
+import com.kenshoo.pl.entity.spi.audit.DefaultAuditFieldValueFormatter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorWithFieldNameOverridesAuditExtensions.DESC_FIELD_NAME_OVERRIDE;
 import static com.kenshoo.pl.entity.internal.audit.ancestorfieldsproviders.AncestorWithFieldNameOverridesAuditExtensions.NAME_FIELD_NAME_OVERRIDE;
@@ -16,18 +19,26 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExternalMandatoryFieldsExtractorTest {
 
+    @Mock
+    private AuditFieldValueFormatterResolver valueFormatterResolver;
+
     @InjectMocks
     private ExternalMandatoryFieldsExtractor extractor;
+
 
     @Test
     public void resolve_WhenAudited_AndHasExternalMandatory_WithNameOverrides_ShouldReturnThem() {
         final Set<AuditedField<?, ?>> expectedAuditedFields =
             Set.of(AuditedField.builder(NotAuditedAncestorType.NAME).withName(NAME_FIELD_NAME_OVERRIDE).build(),
                    AuditedField.builder(NotAuditedAncestorType.DESC).withName(DESC_FIELD_NAME_OVERRIDE).build());
+
+        Stream.of(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
+              .forEach(field -> when(valueFormatterResolver.resolve(field)).thenReturn(DefaultAuditFieldValueFormatter.INSTANCE));
 
         assertThat(extractor.extract(AuditedWithAncestorFieldNameOverridesType.INSTANCE).collect(toUnmodifiableSet()),
                    equalTo(expectedAuditedFields));
@@ -40,6 +51,12 @@ public class ExternalMandatoryFieldsExtractorTest {
                    AuditedField.builder(NotAuditedAncestorType.DESC).build(),
                    AuditedField.builder(NotAuditedAncestorType.AMOUNT).build(),
                    AuditedField.builder(NotAuditedAncestorType.AMOUNT2).build());
+
+        Stream.of(NotAuditedAncestorType.NAME,
+                  NotAuditedAncestorType.DESC,
+                  NotAuditedAncestorType.AMOUNT,
+                  NotAuditedAncestorType.AMOUNT2)
+              .forEach(field -> when(valueFormatterResolver.resolve(field)).thenReturn(DefaultAuditFieldValueFormatter.INSTANCE));
 
         assertThat(extractor.extract(AuditedWithAncestorMandatoryType.INSTANCE).collect(toUnmodifiableSet()),
                    equalTo(expectedAuditedFields));
