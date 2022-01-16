@@ -7,9 +7,9 @@ import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUN
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class DBAuditFieldValueFormatterTest {
+public class DBAdapterAuditFieldValueFormatterTest {
 
-    private final DBAuditFieldValueFormatter formatter = new DBAuditFieldValueFormatter();
+    private final DBAdapterAuditFieldValueFormatter formatter = new DBAdapterAuditFieldValueFormatter();
 
     @Test
     public void formatWhenHasCustomValueConverterShouldFormatValueCorrectly() {

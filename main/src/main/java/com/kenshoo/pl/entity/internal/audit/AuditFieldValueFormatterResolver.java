@@ -58,7 +58,7 @@ public class AuditFieldValueFormatterResolver {
     }
 
     private Optional<AuditFieldValueFormatter> extractFormatter(final Audited auditedAnnotation) {
-        return Optional.ofNullable(auditedAnnotation.valueFormatter())
+        return Optional.of(auditedAnnotation.valueFormatter())
                        .filter(not(MissingAuditFieldValueFormatter.class::equals))
                        .flatMap(this::createFormatter);
     }
