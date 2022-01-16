@@ -55,7 +55,7 @@ public class AuditedField<E extends EntityType<E>, T> {
     }
 
     @VisibleForTesting
-    AuditFieldValueFormatter getValueFormatter() {
+    public AuditFieldValueFormatter getValueFormatter() {
         return valueFormatter;
     }
 

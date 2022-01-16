@@ -1,7 +1,12 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
+import com.kenshoo.pl.entity.internal.audit.formatters.CustomAuditFieldValueFormatter1;
+import com.kenshoo.pl.entity.internal.audit.formatters.CustomAuditFieldValueFormatter2;
+import com.kenshoo.pl.entity.matchers.audit.AuditedFieldMatcher;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
 import com.kenshoo.pl.entity.spi.audit.DefaultAuditFieldValueFormatter;
+import org.hamcrest.Matcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -18,6 +23,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +36,8 @@ public class ExternalMandatoryFieldsExtractorTest {
     @InjectMocks
     private ExternalMandatoryFieldsExtractor extractor;
 
+    private final AuditFieldValueFormatter customValueFormatter1 = new CustomAuditFieldValueFormatter1();
+    private final AuditFieldValueFormatter customValueFormatter2 = new CustomAuditFieldValueFormatter2();
 
     @Test
     public void resolve_WhenAudited_AndHasExternalMandatory_WithNameOverrides_ShouldReturnThem() {
@@ -42,6 +50,21 @@ public class ExternalMandatoryFieldsExtractorTest {
 
         assertThat(extractor.extract(AuditedWithAncestorFieldNameOverridesType.INSTANCE).collect(toUnmodifiableSet()),
                    equalTo(expectedAuditedFields));
+    }
+
+    @Test
+    public void resolve_WhenAudited_AndHasExternalMandatory_WithValueFormatterOverrides_ShouldReturnThem() {
+        final Set<AuditedField<?, ?>> expectedAuditedFields =
+            Set.of(AuditedField.builder(NotAuditedAncestorType.NAME).withValueFormatter(customValueFormatter1).build(),
+                   AuditedField.builder(NotAuditedAncestorType.DESC).withValueFormatter(customValueFormatter2).build());
+
+        final Set<Matcher<? super AuditedField<?, ?>>> auditedFieldMatchers =
+            expectedAuditedFields.stream()
+                                 .map(AuditedFieldMatcher::eqAuditedField)
+                                 .collect(toUnmodifiableSet());
+
+        assertThat(extractor.extract(AuditedWithAncestorValueFormatterOverridesType.INSTANCE).collect(toUnmodifiableSet()),
+                   containsInAnyOrder(auditedFieldMatchers));
     }
 
     @Test
