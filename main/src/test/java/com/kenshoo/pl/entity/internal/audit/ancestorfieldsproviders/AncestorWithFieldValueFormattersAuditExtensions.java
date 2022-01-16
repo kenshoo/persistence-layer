@@ -8,7 +8,7 @@ import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
 
 import java.util.stream.Stream;
 
-public class AncestorWithFieldValueFormatterOverridesAuditExtensions implements AuditExtensions {
+public class AncestorWithFieldValueFormattersAuditExtensions implements AuditExtensions {
 
     @Override
     public Stream<? extends ExternalAuditedField<?, ?>> externalMandatoryFields() {

@@ -15,25 +15,25 @@ public class AuditFieldValueFormatterResolverTest {
 
     @Test
     public void shouldReturnFieldLevelFormatterWhenEntityAuditedWithoutFormatterAndFieldHasFormatter() {
-        final var formatter = formatterResolver.resolve(AuditedWithFieldValueFormatterOverrideType.NAME);
+        final var formatter = formatterResolver.resolve(AuditedWithFieldLevelOnlyValueFormatterType.NAME);
         assertThat(formatter, instanceOf(CustomAuditFieldValueFormatter1.class));
     }
 
     @Test
     public void shouldReturnEntityLevelFormatterWhenEntityHasFormatterAndFieldAuditedWithoutFormatter() {
-        final var formatter = formatterResolver.resolve(AuditedWithEntityValueFormatterOverrideType.NAME);
+        final var formatter = formatterResolver.resolve(AuditedWithEntityLevelValueFormatterType.NAME);
         assertThat(formatter, instanceOf(CustomAuditFieldValueFormatter1.class));
     }
 
     @Test
     public void shouldReturnFieldLevelFormatterWhenEntityHasFormatterAndFieldHasDifferentOne() {
-        final var formatter = formatterResolver.resolve(AuditedWithEntityValueFormatterOverrideType.DESC);
+        final var formatter = formatterResolver.resolve(AuditedWithEntityLevelValueFormatterType.DESC);
         assertThat(formatter, instanceOf(CustomAuditFieldValueFormatter2.class));
     }
 
     @Test
     public void shouldReturnEntityLevelFormatterWhenEntityHasFormatterAndFieldHasNoAnnotations() {
-        final var formatter = formatterResolver.resolve(AuditedWithEntityValueFormatterOverrideType.DESC2);
+        final var formatter = formatterResolver.resolve(AuditedWithEntityLevelValueFormatterType.DESC2);
         assertThat(formatter, instanceOf(CustomAuditFieldValueFormatter1.class));
     }
 
@@ -57,13 +57,13 @@ public class AuditFieldValueFormatterResolverTest {
 
     @Test
     public void shouldReturnDefaultFormatterWhenFieldHasInvalidFormatter() {
-        final var formatter = formatterResolver.resolve(AuditedWithInvalidFieldValueFormatterOverrideType.NAME);
+        final var formatter = formatterResolver.resolve(AuditedWithInvalidFieldLevelValueFormatterType.NAME);
         assertThat(formatter, instanceOf(DefaultAuditFieldValueFormatter.class));
     }
 
     @Test
     public void shouldReturnDefaultFormatterWhenEntityHasInvalidFormatterAndFieldHasNoAnnotations() {
-        final var formatter = formatterResolver.resolve(AuditedWithInvalidEntityValueFormatterOverrideType.NAME);
+        final var formatter = formatterResolver.resolve(AuditedWithInvalidEntityLevelValueFormatterType.NAME);
         assertThat(formatter, instanceOf(DefaultAuditFieldValueFormatter.class));
     }
 }

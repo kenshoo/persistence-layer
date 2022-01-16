@@ -63,7 +63,7 @@ public class ExternalMandatoryFieldsExtractorTest {
                                  .map(AuditedFieldMatcher::eqAuditedField)
                                  .collect(toUnmodifiableSet());
 
-        assertThat(extractor.extract(AuditedWithAncestorValueFormatterOverridesType.INSTANCE).collect(toUnmodifiableSet()),
+        assertThat(extractor.extract(AuditedWithAncestorValueFormattersType.INSTANCE).collect(toUnmodifiableSet()),
                    containsInAnyOrder(auditedFieldMatchers));
     }
 

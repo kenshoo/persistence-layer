@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toList;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 
-public class AuditFieldValuesFormattingTest {
+public class AuditWithDefaultFieldValueFormatterTest {
 
     private static final Set<DataTable> ALL_TABLES = Set.of(AncestorTable.INSTANCE,
                                                             MainWithAncestorTable.INSTANCE,
@@ -91,7 +91,7 @@ public class AuditFieldValuesFormattingTest {
     }
 
     @Test
-    public void numericFieldInMainWithDefaultFormatter() {
+    public void numericFieldInMainWithDefaultStringValueConverter() {
         mainPL.update(singletonList(mainUpdateCmd()
                                         .with(AuditedType.AMOUNT, NEW_AMOUNT_VALUE)),
                       mainFlowConfig);
@@ -106,7 +106,7 @@ public class AuditFieldValuesFormattingTest {
     }
 
     @Test
-    public void numericFieldInMainWithSpecificFormatter() {
+    public void numericFieldInMainWithCustomStringValueConverter() {
         mainPL.update(singletonList(mainUpdateCmd()
                                         .with(AuditedType.AMOUNT2, NEW_AMOUNT_VALUE)),
                       mainFlowConfig);
@@ -121,7 +121,7 @@ public class AuditFieldValuesFormattingTest {
     }
 
     @Test
-    public void numericFieldInAncestorWithDefaultFormatter() {
+    public void numericFieldInAncestorWithDefaultStringValueConverter() {
         mainWithAncestorPL.create(singletonList(mainWithAncestorCreateCmd()
                                                     .with(AuditedWithAncestorMandatoryType.ANCESTOR_ID, ANCESTOR_ID)
                                                     .with(AuditedWithAncestorMandatoryType.NAME, "someName")),
@@ -135,7 +135,7 @@ public class AuditFieldValuesFormattingTest {
     }
 
     @Test
-    public void numericFieldInAncestorWithSpecificFormatter() {
+    public void numericFieldInAncestorWithCustomStringValueConverter() {
         mainWithAncestorPL.create(singletonList(mainWithAncestorCreateCmd()
                                                     .with(AuditedWithAncestorMandatoryType.ANCESTOR_ID, ANCESTOR_ID)
                                                     .with(AuditedWithAncestorMandatoryType.NAME, "someName")),
