@@ -3,6 +3,7 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAllVariationsType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithVirtualType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.InclusiveAuditedWithVirtualType;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -25,15 +26,23 @@ public class AuditedFieldResolverTest {
     @Mock
     private AuditFieldNameResolver fieldNameResolver;
 
+    @Mock
+    private AuditFieldValueFormatterResolver fieldValueFormatterResolver;
+
+    @Mock
+    private AuditFieldValueFormatter fieldValueFormatter;
+
     @InjectMocks
     private AuditedFieldResolver fieldResolver;
 
     @Test
     public void resolveWhenEntityNotAuditedAndFieldTriggeredOnCreateAndUpdate() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.DESC3)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.DESC3)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.DESC3)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ON_CREATE_OR_UPDATE)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.DESC3, NOT_AUDITED);
@@ -44,9 +53,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityNotAuditedAndFieldTriggeredOnUpdate() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.DESC2)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.DESC2)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.DESC2)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ON_UPDATE)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.DESC2, NOT_AUDITED);
@@ -57,9 +68,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityNotAuditedAndFieldTriggeredAlways() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.NAME)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.NAME)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.NAME)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ALWAYS)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.NAME, NOT_AUDITED);
@@ -77,9 +90,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityAuditedAndFieldTriggeredOnCreateAndUpdate() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.DESC3)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.DESC3)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.DESC3)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ON_CREATE_OR_UPDATE)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.DESC3, AUDITED);
@@ -90,9 +105,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityAuditedAndFieldTriggeredOnUpdate() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.DESC2)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.DESC2)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.DESC2)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ON_UPDATE)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.DESC2, AUDITED);
@@ -103,9 +120,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityAuditedAndFieldTriggeredAlways() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.NAME)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.NAME)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.NAME)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ALWAYS)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.NAME, AUDITED);
@@ -123,9 +142,11 @@ public class AuditedFieldResolverTest {
     @Test
     public void resolveWhenEntityAuditedAndFieldHasNoAnnotationShouldReturnFieldTriggeredOnCreateAndUpdate() {
         when(fieldNameResolver.resolve(AuditedWithAllVariationsType.DESC)).thenReturn(FIELD_NAME);
+        when(fieldValueFormatterResolver.resolve(AuditedWithAllVariationsType.DESC)).thenReturn(fieldValueFormatter);
 
         final var expectedAuditedField = AuditedField.builder(AuditedWithAllVariationsType.DESC)
                                                      .withName(FIELD_NAME)
+                                                     .withValueFormatter(fieldValueFormatter)
                                                      .withTrigger(ON_CREATE_OR_UPDATE)
                                                      .build();
         final var maybeActualAuditedField = fieldResolver.resolve(AuditedWithAllVariationsType.DESC, AUDITED);

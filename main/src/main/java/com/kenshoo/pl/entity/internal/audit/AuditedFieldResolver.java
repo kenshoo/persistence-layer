@@ -17,13 +17,17 @@ import static java.util.function.Predicate.not;
 
 public class AuditedFieldResolver {
 
-    public static final AuditedFieldResolver INSTANCE = new AuditedFieldResolver(AuditFieldNameResolver.INSTANCE);
+    public static final AuditedFieldResolver INSTANCE = new AuditedFieldResolver(AuditFieldNameResolver.INSTANCE,
+                                                                                 AuditFieldValueFormatterResolver.INSTANCE);
 
-    private final AuditFieldNameResolver auditFieldNameResolver;
+    private final AuditFieldNameResolver fieldNameResolver;
+    private final AuditFieldValueFormatterResolver fieldValueFormatterResolver;
 
     @VisibleForTesting
-    AuditedFieldResolver(final AuditFieldNameResolver auditFieldNameResolver) {
-        this.auditFieldNameResolver = auditFieldNameResolver;
+    AuditedFieldResolver(final AuditFieldNameResolver auditFieldNameResolver,
+                         final AuditFieldValueFormatterResolver fieldValueFormatterResolver) {
+        this.fieldNameResolver = auditFieldNameResolver;
+        this.fieldValueFormatterResolver = fieldValueFormatterResolver;
     }
 
     public <E extends EntityType<E>> Optional<AuditedField<E, ?>> resolve(final EntityField<E, ?> field,
@@ -40,7 +44,8 @@ public class AuditedFieldResolver {
 
     private <E extends EntityType<E>> AuditedField<E, ?> toAuditedField(EntityField<E, ?> field) {
         final var auditedFieldBuilder = AuditedField.builder(field)
-                                                    .withName(auditFieldNameResolver.resolve(field));
+                                                    .withName(fieldNameResolver.resolve(field))
+                                                    .withValueFormatter(fieldValueFormatterResolver.resolve(field));
         resolveFieldTrigger(field).ifPresent(auditedFieldBuilder::withTrigger);
         return auditedFieldBuilder.build();
     }

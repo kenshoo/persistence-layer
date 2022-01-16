@@ -3,8 +3,6 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.kenshoo.pl.entity.Entity;
 import com.kenshoo.pl.entity.Triptional;
 
-import java.util.Optional;
-
 import static java.util.Objects.requireNonNull;
 
 public class AuditFieldValueResolver {
@@ -19,16 +17,8 @@ public class AuditFieldValueResolver {
 
     public <T> Triptional<String> resolveToString(final AuditedField<?, T> auditedField,
                                                   final Entity entity) {
-
         return resolve(auditedField, entity)
-            .map(value -> valueToString(auditedField, value));
-    }
-
-    private <T> String valueToString(final AuditedField<?, T> auditedField,
-                                     final T value) {
-        return Optional.ofNullable(auditedField.getStringValueConverter())
-                       .map(converter -> converter.convertTo(value))
-                       .orElse(String.valueOf(value));
+            .map(auditedField::formatValue);
     }
 
     private AuditFieldValueResolver() {

@@ -1,32 +1,47 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.CommonTypesStringConverter;
-import com.kenshoo.pl.entity.internal.audit.converters.DoubleToStringValueConverter;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_UPDATE;
 import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUNT2;
 import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.DESC;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AuditedFieldTest {
 
     private static final String DESC_FIELD_NAME = "desc";
+    private static final String DESC_FIELD_VALUE = "descValue";
+    private static final String DESC_FIELD_FORMATTED_VALUE = "descValueFormatted";
 
-    private final AuditedField<AuditedType, String> fullAuditedDescField = AuditedField.builder(DESC)
-                                                                                       .withName(DESC_FIELD_NAME)
-                                                                                       .withTrigger(ON_UPDATE)
-                                                                                       .build();
-    private final AuditedField<AuditedType, String> minimalAuditedDescField = AuditedField.builder(DESC).build();
+    @Mock
+    private AuditFieldValueFormatter customValueFormatter;
 
-    private final AuditedField<AuditedType, Double> auditedFormattedAmountField = AuditedField.builder(AMOUNT2).build();
+    private AuditedField<AuditedType, String> fullAuditedDescField;
+    private AuditedField<AuditedType, String> minimalAuditedDescField;
+    private AuditedField<AuditedType, Double> auditedFormattedAmountField;
+
+    @Before
+    public void setUp() {
+        fullAuditedDescField = AuditedField.builder(DESC)
+                                           .withName(DESC_FIELD_NAME)
+                                           .withValueFormatter(customValueFormatter)
+                                           .withTrigger(ON_UPDATE)
+                                           .build();
+        minimalAuditedDescField = AuditedField.builder(DESC)
+                                              .build();
+
+        auditedFormattedAmountField = AuditedField.builder(AMOUNT2).build();
+    }
 
     @Test
     public void getField() {
@@ -54,16 +69,15 @@ public class AuditedFieldTest {
     }
 
     @Test
-    public void getStringValueConverterWhenSpecified() {
-        assertThat("Incorrect string value converter for " + auditedFormattedAmountField + ": ",
-                   auditedFormattedAmountField.getStringValueConverter(),
-                   instanceOf(DoubleToStringValueConverter.class));
+    public void formatValueWhenCustomFormatterProvidedShouldApplyIt() {
+        when(customValueFormatter.format(DESC, DESC_FIELD_VALUE)).thenReturn(DESC_FIELD_FORMATTED_VALUE);
+
+        assertThat(fullAuditedDescField.formatValue(DESC_FIELD_VALUE), is(DESC_FIELD_FORMATTED_VALUE));
     }
 
     @Test
-    public void getStringValueConverterWhenDefault() {
-        assertThat(fullAuditedDescField.getStringValueConverter(),
-                   instanceOf(CommonTypesStringConverter.class));
+    public void formatDoubleValueWhenNoFormatterProvidedShouldApplyStringFormatterOfField() {
+        assertThat(auditedFormattedAmountField.formatValue(12.343), is("12.34"));
     }
 
     @Test

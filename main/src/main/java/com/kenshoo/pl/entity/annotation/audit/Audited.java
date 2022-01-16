@@ -3,6 +3,8 @@ package com.kenshoo.pl.entity.annotation.audit;
 import com.kenshoo.pl.entity.audit.AuditTrigger;
 import com.kenshoo.pl.entity.spi.audit.AuditExtensions;
 import com.kenshoo.pl.entity.spi.audit.AuditExtensions.EmptyAuditExtensions;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
+import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter.MissingAuditFieldValueFormatter;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,6 +31,16 @@ public @interface Audited {
      * </ul>
      */
     String name() default "";
+
+    /**
+     * @return the formatter to use for field values when they are audited.
+     * <ul>
+     * <li>If defined at the entity level, will apply to all fields in the entity (unless overriden).
+     * <li>If defined at the field level, will apply to that field while overriding any definition (if exists) at the entity level
+     * <li>If missing at both levels, will default to {@link com.kenshoo.pl.entity.spi.audit.DefaultAuditFieldValueFormatter}
+     * </ul>
+     */
+    Class<? extends AuditFieldValueFormatter> valueFormatter() default MissingAuditFieldValueFormatter.class;
 
     /**
      * @return the rule by which to trigger auditing for the annotated entity type or field.<br>
