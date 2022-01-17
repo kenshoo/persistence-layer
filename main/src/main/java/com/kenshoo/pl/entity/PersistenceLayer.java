@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.ChangeOperation.*;
 import static com.kenshoo.pl.entity.HierarchyKeyPopulator.*;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.lambda.Seq.seq;
 
@@ -121,6 +120,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         context.addFetchRequests(fieldsToFetchBuilder.build(commands, flowConfig));
         prepareRecursive(commands, context, flowConfig);
         Collection<? extends ChangeEntityCommand<ROOT>> validCmds = seq(commands).filter(cmd -> !context.containsError(cmd)).toList();
+        prepareFinalizeRecursive(validCmds, context, flowConfig);
         ChangeContext overridingCtx = new OverridingContext(context);
         if (!validCmds.isEmpty()) {
             flowConfig.retryer().run((() -> dslContext().transaction((configuration) -> generateOutputRecursive(flowConfig, validCmds, overridingCtx))));
@@ -154,6 +154,28 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         flow.childFlows().forEach(childFlow -> prepareChildFlowRecursive(validChanges, childFlow, context));
     }
 
+    private <E extends EntityType<E>> void prepareFinalizeRecursive(
+            Collection<? extends ChangeEntityCommand<E>> commands,
+            ChangeContext context,
+            ChangeFlowConfig<E> flow) {
+
+        Stream.of(DELETE, UPDATE, CREATE)
+                .forEach(op -> prepareOneLayerFinalize(only(commands, withOperator(op)), op, context, flow));
+
+        flow.childFlows().forEach(childFlow -> prepareChildFlowFinalize(commands, childFlow, context));
+    }
+
+    private <E extends EntityType<E>> void prepareOneLayerFinalize(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
+
+        if (commands.isEmpty()) {
+            return;
+        }
+
+        flowConfig.getPostValidateCommandFinalizers().stream()
+                .filter(CurrentStateConsumer.supporting(changeOperation))
+                .forEach(finalizer -> finalizer.finalize(commands,  changeOperation, changeContext));
+    }
+
     private <E extends EntityType<E>> void populateParentKeysIntoChildren(ChangeContext context, Collection<? extends ChangeEntityCommand<E>> commands) {
         new Builder<E>()
                 .with(context.getHierarchy())
@@ -168,18 +190,22 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
                 .populateKeysToChildren(only(commands, withOperator(UPDATE)));
     }
 
-    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowRecursive(List<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowRecursive(Collection<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
         prepareRecursive(validChanges.stream().flatMap(parent -> parent.getChildren(childFlow.getEntityType())).collect(toList()), context, childFlow);
+    }
+
+    private <PARENT extends EntityType<PARENT>, CHILD extends EntityType<CHILD>> void prepareChildFlowFinalize(Collection<? extends ChangeEntityCommand<PARENT>> validChanges, ChangeFlowConfig<CHILD> childFlow, ChangeContext context) {
+        prepareFinalizeRecursive(validChanges.stream().flatMap(parent -> parent.getChildren(childFlow.getEntityType())).collect(toList()), context, childFlow);
     }
 
     private boolean isMissing(ChangeEntityCommand<?> cmd, ChangeContext context) {
         return context.getEntity(cmd) == CurrentEntityState.EMPTY;
     }
 
-    private <E extends EntityType<E>> Collection<EntityChange<E>> prepareOneLayer(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
+    private <E extends EntityType<E>> void prepareOneLayer(Collection<? extends ChangeEntityCommand<E>> commands, ChangeOperation changeOperation, ChangeContext changeContext, ChangeFlowConfig<E> flowConfig) {
 
         if (commands.isEmpty()) {
-            return emptyList();
+            return;
         }
 
         if (!flowConfig.getEntityType().getSupportedOperation().supports(changeOperation)) {
@@ -189,7 +215,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         commands = filterCommands(commands, flowConfig, changeOperation, changeContext);
 
         if (commands.isEmpty()) {
-            return emptyList();
+            return;
         }
 
         Stopwatch stopwatch = Stopwatch.createStarted();
@@ -201,7 +227,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
         commands = filterCommands(commands, getSupportedFilters(flowConfig.getPostSupplyFilters(), changeOperation), changeOperation, changeContext);
         enrichCommandsPostFetch(commands, flowConfig, changeOperation, changeContext);
 
-        return validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
+        validateChanges(commands, new ValidationFilter<>(flowConfig.getValidators()), changeOperation, changeContext);
     }
 
     private <E extends EntityType<E>> EntitiesToContextFetcher fetcher(FeatureSet features) {

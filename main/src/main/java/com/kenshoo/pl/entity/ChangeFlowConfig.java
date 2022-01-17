@@ -25,6 +25,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
 
     private final E entityType;
     private final List<PostFetchCommandEnricher<E>> postFetchCommandEnrichers;
+    private final List<PostValidateCommandFinalizer<E>> postValidateCommandFinalizers;
     private final List<OutputGenerator<E>> outputGenerators;
     private final List<ChangesValidator<E>> validators;
     private final Set<EntityField<E, ?>> requiredRelationFields;
@@ -49,7 +50,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                              PersistenceLayerRetryer retryer,
                              final AuditRequiredFieldsCalculator<E> auditRequiredFieldsCalculator,
                              final AuditRecordGenerator<E> auditRecordGenerator,
-                             FeatureSet features) {
+                             FeatureSet features,
+                             List<PostValidateCommandFinalizer<E>> postValidateCommandFinalizers) {
         this.entityType = entityType;
         this.postFetchCommandEnrichers = postFetchCommandEnrichers;
         this.outputGenerators = outputGenerators;
@@ -63,6 +65,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         this.auditRequiredFieldsCalculator = auditRequiredFieldsCalculator;
         this.auditRecordGenerator = auditRecordGenerator;
         this.features = features;
+        this.postValidateCommandFinalizers = postValidateCommandFinalizers;
     }
 
     public E getEntityType() {
@@ -81,6 +84,10 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         return postFetchCommandEnrichers;
     }
 
+    public List<PostValidateCommandFinalizer<E>> getPostValidateCommandFinalizers() {
+        return postValidateCommandFinalizers;
+    }
+
     public List<ChangesValidator<E>> getValidators() {
         return validators;
     }
@@ -94,7 +101,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                           postSupplyFilters,
                           postFetchCommandEnrichers,
                           validators,
-                          outputGenerators)
+                          outputGenerators,
+                          postValidateCommandFinalizers)
                   .concat(Optional.ofNullable(auditRequiredFieldsCalculator));
     }
 
@@ -134,6 +142,7 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
     public static class Builder<E extends EntityType<E>> {
         private final E entityType;
         private final List<Labeled<? extends PostFetchCommandEnricher<E>>> postFetchCommandEnrichers = new ArrayList<>();
+        private final List<Labeled<? extends PostValidateCommandFinalizer<E>>> postValidateCommandFinalizers = new ArrayList<>();
         private final List<Labeled<ChangesValidator<E>>> validators = new ArrayList<>();
         private final List<OutputGenerator<E>> outputGenerators = new ArrayList<>();
         private final Set<EntityField<E, ?>> requiredRelationFields = new HashSet<>();
@@ -280,6 +289,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
         public ChangeFlowConfig<E> build() {
             ImmutableList.Builder<PostFetchCommandEnricher<E>> enrichers = ImmutableList.builder();
             postFetchCommandEnrichers.forEach(excludableElement -> enrichers.add(excludableElement.element()));
+            ImmutableList.Builder<PostValidateCommandFinalizer<E>> finalizers = ImmutableList.builder();
+            postValidateCommandFinalizers.forEach(finalizer -> finalizers.add(finalizer.element()));
             ImmutableList.Builder<ChangesValidator<E>> validatorList = ImmutableList.builder();
             validators.forEach(validator -> validatorList.add(validator.element()));
             falseUpdatesPurger.ifPresent(enrichers::add);
@@ -300,7 +311,8 @@ public class ChangeFlowConfig<E extends EntityType<E>> {
                                           retryer,
                                           auditRequiredFieldsCalculator,
                                           auditRecordGenerator,
-                                          features
+                                          features,
+                                          finalizers.build()
             );
         }
 
