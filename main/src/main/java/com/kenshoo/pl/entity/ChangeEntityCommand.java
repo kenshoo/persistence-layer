@@ -17,7 +17,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
 
     private final E entityType;
     private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
-    private Map<TransientEntityObject<E, ?>, Object> transientObjects;
+    private final Map<TransientEntityProperty<E, ?>, Object> transientProperties = new HashMap<>();
     private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
     private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
@@ -68,14 +68,11 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     }
 
     @Override
-    public <T> void set(final TransientEntityObject<E, T> transientObject, final T newValue) {
-        requireNonNull(transientObject, "A transient object must be provided");
+    public <T> void set(final TransientEntityProperty<E, T> transientProperty, final T newValue) {
+        requireNonNull(transientProperty, "A transient property must be provided");
         requireNonNull(newValue, "A new value must be provided");
 
-        if (transientObjects == null) {
-            transientObjects = new HashMap<>();
-        }
-        transientObjects.put(transientObject, newValue);
+        transientProperties.put(transientProperty, newValue);
     }
 
     private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
@@ -144,10 +141,10 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     }
 
     @Override
-    public <T> Optional<T> get(final TransientEntityObject<E, T> transientObject) {
+    public <T> Optional<T> get(final TransientEntityProperty<E, T> transientProperty) {
         //noinspection unchecked
-        return Stream.ofNullable(transientObjects)
-                     .map(__ -> transientObjects.get(transientObject))
+        return Stream.ofNullable(transientProperties)
+                     .map(__ -> transientProperties.get(transientProperty))
                      .filter(Objects::nonNull)
                      .map(transientVal -> (T) transientVal)
                      .findAny();

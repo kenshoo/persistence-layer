@@ -120,22 +120,22 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     }
 
     /**
-     * Add a transient object to this entity type with the given name.<br>
+     * Add a transient property to this entity type with the given name.<br>
      * This method should only be used for populating a constant member of the entity, for example:
      *
      * <pre>
      * public final MyEntity extends AbstractEntityType&lt;MyEntity&gt; {
-     *     public static final TransientEntityObject&lt;MyEntity, String&gt; MY_TRANSIENT = transientObject("myTransient");
+     *     public static final TransientEntityProperty&lt;MyEntity, String&gt; MY_TRANSIENT = transientProperty("myTransient");
      * }
      * </pre>
      *
      * @param name the name; must not be blank
      * @param <T> the type of value that this object can hold
-     * @return the new transient object
+     * @return the new transient property
      * @throws IllegalArgumentException if the given name is blank or {@code null}
      */
-    protected <T> TransientEntityObject<E, T> transientObject(final String name) {
-        return new TransientEntityObjectImpl<>(this, name);
+    protected <T> TransientEntityProperty<E, T> transientProperty(final String name) {
+        return new TransientEntityPropertyImpl<>(this, name);
     }
 
     // Casting here because the identity field can be of arbitrary type, and we must be able to mutate its value in a command

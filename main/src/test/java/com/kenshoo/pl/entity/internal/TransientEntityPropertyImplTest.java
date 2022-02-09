@@ -7,7 +7,7 @@ import static com.kenshoo.pl.entity.TestEntityWithTransient.TRANSIENT_1;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class TransientEntityObjectImplTest {
+public class TransientEntityPropertyImplTest {
 
     @Test
     public void getEntityTypeShouldReturnCorrectOne() {

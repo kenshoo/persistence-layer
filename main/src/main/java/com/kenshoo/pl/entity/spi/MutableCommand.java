@@ -16,14 +16,14 @@ public interface MutableCommand<E extends EntityType<E>> extends EntityChange<E>
      <T> void set(EntityFieldPrototype<T> fieldPrototype, FieldValueSupplier<T> valueSupplier);
 
      /**
-      * Add or replace the value of a given transient object in this command.<br>
+      * Add or replace the value of a given transient property in this command.<br>
       *
-      * @param transientObject the transient object whose value will be set; required
+      * @param transientProperty the transient property whose value will be set; required
       * @param newValue the new value to set; required
       * @param <T> the type of value to set
       * @throws NullPointerException if either of the params is {@code null}
       */
-     <T> void set(TransientEntityObject<E, T> transientObject, T newValue);
+     <T> void set(TransientEntityProperty<E, T> transientProperty, T newValue);
 
      void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier);
 
