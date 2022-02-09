@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  *     <li>There is a command including changes for the entity type</li>
  *     <li>The same command also has a value for the transient property</li>
  * </ul>
- * --> <i>then</i> the transient property will be added to the mandatory fields of the corresponding {@code AuditRecord}
+ * --&gt; <i>then</i> the transient property will be added to the mandatory fields of the corresponding {@code AuditRecord}
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
