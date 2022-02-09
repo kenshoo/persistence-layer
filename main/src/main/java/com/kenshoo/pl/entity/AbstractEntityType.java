@@ -31,7 +31,6 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     private final String name;
     private Collection<EntityField<E, ?>> fields = new ArrayList<>();
     private Collection<PrototypedEntityField<E, ?>> prototypedFields = new ArrayList<>();
-    private Collection<TransientEntityField<E, ?>> transientFields = new ArrayList<>();
 
     private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this));
 
@@ -121,24 +120,22 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     }
 
     /**
-     * Add a transient field to this entity type with the given name.<br>
+     * Add a transient object to this entity type with the given name.<br>
      * This method should only be used for populating a constant member of the entity, for example:
      *
      * <pre>
      * public final MyEntity extends AbstractEntityType&lt;MyEntity&gt; {
-     *     public static final TransientEntityField&lt;MyEntity, String&gt; MY_TRANSIENT = transientField("myTransient");
+     *     public static final TransientEntityObject&lt;MyEntity, String&gt; MY_TRANSIENT = transientObject("myTransient");
      * }
      * </pre>
      *
      * @param name the name; must not be blank
-     * @param <T> the type of value that this field can hold
-     * @return the new field
+     * @param <T> the type of value that this object can hold
+     * @return the new transient object
      * @throws IllegalArgumentException if the given name is blank or {@code null}
      */
-    protected <T> TransientEntityField<E, T> transientField(final String name) {
-        final var field = new TransientEntityFieldImpl<E, T>(this, name);
-        transientFields.add(field);
-        return field;
+    protected <T> TransientEntityObject<E, T> transientObject(final String name) {
+        return new TransientEntityObjectImpl<>(this, name);
     }
 
     // Casting here because the identity field can be of arbitrary type, and we must be able to mutate its value in a command

@@ -13,13 +13,13 @@ public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E>
     Stream<EntityField<E, ?>> getChangedFields();
 
     /**
-     * Returns the value of the given transient field.
+     * Returns the value of the given transient object.
      *
-     * @param field field to query; required
-     * @param <T> type of the field
-     * @return the value of the field, or {@code Optional.empty()} if {@code null} or absent.
+     * @param transientObject transient object to query; required
+     * @param <T> type of the value
+     * @return the value of the object, or {@code Optional.empty()} if {@code null} or absent.
      */
-    <T> Optional<T> get(final TransientEntityField<E, T> field);
+    <T> Optional<T> get(final TransientEntityObject<E, T> transientObject);
 
     /**
      * @return a stream of the individual field changes modified by this change. The stream does not include
