@@ -1,5 +1,6 @@
 package com.kenshoo.pl.entity;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E> {
@@ -10,6 +11,15 @@ public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E>
      * @return a stream of fields modified by this change, each field being included at most once
      */
     Stream<EntityField<E, ?>> getChangedFields();
+
+    /**
+     * Returns the value of the given transient field.
+     *
+     * @param field field to query; required
+     * @param <T> type of the field
+     * @return the value of the field, or {@code Optional.empty()} if {@code null} or absent.
+     */
+    <T> Optional<T> get(final TransientEntityField<E, T> field);
 
     /**
      * @return a stream of the individual field changes modified by this change. The stream does not include

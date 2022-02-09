@@ -5,16 +5,19 @@ import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.*;
+
 import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static java.util.Objects.requireNonNull;
 import static org.jooq.lambda.Seq.seq;
 
 abstract public class ChangeEntityCommand<E extends EntityType<E>> implements MutableCommand<E> {
 
     private final E entityType;
     private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
+    private Map<TransientEntityField<E, ?>, Object> transientValues = null;
     private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
     private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
@@ -62,6 +65,15 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         for (EntityField<E, ?> field : fields) {
             addAsSingleValueSupplier(field, delegatingMultiSupplier);
         }
+    }
+
+    @Override
+    public <T> void set(final TransientEntityField<E, T> transientField, final T newValue) {
+        requireNonNull(transientField, "A transient field must be provided");
+
+        Optional.ofNullable(newValue)
+                .ifPresentOrElse(newVal -> add(transientField, newVal),
+                                 () -> remove(transientField));
     }
 
     private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
@@ -127,6 +139,16 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
             throw new IllegalArgumentException("No value supplied for field " + field);
         }
         return value;
+    }
+
+    @Override
+    public <T> Optional<T> get(final TransientEntityField<E, T> field) {
+        //noinspection unchecked
+        return Stream.ofNullable(transientValues)
+                     .map(__ -> transientValues.get(field))
+                     .filter(Objects::nonNull)
+                     .map(transientVal -> (T) transientVal)
+                     .findAny();
     }
 
     public <CHILD extends EntityType<CHILD>> void addChild(ChangeEntityCommand<CHILD> childCmd) {
@@ -215,5 +237,21 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     <CHILD extends EntityType<CHILD>> Optional<MissingChildrenSupplier<CHILD>> getMissingChildrenSupplier(CHILD entityType) {
         final Optional<MissingChildrenSupplier<? extends EntityType>> missingChildrenSupplier = seq(this.missingChildrenSuppliers).findFirst(supplier -> entityType.equals(supplier.getChildType()));
         return missingChildrenSupplier.map(supplier -> (MissingChildrenSupplier<CHILD>) supplier);
+    }
+
+    private <T> void add(final TransientEntityField<E, T> transientField, final T newVal) {
+        if (transientValues == null) {
+            transientValues = new HashMap<>();
+        }
+        transientValues.put(transientField, newVal);
+    }
+
+    private void remove(final TransientEntityField<E, ?> transientField) {
+        if (transientValues != null) {
+            transientValues.remove(transientField);
+            if (transientValues.isEmpty()) {
+                transientValues = null;
+            }
+        }
     }
 }
