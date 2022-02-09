@@ -4,8 +4,6 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.validators.RequiredAtLeastOneChildValidator;
-import com.kenshoo.pl.one2many.relatedByPK.ChildTable;
-import com.kenshoo.pl.one2many.relatedByPK.ParentTable;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Assert;
@@ -22,8 +20,8 @@ import static org.junit.Assert.fail;
 
 public class RequiredAtLeastOneChildValidatorTest {
 
-    private final static ParentTable PARENT = ParentTable.INSTANCE;
-    private final static ChildTable CHILD = ChildTable.INSTANCE;
+    private final static TestEntityTable PARENT = TestEntityTable.TABLE;
+    private final static TestChildEntityTable CHILD = TestChildEntityTable.TABLE;
 
     private DSLContext jooq = TestJooqConfig.create();
 
@@ -54,6 +52,7 @@ public class RequiredAtLeastOneChildValidatorTest {
             set(TestEntity.FIELD_1, "f1");
             addChild(new CreateEntityCommand<>(TestChildEntity.INSTANCE) {{
                 set(TestChildEntity.CHILD_FIELD_1, "cf1");
+                set(TestChildEntity.ORDINAL, 1);
             }});
         }};
 
@@ -90,7 +89,6 @@ public class RequiredAtLeastOneChildValidatorTest {
 
     private ChangeFlowConfig.Builder<TestEntity> defaultFlowConfig() {
         return ChangeFlowConfigBuilderFactory.newInstance(plContext, TestEntity.INSTANCE)
-                .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE))
                 .withChildFlowBuilder(ChangeFlowConfigBuilderFactory.newInstance(plContext, TestChildEntity.INSTANCE));
     }
 
