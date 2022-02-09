@@ -3,13 +3,17 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.google.common.annotations.VisibleForTesting;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.TransientEntityProperty;
+import com.kenshoo.pl.entity.annotation.audit.AuditDescription;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.audit.AuditTrigger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.isAnnotatedWith;
 import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.AUDITED;
 import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.NOT_AUDITED;
 import static java.util.Objects.requireNonNull;
@@ -50,11 +54,14 @@ public class AuditedEntityTypeResolverImpl implements AuditedEntityTypeResolver 
 
         final var internalFields = resolveInternalFields(entityType, idField, entityAuditIndicator);
 
+        final var mandatoryProperties = resolveMandatoryProperties(entityType, entityAuditIndicator);
+
         final var auditedEntityType = AuditedEntityType.builder(idField)
-                                                       .withName(auditedEntityTypeNameResolver.resolve(entityType))
-                                                       .withExternalFields(externalFields)
-                                                       .withInternalFields(internalFields)
-                                                       .build();
+                .withName(auditedEntityTypeNameResolver.resolve(entityType))
+                .withExternalFields(externalFields)
+                .withInternalFields(internalFields)
+                .withMandatoryProperties(mandatoryProperties)
+                .build();
 
         if (entityAuditIndicator == AUDITED || auditedEntityType.hasInternalFields()) {
             return Optional.of(auditedEntityType);
@@ -70,5 +77,18 @@ public class AuditedEntityTypeResolverImpl implements AuditedEntityTypeResolver 
                          .map(field -> auditedFieldResolver.resolve(field, entityAuditIndicator))
                          .flatMap(Optional::stream)
                          .collect(groupingBy(AuditedField::getTrigger, toUnmodifiableList()));
+    }
+
+
+    private <E extends EntityType<E>> Stream<? extends TransientEntityProperty<E, ?>> resolveMandatoryProperties(final E entityType,
+                                                                                                                 final AuditIndicator entityAuditIndicator) {
+        switch (entityAuditIndicator) {
+            case AUDITED:
+                return entityType.getTransientProperties()
+                        .filter(transientProperty -> isAnnotatedWith(entityType, AuditDescription.class, transientProperty));
+            case NOT_AUDITED:
+            default:
+                return Stream.empty();
+        }
     }
 }

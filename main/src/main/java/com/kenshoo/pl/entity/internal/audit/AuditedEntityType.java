@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.TransientEntityProperty;
 import com.kenshoo.pl.entity.audit.AuditTrigger;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -33,14 +34,19 @@ public class AuditedEntityType<E extends EntityType<E>> {
     // Fields from current entity (besides id), keyed by audit trigger type
     private final SetMultimap<AuditTrigger, ? extends AuditedField<E, ?>> internalFields;
 
+    // Transient properties from current entity which should be included always in the audit record with their values
+    private final Set<? extends TransientEntityProperty<E, ?>> mandatoryProperties;
+
     private AuditedEntityType(final EntityField<E, ? extends Number> idField,
                               final String name,
                               final Set<? extends AuditedField<?, ?>> externalFields,
-                              final SetMultimap<AuditTrigger, ? extends AuditedField<E, ?>> internalFields) {
+                              final SetMultimap<AuditTrigger, ? extends AuditedField<E, ?>> internalFields,
+                              final Set<? extends TransientEntityProperty<E, ?>> mandatoryProperties) {
         this.idField = idField;
         this.name = name;
         this.externalFields = externalFields;
         this.internalFields = internalFields;
+        this.mandatoryProperties = mandatoryProperties;
     }
 
     public EntityField<E, ? extends Number> getIdField() {
@@ -53,6 +59,10 @@ public class AuditedEntityType<E extends EntityType<E>> {
 
     public Set<? extends AuditedField<?, ?>> getExternalFields() {
         return externalFields;
+    }
+
+    public Set<? extends TransientEntityProperty<?, ?>> getMandatoryProperties() {
+        return mandatoryProperties;
     }
 
     public Stream<? extends EntityField<?, ?>> getUnderlyingMandatoryFields() {
@@ -87,6 +97,7 @@ public class AuditedEntityType<E extends EntityType<E>> {
         private String name;
         private Set<? extends AuditedField<?, ?>> externalFields = emptySet();
         private final SetMultimap<AuditTrigger, AuditedField<E, ?>> internalFields = HashMultimap.create();
+        private Set<? extends TransientEntityProperty<E, ?>> mandatoryProperties = emptySet();
 
         public Builder(final EntityField<E, ? extends Number> idField) {
             this.idField = requireNonNull(idField, "idField is required");
@@ -155,11 +166,18 @@ public class AuditedEntityType<E extends EntityType<E>> {
             return this;
         }
 
+        public final Builder<E> withMandatoryProperties(final Stream<? extends TransientEntityProperty<E, ?>> mandatoryProperties) {
+            this.mandatoryProperties = mandatoryProperties.collect(toUnmodifiableSet());
+            return this;
+        }
+
         public AuditedEntityType<E> build() {
-            return new AuditedEntityType<>(idField,
-                                           name,
-                                           externalFields,
-                                           internalFields);
+            return new AuditedEntityType<>(
+                    idField,
+                    name,
+                    externalFields,
+                    internalFields,
+                    mandatoryProperties);
         }
     }
 
@@ -176,31 +194,34 @@ public class AuditedEntityType<E extends EntityType<E>> {
         final AuditedEntityType<?> that = (AuditedEntityType<?>) o;
 
         return new EqualsBuilder()
-            .append(idField, that.idField)
-            .append(name, that.name)
-            .append(externalFields, that.externalFields)
-            .append(internalFields, that.internalFields)
-            .isEquals();
+                .append(idField, that.idField)
+                .append(name, that.name)
+                .append(externalFields, that.externalFields)
+                .append(internalFields, that.internalFields)
+                .append(mandatoryProperties, that.mandatoryProperties)
+                .isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37)
-            .append(idField)
-            .append(name)
-            .append(externalFields)
-            .append(internalFields)
-            .toHashCode();
+                .append(idField)
+                .append(name)
+                .append(externalFields)
+                .append(internalFields)
+                .append(mandatoryProperties)
+                .toHashCode();
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this, SHORT_PREFIX_STYLE)
-            .append("idField", idField)
-            .append("name", name)
-            .append("externalFields", externalFields)
-            .append("internalFields", internalFields)
-            .toString();
+                .append("idField", idField)
+                .append("name", name)
+                .append("externalFields", externalFields)
+                .append("internalFields", internalFields)
+                .append("transientProperties", mandatoryProperties)
+                .toString();
     }
 
 }
