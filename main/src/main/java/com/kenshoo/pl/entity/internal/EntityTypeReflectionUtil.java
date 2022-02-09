@@ -9,10 +9,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -20,8 +17,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 public abstract class EntityTypeReflectionUtil {
 
@@ -92,27 +88,27 @@ public abstract class EntityTypeReflectionUtil {
         return HashBiMap.create(map);
     }
 
-    private static <E extends EntityType<E>, T> EntityField<E, T> getEntityFieldInstance(final Field field, final EntityType<E> entityType) {
-        try {
-            if (!Modifier.isPublic(field.getModifiers())) {
-                field.setAccessible(true);
-            }
-            //noinspection unchecked
-            return (EntityField<E, T>) field.get(entityType);
-        } catch (IllegalAccessException e) {
-            // Shouldn't happen
-            throw Throwables.propagate(e);
-        }
+    public static <E extends EntityType<E>> Map<? extends TransientEntityProperty<E, ?>, String> createTransientPropertyToFieldNameMap(final EntityType<E> entityType) {
+        return Stream.of(entityType.getClass().getDeclaredFields())
+                .filter(field -> TransientEntityProperty.class.isAssignableFrom(field.getType()))
+                .collect(toUnmodifiableMap(
+                        field -> getTransientEntityPropertyInstance(field, entityType),
+                        Field::getName));
     }
 
     public static <E extends EntityType<E>, A extends Annotation> A getFieldAnnotation(EntityType<E> entityType, EntityField<E, ?> entityField, Class<A> annotationType) {
-        try {
-            Field field = entityType.getClass().getDeclaredField(entityType.toFieldName(entityField));
-            return field.getAnnotation(annotationType);
-        } catch (NoSuchFieldException e) {
-            // Shouldn't happen
-            throw Throwables.propagate(e);
-        }
+        return getJavaFieldAnnotation(entityType,
+                entityType.toFieldName(entityField),
+                annotationType);
+    }
+
+    public static <E extends EntityType<E>, A extends Annotation> Optional<A> getTransientPropertyAnnotation(
+            final EntityType<E> entityType,
+            final TransientEntityProperty<E, ?> transientProperty,
+            final Class<A> annotationType) {
+
+        return entityType.toTransientPropertyJavaFieldName(transientProperty)
+                .map(declaredName -> getJavaFieldAnnotation(entityType, declaredName, annotationType));
     }
 
     public static <E extends EntityType<E>, A extends Annotation> Predicate<EntityField<E, ?>> annotatedWith(E entityType, Class<A> annotationType) {
@@ -129,5 +125,42 @@ public abstract class EntityTypeReflectionUtil {
         return getFieldAnnotation(entityType, field, annotationType) != null;
     }
 
+    public static <E extends EntityType<E>, A extends Annotation> boolean isAnnotatedWith(final EntityType<E> entityType,
+                                                                                          final Class<A> annotationType,
+                                                                                          final TransientEntityProperty<E, ?> field) {
+        return getTransientPropertyAnnotation(entityType, field, annotationType).isPresent();
+    }
 
+    private static <E extends EntityType<E>, T> EntityField<E, T> getEntityFieldInstance(final Field field, final EntityType<E> entityType) {
+        return getEntityMemberInstance(field, entityType);
+    }
+
+    private static <E extends EntityType<E>, T> TransientEntityProperty<E, T> getTransientEntityPropertyInstance(final Field field, final EntityType<E> entityType) {
+        return getEntityMemberInstance(field, entityType);
+    }
+
+    private static <E extends EntityType<E>, M> M getEntityMemberInstance(final Field field, final EntityType<E> entityType) {
+        try {
+            if (!Modifier.isPublic(field.getModifiers())) {
+                field.setAccessible(true);
+            }
+            //noinspection unchecked
+            return (M) field.get(entityType);
+        } catch (IllegalAccessException e) {
+            // Shouldn't happen
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private static <E extends EntityType<E>, A extends Annotation> A getJavaFieldAnnotation(final EntityType<E> entityType,
+                                                                                            final String declaredName,
+                                                                                            final Class<A> annotationType) {
+        try {
+            Field field = entityType.getClass().getDeclaredField(declaredName);
+            return field.getAnnotation(annotationType);
+        } catch (NoSuchFieldException e) {
+            // Shouldn't happen
+            throw Throwables.propagate(e);
+        }
+    }
 }

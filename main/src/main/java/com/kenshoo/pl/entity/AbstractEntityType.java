@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Suppliers.memoize;
 import static com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil.getFieldAnnotation;
+import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractEntityType<E extends EntityType<E>> implements EntityType<E> {
 
@@ -31,6 +32,8 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     private final Set<TransientEntityProperty<E, ?>> transientProperties = new HashSet<>();
 
     private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this));
+    private final Supplier<Map<? extends TransientEntityProperty<E, ?>, String>> transientPropertyMappingSupplier =
+            memoize(() -> EntityTypeReflectionUtil.createTransientPropertyToFieldNameMap(AbstractEntityType.this));
 
     protected AbstractEntityType(String name) {
         this.name = name;
@@ -226,5 +229,11 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     public String toFieldName(EntityField<E, ?> field) {
         BiMap<String, EntityField<E, ?>> fieldToNameBiMap = fieldNameMappingSupplier.get();
         return fieldToNameBiMap.inverse().get(field);
+    }
+
+    @Override
+    public Optional<String> toTransientPropertyJavaFieldName(final TransientEntityProperty<E, ?> transientProperty) {
+        requireNonNull(transientProperty, "A transient property must be provided");
+        return Optional.ofNullable(transientPropertyMappingSupplier.get().get(transientProperty));
     }
 }

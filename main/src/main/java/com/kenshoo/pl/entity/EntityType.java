@@ -52,6 +52,13 @@ public interface EntityType<E extends EntityType<E>> {
 
     String toFieldName(EntityField<E, ?> field);
 
+    /**
+     * @param transientProperty A transient property declared for this entity type; required
+     * @return the declared Java field name of the given transient property within the entity type
+     * @throws NullPointerException if the given property is {@code null}
+     */
+    Optional<String> toTransientPropertyJavaFieldName(final TransientEntityProperty<E, ?> transientProperty);
+
     default SupportedChangeOperation getSupportedOperation() {
         return SupportedChangeOperation.CREATE_AND_UPDATE;
     }

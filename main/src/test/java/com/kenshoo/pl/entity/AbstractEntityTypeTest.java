@@ -67,6 +67,27 @@ public class AbstractEntityTypeTest {
         EntityWithBlankTransientName.INSTANCE.getTransientProperties();
     }
 
+    @Test
+    public void toTransientPropertyJavaFieldNameWhenDeclaredInEntityShouldReturnCorrectName() {
+        final var maybeJavaFieldName = EntityWithValidTransients.INSTANCE.toTransientPropertyJavaFieldName(EntityWithValidTransients.TRANSIENT_STR);
+        assertThat(maybeJavaFieldName, is(Optional.of("TRANSIENT_STR")));
+    }
+
+    @Test
+    public void toTransientPropertyJavaFieldNameWhenNotDeclaredInEntityShouldReturnEmpty() {
+        final var detachedTransientProperty = new TransientEntityProperty<EntityWithValidTransients, String>() {
+            public EntityType<EntityWithValidTransients> getEntityType() {
+                return EntityWithValidTransients.INSTANCE;
+            }
+            public String getName() {
+                return "bla";
+            }
+        };
+
+        final var maybeJavaFieldName = EntityWithValidTransients.INSTANCE.toTransientPropertyJavaFieldName(detachedTransientProperty);
+        assertThat(maybeJavaFieldName, is(Optional.empty()));
+    }
+
     public static class AutoIncTable extends AbstractDataTable<AutoIncTable> {
 
         public static final AutoIncTable TABLE = new AutoIncTable();
@@ -164,7 +185,7 @@ public class AbstractEntityTypeTest {
         }
     }
 
-    private static class EntityWithValidTransients extends AbstractEntityType<EntityWithValidTransients> {
+    public static class EntityWithValidTransients extends AbstractEntityType<EntityWithValidTransients> {
         static EntityWithValidTransients INSTANCE = new EntityWithValidTransients();
 
         private EntityWithValidTransients() {
@@ -180,7 +201,7 @@ public class AbstractEntityTypeTest {
         }
     }
 
-    private static class EntityWithDuplicateTransient extends AbstractEntityType<EntityWithDuplicateTransient> {
+    public static class EntityWithDuplicateTransient extends AbstractEntityType<EntityWithDuplicateTransient> {
         static EntityWithDuplicateTransient INSTANCE = new EntityWithDuplicateTransient();
 
         private EntityWithDuplicateTransient() {
@@ -196,7 +217,7 @@ public class AbstractEntityTypeTest {
         }
     }
 
-    private static class EntityWithBlankTransientName extends AbstractEntityType<EntityWithBlankTransientName> {
+    public static class EntityWithBlankTransientName extends AbstractEntityType<EntityWithBlankTransientName> {
         static EntityWithBlankTransientName INSTANCE = new EntityWithBlankTransientName();
 
         private EntityWithBlankTransientName() {
