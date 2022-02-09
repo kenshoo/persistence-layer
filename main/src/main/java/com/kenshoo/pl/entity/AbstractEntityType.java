@@ -12,10 +12,7 @@ import com.kenshoo.pl.entity.internal.*;
 import org.jooq.Record;
 import org.jooq.TableField;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -31,6 +28,7 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     private final String name;
     private Collection<EntityField<E, ?>> fields = new ArrayList<>();
     private Collection<PrototypedEntityField<E, ?>> prototypedFields = new ArrayList<>();
+    private final Set<TransientEntityProperty<E, ?>> transientProperties = new HashSet<>();
 
     private final Supplier<BiMap<String, EntityField<E, ?>>> fieldNameMappingSupplier = memoize(() -> EntityTypeReflectionUtil.getFieldToNameBiMap(AbstractEntityType.this));
 
@@ -121,6 +119,7 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
 
     /**
      * Add a transient property to this entity type with the given name.<br>
+     * <b>The name must be unique within this entity type.</b><br>
      * This method should only be used for populating a constant member of the entity, for example:
      *
      * <pre>
@@ -132,10 +131,20 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
      * @param name the name; must not be blank
      * @param <T> the type of value that this object can hold
      * @return the new transient property
-     * @throws IllegalArgumentException if the given name is blank or {@code null}
+     * @throws IllegalArgumentException in the following cases:
+     * <ul>
+     * <li>The given name is blank or {@code null}
+     * <li>A transient property with the given name already exists in this entity type
+     * </ul>
      */
     protected <T> TransientEntityProperty<E, T> transientProperty(final String name) {
-        return new TransientEntityPropertyImpl<>(this, name);
+        final var transientProperty = new TransientEntityPropertyImpl<E, T>(this, name);
+        if (transientProperties.contains(transientProperty)) {
+            throw new IllegalArgumentException(String.format("Only one transient property named '%s' may be defined in the entity type '%s'",
+                    name, this));
+        }
+        transientProperties.add(transientProperty);
+        return transientProperty;
     }
 
     // Casting here because the identity field can be of arbitrary type, and we must be able to mutate its value in a command
@@ -195,6 +204,11 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     @Override
     public Stream<PrototypedEntityField<E, ?>> getPrototypedFields() {
         return prototypedFields.stream();
+    }
+
+    @Override
+    public Stream<TransientEntityProperty<E, ?>> getTransientProperties() {
+        return transientProperties.stream();
     }
 
     @Override

@@ -43,6 +43,11 @@ public interface EntityType<E extends EntityType<E>> {
 
     Stream<PrototypedEntityField<E, ?>> getPrototypedFields();
 
+    /**
+     * @return the transient properties of the entity type
+     */
+    Stream<TransientEntityProperty<E, ?>> getTransientProperties();
+
     EntityField<E, ?> getFieldByName(String name);
 
     String toFieldName(EntityField<E, ?> field);
