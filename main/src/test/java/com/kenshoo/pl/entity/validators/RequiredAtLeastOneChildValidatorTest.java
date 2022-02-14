@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 
 public class RequiredAtLeastOneChildValidatorTest {
 
-    private final RequiredAtLeastOneChildValidator<TestEntity, TestChildEntity> onTest = new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE);
+    private final RequiredAtLeastOneChildValidator<TestEntity, TestChildEntity> onTest = new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD");
 
     @Test
     public void returnNoErrorWhenChildCommandIsPresented() {
@@ -42,7 +42,7 @@ public class RequiredAtLeastOneChildValidatorTest {
         context.getValidationErrors(command)
                 .findSingle()
                 .ifPresentOrElse(error -> {
-                    assertThat(error.getErrorCode(), is("At least one testChildEntity is required."));
+                    assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     assertThat(error.getField(), nullValue());
                     assertThat(error.getParameters(), is(emptyMap()));
                 }, () -> fail("ValidationError is not presented"));

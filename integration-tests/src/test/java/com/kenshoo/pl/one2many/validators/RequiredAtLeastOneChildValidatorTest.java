@@ -58,7 +58,7 @@ public class RequiredAtLeastOneChildValidatorTest {
 
         var result = persistenceLayer.create(List.of(command),
                 defaultFlowConfig()
-                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE))
+                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD"))
                         .build());
 
         assertThat(result.getErrors(command), emptyCollectionOf(ValidationError.class));
@@ -73,13 +73,13 @@ public class RequiredAtLeastOneChildValidatorTest {
 
         var result = persistenceLayer.create(List.of(command),
                 defaultFlowConfig()
-                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE))
+                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD"))
                         .build());
 
         seq(result.getErrors(command))
                 .findSingle()
                 .ifPresentOrElse(error -> {
-                    Assert.assertThat(error.getErrorCode(), is("At least one testChildEntity is required."));
+                    Assert.assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     Assert.assertThat(error.getField(), nullValue());
                     Assert.assertThat(error.getParameters(), is(emptyMap()));
                 }, () -> fail("ValidationError is not presented"));
