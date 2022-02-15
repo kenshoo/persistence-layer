@@ -68,11 +68,11 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     }
 
     @Override
-    public <T> void set(final TransientProperty<T> transientProperty, final T newValue) {
+    public <T> void set(final TransientProperty<T> transientProperty, final T propertyValue) {
         requireNonNull(transientProperty, "A transient property must be provided");
-        requireNonNull(newValue, "A new value must be provided");
+        requireNonNull(propertyValue, "A property value must be provided");
 
-        transientProperties.put(transientProperty, newValue);
+        transientProperties.put(transientProperty, propertyValue);
     }
 
     private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {

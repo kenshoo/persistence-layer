@@ -11,8 +11,8 @@ public interface EntityCommandExt<E extends EntityType<E>, C extends EntityComma
     }
 
     @SuppressWarnings("unchecked")
-    default <T> C with(final TransientProperty<T> property, final T newValue) {
-        set(property, newValue);
+    default <T> C with(final TransientProperty<T> property, final T propertyValue) {
+        set(property, propertyValue);
         return (C) this;
     }
 
