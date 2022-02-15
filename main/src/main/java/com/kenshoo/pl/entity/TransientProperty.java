@@ -9,9 +9,9 @@ package com.kenshoo.pl.entity;
 public interface TransientProperty<T> {
 
     /**
-     * @return the name of the property
+     * @return a description of what the property represents
      */
-    String getName();
+    String getDescription();
 
     /**
      * @return the type of value the property can have

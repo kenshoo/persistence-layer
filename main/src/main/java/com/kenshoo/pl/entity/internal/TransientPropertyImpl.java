@@ -9,17 +9,17 @@ import static org.apache.commons.lang3.Validate.notBlank;
 
 public class TransientPropertyImpl<T> implements TransientProperty<T> {
 
-    private final String name;
+    private final String description;
     private final Class<T> type;
 
-    public TransientPropertyImpl(final String name, final Class<T> type) {
-        this.name = notBlank(name, "A non-blank name is required");
+    public TransientPropertyImpl(final String description, final Class<T> type) {
+        this.description = notBlank(description, "A non-blank description is required");
         this.type = requireNonNull(type, "A type is required");
     }
 
     @Override
-    public String getName() {
-        return name;
+    public String getDescription() {
+        return description;
     }
 
     @Override
@@ -35,16 +35,16 @@ public class TransientPropertyImpl<T> implements TransientProperty<T> {
 
         TransientPropertyImpl<?> that = (TransientPropertyImpl<?>) o;
 
-        return new EqualsBuilder().append(name, that.name).isEquals();
+        return new EqualsBuilder().append(description, that.description).isEquals();
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(name).toHashCode();
+        return new HashCodeBuilder(17, 37).append(description).toHashCode();
     }
 
     @Override
     public String toString() {
-        return name;
+        return description;
     }
 }
