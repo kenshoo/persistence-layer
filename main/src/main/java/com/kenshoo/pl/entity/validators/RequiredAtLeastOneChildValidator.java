@@ -4,6 +4,7 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A validator that force given a child in command
@@ -13,9 +14,11 @@ import java.util.Collection;
  */
 public class RequiredAtLeastOneChildValidator<E extends EntityType<E>, CHILD extends EntityType<CHILD>> implements ChangesValidator<E> {
 
+    private final String errorCode;
     private final CHILD childType;
 
-    public RequiredAtLeastOneChildValidator(CHILD childType) {
+    public RequiredAtLeastOneChildValidator(CHILD childType, String errorCode) {
+        this.errorCode = errorCode;
         this.childType = childType;
     }
 
@@ -25,7 +28,7 @@ public class RequiredAtLeastOneChildValidator<E extends EntityType<E>, CHILD ext
             long childrenAmount = entityChange.getChildren(childType).count();
             if (childrenAmount == 0) {
                 changeContext.addValidationError(entityChange,
-                        new ValidationError(String.format("At least one %s is required.", childType.getName())));
+                        new ValidationError(errorCode, Map.of("childType", childType.getName())));
             }
         });
     }

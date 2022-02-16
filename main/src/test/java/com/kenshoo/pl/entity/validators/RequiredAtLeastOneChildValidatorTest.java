@@ -4,8 +4,8 @@ import com.kenshoo.pl.entity.*;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 
 public class RequiredAtLeastOneChildValidatorTest {
 
-    private final RequiredAtLeastOneChildValidator<TestEntity, TestChildEntity> onTest = new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE);
+    private final RequiredAtLeastOneChildValidator<TestEntity, TestChildEntity> onTest = new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD");
 
     @Test
     public void returnNoErrorWhenChildCommandIsPresented() {
@@ -42,9 +42,9 @@ public class RequiredAtLeastOneChildValidatorTest {
         context.getValidationErrors(command)
                 .findSingle()
                 .ifPresentOrElse(error -> {
-                    assertThat(error.getErrorCode(), is("At least one testChildEntity is required."));
+                    assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     assertThat(error.getField(), nullValue());
-                    assertThat(error.getParameters(), is(emptyMap()));
+                    assertThat(error.getParameters(), is(Map.of("childType", "testChildEntity")));
                 }, () -> fail("ValidationError is not presented"));
     }
 

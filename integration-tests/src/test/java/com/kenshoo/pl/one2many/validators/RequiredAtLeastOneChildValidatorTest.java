@@ -11,8 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.jooq.lambda.Seq.seq;
@@ -58,7 +58,7 @@ public class RequiredAtLeastOneChildValidatorTest {
 
         var result = persistenceLayer.create(List.of(command),
                 defaultFlowConfig()
-                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE))
+                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD"))
                         .build());
 
         assertThat(result.getErrors(command), emptyCollectionOf(ValidationError.class));
@@ -73,15 +73,15 @@ public class RequiredAtLeastOneChildValidatorTest {
 
         var result = persistenceLayer.create(List.of(command),
                 defaultFlowConfig()
-                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE))
+                        .withValidator(new RequiredAtLeastOneChildValidator<>(TestChildEntity.INSTANCE, "REQUIRED_AT_LEAST_ONE_CHILD"))
                         .build());
 
         seq(result.getErrors(command))
                 .findSingle()
                 .ifPresentOrElse(error -> {
-                    Assert.assertThat(error.getErrorCode(), is("At least one testChildEntity is required."));
+                    Assert.assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     Assert.assertThat(error.getField(), nullValue());
-                    Assert.assertThat(error.getParameters(), is(emptyMap()));
+                    Assert.assertThat(error.getParameters(), is(Map.of("childType", "testChildEntity")));
                 }, () -> fail("ValidationError is not presented"));
 
     }
