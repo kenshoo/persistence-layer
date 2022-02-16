@@ -4,8 +4,8 @@ import com.kenshoo.pl.entity.*;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -44,7 +44,7 @@ public class RequiredAtLeastOneChildValidatorTest {
                 .ifPresentOrElse(error -> {
                     assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     assertThat(error.getField(), nullValue());
-                    assertThat(error.getParameters(), is(emptyMap()));
+                    assertThat(error.getParameters(), is(Map.of("childType", "testChildEntity")));
                 }, () -> fail("ValidationError is not presented"));
     }
 

@@ -11,8 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.jooq.lambda.Seq.seq;
@@ -81,7 +81,7 @@ public class RequiredAtLeastOneChildValidatorTest {
                 .ifPresentOrElse(error -> {
                     Assert.assertThat(error.getErrorCode(), is("REQUIRED_AT_LEAST_ONE_CHILD"));
                     Assert.assertThat(error.getField(), nullValue());
-                    Assert.assertThat(error.getParameters(), is(emptyMap()));
+                    Assert.assertThat(error.getParameters(), is(Map.of("childType", "testChildEntity")));
                 }, () -> fail("ValidationError is not presented"));
 
     }

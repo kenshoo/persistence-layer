@@ -4,6 +4,7 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ChangesValidator;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A validator that force given a child in command
@@ -27,7 +28,7 @@ public class RequiredAtLeastOneChildValidator<E extends EntityType<E>, CHILD ext
             long childrenAmount = entityChange.getChildren(childType).count();
             if (childrenAmount == 0) {
                 changeContext.addValidationError(entityChange,
-                        new ValidationError(errorCode));
+                        new ValidationError(errorCode, Map.of("childType", childType.getName())));
             }
         });
     }
