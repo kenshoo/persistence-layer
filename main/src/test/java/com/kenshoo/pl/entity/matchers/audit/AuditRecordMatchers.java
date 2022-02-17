@@ -84,6 +84,10 @@ public class AuditRecordMatchers {
         return new AuditRecordNoChildRecordsMatcher();
     }
 
+    public static Matcher<AuditRecord> hasEntityChangeDescription(final String entityChangeDescription) {
+        return new AuditRecordEntityChangeDescriptionMatcher(entityChangeDescription);
+    }
+
     private static Matcher<AuditRecord> hasFieldRecord(final FieldAuditRecord expectedFieldRecord) {
         return new AuditRecordFieldRecordMatcher(expectedFieldRecord);
     }

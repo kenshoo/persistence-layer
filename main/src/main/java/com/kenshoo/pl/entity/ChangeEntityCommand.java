@@ -5,16 +5,19 @@ import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.LazyDelegatingMultiSupplier;
 import com.kenshoo.pl.entity.internal.MissingChildrenSupplier;
 import com.kenshoo.pl.entity.spi.*;
+
 import java.util.*;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static java.util.Objects.requireNonNull;
 import static org.jooq.lambda.Seq.seq;
 
 abstract public class ChangeEntityCommand<E extends EntityType<E>> implements MutableCommand<E> {
 
     private final E entityType;
     private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
+    private final Map<TransientProperty<?>, Object> transientProperties = new HashMap<>(0);
     private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
     private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
@@ -62,6 +65,14 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         for (EntityField<E, ?> field : fields) {
             addAsSingleValueSupplier(field, delegatingMultiSupplier);
         }
+    }
+
+    @Override
+    public <T> void set(final TransientProperty<T> transientProperty, final T propertyValue) {
+        requireNonNull(transientProperty, "A transient property must be provided");
+        requireNonNull(propertyValue, "A property value must be provided");
+
+        transientProperties.put(transientProperty, propertyValue);
     }
 
     private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
@@ -127,6 +138,14 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
             throw new IllegalArgumentException("No value supplied for field " + field);
         }
         return value;
+    }
+
+    @Override
+    public <T> Optional<T> get(final TransientProperty<T> transientProperty) {
+        requireNonNull(transientProperty, "A transient property must be specified");
+        //noinspection unchecked
+        return Optional.ofNullable(transientProperties.get(transientProperty))
+                .map(transientVal -> (T) transientVal);
     }
 
     public <CHILD extends EntityType<CHILD>> void addChild(ChangeEntityCommand<CHILD> childCmd) {

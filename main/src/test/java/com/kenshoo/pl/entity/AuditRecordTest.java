@@ -7,6 +7,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mockito.Mock;
 
+import java.util.Optional;
+
 import static com.kenshoo.pl.entity.ChangeOperation.CREATE;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -20,6 +22,8 @@ public class AuditRecordTest {
     private static final String ENTITY_ID_1 = "123";
     private static final String ENTITY_ID_2 = "456";
 
+    private static final String ENTITY_CHANGE_DESCRIPTION = "A very interesting description";
+
     private static final FieldAuditRecord NAME_FIELD_RECORD =
         FieldAuditRecord.builder(AuditedType.NAME)
                         .newValue("name")
@@ -27,6 +31,29 @@ public class AuditRecordTest {
 
     @Mock
     private AuditRecord childRecord;
+
+    @Test
+    public void getEntityChangeDescriptionWhenExistsShouldReturnIt() {
+        final var auditRecord = new AuditRecord.Builder()
+                .withEntityType(ENTITY_TYPE)
+                .withEntityId(ENTITY_ID_1)
+                .withOperator(CREATE)
+                .withEntityChangeDescription(ENTITY_CHANGE_DESCRIPTION)
+                .build();
+
+        assertThat(auditRecord.getEntityChangeDescription(), is(Optional.of(ENTITY_CHANGE_DESCRIPTION)));
+    }
+
+    @Test
+    public void getEntityChangeDescriptionWhenDoesntExistShouldReturnEmpty() {
+        final var auditRecord = new AuditRecord.Builder()
+                .withEntityType(ENTITY_TYPE)
+                .withEntityId(ENTITY_ID_1)
+                .withOperator(CREATE)
+                .build();
+
+        assertThat(auditRecord.getEntityChangeDescription(), is(Optional.empty()));
+    }
 
     @Test
     public void hasNoChanges_WithFieldRecords_WithChildRecords_ShouldReturnFalse() {

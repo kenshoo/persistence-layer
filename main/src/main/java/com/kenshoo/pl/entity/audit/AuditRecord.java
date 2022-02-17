@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.Collection;
+import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
@@ -17,6 +18,7 @@ public class AuditRecord {
     private final String entityId;
     private final Collection<? extends FieldValue> mandatoryFieldValues;
     private final ChangeOperation operator;
+    private final String entityChangeDescription;
     private final Collection<? extends FieldAuditRecord> fieldRecords;
     private final Collection<? extends AuditRecord> childRecords;
 
@@ -24,12 +26,14 @@ public class AuditRecord {
                         final String entityId,
                         final Collection<? extends FieldValue> mandatoryFieldValues,
                         final ChangeOperation operator,
+                        final String entityChangeDescription,
                         final Collection<? extends FieldAuditRecord> fieldRecords,
                         final Collection<? extends AuditRecord> childRecords) {
         this.entityType = requireNonNull(entityType, "entityType is required");
         this.entityId = requireNonNull(entityId, "entityId is required");
         this.mandatoryFieldValues = mandatoryFieldValues;
         this.operator = requireNonNull(operator, "operator is required");
+        this.entityChangeDescription = entityChangeDescription;
         this.fieldRecords = fieldRecords;
         this.childRecords = childRecords;
     }
@@ -48,6 +52,10 @@ public class AuditRecord {
 
     public ChangeOperation getOperator() {
         return operator;
+    }
+
+    public Optional<String> getEntityChangeDescription() {
+        return Optional.ofNullable(entityChangeDescription);
     }
 
     public Collection<? extends FieldAuditRecord> getFieldRecords() {
@@ -80,13 +88,14 @@ public class AuditRecord {
             return StringUtils.EMPTY;
         }
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
-            .append("entityType", entityType)
-            .append("entityId", entityId)
-            .append("mandatoryFieldValues", mandatoryFieldValues)
-            .append("operator", operator)
-            .append("fieldRecords", fieldRecords)
-            .append("childRecords", childRecordsToString(maxDepth))
-            .toString();
+                .append("entityType", entityType)
+                .append("entityId", entityId)
+                .append("mandatoryFieldValues", mandatoryFieldValues)
+                .append("operator", operator)
+                .append("entityChangeDescription", entityChangeDescription)
+                .append("fieldRecords", fieldRecords)
+                .append("childRecords", childRecordsToString(maxDepth))
+                .toString();
     }
 
     private String childRecordsToString(final int maxDepth) {
@@ -101,6 +110,7 @@ public class AuditRecord {
         private String entityId;
         private Collection<? extends FieldValue> mandatoryFieldValues = emptyList();
         private ChangeOperation operator;
+        private String entityChangeDescription;
         private Collection<? extends FieldAuditRecord> fieldRecords = emptyList();
         private Collection<? extends AuditRecord> childRecords = emptyList();
 
@@ -116,6 +126,11 @@ public class AuditRecord {
 
         public Builder withOperator(ChangeOperation operator) {
             this.operator = operator;
+            return this;
+        }
+
+        public Builder withEntityChangeDescription(final String entityChangeDescription) {
+            this.entityChangeDescription = entityChangeDescription;
             return this;
         }
 
@@ -135,12 +150,14 @@ public class AuditRecord {
         }
 
         public AuditRecord build() {
-            return new AuditRecord(entityType,
-                                   entityId,
-                                   mandatoryFieldValues,
-                                   operator,
-                                   fieldRecords,
-                                   childRecords);
+            return new AuditRecord(
+                    entityType,
+                    entityId,
+                    mandatoryFieldValues,
+                    operator,
+                    entityChangeDescription,
+                    fieldRecords,
+                    childRecords);
         }
     }
 }

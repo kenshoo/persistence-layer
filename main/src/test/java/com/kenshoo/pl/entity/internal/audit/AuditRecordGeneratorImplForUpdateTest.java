@@ -2,6 +2,7 @@ package com.kenshoo.pl.entity.internal.audit;
 
 import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.audit.AuditProperties;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
@@ -39,6 +40,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
     private static final String OLD_NAME = "oldName";
     private static final String NEW_DESC = "newDesc";
     private static final String OLD_DESC = "oldDesc";
+    private static final String ENTITY_CHANGE_DESCRIPTION = "A very interesting description";
 
     @Mock
     private AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
@@ -185,6 +187,25 @@ public class AuditRecordGeneratorImplForUpdateTest {
                                       hasChangedFieldRecord(AuditedType.DESC, OLD_DESC, NEW_DESC),
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
+    }
+
+    @Test
+    public void generate_WithFieldChanges_AndEntityChangeDescriptionInCmd_ShouldGenerateWithEntityChangeDescription() {
+        final var expectedFieldChanges = List.of(
+                FieldAuditRecord.builder(AuditedType.NAME)
+                        .oldValue(OLD_NAME)
+                        .newValue(NEW_NAME)
+                        .build());
+
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
+        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
+        when(cmd.get(AuditProperties.ENTITY_CHANGE_DESCRIPTION)).thenReturn(Optional.of(ENTITY_CHANGE_DESCRIPTION));
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(hasEntityChangeDescription(ENTITY_CHANGE_DESCRIPTION)));
     }
 
     private AuditRecord mockChildRecord() {

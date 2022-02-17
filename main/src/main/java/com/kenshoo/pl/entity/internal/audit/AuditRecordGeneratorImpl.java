@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.ChangeOperation.UPDATE;
+import static com.kenshoo.pl.entity.audit.AuditProperties.ENTITY_CHANGE_DESCRIPTION;
 import static java.util.Objects.requireNonNull;
 
 public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditRecordGenerator<E> {
@@ -67,16 +68,19 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
 
         final Collection<? extends FieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
+        final Optional<String> maybeEntityChangeDescription = entityChange.get(ENTITY_CHANGE_DESCRIPTION);
+
         final Collection<FieldAuditRecord> fieldRecords = fieldChangesGenerator.generate(currentState, finalState);
 
-        return new AuditRecord.Builder()
+        final var auditRecordBuilder = new AuditRecord.Builder()
             .withEntityType(entityTypeName)
             .withEntityId(entityId)
             .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())
             .withFieldRecords(fieldRecords)
-            .withChildRecords(childRecords)
-            .build();
+            .withChildRecords(childRecords);
+        maybeEntityChangeDescription.ifPresent(auditRecordBuilder::withEntityChangeDescription);
+        return auditRecordBuilder.build();
     }
 
     private String extractEntityId(final EntityChange<E> entityChange,
