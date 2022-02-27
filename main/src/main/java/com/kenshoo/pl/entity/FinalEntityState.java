@@ -20,7 +20,7 @@ public class FinalEntityState implements Entity {
     @Override
     public <T> T get(EntityField<?, T> field) {
         return field.getEntityType() == change.getEntityType() && change.containsField((EntityField)field)
-                ? (T)change.get((EntityField)field)
+                ? getFromEntityChange(field)
                 : currentState.get(field);
     }
 
@@ -29,4 +29,11 @@ public class FinalEntityState implements Entity {
         throw new UnsupportedOperationException("Final state of children is unknown at this point");
     }
 
+    private <E extends EntityType<E>, T> T getFromEntityChange(EntityField<E, T> field) {
+        final var dbAdapter = field.getDbAdapter();
+
+        final var entityChangeValue = ((EntityChange<E>)change).get(field);
+        final var dbValues = dbAdapter.getDbValues(entityChangeValue);
+        return dbAdapter.getFromRecord(dbValues.iterator());
+    }
 }
