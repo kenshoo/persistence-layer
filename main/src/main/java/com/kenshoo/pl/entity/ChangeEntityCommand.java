@@ -18,8 +18,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     private final E entityType;
     private final Map<EntityField<E, ?>, Object> values = new HashMap<>();
     private final Map<TransientProperty<?>, Object> transientProperties = new HashMap<>(0);
-    private final Map<EntityField<E, ?>, FieldValueSupplier<?>> suppliers = new HashMap<>();
-    private final List<CurrentStateConsumer<E>> currentStateConsumers = newArrayListWithCapacity(1);
+    private final Map<EntityField<E, ?>, FieldValueSupplierDelegate<E,?>> suppliers = new HashMap<>();
     private final List<ChangeEntityCommand<? extends EntityType>> children = newArrayListWithCapacity(1);
     private final List<MissingChildrenSupplier<? extends EntityType>> missingChildrenSuppliers = newArrayListWithCapacity(1);
 
@@ -47,8 +46,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
 
     @Override
     public <T> void set(EntityField<E, T> field, FieldValueSupplier<T> valueSupplier) {
-        suppliers.put(field, valueSupplier);
-        addCurrentStateConsumer(valueSupplier);
+        suppliers.put(field, new SingleFieldValueSupplierDelegate<>(valueSupplier));
     }
 
     @Override
@@ -60,7 +58,6 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     @Override
     public void set(Collection<EntityField<E, ?>> fields, MultiFieldValueSupplier<E> valueSupplier) {
         LazyDelegatingMultiSupplier<E> delegatingMultiSupplier = new LazyDelegatingMultiSupplier<>(valueSupplier);
-        addCurrentStateConsumer(valueSupplier);
 
         for (EntityField<E, ?> field : fields) {
             addAsSingleValueSupplier(field, delegatingMultiSupplier);
@@ -75,32 +72,8 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         transientProperties.put(transientProperty, propertyValue);
     }
 
-    private void addCurrentStateConsumer(FetchEntityFields valueSupplier) {
-        currentStateConsumers.add(new CurrentStateConsumer<E>() {
-            @Override
-            public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
-                return valueSupplier.fetchFields(changeOperation);
-            }
-        });
-    }
-
     private <T> void addAsSingleValueSupplier(final EntityField<E, T> entityField, final MultiFieldValueSupplier<E> delegatingSupplier) {
-        suppliers.put(entityField, new FieldValueSupplier<T>() {
-            @Override
-            public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
-                return delegatingSupplier.fetchFields(changeOperation);
-            }
-
-            @Override
-            public T supply(CurrentEntityState currentState) throws ValidationException {
-                FieldsValueMap<E> result = delegatingSupplier.supply(currentState);
-                if (result.containsField(entityField)) {
-                    return result.get(entityField);
-                } else {
-                    throw new NotSuppliedException();
-                }
-            }
-        });
+        suppliers.put(entityField, new MultiFieldValueSupplierDelegate<>(delegatingSupplier, entityField));
     }
 
     @Override
@@ -174,7 +147,7 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
         if (suppliers.isEmpty()) {
             return;
         }
-        for (Map.Entry<EntityField<E, ?>, FieldValueSupplier<?>> entry : suppliers.entrySet()) {
+        for (Map.Entry<EntityField<E, ?>, FieldValueSupplierDelegate<E, ?>> entry : suppliers.entrySet()) {
             try {
                 values.put(entry.getKey(), entry.getValue().supply(currentState));
             } catch (NotSuppliedException ignore) {
@@ -183,7 +156,10 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     }
 
     Stream<? extends CurrentStateConsumer<E>> getCurrentStateConsumers() {
-        return currentStateConsumers.stream();
+        if(suppliers.isEmpty()) {
+            return Stream.empty();
+        }
+        return suppliers.values().stream().distinct();
     }
 
     private <T> EntityField<E, T> findFieldByPrototype(EntityFieldPrototype<T> fieldPrototype) {
@@ -234,5 +210,91 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     <CHILD extends EntityType<CHILD>> Optional<MissingChildrenSupplier<CHILD>> getMissingChildrenSupplier(CHILD entityType) {
         final Optional<MissingChildrenSupplier<? extends EntityType>> missingChildrenSupplier = seq(this.missingChildrenSuppliers).findFirst(supplier -> entityType.equals(supplier.getChildType()));
         return missingChildrenSupplier.map(supplier -> (MissingChildrenSupplier<CHILD>) supplier);
+    }
+
+
+    interface FieldValueSupplierDelegate<E extends EntityType<E>, T> extends FieldValueSupplier<T>, CurrentStateConsumer<E> {
+
+    }
+
+    static private class SingleFieldValueSupplierDelegate<E extends EntityType<E>, T> implements FieldValueSupplierDelegate<E, T> {
+
+        private final FieldValueSupplier<T> valueSupplier;
+
+        private SingleFieldValueSupplierDelegate(FieldValueSupplier<T> supplier) {
+            this.valueSupplier = supplier;
+        }
+
+        @Override
+        public T supply(CurrentEntityState currentState) throws ValidationException, NotSuppliedException {
+            return valueSupplier.supply(currentState);
+        }
+
+        @Override
+        public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+            return valueSupplier.fetchFields(changeOperation);
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return fetchFields(changeOperation);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SingleFieldValueSupplierDelegate<?, ?> that = (SingleFieldValueSupplierDelegate<?, ?>) o;
+            return Objects.equals(valueSupplier, that.valueSupplier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(valueSupplier);
+        }
+    }
+
+    static private class MultiFieldValueSupplierDelegate<E extends EntityType<E>, T> implements FieldValueSupplierDelegate<E, T> {
+
+        private final MultiFieldValueSupplier<E> multiValueSupplier;
+        private final EntityField<E, T> entityField;
+
+        private MultiFieldValueSupplierDelegate(MultiFieldValueSupplier<E> supplier, EntityField<E, T> entityField) {
+            this.multiValueSupplier = supplier;
+            this.entityField = entityField;
+        }
+
+        @Override
+        public T supply(CurrentEntityState currentState) throws ValidationException {
+            FieldsValueMap<E> result = multiValueSupplier.supply(currentState);
+            if (result.containsField(entityField)) {
+                return result.get(entityField);
+            } else {
+                throw new NotSuppliedException();
+            }
+        }
+
+        @Override
+        public Stream<EntityField<?, ?>> fetchFields(ChangeOperation changeOperation) {
+            return multiValueSupplier.fetchFields(changeOperation);
+        }
+
+        @Override
+        public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation changeOperation) {
+            return fetchFields(changeOperation);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MultiFieldValueSupplierDelegate<?, ?> that = (MultiFieldValueSupplierDelegate<?, ?>) o;
+            return Objects.equals(multiValueSupplier, that.multiValueSupplier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(multiValueSupplier);
+        }
     }
 }
