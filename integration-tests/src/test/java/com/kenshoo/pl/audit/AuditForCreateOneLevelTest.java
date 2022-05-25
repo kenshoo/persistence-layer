@@ -79,7 +79,7 @@ public class AuditForCreateOneLevelTest {
     @Test
     public void oneAuditedEntity_AllFieldsInCommand_ShouldCreateFieldRecordsForAll() {
         final CreateResult<AuditedAutoIncIdType, Identifier<AuditedAutoIncIdType>> createResult =
-            auditedPL.create(singletonList(new CreateAuditedCommand()
+            auditedPL.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                                .with(AuditedAutoIncIdType.NAME, "name")
                                                .with(AuditedAutoIncIdType.DESC, "desc")
                                                .with(AuditedAutoIncIdType.DESC2, "desc2")),
@@ -101,7 +101,7 @@ public class AuditForCreateOneLevelTest {
 
     @Test
     public void oneAuditedEntity_SomeFieldsInCommand_ShouldCreateFieldRecordsForThemOnly() {
-        auditedPL.create(singletonList(new CreateAuditedCommand()
+        auditedPL.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                            .with(AuditedAutoIncIdType.NAME, "name")
                                            .with(AuditedAutoIncIdType.DESC, "desc")),
                          auditedConfig);
@@ -118,7 +118,7 @@ public class AuditForCreateOneLevelTest {
 
     @Test
     public void oneAuditedEntity_SomeNullFieldValues_ShouldCreateRecordWithoutThem() {
-        final var createResult = auditedPL.create(singletonList(new CreateAuditedCommand()
+        final var createResult = auditedPL.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                                                     .with(AuditedAutoIncIdType.NAME, "name")
                                                                     .with(AuditedAutoIncIdType.DESC, null)
                                                                     .with(AuditedAutoIncIdType.DESC2, null)),
@@ -140,12 +140,12 @@ public class AuditForCreateOneLevelTest {
 
     @Test
     public void twoAuditedEntities_AllFieldsInCommands_ShouldCreateFieldRecordsForAll() {
-        final List<CreateAuditedCommand> cmds =
-            ImmutableList.of(new CreateAuditedCommand()
+        final List<CreateAuditedAutoIncIdTypeCommand> cmds =
+            ImmutableList.of(new CreateAuditedAutoIncIdTypeCommand()
                                  .with(AuditedAutoIncIdType.NAME, "nameA")
                                  .with(AuditedAutoIncIdType.DESC, "descA")
                                  .with(AuditedAutoIncIdType.DESC2, "desc2A"),
-                             new CreateAuditedCommand()
+                             new CreateAuditedAutoIncIdTypeCommand()
                                  .with(AuditedAutoIncIdType.NAME, "nameB")
                                  .with(AuditedAutoIncIdType.DESC, "descB")
                                  .with(AuditedAutoIncIdType.DESC2, "desc2B"));

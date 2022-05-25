@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
-public class AuditForCreateTwoLevelsTest {
+public class AuditForCreateTwoLevelsBothAutoIncIdTest {
 
     private static final List<? extends DataTable> ALL_TABLES =
         ImmutableList.of(MainAutoIncIdTable.INSTANCE, ChildAutoIncIdTable.INSTANCE);
@@ -62,9 +62,9 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_OneAuditedChild_ShouldCreateRecordsForParentAndChild() {
-        final CreateAuditedChild1Command childCmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command childCmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "childName");
-        final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parentCmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "name")
             .with(childCmd);
 
@@ -99,11 +99,11 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_TwoAuditedChildrenSameType_ShouldCreateRecordsForBothChildren() {
-        final CreateAuditedChild1Command child1ACmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command child1ACmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "child1AName");
-        final CreateAuditedChild1Command child1BCmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command child1BCmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "child1BName");
-        final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parentCmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "name")
             .with(child1ACmd)
             .with(child1BCmd);
@@ -136,11 +136,11 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_TwoAuditedChildrenDifferentTypes_ShouldCreateRecordsForBothChildren() {
-        final CreateAuditedChild1Command child1Cmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command child1Cmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "child1Name");
-        final CreateAuditedChild2Command child2Cmd = new CreateAuditedChild2Command()
+        final CreateAuditedAutoIncChild2Command child2Cmd = new CreateAuditedAutoIncChild2Command()
             .with(AuditedAutoIncIdChild2Type.NAME, "child2Name");
-        final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parentCmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "name")
             .with(child1Cmd)
             .with(child2Cmd);
@@ -174,11 +174,11 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_ShouldCreateRecordForAuditedChildOnly() {
-        final CreateAuditedChild1Command auditedChildCmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command auditedChildCmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "auditedChildName");
         final CreateNotAuditedChildCommand notAuditedChildCmd = new CreateNotAuditedChildCommand()
             .with(NotAuditedChildType.NAME, "notAuditedChildName");
-        final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parentCmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "name")
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
@@ -208,7 +208,7 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void oneNotAuditedParent_OneAuditedChild_ShouldReturnEmpty() {
-        final CreateAuditedChild1Command auditedChildCmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command auditedChildCmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "auditedChildName");
         final CreateNotAuditedCommand parentCmd = new CreateNotAuditedCommand()
             .with(NotAuditedType.NAME, "notAuditedParentName")
@@ -230,7 +230,7 @@ public class AuditForCreateTwoLevelsTest {
     public void oneAuditedParentWithoutDataFields_OneAuditedChild_ShouldCreateRecordsForParentAndChild() {
         final long parentId = 11L;
 
-        final CreateAuditedChild1Command childCmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command childCmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "childName");
         final CreateAuditedWithoutDataFieldsCommand parentCmd = new CreateAuditedWithoutDataFieldsCommand(parentId)
             .with(childCmd);
@@ -262,15 +262,15 @@ public class AuditForCreateTwoLevelsTest {
 
     @Test
     public void twoAuditedParents_OneAuditedChildEach_ShouldCreateChildRecordsForBoth() {
-        final CreateAuditedChild1Command child1Cmd = new CreateAuditedChild1Command()
+        final CreateAuditedAutoIncChild1Command child1Cmd = new CreateAuditedAutoIncChild1Command()
             .with(AuditedAutoIncIdChild1Type.NAME, "child1Name");
-        final CreateAuditedChild2Command child2Cmd = new CreateAuditedChild2Command()
+        final CreateAuditedAutoIncChild2Command child2Cmd = new CreateAuditedAutoIncChild2Command()
             .with(AuditedAutoIncIdChild2Type.NAME, "child2Name");
 
-        final CreateAuditedCommand parent1Cmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parent1Cmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "parent1Name")
             .with(child1Cmd);
-        final CreateAuditedCommand parent2Cmd = new CreateAuditedCommand()
+        final CreateAuditedAutoIncIdTypeCommand parent2Cmd = new CreateAuditedAutoIncIdTypeCommand()
             .with(AuditedAutoIncIdType.NAME, "parent2Name")
             .with(child2Cmd);
 

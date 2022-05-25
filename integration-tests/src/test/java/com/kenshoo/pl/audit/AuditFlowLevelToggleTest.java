@@ -2,7 +2,7 @@ package com.kenshoo.pl.audit;
 
 import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TestJooqConfig;
-import com.kenshoo.pl.audit.commands.CreateAuditedCommand;
+import com.kenshoo.pl.audit.commands.CreateAuditedAutoIncIdTypeCommand;
 import com.kenshoo.pl.entity.ChangeFlowConfigBuilderFactory;
 import com.kenshoo.pl.entity.PLContext;
 import com.kenshoo.pl.entity.PersistenceLayer;
@@ -56,7 +56,7 @@ public class AuditFlowLevelToggleTest {
                                                        .disableAuditing()
                                                        .build();
 
-        pl.create(singletonList(new CreateAuditedCommand()
+        pl.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                     .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
@@ -73,7 +73,7 @@ public class AuditFlowLevelToggleTest {
                                                        .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedAutoIncIdType.INSTANCE))
                                                        .build();
 
-        pl.create(singletonList(new CreateAuditedCommand()
+        pl.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                     .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
@@ -91,7 +91,7 @@ public class AuditFlowLevelToggleTest {
                                                        .enableAuditing()
                                                        .build();
 
-        pl.create(singletonList(new CreateAuditedCommand()
+        pl.create(singletonList(new CreateAuditedAutoIncIdTypeCommand()
                                     .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
