@@ -4,7 +4,7 @@ import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.FinalEntityState;
 import com.kenshoo.pl.entity.Triptional;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -15,8 +15,8 @@ import java.util.Optional;
 
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isEmpty;
 import static com.github.npathai.hamcrestopt.OptionalMatchers.isPresentAnd;
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUNT;
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.NAME;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.AMOUNT;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
@@ -35,10 +35,10 @@ public class AuditFieldChangeGeneratorTest {
     private static final String NAME_FIELD_NAME = "name";
     private static final String AMOUNT_FIELD_NAME = "amount";
 
-    private static final AuditedField<AuditedType, String> NAME_AUDITED_FIELD = AuditedField.builder(NAME)
+    private static final AuditedField<AuditedAutoIncIdType, String> NAME_AUDITED_FIELD = AuditedField.builder(NAME)
                                                                                             .withName(NAME_FIELD_NAME)
                                                                                             .build();
-    private static final AuditedField<AuditedType, Double> AMOUNT_AUDITED_FIELD = AuditedField.builder(AMOUNT)
+    private static final AuditedField<AuditedAutoIncIdType, Double> AMOUNT_AUDITED_FIELD = AuditedField.builder(AMOUNT)
                                                                                               .withName(AMOUNT_FIELD_NAME)
                                                                                               .build();
 
@@ -163,7 +163,7 @@ public class AuditFieldChangeGeneratorTest {
         assertThat(generate(NAME_AUDITED_FIELD), isEmpty());
     }
 
-    private Optional<? extends FieldAuditRecord> generate(final AuditedField<AuditedType, ?> field) {
+    private Optional<? extends FieldAuditRecord> generate(final AuditedField<AuditedAutoIncIdType, ?> field) {
         return generator.generate(currentState, finalState, field);
     }
 }

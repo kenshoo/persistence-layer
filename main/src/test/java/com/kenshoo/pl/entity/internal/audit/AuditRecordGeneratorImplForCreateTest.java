@@ -5,7 +5,7 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +41,7 @@ public class AuditRecordGeneratorImplForCreateTest {
     private AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
 
     @Mock
-    private AuditFieldChangesGenerator<AuditedType> fieldChangesGenerator;
+    private AuditFieldChangesGenerator<AuditedAutoIncIdType> fieldChangesGenerator;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
@@ -53,12 +53,12 @@ public class AuditRecordGeneratorImplForCreateTest {
     private CurrentEntityState currentState;
 
     @Mock
-    private EntityChange<AuditedType> cmd;
+    private EntityChange<AuditedAutoIncIdType> cmd;
 
     @Mock
     private FinalEntityState finalState;
 
-    private AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator;
+    private AuditRecordGeneratorImpl<AuditedAutoIncIdType> auditRecordGenerator;
 
     @Before
     public void setUp() {
@@ -107,10 +107,10 @@ public class AuditRecordGeneratorImplForCreateTest {
     @Test
     public void generate_WithFieldChangesOnly_ShouldReturnFieldChanges() {
         final Collection<FieldAuditRecord> expectedFieldChanges =
-            ImmutableList.of(FieldAuditRecord.builder(AuditedType.NAME)
+            ImmutableList.of(FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                                              .newValue(NAME)
                                              .build(),
-                             FieldAuditRecord.builder(AuditedType.DESC)
+                             FieldAuditRecord.builder(AuditedAutoIncIdType.DESC)
                                              .newValue(DESC)
                                              .build());
 
@@ -121,8 +121,8 @@ public class AuditRecordGeneratorImplForCreateTest {
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
 
         assertThat(actualOptionalAuditRecord,
-                   isPresentAnd(allOf(hasCreatedFieldRecord(AuditedType.NAME, NAME),
-                                      hasCreatedFieldRecord(AuditedType.DESC, DESC))));
+                   isPresentAnd(allOf(hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NAME),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, DESC))));
     }
 
     @Test
@@ -147,10 +147,10 @@ public class AuditRecordGeneratorImplForCreateTest {
                     new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
         final Collection<FieldAuditRecord> expectedFieldChanges =
-            ImmutableList.of(FieldAuditRecord.builder(AuditedType.NAME)
+            ImmutableList.of(FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                                              .newValue(NAME)
                                              .build(),
-                             FieldAuditRecord.builder(AuditedType.DESC)
+                             FieldAuditRecord.builder(AuditedAutoIncIdType.DESC)
                                              .newValue(DESC)
                                              .build());
 
@@ -163,8 +163,8 @@ public class AuditRecordGeneratorImplForCreateTest {
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
-                                      hasCreatedFieldRecord(AuditedType.NAME, NAME),
-                                      hasCreatedFieldRecord(AuditedType.DESC, DESC))));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NAME),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, DESC))));
     }
 
     @Test
@@ -174,10 +174,10 @@ public class AuditRecordGeneratorImplForCreateTest {
                     new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
         final Collection<FieldAuditRecord> expectedFieldChanges =
-            ImmutableList.of(FieldAuditRecord.builder(AuditedType.NAME)
+            ImmutableList.of(FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                                              .newValue(NAME)
                                              .build(),
-                             FieldAuditRecord.builder(AuditedType.DESC)
+                             FieldAuditRecord.builder(AuditedAutoIncIdType.DESC)
                                              .newValue(DESC)
                                              .build());
 
@@ -192,8 +192,8 @@ public class AuditRecordGeneratorImplForCreateTest {
         assertThat(actualOptionalAuditRecord,
                    isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
                                       hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC),
-                                      hasCreatedFieldRecord(AuditedType.NAME, NAME),
-                                      hasCreatedFieldRecord(AuditedType.DESC, DESC),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NAME),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, DESC),
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
     }

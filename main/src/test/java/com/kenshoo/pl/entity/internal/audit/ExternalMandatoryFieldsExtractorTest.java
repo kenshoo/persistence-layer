@@ -87,7 +87,7 @@ public class ExternalMandatoryFieldsExtractorTest {
 
     @Test
     public void resolve_WhenAudited_AndHasNoExtensions_ShouldReturnEmpty() {
-        assertThat(extractor.extract(AuditedType.INSTANCE).collect(toSet()), is(empty()));
+        assertThat(extractor.extract(AuditedAutoIncIdType.INSTANCE).collect(toSet()), is(empty()));
     }
 
     @Test

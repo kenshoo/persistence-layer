@@ -7,8 +7,8 @@ import com.kenshoo.pl.entity.ChangeFlowConfigBuilderFactory;
 import com.kenshoo.pl.entity.PLContext;
 import com.kenshoo.pl.entity.PersistenceLayer;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.simulation.internal.FakeAutoIncGenerator;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -29,7 +29,7 @@ public class AuditFlowLevelToggleTest {
 
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private PersistenceLayer<AuditedType> pl;
+    private PersistenceLayer<AuditedAutoIncIdType> pl;
 
     @Before
     public void setUp() {
@@ -42,22 +42,22 @@ public class AuditFlowLevelToggleTest {
 
         pl = new PersistenceLayer<>(plContext);
 
-        DataTableUtils.createTable(dslContext, MainTable.INSTANCE);
+        DataTableUtils.createTable(dslContext, MainAutoIncIdTable.INSTANCE);
     }
 
     @After
     public void tearDown() {
-        plContext.dslContext().dropTable(MainTable.INSTANCE).execute();
+        plContext.dslContext().dropTable(MainAutoIncIdTable.INSTANCE).execute();
     }
 
     @Test
     public void shouldNotGenerateAuditRecordWhenAuditingDisabled() {
-        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
+        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedAutoIncIdType.INSTANCE)
                                                        .disableAuditing()
                                                        .build();
 
         pl.create(singletonList(new CreateAuditedCommand()
-                                    .with(AuditedType.NAME, "name")),
+                                    .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -68,13 +68,13 @@ public class AuditFlowLevelToggleTest {
 
     @Test
     public void shouldNotGenerateAuditRecordWhenOutputGeneratorsRemoved() {
-        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
+        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedAutoIncIdType.INSTANCE)
                                                        .withoutOutputGenerators()
-                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedType.INSTANCE))
+                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedAutoIncIdType.INSTANCE))
                                                        .build();
 
         pl.create(singletonList(new CreateAuditedCommand()
-                                    .with(AuditedType.NAME, "name")),
+                                    .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -85,14 +85,14 @@ public class AuditFlowLevelToggleTest {
 
     @Test
     public void shouldGenerateAuditRecordWhenOutputGeneratorsRemovedAndAuditingReEnabled() {
-        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedType.INSTANCE)
+        var flowConfig = ChangeFlowConfigBuilderFactory.newInstance(plContext, AuditedAutoIncIdType.INSTANCE)
                                                        .withoutOutputGenerators()
-                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedType.INSTANCE))
+                                                       .withOutputGenerator(new FakeAutoIncGenerator<>(AuditedAutoIncIdType.INSTANCE))
                                                        .enableAuditing()
                                                        .build();
 
         pl.create(singletonList(new CreateAuditedCommand()
-                                    .with(AuditedType.NAME, "name")),
+                                    .with(AuditedAutoIncIdType.NAME, "name")),
                   flowConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());

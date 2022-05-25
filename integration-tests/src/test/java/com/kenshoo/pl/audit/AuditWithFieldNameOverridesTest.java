@@ -10,8 +10,8 @@ import com.kenshoo.pl.audit.commands.CreateAuditedWithFieldNameOverridesCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedChild1WithFieldNameOverridesType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedChild2WithFieldNameOverridesType;
@@ -37,8 +37,8 @@ public class AuditWithFieldNameOverridesTest {
 
     private static final Set<DataTable> ALL_TABLES = Set.of(AncestorTable.INSTANCE,
                                                             MainWithAncestorTable.INSTANCE,
-                                                            MainTable.INSTANCE,
-                                                            ChildTable.INSTANCE);
+                                                            MainAutoIncIdTable.INSTANCE,
+                                                            ChildAutoIncIdTable.INSTANCE);
 
     private static final String ANCESTOR_NAME_VALUE = "ancestorNameValue";
     private static final String ANCESTOR_DESC_VALUE = "ancestorDescValue";

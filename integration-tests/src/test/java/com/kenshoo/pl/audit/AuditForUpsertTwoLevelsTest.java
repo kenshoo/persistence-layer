@@ -7,8 +7,8 @@ import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -60,8 +60,8 @@ public class AuditForUpsertTwoLevelsTest {
     private static final String NEW_CHILD_DESC_21 = "newChildDesc21";
     private static final String CHILD_DESC_22 = "childDesc22";
 
-    private static final MainTable parent_table = MainTable.INSTANCE;
-    private static final ChildTable child_table = ChildTable.INSTANCE;
+    private static final MainAutoIncIdTable parent_table = MainAutoIncIdTable.INSTANCE;
+    private static final ChildAutoIncIdTable child_table = ChildAutoIncIdTable.INSTANCE;
 
     private static final List<? extends DataTable> ALL_TABLES = ImmutableList.of(parent_table, child_table);
 
@@ -69,7 +69,7 @@ public class AuditForUpsertTwoLevelsTest {
     private DSLContext dslContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private PersistenceLayer<AuditedType> auditedParentPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedParentPL;
     private PersistenceLayer<NotAuditedType> notAuditedParentPL;
 
     @Before
@@ -112,9 +112,9 @@ public class AuditForUpsertTwoLevelsTest {
         final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(NEW_PARENT_NAME_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -128,30 +128,30 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(parentId)),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(AuditedType.NAME, NEW_PARENT_NAME_1)));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NEW_PARENT_NAME_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_11))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_BothChanged_ShouldGenerateUpdateRecordsForBoth() {
         final UpsertAuditedChild1Command childCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertAuditedCommand parentCmd =
             new UpsertAuditedCommand(PARENT_NAME_1)
-                .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+                .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -161,14 +161,14 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+                                      hasChangedFieldRecord(AuditedAutoIncIdType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
+                                                         hasChangedFieldRecord(AuditedAutoIncIdChild1Type.DESC,
                                                                                CHILD_DESC_11,
                                                                                NEW_CHILD_DESC_11))));
     }
@@ -181,9 +181,9 @@ public class AuditForUpsertTwoLevelsTest {
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -197,33 +197,33 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child11Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_11))));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child12Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_12))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_12))));
     }
 
     @Test
     public void oneAuditedParent_TwoAuditedChildren_AllChanged_ShouldGenerateUpdateRecordsForBothChildren() {
         final UpsertAuditedChild1Command child11Cmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertAuditedChild1Command child12Cmd =
             new UpsertAuditedChild1Command(CHILD_NAME_12)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_12);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_12);
 
         final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
-            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+            .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -234,16 +234,16 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
+                                                         hasChangedFieldRecord(AuditedAutoIncIdChild1Type.DESC,
                                                                                CHILD_DESC_11,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
+                                                         hasChangedFieldRecord(AuditedAutoIncIdChild1Type.DESC,
                                                                                CHILD_DESC_12,
                                                                                NEW_CHILD_DESC_12))));
     }
@@ -252,19 +252,19 @@ public class AuditForUpsertTwoLevelsTest {
     public void oneChangedAuditedParent_OneNewAuditedChild_OneChangedAuditedChild_ShouldGenerateCreateAndUpdateRecordsForChildren() {
         final UpsertAuditedChild1Command child11Cmd =
             new UpsertAuditedChild1Command(NEW_CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertAuditedChild1Command child12Cmd =
             new UpsertAuditedChild1Command(CHILD_NAME_12)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_12);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_12);
 
         final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
-            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+            .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
             .with(child11Cmd)
             .with(child12Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -277,15 +277,15 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(newChildId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.DESC,
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.DESC,
                                                                                NEW_CHILD_DESC_11))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(UPDATE),
-                                                         hasChangedFieldRecord(AuditedChild1Type.DESC,
+                                                         hasChangedFieldRecord(AuditedAutoIncIdChild1Type.DESC,
                                                                                CHILD_DESC_12,
                                                                                NEW_CHILD_DESC_12))));
     }
@@ -298,9 +298,9 @@ public class AuditForUpsertTwoLevelsTest {
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
@@ -314,10 +314,10 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(auditedChildId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_11))));
         assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
     }
 
@@ -325,19 +325,19 @@ public class AuditForUpsertTwoLevelsTest {
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_AllChanged_ShouldGenerateUpdateRecordForAuditedChildOnly() {
         final UpsertAuditedChild1Command auditedChildCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertNotAuditedChildCommand notAuditedChildCmd =
             new UpsertNotAuditedChildCommand(CHILD_NAME_12)
                 .with(NotAuditedChildType.DESC, NEW_CHILD_DESC_12);
 
         final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
-            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+            .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
@@ -349,7 +349,7 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
         assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
@@ -359,15 +359,15 @@ public class AuditForUpsertTwoLevelsTest {
     public void oneAuditedParent_OneAuditedChild_BothChanged_WithDeletionOfOthers_ShouldCreateDeletionRecordForOtherChild() {
         final UpsertAuditedChild1Command childCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
 
         final UpsertAuditedCommand cmd = new UpsertAuditedCommand(PARENT_NAME_1)
             .with(childCmd)
-            .with(new DeletionOfOther<>(AuditedChild1Type.INSTANCE));
+            .with(new DeletionOfOther<>(AuditedAutoIncIdChild1Type.INSTANCE));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(cmd), flowConfig);
@@ -378,7 +378,7 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -389,12 +389,12 @@ public class AuditForUpsertTwoLevelsTest {
             new UpsertAuditedChild1Command(NEW_CHILD_NAME_11);
 
         final UpsertAuditedCommand cmd = new UpsertAuditedCommand(PARENT_NAME_1)
-            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+            .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(cmd), flowConfig);
@@ -407,15 +407,15 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      hasChangedFieldRecord(AuditedType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
+                                      hasChangedFieldRecord(AuditedAutoIncIdType.DESC, PARENT_DESC_1, NEW_PARENT_DESC_1)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_11))));
     }
 
     @Test
@@ -426,7 +426,7 @@ public class AuditForUpsertTwoLevelsTest {
 
         final ChangeFlowConfig<NotAuditedType> flowConfig =
             flowConfigBuilder(NotAuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -440,7 +440,7 @@ public class AuditForUpsertTwoLevelsTest {
     public void oneNotAuditedParent_OneAuditedChild_BothChanged_ShouldReturnEmpty() {
         final UpsertAuditedChild1Command childCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
 
         final UpsertNotAuditedCommand parentCmd = new UpsertNotAuditedCommand(PARENT_NAME_1)
             .with(NotAuditedType.DESC, NEW_PARENT_DESC_1)
@@ -448,7 +448,7 @@ public class AuditForUpsertTwoLevelsTest {
 
         final ChangeFlowConfig<NotAuditedType> flowConfig =
             flowConfigBuilder(NotAuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         notAuditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -465,11 +465,11 @@ public class AuditForUpsertTwoLevelsTest {
                 .with(NotAuditedChildType.DESC, NEW_CHILD_DESC_11);
 
         final UpsertAuditedCommand parentCmd = new UpsertAuditedCommand(PARENT_NAME_1)
-            .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+            .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
             .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
                 .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
@@ -481,7 +481,7 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
                                       not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName())))));
@@ -492,15 +492,15 @@ public class AuditForUpsertTwoLevelsTest {
 
         final UpsertAuditedChild1Command childCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertAuditedCommand parentCmd =
             new UpsertAuditedCommand(PARENT_NAME_1)
-                .with(AuditedType.DESC, PARENT_DESC_1)
+                .with(AuditedAutoIncIdType.DESC, PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -510,10 +510,10 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(UPDATE))));
     }
@@ -523,15 +523,15 @@ public class AuditForUpsertTwoLevelsTest {
 
         final UpsertAuditedChild1Command childCmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, CHILD_DESC_11);
         final UpsertAuditedCommand parentCmd =
             new UpsertAuditedCommand(PARENT_NAME_1)
-                .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+                .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
                 .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(singletonList(parentCmd), flowConfig);
@@ -541,10 +541,10 @@ public class AuditForUpsertTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasChildRecordThat(hasEntityType(AuditedChild1Type.INSTANCE.getName())))));
+                                      not(hasChildRecordThat(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName())))));
     }
 
     @Test
@@ -557,10 +557,10 @@ public class AuditForUpsertTwoLevelsTest {
         final UpsertAuditedCommand parent2Cmd = new UpsertAuditedCommand(NEW_PARENT_NAME_2)
             .with(child2Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(ImmutableList.of(parent1Cmd, parent2Cmd), flowConfig);
@@ -575,37 +575,37 @@ public class AuditForUpsertTwoLevelsTest {
         final AuditRecord auditRecord1 = auditRecords.get(0);
         final AuditRecord auditRecord2 = auditRecords.get(1);
 
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child1Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, NEW_CHILD_NAME_11))));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+                                                          hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, NEW_CHILD_NAME_11))));
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child2Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(AuditedChild2Type.NAME, NEW_CHILD_NAME_21))));
+                                                          hasCreatedFieldRecord(AuditedAutoIncIdChild2Type.NAME, NEW_CHILD_NAME_21))));
     }
 
     @Test
     public void twoAuditedParents_OneAuditedChildEach_AllChanged_ShouldGenerateUpdateRecordsForBothChildren() {
         final UpsertAuditedChild1Command child1Cmd =
             new UpsertAuditedChild1Command(CHILD_NAME_11)
-                .with(AuditedChild1Type.DESC, NEW_CHILD_DESC_11);
+                .with(AuditedAutoIncIdChild1Type.DESC, NEW_CHILD_DESC_11);
         final UpsertAuditedChild2Command child2Cmd =
             new UpsertAuditedChild2Command(CHILD_NAME_21)
-                .with(AuditedChild2Type.DESC, NEW_CHILD_DESC_21);
+                .with(AuditedAutoIncIdChild2Type.DESC, NEW_CHILD_DESC_21);
 
         final List<UpsertAuditedCommand> cmds =
             ImmutableList.of(new UpsertAuditedCommand(PARENT_NAME_1)
-                                 .with(AuditedType.DESC, NEW_PARENT_DESC_1)
+                                 .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_1)
                                  .with(child1Cmd),
                              new UpsertAuditedCommand(PARENT_NAME_2)
-                                 .with(AuditedType.DESC, NEW_PARENT_DESC_2)
+                                 .with(AuditedAutoIncIdType.DESC, NEW_PARENT_DESC_2)
                                  .with(child2Cmd));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.upsert(cmds, flowConfig);
@@ -616,12 +616,12 @@ public class AuditForUpsertTwoLevelsTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(UPDATE))));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(UPDATE))));
     }

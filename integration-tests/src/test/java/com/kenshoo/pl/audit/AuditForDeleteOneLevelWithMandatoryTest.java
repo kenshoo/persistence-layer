@@ -9,7 +9,7 @@ import com.kenshoo.pl.audit.commands.DeleteAuditedWithInternalMandatoryCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithInternalMandatoryType;
@@ -41,7 +41,7 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
 
-    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainTable.INSTANCE,
+    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainAutoIncIdTable.INSTANCE,
                                                                        MainWithAncestorTable.INSTANCE,
                                                                        AncestorTable.INSTANCE);
     private PLContext plContext;
@@ -70,10 +70,10 @@ public class AuditForDeleteOneLevelWithMandatoryTest {
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, ID)
-                  .set(MainTable.INSTANCE.name, NAME)
-                  .set(MainTable.INSTANCE.desc, DESC)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, ID)
+                  .set(MainAutoIncIdTable.INSTANCE.name, NAME)
+                  .set(MainAutoIncIdTable.INSTANCE.desc, DESC)
                   .execute();
 
         dslContext.insertInto(MainWithAncestorTable.INSTANCE)

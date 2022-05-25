@@ -2,7 +2,7 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.audit.FieldAuditRecord;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -25,7 +25,7 @@ public class AuditRecordTest {
     private static final String ENTITY_CHANGE_DESCRIPTION = "A very interesting description";
 
     private static final FieldAuditRecord NAME_FIELD_RECORD =
-        FieldAuditRecord.builder(AuditedType.NAME)
+        FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                         .newValue("name")
                         .build();
 

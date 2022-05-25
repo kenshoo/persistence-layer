@@ -1,21 +1,21 @@
 package com.kenshoo.pl.entity.internal.audit;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 
-class AuditedCommand extends ChangeEntityCommand<AuditedType> implements EntityCommandExt<AuditedType, AuditedCommand> {
+class AuditedCommand extends ChangeEntityCommand<AuditedAutoIncIdType> implements EntityCommandExt<AuditedAutoIncIdType, AuditedCommand> {
 
     private final ChangeOperation operator;
-    private final Identifier<AuditedType> identifier;
+    private final Identifier<AuditedAutoIncIdType> identifier;
 
     AuditedCommand(final long id, final ChangeOperation operator) {
-        super(AuditedType.INSTANCE);
+        super(AuditedAutoIncIdType.INSTANCE);
         this.operator = operator;
-        this.identifier = new SingleUniqueKey<>(AuditedType.ID).createIdentifier(id);
+        this.identifier = new SingleUniqueKey<>(AuditedAutoIncIdType.ID).createIdentifier(id);
     }
 
     @Override
-    public Identifier<AuditedType> getIdentifier() {
+    public Identifier<AuditedAutoIncIdType> getIdentifier() {
         return identifier;
     }
 

@@ -7,8 +7,8 @@ import com.kenshoo.pl.audit.commands.UpsertAuditedCommand;
 import com.kenshoo.pl.audit.commands.UpsertNotAuditedCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedType;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -41,10 +41,10 @@ public class AuditForUpsertOneLevelTest {
     private DSLContext dslContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedType> auditedConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> auditedConfig;
     private ChangeFlowConfig<NotAuditedType> notAuditedConfig;
 
-    private PersistenceLayer<AuditedType> auditedPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedPL;
     private PersistenceLayer<NotAuditedType> notAuditedPL;
 
     @Before
@@ -56,40 +56,40 @@ public class AuditForUpsertOneLevelTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedConfig = flowConfig(AuditedType.INSTANCE);
+        auditedConfig = flowConfig(AuditedAutoIncIdType.INSTANCE);
         notAuditedConfig = flowConfig(NotAuditedType.INSTANCE);
 
         auditedPL = persistenceLayer();
         notAuditedPL = persistenceLayer();
 
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, EXISTING_ID_1)
-                  .set(MainTable.INSTANCE.name, EXISTING_NAME_1)
-                  .set(MainTable.INSTANCE.desc, "descA")
-                  .set(MainTable.INSTANCE.desc2, "desc2A")
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, EXISTING_ID_1)
+                  .set(MainAutoIncIdTable.INSTANCE.name, EXISTING_NAME_1)
+                  .set(MainAutoIncIdTable.INSTANCE.desc, "descA")
+                  .set(MainAutoIncIdTable.INSTANCE.desc2, "desc2A")
                   .execute();
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, EXISTING_ID_2)
-                  .set(MainTable.INSTANCE.name, EXISTING_NAME_2)
-                  .set(MainTable.INSTANCE.desc, "descB")
-                  .set(MainTable.INSTANCE.desc2, "desc2B")
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, EXISTING_ID_2)
+                  .set(MainAutoIncIdTable.INSTANCE.name, EXISTING_NAME_2)
+                  .set(MainAutoIncIdTable.INSTANCE.desc, "descB")
+                  .set(MainAutoIncIdTable.INSTANCE.desc2, "desc2B")
                   .execute();
     }
 
     @After
     public void tearDown() {
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 
     @Test
     public void oneAuditedEntity_New_ShouldReturnCreateOperator_AndCreatedFieldRecords() {
         auditedPL.upsert(singletonList(new UpsertAuditedCommand(NEW_NAME_1)
-                                           .with(AuditedType.DESC, "desc")
-                                           .with(AuditedType.DESC2, "desc2")),
+                                           .with(AuditedAutoIncIdType.DESC, "desc")
+                                           .with(AuditedAutoIncIdType.DESC2, "desc2")),
                          auditedConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -97,19 +97,19 @@ public class AuditForUpsertOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
-                                      hasCreatedFieldRecord(AuditedType.DESC, "desc"),
-                                      hasCreatedFieldRecord(AuditedType.DESC2, "desc2")));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NEW_NAME_1),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "desc"),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2")));
     }
 
     @Test
     public void oneAuditedEntity_Existing_ShouldReturnUpdateOperator_AndChangedFieldRecordsExceptKey() {
         auditedPL.upsert(singletonList(new UpsertAuditedCommand(EXISTING_NAME_1)
-                                           .with(AuditedType.DESC, "newDescA")
-                                           .with(AuditedType.DESC2, "newDesc2A")),
+                                           .with(AuditedAutoIncIdType.DESC, "newDescA")
+                                           .with(AuditedAutoIncIdType.DESC2, "newDesc2A")),
                          auditedConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -117,19 +117,19 @@ public class AuditForUpsertOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(EXISTING_ID_1)),
                                       hasOperator(UPDATE),
-                                      not(hasFieldRecordFor(AuditedType.NAME)),
-                                      hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
-                                      hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
+                                      not(hasFieldRecordFor(AuditedAutoIncIdType.NAME)),
+                                      hasChangedFieldRecord(AuditedAutoIncIdType.DESC, "descA", "newDescA"),
+                                      hasChangedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2A", "newDesc2A")));
     }
 
     @Test
     public void oneAuditedEntity_Existing_NoFieldsChanged_ShouldReturnEmpty() {
         auditedPL.upsert(singletonList(new UpsertAuditedCommand(EXISTING_NAME_1)
-                                           .with(AuditedType.DESC, "descA")
-                                           .with(AuditedType.DESC2, "desc2A")),
+                                           .with(AuditedAutoIncIdType.DESC, "descA")
+                                           .with(AuditedAutoIncIdType.DESC2, "desc2A")),
                          auditedConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -141,11 +141,11 @@ public class AuditForUpsertOneLevelTest {
     public void twoAuditedEntities_BothNew_ShouldReturnCreateOperator_AndCreatedFieldRecords() {
         final List<UpsertAuditedCommand> cmds =
             ImmutableList.of(new UpsertAuditedCommand(NEW_NAME_1)
-                                 .with(AuditedType.DESC, "newDescA")
-                                 .with(AuditedType.DESC2, "newDesc2A"),
+                                 .with(AuditedAutoIncIdType.DESC, "newDescA")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2A"),
                              new UpsertAuditedCommand(NEW_NAME_2)
-                                 .with(AuditedType.DESC, "newDescB")
-                                 .with(AuditedType.DESC2, "newDesc2B"));
+                                 .with(AuditedAutoIncIdType.DESC, "newDescB")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2B"));
 
         auditedPL.upsert(cmds, auditedConfig);
 
@@ -155,31 +155,31 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
-                                       hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
-                                       hasCreatedFieldRecord(AuditedType.DESC, "newDescA"),
-                                       hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NEW_NAME_1),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "newDescA"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "newDesc2A")));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_2))),
                                        hasOperator(CREATE),
-                                       hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_2),
-                                       hasCreatedFieldRecord(AuditedType.DESC, "newDescB"),
-                                       hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2B")));
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NEW_NAME_2),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "newDescB"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "newDesc2B")));
     }
 
     @Test
     public void twoAuditedEntities_BothExisting_ShouldReturnUpdateOperator_AndChangedFieldRecordsExceptKey() {
         final List<UpsertAuditedCommand> cmds =
             ImmutableList.of(new UpsertAuditedCommand(EXISTING_NAME_1)
-                                 .with(AuditedType.DESC, "newDescA")
-                                 .with(AuditedType.DESC2, "newDesc2A"),
+                                 .with(AuditedAutoIncIdType.DESC, "newDescA")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2A"),
                              new UpsertAuditedCommand(EXISTING_NAME_2)
-                                 .with(AuditedType.DESC, "newDescB")
-                                 .with(AuditedType.DESC2, "newDesc2B"));
+                                 .with(AuditedAutoIncIdType.DESC, "newDescB")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2B"));
 
         auditedPL.upsert(cmds, auditedConfig);
 
@@ -189,31 +189,31 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_1)),
                                        hasOperator(UPDATE),
-                                       not(hasFieldRecordFor(AuditedType.NAME)),
-                                       hasChangedFieldRecord(AuditedType.DESC, "descA", "newDescA"),
-                                       hasChangedFieldRecord(AuditedType.DESC2, "desc2A", "newDesc2A")));
+                                       not(hasFieldRecordFor(AuditedAutoIncIdType.NAME)),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC, "descA", "newDescA"),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2A", "newDesc2A")));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
-                                       not(hasFieldRecordFor(AuditedType.NAME)),
-                                       hasChangedFieldRecord(AuditedType.DESC, "descB", "newDescB"),
-                                       hasChangedFieldRecord(AuditedType.DESC2, "desc2B", "newDesc2B")));
+                                       not(hasFieldRecordFor(AuditedAutoIncIdType.NAME)),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC, "descB", "newDescB"),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2B", "newDesc2B")));
     }
 
     @Test
     public void twoAuditedEntities_OneNew_OneExistingWithChanges_ShouldReturnProperOperators_AndFieldRecords() {
         final List<UpsertAuditedCommand> cmds =
             ImmutableList.of(new UpsertAuditedCommand(NEW_NAME_1)
-                                 .with(AuditedType.DESC, "newDescA")
-                                 .with(AuditedType.DESC2, "newDesc2A"),
+                                 .with(AuditedAutoIncIdType.DESC, "newDescA")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2A"),
                              new UpsertAuditedCommand(EXISTING_NAME_2)
-                                 .with(AuditedType.DESC, "newDescB")
-                                 .with(AuditedType.DESC2, "newDesc2B"));
+                                 .with(AuditedAutoIncIdType.DESC, "newDescB")
+                                 .with(AuditedAutoIncIdType.DESC2, "newDesc2B"));
 
         auditedPL.upsert(cmds, auditedConfig);
 
@@ -223,20 +223,20 @@ public class AuditForUpsertOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(fetchIdByName(NEW_NAME_1))),
                                        hasOperator(CREATE),
-                                       hasCreatedFieldRecord(AuditedType.NAME, NEW_NAME_1),
-                                       hasCreatedFieldRecord(AuditedType.DESC, "newDescA"),
-                                       hasCreatedFieldRecord(AuditedType.DESC2, "newDesc2A")));
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, NEW_NAME_1),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "newDescA"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "newDesc2A")));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(EXISTING_ID_2)),
                                        hasOperator(UPDATE),
-                                       not(hasFieldRecordFor(AuditedType.NAME)),
-                                       hasChangedFieldRecord(AuditedType.DESC, "descB", "newDescB"),
-                                       hasChangedFieldRecord(AuditedType.DESC2, "desc2B", "newDesc2B")));
+                                       not(hasFieldRecordFor(AuditedAutoIncIdType.NAME)),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC, "descB", "newDescB"),
+                                       hasChangedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2B", "newDesc2B")));
     }
 
     @Test
@@ -270,10 +270,10 @@ public class AuditForUpsertOneLevelTest {
     }
 
     private long fetchIdByName(final String name) {
-        return dslContext.select(MainTable.INSTANCE.id)
-                         .from(MainTable.INSTANCE)
-                         .where(MainTable.INSTANCE.name.eq(name))
-                         .fetchOptional(MainTable.INSTANCE.id)
+        return dslContext.select(MainAutoIncIdTable.INSTANCE.id)
+                         .from(MainAutoIncIdTable.INSTANCE)
+                         .where(MainAutoIncIdTable.INSTANCE.name.eq(name))
+                         .fetchOptional(MainAutoIncIdTable.INSTANCE.id)
                          .orElseThrow(() -> new IllegalStateException("Could not fetch the id of the entity named '" + name + "'"));
     }
 }

@@ -8,10 +8,10 @@ import com.kenshoo.pl.audit.commands.UpdateAuditedCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditProperties;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedChild1Type;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdChild1Type;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
@@ -46,14 +46,14 @@ public class AuditWithEntityChangeDescriptionTest {
     private static final String PARENT_ENTITY_CHANGE_DESCRIPTION_2 = "changed because client needed to";
     private static final String CHILD_ENTITY_CHANGE_DESCRIPTION_11 = "changed child because optimization said so.. ";
 
-    private static final List<? extends DataTable> ALL_TABLES = List.of(MainTable.INSTANCE, ChildTable.INSTANCE);
+    private static final List<? extends DataTable> ALL_TABLES = List.of(MainAutoIncIdTable.INSTANCE, ChildAutoIncIdTable.INSTANCE);
 
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedType> parentFlowConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> parentFlowConfig;
 
-    private PersistenceLayer<AuditedType> pl;
+    private PersistenceLayer<AuditedAutoIncIdType> pl;
 
     @Before
     public void setUp() {
@@ -64,25 +64,25 @@ public class AuditWithEntityChangeDescriptionTest {
                 .withAuditRecordPublisher(auditRecordPublisher)
                 .build();
 
-        parentFlowConfig = flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        parentFlowConfig = flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         pl = persistenceLayer();
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                .set(MainTable.INSTANCE.id, PARENT_ID_1)
-                .set(MainTable.INSTANCE.name, PARENT_OLD_NAME_1)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                .set(MainAutoIncIdTable.INSTANCE.id, PARENT_ID_1)
+                .set(MainAutoIncIdTable.INSTANCE.name, PARENT_OLD_NAME_1)
                 .execute();
-        dslContext.insertInto(MainTable.INSTANCE)
-                .set(MainTable.INSTANCE.id, PARENT_ID_2)
-                .set(MainTable.INSTANCE.name, PARENT_OLD_NAME_2)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                .set(MainAutoIncIdTable.INSTANCE.id, PARENT_ID_2)
+                .set(MainAutoIncIdTable.INSTANCE.name, PARENT_OLD_NAME_2)
                 .execute();
 
-        dslContext.insertInto(ChildTable.INSTANCE)
-                .columns(ChildTable.INSTANCE.id, ChildTable.INSTANCE.parent_id, ChildTable.INSTANCE.name)
+        dslContext.insertInto(ChildAutoIncIdTable.INSTANCE)
+                .columns(ChildAutoIncIdTable.INSTANCE.id, ChildAutoIncIdTable.INSTANCE.parent_id, ChildAutoIncIdTable.INSTANCE.name)
                 .values(CHILD_ID_11, PARENT_ID_1, CHILD_OLD_NAME_11)
                 .execute();
     }
@@ -95,7 +95,7 @@ public class AuditWithEntityChangeDescriptionTest {
     @Test
     public void oneAuditedEntityWithEntityChangeDescription() {
         final var updateCmd = new UpdateAuditedCommand(PARENT_ID_1)
-                .with(AuditedType.NAME, PARENT_NEW_NAME_1)
+                .with(AuditedAutoIncIdType.NAME, PARENT_NEW_NAME_1)
                 .with(AuditProperties.ENTITY_CHANGE_DESCRIPTION, PARENT_ENTITY_CHANGE_DESCRIPTION_1);
         pl.update(singletonList(updateCmd), parentFlowConfig);
 
@@ -110,10 +110,10 @@ public class AuditWithEntityChangeDescriptionTest {
     @Test
     public void twoAuditedEntitiesWithEntityChangeDescriptions() {
         final var updateCmd1 = new UpdateAuditedCommand(PARENT_ID_1)
-                .with(AuditedType.NAME, PARENT_NEW_NAME_1)
+                .with(AuditedAutoIncIdType.NAME, PARENT_NEW_NAME_1)
                 .with(AuditProperties.ENTITY_CHANGE_DESCRIPTION, PARENT_ENTITY_CHANGE_DESCRIPTION_1);
         final var updateCmd2 = new UpdateAuditedCommand(PARENT_ID_2)
-                .with(AuditedType.NAME, PARENT_NEW_NAME_2)
+                .with(AuditedAutoIncIdType.NAME, PARENT_NEW_NAME_2)
                 .with(AuditProperties.ENTITY_CHANGE_DESCRIPTION, PARENT_ENTITY_CHANGE_DESCRIPTION_2);
 
         pl.update(List.of(updateCmd1, updateCmd2), parentFlowConfig);
@@ -131,10 +131,10 @@ public class AuditWithEntityChangeDescriptionTest {
     @Test
     public void oneAuditedEntityWithAuditedChildEntityChangeDescription() {
         final var childUpdateCmd = new UpdateAuditedChild1Command(CHILD_ID_11)
-                .with(AuditedChild1Type.NAME, CHILD_NEW_NAME_11)
+                .with(AuditedAutoIncIdChild1Type.NAME, CHILD_NEW_NAME_11)
                 .with(AuditProperties.ENTITY_CHANGE_DESCRIPTION, CHILD_ENTITY_CHANGE_DESCRIPTION_11);
         final var parentUpdateCmd = new UpdateAuditedCommand(PARENT_ID_1)
-                .with(AuditedType.NAME, PARENT_NEW_NAME_1)
+                .with(AuditedAutoIncIdType.NAME, PARENT_NEW_NAME_1)
                 .with(childUpdateCmd);
 
         pl.update(singletonList(parentUpdateCmd), parentFlowConfig);
