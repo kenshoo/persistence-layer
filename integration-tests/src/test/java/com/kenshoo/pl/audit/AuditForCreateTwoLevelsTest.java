@@ -7,8 +7,8 @@ import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -29,13 +29,13 @@ import static org.junit.Assert.assertThat;
 public class AuditForCreateTwoLevelsTest {
 
     private static final List<? extends DataTable> ALL_TABLES =
-        ImmutableList.of(MainTable.INSTANCE, ChildTable.INSTANCE);
+        ImmutableList.of(MainAutoIncIdTable.INSTANCE, ChildAutoIncIdTable.INSTANCE);
 
     private PLContext plContext;
     private DSLContext dslContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private PersistenceLayer<AuditedType> auditedParentPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedParentPL;
     private PersistenceLayer<AuditedWithoutDataFieldsType> auditedParentWithoutDataFieldsPL;
     private PersistenceLayer<NotAuditedType> notAuditedParentPL;
 
@@ -63,20 +63,20 @@ public class AuditForCreateTwoLevelsTest {
     @Test
     public void oneAuditedParent_OneAuditedChild_ShouldCreateRecordsForParentAndChild() {
         final CreateAuditedChild1Command childCmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "childName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "childName");
         final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "name")
+            .with(AuditedAutoIncIdType.NAME, "name")
             .with(childCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
-        final CreateResult<AuditedType, Identifier<AuditedType>> createResult =
+        final CreateResult<AuditedAutoIncIdType, Identifier<AuditedAutoIncIdType>> createResult =
             auditedParentPL.create(singletonList(parentCmd), flowConfig);
 
-        final CreateEntityCommand<AuditedType> outputParentCmd = extractFirstCmdFromResult(createResult);
+        final CreateEntityCommand<AuditedAutoIncIdType> outputParentCmd = extractFirstCmdFromResult(createResult);
         final long parentId = extractAuditedParentIdFromCmd(outputParentCmd);
         final long childId = fetchChildIdByName("childName");
 
@@ -86,31 +86,31 @@ public class AuditForCreateTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(parentId)),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(AuditedType.NAME, "name")));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "name")));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "childName"))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "childName"))));
     }
 
     @Test
     public void oneAuditedParent_TwoAuditedChildrenSameType_ShouldCreateRecordsForBothChildren() {
         final CreateAuditedChild1Command child1ACmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "child1AName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "child1AName");
         final CreateAuditedChild1Command child1BCmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "child1BName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "child1BName");
         final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "name")
+            .with(AuditedAutoIncIdType.NAME, "name")
             .with(child1ACmd)
             .with(child1BCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.create(singletonList(parentCmd), flowConfig);
@@ -124,31 +124,31 @@ public class AuditForCreateTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child1AId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "child1AName"))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "child1AName"))));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child1BId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "child1BName"))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "child1BName"))));
     }
 
     @Test
     public void oneAuditedParent_TwoAuditedChildrenDifferentTypes_ShouldCreateRecordsForBothChildren() {
         final CreateAuditedChild1Command child1Cmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "child1Name");
+            .with(AuditedAutoIncIdChild1Type.NAME, "child1Name");
         final CreateAuditedChild2Command child2Cmd = new CreateAuditedChild2Command()
-            .with(AuditedChild2Type.NAME, "child2Name");
+            .with(AuditedAutoIncIdChild2Type.NAME, "child2Name");
         final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "name")
+            .with(AuditedAutoIncIdType.NAME, "name")
             .with(child1Cmd)
             .with(child2Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.create(singletonList(parentCmd), flowConfig);
@@ -162,30 +162,30 @@ public class AuditForCreateTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child1Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "child1Name"))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "child1Name"))));
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(child2Id)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild2Type.NAME, "child2Name"))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild2Type.NAME, "child2Name"))));
     }
 
     @Test
     public void oneAuditedParent_OneAuditedChild_OneNotAuditedChild_ShouldCreateRecordForAuditedChildOnly() {
         final CreateAuditedChild1Command auditedChildCmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "auditedChildName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "auditedChildName");
         final CreateNotAuditedChildCommand notAuditedChildCmd = new CreateNotAuditedChildCommand()
             .with(NotAuditedChildType.NAME, "notAuditedChildName");
         final CreateAuditedCommand parentCmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "name")
+            .with(AuditedAutoIncIdType.NAME, "name")
             .with(auditedChildCmd)
             .with(notAuditedChildCmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
@@ -199,24 +199,24 @@ public class AuditForCreateTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(auditedChildId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "auditedChildName"))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "auditedChildName"))));
         assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
     }
 
     @Test
     public void oneNotAuditedParent_OneAuditedChild_ShouldReturnEmpty() {
         final CreateAuditedChild1Command auditedChildCmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "auditedChildName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "auditedChildName");
         final CreateNotAuditedCommand parentCmd = new CreateNotAuditedCommand()
             .with(NotAuditedType.NAME, "notAuditedParentName")
             .with(auditedChildCmd);
 
         final ChangeFlowConfig<NotAuditedType> flowConfig =
             flowConfigBuilder(NotAuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         notAuditedParentPL.create(singletonList(parentCmd), flowConfig);
@@ -231,13 +231,13 @@ public class AuditForCreateTwoLevelsTest {
         final long parentId = 11L;
 
         final CreateAuditedChild1Command childCmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "childName");
+            .with(AuditedAutoIncIdChild1Type.NAME, "childName");
         final CreateAuditedWithoutDataFieldsCommand parentCmd = new CreateAuditedWithoutDataFieldsCommand(parentId)
             .with(childCmd);
 
         final ChangeFlowConfig<AuditedWithoutDataFieldsType> flowConfig =
             flowConfigBuilder(AuditedWithoutDataFieldsType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentWithoutDataFieldsPL.create(singletonList(parentCmd), flowConfig);
@@ -254,30 +254,30 @@ public class AuditForCreateTwoLevelsTest {
                                       hasEntityId(String.valueOf(parentId)),
                                       hasOperator(CREATE)));
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(childId)),
                                                          hasOperator(CREATE),
-                                                         hasCreatedFieldRecord(AuditedChild1Type.NAME, "childName"))));
+                                                         hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "childName"))));
     }
 
     @Test
     public void twoAuditedParents_OneAuditedChildEach_ShouldCreateChildRecordsForBoth() {
         final CreateAuditedChild1Command child1Cmd = new CreateAuditedChild1Command()
-            .with(AuditedChild1Type.NAME, "child1Name");
+            .with(AuditedAutoIncIdChild1Type.NAME, "child1Name");
         final CreateAuditedChild2Command child2Cmd = new CreateAuditedChild2Command()
-            .with(AuditedChild2Type.NAME, "child2Name");
+            .with(AuditedAutoIncIdChild2Type.NAME, "child2Name");
 
         final CreateAuditedCommand parent1Cmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "parent1Name")
+            .with(AuditedAutoIncIdType.NAME, "parent1Name")
             .with(child1Cmd);
         final CreateAuditedCommand parent2Cmd = new CreateAuditedCommand()
-            .with(AuditedType.NAME, "parent2Name")
+            .with(AuditedAutoIncIdType.NAME, "parent2Name")
             .with(child2Cmd);
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.create(ImmutableList.of(parent1Cmd, parent2Cmd), flowConfig);
@@ -292,14 +292,14 @@ public class AuditForCreateTwoLevelsTest {
         final AuditRecord auditRecord1 = auditRecords.get(0);
         final AuditRecord auditRecord2 = auditRecords.get(1);
 
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child1Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(AuditedChild1Type.NAME, "child1Name"))));
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+                                                          hasCreatedFieldRecord(AuditedAutoIncIdChild1Type.NAME, "child1Name"))));
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(child2Id)),
                                                           hasOperator(CREATE),
-                                                          hasCreatedFieldRecord(AuditedChild2Type.NAME, "child2Name"))));
+                                                          hasCreatedFieldRecord(AuditedAutoIncIdChild2Type.NAME, "child2Name"))));
     }
 
     private <E extends EntityType<E>> ChangeFlowConfig.Builder<E> flowConfigBuilder(final E entityType) {
@@ -317,18 +317,18 @@ public class AuditForCreateTwoLevelsTest {
                            .orElseThrow(() -> new IllegalStateException("An empty collection of results was returned by the PL"));
     }
 
-    private long extractAuditedParentIdFromCmd(final ChangeEntityCommand<AuditedType> cmd) {
+    private long extractAuditedParentIdFromCmd(final ChangeEntityCommand<AuditedAutoIncIdType> cmd) {
         return Optional.ofNullable(cmd.getIdentifier())
-                       .map(identifier -> identifier.get(AuditedType.ID))
+                       .map(identifier -> identifier.get(AuditedAutoIncIdType.ID))
                        .orElseThrow(() -> new IllegalStateException("Could not find the audited parent id in the creation result"));
     }
 
     private long fetchChildIdByName(final String childName) {
-        return dslContext.select(ChildTable.INSTANCE.id)
-                         .from(ChildTable.INSTANCE)
-                         .where(ChildTable.INSTANCE.name.eq(childName))
+        return dslContext.select(ChildAutoIncIdTable.INSTANCE.id)
+                         .from(ChildAutoIncIdTable.INSTANCE)
+                         .where(ChildAutoIncIdTable.INSTANCE.name.eq(childName))
                          .fetchOptional()
-                         .map(rec -> rec.get(ChildTable.INSTANCE.id))
+                         .map(rec -> rec.get(ChildAutoIncIdTable.INSTANCE.id))
                          .orElseThrow(() -> new IllegalStateException("Could not fetch id by name '" + childName + "'"));
     }
 }

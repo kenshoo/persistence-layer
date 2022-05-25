@@ -6,7 +6,7 @@ import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -32,13 +32,13 @@ public class AuditForCreateOneLevelTest {
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedType> auditedConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> auditedConfig;
     private ChangeFlowConfig<InclusiveAuditedType> inclusiveAuditedConfig;
     private ChangeFlowConfig<ExclusiveAuditedType> exclusiveAuditedConfig;
     private ChangeFlowConfig<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsConfig;
     private ChangeFlowConfig<NotAuditedType> notAuditedConfig;
 
-    private PersistenceLayer<AuditedType> auditedPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedPL;
     private PersistenceLayer<InclusiveAuditedType> inclusiveAuditedPL;
     private PersistenceLayer<ExclusiveAuditedType> exclusiveAuditedPL;
     private PersistenceLayer<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsPL;
@@ -53,7 +53,7 @@ public class AuditForCreateOneLevelTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedConfig = flowConfig(AuditedType.INSTANCE);
+        auditedConfig = flowConfig(AuditedAutoIncIdType.INSTANCE);
         inclusiveAuditedConfig = flowConfig(InclusiveAuditedType.INSTANCE);
         exclusiveAuditedConfig = flowConfig(ExclusiveAuditedType.INSTANCE);
         auditedWithoutDataFieldsConfig = flowConfig(AuditedWithoutDataFieldsType.INSTANCE);
@@ -65,45 +65,45 @@ public class AuditForCreateOneLevelTest {
         auditedWithoutDataFieldsPL = persistenceLayer();
         notAuditedPL = persistenceLayer();
 
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
     }
 
     @After
     public void tearDown() {
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 
     @Test
     public void oneAuditedEntity_AllFieldsInCommand_ShouldCreateFieldRecordsForAll() {
-        final CreateResult<AuditedType, Identifier<AuditedType>> createResult =
+        final CreateResult<AuditedAutoIncIdType, Identifier<AuditedAutoIncIdType>> createResult =
             auditedPL.create(singletonList(new CreateAuditedCommand()
-                                               .with(AuditedType.NAME, "name")
-                                               .with(AuditedType.DESC, "desc")
-                                               .with(AuditedType.DESC2, "desc2")),
+                                               .with(AuditedAutoIncIdType.NAME, "name")
+                                               .with(AuditedAutoIncIdType.DESC, "desc")
+                                               .with(AuditedAutoIncIdType.DESC2, "desc2")),
                              auditedConfig);
-        final long id = extractIdFromResult(createResult, AuditedType.ID);
+        final long id = extractIdFromResult(createResult, AuditedAutoIncIdType.ID);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(id)),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(AuditedType.NAME, "name"),
-                                      hasCreatedFieldRecord(AuditedType.DESC, "desc"),
-                                      hasCreatedFieldRecord(AuditedType.DESC2, "desc2")));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "name"),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "desc"),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2")));
     }
 
     @Test
     public void oneAuditedEntity_SomeFieldsInCommand_ShouldCreateFieldRecordsForThemOnly() {
         auditedPL.create(singletonList(new CreateAuditedCommand()
-                                           .with(AuditedType.NAME, "name")
-                                           .with(AuditedType.DESC, "desc")),
+                                           .with(AuditedAutoIncIdType.NAME, "name")
+                                           .with(AuditedAutoIncIdType.DESC, "desc")),
                          auditedConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
@@ -111,50 +111,50 @@ public class AuditForCreateOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasCreatedFieldRecord(AuditedType.NAME, "name"),
-                                      hasCreatedFieldRecord(AuditedType.DESC, "desc"),
-                                      not(hasFieldRecordFor(AuditedType.DESC2))));
+        assertThat(auditRecord, allOf(hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "name"),
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "desc"),
+                                      not(hasFieldRecordFor(AuditedAutoIncIdType.DESC2))));
     }
 
     @Test
     public void oneAuditedEntity_SomeNullFieldValues_ShouldCreateRecordWithoutThem() {
         final var createResult = auditedPL.create(singletonList(new CreateAuditedCommand()
-                                                                    .with(AuditedType.NAME, "name")
-                                                                    .with(AuditedType.DESC, null)
-                                                                    .with(AuditedType.DESC2, null)),
+                                                                    .with(AuditedAutoIncIdType.NAME, "name")
+                                                                    .with(AuditedAutoIncIdType.DESC, null)
+                                                                    .with(AuditedAutoIncIdType.DESC2, null)),
                                                   auditedConfig);
-        final long id = extractIdFromResult(createResult, AuditedType.ID);
+        final long id = extractIdFromResult(createResult, AuditedAutoIncIdType.ID);
 
         final var auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final var auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(id)),
                                       hasOperator(CREATE),
-                                      hasCreatedFieldRecord(AuditedType.NAME, "name"),
-                                      hasNoFieldRecordFor(AuditedType.DESC),
-                                      hasNoFieldRecordFor(AuditedType.DESC2)));
+                                      hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "name"),
+                                      hasNoFieldRecordFor(AuditedAutoIncIdType.DESC),
+                                      hasNoFieldRecordFor(AuditedAutoIncIdType.DESC2)));
     }
 
     @Test
     public void twoAuditedEntities_AllFieldsInCommands_ShouldCreateFieldRecordsForAll() {
         final List<CreateAuditedCommand> cmds =
             ImmutableList.of(new CreateAuditedCommand()
-                                 .with(AuditedType.NAME, "nameA")
-                                 .with(AuditedType.DESC, "descA")
-                                 .with(AuditedType.DESC2, "desc2A"),
+                                 .with(AuditedAutoIncIdType.NAME, "nameA")
+                                 .with(AuditedAutoIncIdType.DESC, "descA")
+                                 .with(AuditedAutoIncIdType.DESC2, "desc2A"),
                              new CreateAuditedCommand()
-                                 .with(AuditedType.NAME, "nameB")
-                                 .with(AuditedType.DESC, "descB")
-                                 .with(AuditedType.DESC2, "desc2B"));
+                                 .with(AuditedAutoIncIdType.NAME, "nameB")
+                                 .with(AuditedAutoIncIdType.DESC, "descB")
+                                 .with(AuditedAutoIncIdType.DESC2, "desc2B"));
 
-        final CreateResult<AuditedType, Identifier<AuditedType>> createResult =
+        final CreateResult<AuditedAutoIncIdType, Identifier<AuditedAutoIncIdType>> createResult =
             auditedPL.create(cmds, auditedConfig);
         final List<Long> ids = extractIdsFromResult(createResult,
-                                                    AuditedType.ID,
-                                                    AuditedType.NAME);
+                                                    AuditedAutoIncIdType.ID,
+                                                    AuditedAutoIncIdType.NAME);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
@@ -164,20 +164,20 @@ public class AuditForCreateOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ids.get(0))),
                                        hasOperator(CREATE),
-                                       hasCreatedFieldRecord(AuditedType.NAME, "nameA"),
-                                       hasCreatedFieldRecord(AuditedType.DESC, "descA"),
-                                       hasCreatedFieldRecord(AuditedType.DESC2, "desc2A")));
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "nameA"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "descA"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2A")));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ids.get(1))),
                                        hasOperator(CREATE),
-                                       hasCreatedFieldRecord(AuditedType.NAME, "nameB"),
-                                       hasCreatedFieldRecord(AuditedType.DESC, "descB"),
-                                       hasCreatedFieldRecord(AuditedType.DESC2, "desc2B")));
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.NAME, "nameB"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC, "descB"),
+                                       hasCreatedFieldRecord(AuditedAutoIncIdType.DESC2, "desc2B")));
     }
 
     @Test

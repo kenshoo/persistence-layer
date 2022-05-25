@@ -4,17 +4,17 @@ import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 
-abstract class AbstractChildType<E extends EntityType<E>> extends AbstractEntityType<E> {
+public abstract class AbstractAutoIncIdType<E extends EntityType<E>> extends AbstractEntityType<E> {
 
-    AbstractChildType(final String name) {
+    public AbstractAutoIncIdType(final String name) {
         super(name);
     }
 
     @Override
     public DataTable getPrimaryTable() {
-        return ChildTable.INSTANCE;
+        return MainAutoIncIdTable.INSTANCE;
     }
 
     public SupportedChangeOperation getSupportedOperation() {

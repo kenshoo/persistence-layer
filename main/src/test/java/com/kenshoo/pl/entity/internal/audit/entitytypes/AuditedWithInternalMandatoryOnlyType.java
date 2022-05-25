@@ -6,7 +6,7 @@ import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.SupportedChangeOperation;
 import com.kenshoo.pl.entity.annotation.Id;
 import com.kenshoo.pl.entity.annotation.audit.Audited;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ALWAYS;
 
@@ -16,9 +16,9 @@ public class AuditedWithInternalMandatoryOnlyType extends AbstractEntityType<Aud
     public static final AuditedWithInternalMandatoryOnlyType INSTANCE = new AuditedWithInternalMandatoryOnlyType();
 
     @Id
-    public static final EntityField<AuditedWithInternalMandatoryOnlyType, Long> ID = INSTANCE.field(MainTable.INSTANCE.id);
+    public static final EntityField<AuditedWithInternalMandatoryOnlyType, Long> ID = INSTANCE.field(MainAutoIncIdTable.INSTANCE.id);
     @Audited(trigger = ALWAYS)
-    public static final EntityField<AuditedWithInternalMandatoryOnlyType, String> NAME = INSTANCE.field(MainTable.INSTANCE.name);
+    public static final EntityField<AuditedWithInternalMandatoryOnlyType, String> NAME = INSTANCE.field(MainAutoIncIdTable.INSTANCE.name);
 
     private AuditedWithInternalMandatoryOnlyType() {
         super("AuditedWithInternalMandatoryOnly");
@@ -31,6 +31,6 @@ public class AuditedWithInternalMandatoryOnlyType extends AbstractEntityType<Aud
 
     @Override
     public DataTable getPrimaryTable() {
-        return MainTable.INSTANCE;
+        return MainAutoIncIdTable.INSTANCE;
     }
 }

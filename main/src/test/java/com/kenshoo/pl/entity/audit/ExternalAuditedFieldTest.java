@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.audit;
 
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +20,7 @@ public class ExternalAuditedFieldTest {
 
     @Test
     public void getValueFormatterShouldReturnTheFormatterWhenProvided() {
-        final var externalAuditedField = new ExternalAuditedField.Builder<>(AuditedType.NAME)
+        final var externalAuditedField = new ExternalAuditedField.Builder<>(AuditedAutoIncIdType.NAME)
             .withValueFormatter(valueFormatter)
             .build();
 
@@ -29,7 +29,7 @@ public class ExternalAuditedFieldTest {
 
     @Test
     public void getValueFormatterShouldReturnEmptyWhenNoFormatterProvided() {
-        final var externalAuditedField = new ExternalAuditedField.Builder<>(AuditedType.NAME).build();
+        final var externalAuditedField = new ExternalAuditedField.Builder<>(AuditedAutoIncIdType.NAME).build();
         assertThat(externalAuditedField.getValueFormatter(), is(Optional.empty()));
     }
 

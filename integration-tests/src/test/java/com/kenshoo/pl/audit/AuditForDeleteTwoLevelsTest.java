@@ -7,8 +7,8 @@ import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.audit.commands.*;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
@@ -37,12 +37,12 @@ public class AuditForDeleteTwoLevelsTest {
     private static final long INVALID_ID = 999L;
 
     private static final List<? extends DataTable> ALL_TABLES =
-        ImmutableList.of(MainTable.INSTANCE, ChildTable.INSTANCE);
+        ImmutableList.of(MainAutoIncIdTable.INSTANCE, ChildAutoIncIdTable.INSTANCE);
 
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private PersistenceLayer<AuditedType> auditedParentPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedParentPL;
     private PersistenceLayer<AuditedWithoutDataFieldsType> auditedParentWithoutDataFieldsPL;
     private PersistenceLayer<NotAuditedType> notAuditedParentPL;
 
@@ -61,14 +61,14 @@ public class AuditForDeleteTwoLevelsTest {
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .columns(MainTable.INSTANCE.id, MainTable.INSTANCE.name)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .columns(MainAutoIncIdTable.INSTANCE.id, MainAutoIncIdTable.INSTANCE.name)
                   .values(PARENT_ID_1, "parentName1")
                   .values(PARENT_ID_2, "parentName2")
                   .execute();
 
-        dslContext.insertInto(ChildTable.INSTANCE)
-                  .columns(ChildTable.INSTANCE.id, ChildTable.INSTANCE.parent_id, ChildTable.INSTANCE.name)
+        dslContext.insertInto(ChildAutoIncIdTable.INSTANCE)
+                  .columns(ChildAutoIncIdTable.INSTANCE.id, ChildAutoIncIdTable.INSTANCE.parent_id, ChildAutoIncIdTable.INSTANCE.name)
                   .values(CHILD_ID_11, PARENT_ID_1, "childName11")
                   .values(CHILD_ID_12, PARENT_ID_1, "childName12")
                   .values(CHILD_ID_21, PARENT_ID_2, "childName21")
@@ -87,9 +87,9 @@ public class AuditForDeleteTwoLevelsTest {
             new DeleteAuditedCommand(PARENT_ID_1)
                 .with(new DeleteAuditedChild1Command(CHILD_ID_11));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(singletonList(cmd), flowConfig);
@@ -99,10 +99,10 @@ public class AuditForDeleteTwoLevelsTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(DELETE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
     }
@@ -110,13 +110,13 @@ public class AuditForDeleteTwoLevelsTest {
     @Test
     public void oneAuditedParent_TwoAuditedChildrenSameType_AllExist_ShouldCreateRecordsForBothChildren() {
         final DeleteAuditedCommand cmd = new DeleteAuditedCommand(PARENT_ID_1)
-            .with(AuditedType.NAME, "name")
+            .with(AuditedAutoIncIdType.NAME, "name")
             .with(new DeleteAuditedChild1Command(CHILD_ID_11))
             .with(new DeleteAuditedChild1Command(CHILD_ID_12));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(singletonList(cmd), flowConfig);
@@ -127,10 +127,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -141,10 +141,10 @@ public class AuditForDeleteTwoLevelsTest {
             .with(new DeleteAuditedChild1Command(CHILD_ID_11))
             .with(new DeleteAuditedChild2Command(CHILD_ID_12));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(singletonList(parentCmd), flowConfig);
@@ -155,10 +155,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -169,9 +169,9 @@ public class AuditForDeleteTwoLevelsTest {
             .with(new DeleteAuditedChild1Command(CHILD_ID_11))
             .with(new DeleteNotAuditedChildCommand(CHILD_ID_12));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .withChildFlowBuilder(flowConfigBuilder(NotAuditedChildType.INSTANCE))
                 .build();
 
@@ -183,7 +183,7 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
         assertThat(auditRecord, not(hasChildRecordThat(hasEntityType(NotAuditedChildType.INSTANCE.getName()))));
@@ -193,11 +193,11 @@ public class AuditForDeleteTwoLevelsTest {
     public void oneAuditedParent_OneAuditedChild_BothExist_WithDeletionOfOthers_ShouldCreateRecordsForBothChildren() {
         final DeleteAuditedCommand cmd = new DeleteAuditedCommand(PARENT_ID_1)
             .with(new DeleteAuditedChild1Command(CHILD_ID_11))
-            .with(new DeletionOfOther<>(AuditedChild1Type.INSTANCE));
+            .with(new DeletionOfOther<>(AuditedAutoIncIdChild1Type.INSTANCE));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(singletonList(cmd), flowConfig);
@@ -208,10 +208,10 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
 
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_12)),
                                                          hasOperator(DELETE))));
     }
@@ -222,9 +222,9 @@ public class AuditForDeleteTwoLevelsTest {
             new DeleteAuditedCommand(PARENT_ID_1)
                 .with(new DeleteAuditedChild1Command(INVALID_ID));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(singletonList(cmd), flowConfig);
@@ -242,7 +242,7 @@ public class AuditForDeleteTwoLevelsTest {
 
         final ChangeFlowConfig<NotAuditedType> flowConfig =
             flowConfigBuilder(NotAuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         notAuditedParentPL.delete(singletonList(cmd), flowConfig);
@@ -260,7 +260,7 @@ public class AuditForDeleteTwoLevelsTest {
 
         final ChangeFlowConfig<AuditedWithoutDataFieldsType> flowConfig =
             flowConfigBuilder(AuditedWithoutDataFieldsType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
                 .build();
 
         auditedParentWithoutDataFieldsPL.delete(singletonList(cmd), flowConfig);
@@ -273,7 +273,7 @@ public class AuditForDeleteTwoLevelsTest {
         assertThat(auditRecord, allOf(hasEntityType(AuditedWithoutDataFieldsType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(PARENT_ID_1)),
                                       hasOperator(DELETE)));
-        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                          hasEntityId(String.valueOf(CHILD_ID_11)),
                                                          hasOperator(DELETE))));
     }
@@ -286,10 +286,10 @@ public class AuditForDeleteTwoLevelsTest {
                              new DeleteAuditedCommand(PARENT_ID_2)
                                  .with(new DeleteAuditedChild2Command(CHILD_ID_21)));
 
-        final ChangeFlowConfig<AuditedType> flowConfig =
-            flowConfigBuilder(AuditedType.INSTANCE)
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild1Type.INSTANCE))
-                .withChildFlowBuilder(flowConfigBuilder(AuditedChild2Type.INSTANCE))
+        final ChangeFlowConfig<AuditedAutoIncIdType> flowConfig =
+            flowConfigBuilder(AuditedAutoIncIdType.INSTANCE)
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild1Type.INSTANCE))
+                .withChildFlowBuilder(flowConfigBuilder(AuditedAutoIncIdChild2Type.INSTANCE))
                 .build();
 
         auditedParentPL.delete(cmds, flowConfig);
@@ -300,12 +300,12 @@ public class AuditForDeleteTwoLevelsTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedChild1Type.INSTANCE.getName()),
+        assertThat(auditRecord1, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild1Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_11)),
                                                           hasOperator(DELETE))));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedChild2Type.INSTANCE.getName()),
+        assertThat(auditRecord2, hasChildRecordThat(allOf(hasEntityType(AuditedAutoIncIdChild2Type.INSTANCE.getName()),
                                                           hasEntityId(String.valueOf(CHILD_ID_21)),
                                                           hasOperator(DELETE))));
     }

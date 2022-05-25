@@ -39,7 +39,7 @@ public class AuditFieldValueFormatterResolverTest {
 
     @Test
     public void shouldReturnDefaultFormatterWhenEntityAuditedWithoutFormatterAndFieldHasNoAnnotations() {
-        final var formatter = formatterResolver.resolve(AuditedType.DESC);
+        final var formatter = formatterResolver.resolve(AuditedAutoIncIdType.DESC);
         assertThat(formatter, instanceOf(DefaultAuditFieldValueFormatter.class));
     }
 

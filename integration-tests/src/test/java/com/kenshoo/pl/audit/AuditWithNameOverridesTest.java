@@ -8,8 +8,8 @@ import com.kenshoo.pl.audit.commands.CreateAuditedChild2WithNameOverrideCommand;
 import com.kenshoo.pl.audit.commands.CreateAuditedWithNameOverrideCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.ChildTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.ChildAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedChild1WithNameOverrideType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedChild2WithNameOverrideType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithNameOverrideType;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertThat;
 
 public class AuditWithNameOverridesTest {
 
-    private static final Set<DataTable> ALL_TABLES = Set.of(MainTable.INSTANCE, ChildTable.INSTANCE);
+    private static final Set<DataTable> ALL_TABLES = Set.of(MainAutoIncIdTable.INSTANCE, ChildAutoIncIdTable.INSTANCE);
 
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;

@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.EntityIdExtractor;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class AuditRecordGeneratorImplForDeleteTest {
     private AuditMandatoryFieldValuesGenerator mandatoryFieldValuesGenerator;
 
     @Mock
-    private AuditFieldChangesGenerator<AuditedType> fieldChangesGenerator;
+    private AuditFieldChangesGenerator<AuditedAutoIncIdType> fieldChangesGenerator;
 
     @Mock
     private EntityIdExtractor entityIdExtractor;
@@ -50,12 +50,12 @@ public class AuditRecordGeneratorImplForDeleteTest {
     private CurrentEntityState currentState;
 
     @Mock
-    private EntityChange<AuditedType> cmd;
+    private EntityChange<AuditedAutoIncIdType> cmd;
 
     @Mock
     private FinalEntityState finalState;
 
-    private AuditRecordGeneratorImpl<AuditedType> auditRecordGenerator;
+    private AuditRecordGeneratorImpl<AuditedAutoIncIdType> auditRecordGenerator;
 
     @Before
     public void setUp() {

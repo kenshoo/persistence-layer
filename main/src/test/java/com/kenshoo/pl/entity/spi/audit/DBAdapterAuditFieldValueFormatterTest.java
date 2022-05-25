@@ -2,8 +2,8 @@ package com.kenshoo.pl.entity.spi.audit;
 
 import org.junit.Test;
 
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUNT;
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUNT3;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.AMOUNT;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.AMOUNT3;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 

@@ -1,6 +1,6 @@
 package com.kenshoo.pl.entity.internal.audit;
 
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.spi.audit.AuditFieldValueFormatter;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,8 +10,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_CREATE_OR_UPDATE;
 import static com.kenshoo.pl.entity.audit.AuditTrigger.ON_UPDATE;
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.AMOUNT2;
-import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType.DESC;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.AMOUNT2;
+import static com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType.DESC;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
@@ -26,9 +26,9 @@ public class AuditedFieldTest {
     @Mock
     private AuditFieldValueFormatter customValueFormatter;
 
-    private AuditedField<AuditedType, String> fullAuditedDescField;
-    private AuditedField<AuditedType, String> minimalAuditedDescField;
-    private AuditedField<AuditedType, Double> auditedFormattedAmountField;
+    private AuditedField<AuditedAutoIncIdType, String> fullAuditedDescField;
+    private AuditedField<AuditedAutoIncIdType, String> minimalAuditedDescField;
+    private AuditedField<AuditedAutoIncIdType, Double> auditedFormattedAmountField;
 
     @Before
     public void setUp() {

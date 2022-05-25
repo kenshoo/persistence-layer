@@ -6,7 +6,7 @@ import com.kenshoo.pl.audit.commands.CreateAuditedWithVirtualCommand;
 import com.kenshoo.pl.audit.commands.CreateInclusiveAuditedWithVirtualCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithVirtualType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.InclusiveAuditedWithVirtualType;
 import org.jooq.DSLContext;
@@ -51,14 +51,14 @@ public class AuditIgnoreVirtualFieldsTest {
         auditedPL = persistenceLayer();
         inclusiveAuditedPL = persistenceLayer();
 
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
     }
 
     @After
     public void tearDown() {
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 

@@ -8,8 +8,8 @@ import com.kenshoo.pl.audit.commands.DeleteAuditedWithoutDataFieldsCommand;
 import com.kenshoo.pl.audit.commands.DeleteNotAuditedCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithoutDataFieldsType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedType;
 import org.jooq.DSLContext;
@@ -36,11 +36,11 @@ public class AuditForDeleteOneLevelTest {
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedType> auditedConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> auditedConfig;
     private ChangeFlowConfig<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsConfig;
     private ChangeFlowConfig<NotAuditedType> notAuditedConfig;
 
-    private PersistenceLayer<AuditedType> auditedPL;
+    private PersistenceLayer<AuditedAutoIncIdType> auditedPL;
     private PersistenceLayer<AuditedWithoutDataFieldsType> auditedWithoutDataFieldsPL;
     private PersistenceLayer<NotAuditedType> notAuditedPL;
 
@@ -53,7 +53,7 @@ public class AuditForDeleteOneLevelTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        auditedConfig = flowConfig(AuditedType.INSTANCE);
+        auditedConfig = flowConfig(AuditedAutoIncIdType.INSTANCE);
         auditedWithoutDataFieldsConfig = flowConfig(AuditedWithoutDataFieldsType.INSTANCE);
         notAuditedConfig = flowConfig(NotAuditedType.INSTANCE);
 
@@ -61,22 +61,22 @@ public class AuditForDeleteOneLevelTest {
         auditedWithoutDataFieldsPL = persistenceLayer();
         notAuditedPL = persistenceLayer();
 
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, ID_1)
-                  .set(MainTable.INSTANCE.name, "name")
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, ID_1)
+                  .set(MainAutoIncIdTable.INSTANCE.name, "name")
                   .execute();
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, ID_2)
-                  .set(MainTable.INSTANCE.name, "name2")
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, ID_2)
+                  .set(MainAutoIncIdTable.INSTANCE.name, "name2")
                   .execute();
     }
 
     @After
     public void tearDown() {
-        Stream.of(MainTable.INSTANCE)
+        Stream.of(MainAutoIncIdTable.INSTANCE)
               .forEach(table -> plContext.dslContext().dropTable(table).execute());
     }
 
@@ -90,7 +90,7 @@ public class AuditForDeleteOneLevelTest {
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
         final AuditRecord auditRecord = auditRecords.get(0);
-        assertThat(auditRecord, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                       hasEntityId(String.valueOf(ID_1)),
                                       hasOperator(DELETE)));
     }
@@ -119,12 +119,12 @@ public class AuditForDeleteOneLevelTest {
                    auditRecords, hasSize(2));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
 
         final AuditRecord auditRecord2 = auditRecords.get(1);
-        assertThat(auditRecord2, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord2, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_2)),
                                        hasOperator(DELETE)));
     }
@@ -143,7 +143,7 @@ public class AuditForDeleteOneLevelTest {
                    auditRecords, hasSize(1));
 
         final AuditRecord auditRecord1 = auditRecords.get(0);
-        assertThat(auditRecord1, allOf(hasEntityType(AuditedType.INSTANCE.getName()),
+        assertThat(auditRecord1, allOf(hasEntityType(AuditedAutoIncIdType.INSTANCE.getName()),
                                        hasEntityId(String.valueOf(ID_1)),
                                        hasOperator(DELETE)));
     }

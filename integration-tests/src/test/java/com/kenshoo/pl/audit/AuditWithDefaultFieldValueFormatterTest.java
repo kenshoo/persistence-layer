@@ -8,9 +8,9 @@ import com.kenshoo.pl.audit.commands.UpdateAuditedCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.jooq.DSLContext;
@@ -32,7 +32,7 @@ public class AuditWithDefaultFieldValueFormatterTest {
 
     private static final Set<DataTable> ALL_TABLES = Set.of(AncestorTable.INSTANCE,
                                                             MainWithAncestorTable.INSTANCE,
-                                                            MainTable.INSTANCE);
+                                                            MainAutoIncIdTable.INSTANCE);
 
     private static final long MAIN_ID = 11;
     private static final long ANCESTOR_ID = 1;
@@ -49,10 +49,10 @@ public class AuditWithDefaultFieldValueFormatterTest {
     private PLContext plContext;
     private InMemoryAuditRecordPublisher auditRecordPublisher;
 
-    private ChangeFlowConfig<AuditedType> mainFlowConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> mainFlowConfig;
     private ChangeFlowConfig<AuditedWithAncestorMandatoryType> mainWithAncestorFlowConfig;
 
-    private PersistenceLayer<AuditedType> mainPL;
+    private PersistenceLayer<AuditedAutoIncIdType> mainPL;
     private PersistenceLayer<AuditedWithAncestorMandatoryType> mainWithAncestorPL;
 
     @Before
@@ -64,7 +64,7 @@ public class AuditWithDefaultFieldValueFormatterTest {
             .withAuditRecordPublisher(auditRecordPublisher)
             .build();
 
-        mainFlowConfig = flowConfigBuilder(AuditedType.INSTANCE).build();
+        mainFlowConfig = flowConfigBuilder(AuditedAutoIncIdType.INSTANCE).build();
         mainWithAncestorFlowConfig = flowConfigBuilder(AuditedWithAncestorMandatoryType.INSTANCE).build();
 
         mainPL = persistenceLayer();
@@ -72,10 +72,10 @@ public class AuditWithDefaultFieldValueFormatterTest {
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, MAIN_ID)
-                  .set(MainTable.INSTANCE.amount, OLD_AMOUNT_VALUE)
-                  .set(MainTable.INSTANCE.amount2, OLD_AMOUNT_VALUE)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, MAIN_ID)
+                  .set(MainAutoIncIdTable.INSTANCE.amount, OLD_AMOUNT_VALUE)
+                  .set(MainAutoIncIdTable.INSTANCE.amount2, OLD_AMOUNT_VALUE)
                   .execute();
 
         dslContext.insertInto(AncestorTable.INSTANCE)
@@ -93,14 +93,14 @@ public class AuditWithDefaultFieldValueFormatterTest {
     @Test
     public void numericFieldInMainWithDefaultStringValueConverter() {
         mainPL.update(singletonList(mainUpdateCmd()
-                                        .with(AuditedType.AMOUNT, NEW_AMOUNT_VALUE)),
+                                        .with(AuditedAutoIncIdType.AMOUNT, NEW_AMOUNT_VALUE)),
                       mainFlowConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        assertThat(auditRecords.get(0), hasChangedFieldRecord(AuditedType.AMOUNT,
+        assertThat(auditRecords.get(0), hasChangedFieldRecord(AuditedAutoIncIdType.AMOUNT,
                                                               DEFAULT_FORMAT_OLD_AMOUNT_VALUE,
                                                               DEFAULT_FORMAT_NEW_AMOUNT_VALUE));
     }
@@ -108,14 +108,14 @@ public class AuditWithDefaultFieldValueFormatterTest {
     @Test
     public void numericFieldInMainWithCustomStringValueConverter() {
         mainPL.update(singletonList(mainUpdateCmd()
-                                        .with(AuditedType.AMOUNT2, NEW_AMOUNT_VALUE)),
+                                        .with(AuditedAutoIncIdType.AMOUNT2, NEW_AMOUNT_VALUE)),
                       mainFlowConfig);
 
         final List<? extends AuditRecord> auditRecords = auditRecordPublisher.getAuditRecords().collect(toList());
 
         assertThat("Incorrect number of published records",
                    auditRecords, hasSize(1));
-        assertThat(auditRecords.get(0), hasChangedFieldRecord(AuditedType.AMOUNT2,
+        assertThat(auditRecords.get(0), hasChangedFieldRecord(AuditedAutoIncIdType.AMOUNT2,
                                                               SPECIFIC_FORMAT_OLD_AMOUNT_VALUE,
                                                               SPECIFIC_FORMAT_NEW_AMOUNT_VALUE));
     }

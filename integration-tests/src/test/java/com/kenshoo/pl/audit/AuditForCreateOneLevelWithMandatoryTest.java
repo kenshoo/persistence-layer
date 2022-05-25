@@ -10,7 +10,7 @@ import com.kenshoo.pl.audit.commands.CreateAuditedWithInternalMandatoryCommand;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorMandatoryType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithInternalAndAncestorMandatoryType;
@@ -53,7 +53,7 @@ public class AuditForCreateOneLevelWithMandatoryTest {
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_NAME_FIELD = NotAuditedAncestorType.NAME;
     private static final EntityField<NotAuditedAncestorType, String> ANCESTOR_DESC_FIELD = NotAuditedAncestorType.DESC;
 
-    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainTable.INSTANCE,
+    private static final List<DataTable> ALL_TABLES = ImmutableList.of(MainAutoIncIdTable.INSTANCE,
                                                                        MainWithAncestorTable.INSTANCE,
                                                                        AncestorTable.INSTANCE);
 

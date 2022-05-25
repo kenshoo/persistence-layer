@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
-import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -30,7 +30,7 @@ public class RecursiveAuditRecordGeneratorTest {
     private final RecursiveAuditRecordGenerator recursiveAuditRecordGenerator = new RecursiveAuditRecordGenerator();
 
     @Mock
-    private ChangeFlowConfig<AuditedType> flowConfig;
+    private ChangeFlowConfig<AuditedAutoIncIdType> flowConfig;
     @Mock
     private ChangeFlowConfig<TestEntity> notAuditedFlowConfig;
     @Mock
@@ -44,7 +44,7 @@ public class RecursiveAuditRecordGeneratorTest {
     private ChangeContext changeContext;
 
     @Mock
-    private AuditRecordGenerator<AuditedType> auditRecordGenerator;
+    private AuditRecordGenerator<AuditedAutoIncIdType> auditRecordGenerator;
     @Mock
     private AuditRecordGenerator<TestChild1EntityType> child1AuditRecordGenerator;
     @Mock
@@ -54,7 +54,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_OneAuditedEntity_WithChanges_ShouldGenerateRecord() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final AuditRecord auditRecord = mockAuditRecord();
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
@@ -68,7 +68,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_OneAuditedEntity_WithoutChanges_ShouldReturnEmpty() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.of(auditRecordGenerator));
         doReturn(Optional.empty()).when(auditRecordGenerator).generate(cmd, changeContext, emptyList());
@@ -81,7 +81,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_OneNotAuditedEntity_ShouldReturnEmpty() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
 
         when(flowConfig.auditRecordGenerator()).thenReturn(Optional.empty());
 
@@ -93,8 +93,8 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_TwoAuditedEntities_BothWithChanges_ShouldGenerateTwoRecords() {
-        final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
-        final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd1 = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd2 = mockCommand();
 
         final AuditRecord auditRecord1 = mockAuditRecord();
         final AuditRecord auditRecord2 = mockAuditRecord();
@@ -115,8 +115,8 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_TwoAuditedEntities_OnlyOneWithChanges_ShouldGenerateOneRecord() {
-        final ChangeEntityCommand<AuditedType> cmd1 = mockCommand();
-        final ChangeEntityCommand<AuditedType> cmd2 = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd1 = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd2 = mockCommand();
 
         final AuditRecord auditRecord1 = mockAuditRecord();
 
@@ -133,7 +133,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_AuditedParent_TwoAuditedChildrenSameType_AllChanged_ShouldGenerateParentRecordWithTwoChildren() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1A = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1B = mockCommand();
 
@@ -164,7 +164,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_AuditedParent_TwoAuditedChildrenSameType_OnlyOneChanged_ShouldGenerateParentRecordWithOneChild() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1A = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1B = mockCommand();
 
@@ -193,7 +193,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_AuditedParent_OneAuditedChildAndOneNot_ShouldGenerateParentRecordWithOneChild() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> auditedChildCmd = mockCommand();
         final ChangeEntityCommand<TestChild2EntityType> notAuditedChildCmd = mockCommand();
 
@@ -224,7 +224,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_AuditedParent_TwoAuditedChildrenEachOfTwoTypes_ShouldGenerateParentRecordWithFourChildren() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1A = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd1B = mockCommand();
         final ChangeEntityCommand<TestChild2EntityType> childCmd2A = mockCommand();
@@ -269,7 +269,7 @@ public class RecursiveAuditRecordGeneratorTest {
 
     @Test
     public void generateMany_ThreeAuditedLevels_OneEntityEach_ShouldGenerateThreeLevelRecord() {
-        final ChangeEntityCommand<AuditedType> cmd = mockCommand();
+        final ChangeEntityCommand<AuditedAutoIncIdType> cmd = mockCommand();
         final ChangeEntityCommand<TestChild1EntityType> childCmd = mockCommand();
         final ChangeEntityCommand<TestGrandchildEntityType> grandchildCmd = mockCommand();
 

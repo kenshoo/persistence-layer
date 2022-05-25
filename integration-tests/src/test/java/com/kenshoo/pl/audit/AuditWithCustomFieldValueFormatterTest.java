@@ -9,7 +9,7 @@ import com.kenshoo.pl.audit.commands.UpdateAuditedWithFieldLevelOnlyValueFormatt
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.audit.AuditRecord;
 import com.kenshoo.pl.entity.internal.audit.AncestorTable;
-import com.kenshoo.pl.entity.internal.audit.MainTable;
+import com.kenshoo.pl.entity.internal.audit.MainAutoIncIdTable;
 import com.kenshoo.pl.entity.internal.audit.MainWithAncestorTable;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithAncestorValueFormattersType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithEntityLevelValueFormatterType;
@@ -35,7 +35,7 @@ public class AuditWithCustomFieldValueFormatterTest {
 
     private static final Set<DataTable> ALL_TABLES = Set.of(AncestorTable.INSTANCE,
                                                             MainWithAncestorTable.INSTANCE,
-                                                            MainTable.INSTANCE);
+                                                            MainAutoIncIdTable.INSTANCE);
 
     private static final long MAIN_ID = 11;
     private static final long ANCESTOR_ID = 1;
@@ -86,11 +86,11 @@ public class AuditWithCustomFieldValueFormatterTest {
 
         ALL_TABLES.forEach(table -> DataTableUtils.createTable(dslContext, table));
 
-        dslContext.insertInto(MainTable.INSTANCE)
-                  .set(MainTable.INSTANCE.id, MAIN_ID)
-                  .set(MainTable.INSTANCE.name, OLD_NAME)
-                  .set(MainTable.INSTANCE.desc, OLD_DESC)
-                  .set(MainTable.INSTANCE.desc2, OLD_DESC2)
+        dslContext.insertInto(MainAutoIncIdTable.INSTANCE)
+                  .set(MainAutoIncIdTable.INSTANCE.id, MAIN_ID)
+                  .set(MainAutoIncIdTable.INSTANCE.name, OLD_NAME)
+                  .set(MainAutoIncIdTable.INSTANCE.desc, OLD_DESC)
+                  .set(MainAutoIncIdTable.INSTANCE.desc2, OLD_DESC2)
                   .execute();
 
         dslContext.insertInto(AncestorTable.INSTANCE)
