@@ -5,16 +5,14 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 
-import static org.jooq.impl.DSL.name;
-
 public class ChildManualIdTable extends AbstractDataTable<ChildManualIdTable> {
 
     public static final ChildManualIdTable INSTANCE = new ChildManualIdTable();
 
     public final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT);
     public final TableField<Record, Long> parent_id = createFKField("parent_id", MainManualIdTable.INSTANCE.id);
-    public final TableField<Record, String> name = createField(name("name"), SQLDataType.VARCHAR(50));
-    public final TableField<Record, String> desc = createField(name("desc"), SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
 
     private ChildManualIdTable() {
         super("child_manual_id");
