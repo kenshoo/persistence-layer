@@ -11,7 +11,6 @@ import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.jooq.DSLContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -103,7 +102,6 @@ public class AuditForCreateTwoLevelsManualOrNoIdTest {
                 hasCreatedFieldRecord(AuditedChildManualIdType.NAME, CHILD_NAME))));
     }
 
-    @Ignore
     @Test
     public void oneParentWithManualId_OneChildWithoutId_ShouldCreateRecordsForParentAndChild() {
         final var childCmd = new CreateAuditedChildWithoutIdOfParentManualIdCommand()
@@ -131,12 +129,11 @@ public class AuditForCreateTwoLevelsManualOrNoIdTest {
                 hasCreatedFieldRecord(AuditedManualIdType.NAME, PARENT_NAME)));
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChildWithoutIdOfParentManualIdType.INSTANCE.getName()),
+                hasMandatoryFieldValue(AuditedChildWithoutIdOfParentWithoutIdType.NAME, CHILD_NAME),
                 hasOperator(CREATE),
-                hasMandatoryFieldValue(AuditedChildWithoutIdOfParentManualIdType.PARENT_ID, String.valueOf(PARENT_ID)),
                 hasCreatedFieldRecord(AuditedChildWithoutIdOfParentManualIdType.NAME, CHILD_NAME))));
     }
 
-    @Ignore
     @Test
     public void oneParentWithoutId_OneChildWithoutId_ShouldCreateRecordsForParentAndChild() {
         final var childCmd = new CreateAuditedChildWithoutIdOfParentWithoutIdCommand()
@@ -164,7 +161,7 @@ public class AuditForCreateTwoLevelsManualOrNoIdTest {
 
         assertThat(auditRecord, hasChildRecordThat(allOf(hasEntityType(AuditedChildWithoutIdOfParentWithoutIdType.INSTANCE.getName()),
                 hasOperator(CREATE),
-                hasMandatoryFieldValue(AuditedChildWithoutIdOfParentWithoutIdType.PARENT_NAME, String.valueOf(PARENT_NAME)),
+                hasMandatoryFieldValue(AuditedChildWithoutIdOfParentWithoutIdType.NAME, CHILD_NAME),
                 hasCreatedFieldRecord(AuditedChildWithoutIdOfParentWithoutIdType.NAME, CHILD_NAME))));
     }
 

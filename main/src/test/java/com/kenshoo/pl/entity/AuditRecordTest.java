@@ -32,6 +32,29 @@ public class AuditRecordTest {
     @Mock
     private AuditRecord childRecord;
 
+
+    @Test
+    public void safeGetEntityIdWhenExistsShouldReturnIt() {
+        final var auditRecord = new AuditRecord.Builder()
+                .withEntityType(ENTITY_TYPE)
+                .withEntityId(ENTITY_ID_1)
+                .withOperator(CREATE)
+                .withEntityChangeDescription(ENTITY_CHANGE_DESCRIPTION)
+                .build();
+
+        assertThat(auditRecord.getEntityId(), is(Optional.of(ENTITY_ID_1)));
+    }
+
+    @Test
+    public void safeGetEntityIdWhenWhenDoesntExistShouldReturnEmpty() {
+        final var auditRecord = new AuditRecord.Builder()
+                .withEntityType(ENTITY_TYPE)
+                .withOperator(CREATE)
+                .build();
+
+        assertThat(auditRecord.getEntityId(), is(Optional.empty()));
+    }
+
     @Test
     public void getEntityChangeDescriptionWhenExistsShouldReturnIt() {
         final var auditRecord = new AuditRecord.Builder()

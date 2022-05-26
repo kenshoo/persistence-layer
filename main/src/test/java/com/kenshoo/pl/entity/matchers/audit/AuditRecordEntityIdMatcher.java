@@ -4,9 +4,8 @@ import com.kenshoo.pl.entity.audit.AuditRecord;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-import java.util.Objects;
-
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 
 class AuditRecordEntityIdMatcher extends TypeSafeMatcher<AuditRecord> {
 
@@ -21,7 +20,7 @@ class AuditRecordEntityIdMatcher extends TypeSafeMatcher<AuditRecord> {
         if (actualRecord == null) {
             return false;
         }
-        return Objects.equals(actualRecord.getEntityId(), expectedEntityId);
+        return actualRecord.getEntityId().equals(ofNullable(expectedEntityId));
     }
 
     @Override

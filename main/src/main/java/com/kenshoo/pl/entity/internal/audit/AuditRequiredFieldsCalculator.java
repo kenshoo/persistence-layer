@@ -7,11 +7,10 @@ import com.kenshoo.pl.entity.spi.CurrentStateConsumer;
 import org.jooq.lambda.Seq;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.jooq.lambda.Seq.seq;
 
 public class AuditRequiredFieldsCalculator<E extends EntityType<E>> implements CurrentStateConsumer<E> {
@@ -26,13 +25,12 @@ public class AuditRequiredFieldsCalculator<E extends EntityType<E>> implements C
     public Stream<? extends EntityField<?, ?>> requiredFields(final Collection<? extends EntityField<E, ?>> fieldsToChange,
                                                               final ChangeOperation changeOperation) {
 
-        final Set<? extends EntityField<E, ?>> onChangeFields = auditedEntityType.getUnderlyingOnChangeFields().collect(toSet());
+        final var onChangeFields = auditedEntityType.getUnderlyingOnChangeFields().collect(toUnmodifiableSet());
 
-        final Seq<? extends EntityField<E, ?>> intersectedChangeFields =
-            seq(fieldsToChange).filter(onChangeFields::contains);
+        final var intersectedChangeFields = seq(fieldsToChange).filter(onChangeFields::contains);
 
-        return Seq.<EntityField<?, ?>>of(auditedEntityType.getIdField())
-            .append(auditedEntityType.getUnderlyingMandatoryFields())
-            .append(intersectedChangeFields);
+        return Seq.<EntityField<?, ?>>seq(auditedEntityType.getUnderlyingMandatoryFields())
+                .append(intersectedChangeFields)
+                .append(auditedEntityType.getIdField());
     }
 }

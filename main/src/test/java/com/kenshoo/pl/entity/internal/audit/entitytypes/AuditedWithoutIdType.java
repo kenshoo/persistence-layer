@@ -17,6 +17,7 @@ public class AuditedWithoutIdType extends AbstractEntityType<AuditedWithoutIdTyp
     @Audited(trigger = ALWAYS)
     public static final EntityField<AuditedWithoutIdType, String> NAME = INSTANCE.field(MainWithoutIdTable.INSTANCE.name);
     public static final EntityField<AuditedWithoutIdType, String> DESC = INSTANCE.field(MainWithoutIdTable.INSTANCE.desc);
+    public static final EntityField<AuditedWithoutIdType, String> DESC2 = INSTANCE.field(MainWithoutIdTable.INSTANCE.desc2);
 
     public DataTable getPrimaryTable() {
         return MainWithoutIdTable.INSTANCE;

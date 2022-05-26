@@ -3,9 +3,11 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.google.common.collect.ImmutableSet;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedAutoIncIdType;
+import com.kenshoo.pl.entity.internal.audit.entitytypes.AuditedWithoutIdType;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.NotAuditedAncestorType;
 import org.junit.Test;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -20,9 +22,21 @@ import static org.junit.Assert.assertThat;
 public class AuditedEntityTypeTest {
 
     @Test
+    public void getIdFieldWhenDoesntExist() {
+        final var auditedEntityType = builder(AuditedWithoutIdType.INSTANCE).build();
+        assertThat(auditedEntityType.getIdField(), is(Optional.empty()));
+    }
+
+    @Test
+    public void getIdFieldWhenExists() {
+        final var auditedEntityType = builder(AuditedAutoIncIdType.INSTANCE).build();
+        assertThat(auditedEntityType.getIdField(), is(Optional.of(AuditedAutoIncIdType.ID)));
+    }
+
+    @Test
     public void getName_Default() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID).build();
+            builder(AuditedAutoIncIdType.INSTANCE).build();
 
         assertThat(auditedEntityType.getName(), is(AuditedAutoIncIdType.INSTANCE.getName()));
     }
@@ -31,7 +45,7 @@ public class AuditedEntityTypeTest {
     public void setAndGetName() {
         final String name = "someName";
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withName(name)
                 .build();
 
@@ -41,7 +55,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasOnCreateOrUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -57,7 +71,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasOnUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -73,7 +87,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -89,7 +103,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasOnCreateOrUpdateAndOnUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .withUnderlyingInternalFields(ON_UPDATE, AuditedAutoIncIdType.DESC2)
                 .build();
@@ -107,7 +121,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasOnCreateOrUpdateAndInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.DESC, AuditedAutoIncIdType.DESC2)
                 .build();
@@ -125,7 +139,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getInternalFields_WhenHasNone() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID).build();
+            builder(AuditedAutoIncIdType.INSTANCE).build();
 
         assertThat(auditedEntityType.getInternalFields().collect(toSet()), is(empty()));
     }
@@ -133,7 +147,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasOnCreateOrUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -146,7 +160,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasOnUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -159,7 +173,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasExternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .build();
 
@@ -169,7 +183,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -179,7 +193,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasOnCreateOrUpdateAndOnUpdate() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .withUnderlyingInternalFields(ON_UPDATE, AuditedAutoIncIdType.DESC2)
                 .build();
@@ -195,7 +209,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasOnCreateOrUpdateAndInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.DESC, AuditedAutoIncIdType.DESC2)
                 .build();
@@ -209,7 +223,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingOnChangeFields_WhenHasNone() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID).build();
+            builder(AuditedAutoIncIdType.INSTANCE).build();
 
         assertThat(auditedEntityType.getUnderlyingOnChangeFields().collect(toSet()), is(empty()));
     }
@@ -217,7 +231,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingMandatoryFields_WhenHasExternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .build();
 
@@ -230,7 +244,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingMandatoryFields_WhenHasInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -243,7 +257,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingMandatoryFields_WhenHasExternalAndInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
@@ -260,7 +274,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getUnderlyingMandatoryFields_WhenHasNoMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -270,7 +284,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getMandatoryFields_WhenHasExternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .build();
 
@@ -285,7 +299,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getMandatoryFields_WhenHasInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -300,7 +314,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getMandatoryFields_WhenHasExternalAndInternalMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME, NotAuditedAncestorType.DESC)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
@@ -319,7 +333,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void getMandatoryFields_WhenHasNoMandatory() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -329,7 +343,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void hasInternalFields_WhenHasOnCreateOrUpdateFields_ShouldReturnTrue() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -339,7 +353,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void hasInternalFields_WhenHasOnUpdateFields_ShouldReturnTrue() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ON_UPDATE, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -349,7 +363,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void hasInternalFields_WhenHasInternalMandatoryFields_ShouldReturnTrue() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingInternalFields(ALWAYS, AuditedAutoIncIdType.NAME, AuditedAutoIncIdType.DESC)
                 .build();
 
@@ -357,8 +371,14 @@ public class AuditedEntityTypeTest {
     }
 
     @Test
+    public void hasInternalFields_WhenEmpty_ShouldReturnFalse() {
+        final var auditedEntityType = builder(AuditedWithoutIdType.INSTANCE).build();
+        assertThat(auditedEntityType.hasInternalFields(), is(false));
+    }
+
+    @Test
     public void hasInternalFields_WhenHasIdOnly_ShouldReturnFalse() {
-        final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType = builder(AuditedAutoIncIdType.ID).build();
+        final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType = builder(AuditedAutoIncIdType.INSTANCE).build();
 
         assertThat(auditedEntityType.hasInternalFields(), is(false));
     }
@@ -366,7 +386,7 @@ public class AuditedEntityTypeTest {
     @Test
     public void hasInternalFields_WhenHasIdAndExternalMandatoryOnly_ShouldReturnFalse() {
         final AuditedEntityType<AuditedAutoIncIdType> auditedEntityType =
-            builder(AuditedAutoIncIdType.ID)
+            builder(AuditedAutoIncIdType.INSTANCE)
                 .withUnderlyingExternalFields(NotAuditedAncestorType.NAME)
                 .build();
 
