@@ -1,5 +1,9 @@
 package com.kenshoo.pl.entity;
 
+/**
+ * Inverse any ValueConverter.
+ * If you have String to Enum converter, use this implementation to have opposite one - Enum to String.
+ */
 public class InverseValueConverter<T, T2> implements ValueConverter<T, T2>{
 
     private final ValueConverter<T2, T> converter;
