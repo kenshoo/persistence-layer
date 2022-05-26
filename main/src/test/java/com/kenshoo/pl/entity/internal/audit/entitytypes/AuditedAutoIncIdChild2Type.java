@@ -17,6 +17,6 @@ public class AuditedAutoIncIdChild2Type extends AbstractAutoIncIdChildType<Audit
     public static final EntityField<AuditedAutoIncIdChild2Type, String> DESC = INSTANCE.field(ChildAutoIncIdTable.INSTANCE.desc);
 
     private AuditedAutoIncIdChild2Type() {
-        super("AuditedChild2");
+        super("AuditedAutoIncChild2");
     }
 }

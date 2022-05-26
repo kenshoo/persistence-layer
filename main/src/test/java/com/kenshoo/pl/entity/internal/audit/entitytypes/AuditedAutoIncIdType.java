@@ -29,6 +29,6 @@ public class AuditedAutoIncIdType extends AbstractAutoIncIdType<AuditedAutoIncId
                                                                                   new DoubleToIntegerValueConverter());
 
     private AuditedAutoIncIdType() {
-        super("Audited");
+        super("AuditedAutoInc");
     }
 }
