@@ -30,7 +30,7 @@ public class AuditRecord {
                         final Collection<? extends FieldAuditRecord> fieldRecords,
                         final Collection<? extends AuditRecord> childRecords) {
         this.entityType = requireNonNull(entityType, "entityType is required");
-        this.entityId = requireNonNull(entityId, "entityId is required");
+        this.entityId = entityId;
         this.mandatoryFieldValues = mandatoryFieldValues;
         this.operator = requireNonNull(operator, "operator is required");
         this.entityChangeDescription = entityChangeDescription;
@@ -42,8 +42,16 @@ public class AuditRecord {
         return entityType;
     }
 
+    /**
+     * @deprecated replaced by {@link #safeGetEntityId()} since the entity id is no longer mandatory
+     */
+    @Deprecated
     public String getEntityId() {
         return entityId;
+    }
+
+    public Optional<String> safeGetEntityId() {
+        return Optional.ofNullable(entityId);
     }
 
     public Collection<? extends FieldValue> getMandatoryFieldValues() {

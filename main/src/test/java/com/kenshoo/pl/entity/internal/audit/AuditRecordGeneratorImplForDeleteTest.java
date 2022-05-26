@@ -59,10 +59,10 @@ public class AuditRecordGeneratorImplForDeleteTest {
 
     @Before
     public void setUp() {
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.empty());
         when(cmd.getChangeOperation()).thenReturn(DELETE);
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
         when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
-        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         auditRecordGenerator = new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
@@ -72,7 +72,8 @@ public class AuditRecordGeneratorImplForDeleteTest {
     }
 
     @Test
-    public void generate_WithIdOnly_ShouldGenerateBasicData() {
+    public void generate_WithIdOnly_ShouldGenerateIdTypeAndOperator() {
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord> actualOptionalAuditRecord =
@@ -84,19 +85,13 @@ public class AuditRecordGeneratorImplForDeleteTest {
                                       hasOperator(DELETE))));
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void generate_WithNoId_ShouldThrowException() {
-        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.empty());
-
-        auditRecordGenerator.generate(cmd, changeContext, emptyList());
-    }
-
     @Test
-    public void generate_WithMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
+    public void generate_WithIdAndMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
         final Collection<FieldValue> expectedMandatoryFieldValues =
             List.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
 
         final Optional<? extends AuditRecord> actualOptionalAuditRecord =
@@ -108,7 +103,8 @@ public class AuditRecordGeneratorImplForDeleteTest {
     }
 
     @Test
-    public void generate_WithChildRecordsOnly_ShouldGenerateChildRecords() {
+    public void generate_WithIdAndChildRecordsOnly_ShouldGenerateChildRecords() {
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
 
         final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
@@ -122,11 +118,12 @@ public class AuditRecordGeneratorImplForDeleteTest {
     }
 
     @Test
-    public void generate_WithMandatoryAndChildRecords_ShouldGenerateMandatoryFieldValuesAndChildRecords() {
+    public void generate_WithIdAndMandatoryAndChildRecords_ShouldGenerateMandatoryFieldValuesAndChildRecords() {
         final Collection<FieldValue> expectedMandatoryFieldValues =
             List.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
 
         final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
@@ -140,6 +137,47 @@ public class AuditRecordGeneratorImplForDeleteTest {
                                       hasSameChildRecord(childRecords.get(0)),
                                       hasSameChildRecord(childRecords.get(1)))));
     }
+
+    @Test
+    public void generate_WhenEmpty_ShouldGenerateTypeAndOperator() {
+        final var actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(allOf(hasEntityType(ENTITY_TYPE_NAME),
+                        hasOperator(DELETE))));
+    }
+
+    @Test
+    public void generate_WithoutIdAndWithMandatoryOnly_ShouldGenerateMandatoryFieldValues() {
+        final Collection<FieldValue> expectedMandatoryFieldValues =
+                List.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                        new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
+
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(allOf(hasMandatoryFieldValue(NotAuditedAncestorType.NAME, ANCESTOR_NAME),
+                        hasMandatoryFieldValue(NotAuditedAncestorType.DESC, ANCESTOR_DESC))));
+    }
+
+    @Test
+    public void generate_WithoutIdAndWithChildRecordsOnly_ShouldGenerateChildRecords() {
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
+
+        final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, childRecords);
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(allOf(hasSameChildRecord(childRecords.get(0)),
+                        hasSameChildRecord(childRecords.get(1)))));
+    }
+
 
     private AuditRecord mockChildRecord() {
         return mock(AuditRecord.class);

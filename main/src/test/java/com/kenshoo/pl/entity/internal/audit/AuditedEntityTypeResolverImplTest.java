@@ -3,7 +3,6 @@ package com.kenshoo.pl.entity.internal.audit;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.AbstractEntityType;
 import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.annotation.audit.Audited;
 import com.kenshoo.pl.entity.internal.audit.entitytypes.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,7 +61,7 @@ public class AuditedEntityTypeResolverImplTest {
                                             when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
 
         final var expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedAutoIncIdType.ID)
+            AuditedEntityType.builder(AuditedAutoIncIdType.INSTANCE)
                              .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE, expectedAuditedFieldMap.values())
                              .build();
@@ -96,7 +95,7 @@ public class AuditedEntityTypeResolverImplTest {
                                             when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
 
         final var expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedAutoIncIdType.ID)
+            AuditedEntityType.builder(AuditedAutoIncIdType.INSTANCE)
                              .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE, Set.of(expectedAuditedFieldMap.get(AuditedAutoIncIdType.NAME),
                                                                              expectedAuditedFieldMap.get(AuditedAutoIncIdType.DESC)))
@@ -136,7 +135,7 @@ public class AuditedEntityTypeResolverImplTest {
                                                     when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
 
         final var expectedAuditedEntityType =
-            AuditedEntityType.builder(AuditedAutoIncIdType.ID)
+            AuditedEntityType.builder(AuditedAutoIncIdType.INSTANCE)
                              .withName(ENTITY_TYPE_NAME)
                              .withExternalFields(expectedAuditedExternalFields)
                              .withInternalFields(ON_CREATE_OR_UPDATE, Set.of(expectedAuditedInternalFieldMap.get(AuditedAutoIncIdType.NAME),
@@ -167,7 +166,7 @@ public class AuditedEntityTypeResolverImplTest {
                                             when(auditedFieldResolver.resolve(field, NOT_AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
 
         final var expectedAuditedEntityType =
-            AuditedEntityType.builder(InclusiveAuditedType.ID)
+            AuditedEntityType.builder(InclusiveAuditedType.INSTANCE)
                              .withName(ENTITY_TYPE_NAME)
                              .withInternalFields(ON_CREATE_OR_UPDATE, expectedAuditedFieldMap.values())
                              .build();
@@ -177,8 +176,77 @@ public class AuditedEntityTypeResolverImplTest {
     }
 
     @Test
-    public void resolve_WhenAudited_AndHasNoId_ShouldReturnEmpty() {
-        assertThat(auditedEntityTypeResolver.resolve(TestAuditedEntityWithoutIdType.INSTANCE), isEmpty());
+    public void resolve_WhenAudited_AndHasNoId_AndHasInternalFields_ShouldReturnThem() {
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithoutIdType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
+        when(externalMandatoryFieldsExtractor.extract(AuditedWithoutIdType.INSTANCE)).thenReturn(Stream.empty());
+
+        final var expectedAuditedFieldMap = Map.of(
+                AuditedWithoutIdType.NAME,
+                AuditedField.builder(AuditedWithoutIdType.NAME)
+                        .withName("name")
+                        .withTrigger(ON_CREATE_OR_UPDATE)
+                        .build(),
+        AuditedWithoutIdType.DESC,
+                AuditedField.builder(AuditedWithoutIdType.DESC)
+                        .withName("desc")
+                        .withTrigger(ON_CREATE_OR_UPDATE)
+                        .build());
+
+        expectedAuditedFieldMap.forEach((field, expectedAuditedField) ->
+                when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
+                AuditedEntityType.builder(AuditedWithoutIdType.INSTANCE)
+                        .withName(ENTITY_TYPE_NAME)
+                        .withInternalFields(ON_CREATE_OR_UPDATE, expectedAuditedFieldMap.values())
+                        .build();
+
+        assertThat(auditedEntityTypeResolver.resolve(AuditedWithoutIdType.INSTANCE),
+                isPresentAndIs(expectedAuditedEntityType));
+    }
+
+    @Test
+    public void resolve_WhenAudited_AndHasNoId_AndHasInternalAndExternalFields_ShouldReturnThem() {
+        final var expectedAuditedInternalFieldMap = Map.of(
+                AuditedWithoutIdType.NAME,
+                AuditedField.builder(AuditedWithoutIdType.NAME)
+                        .withName("name")
+                        .withTrigger(ON_CREATE_OR_UPDATE)
+                        .build(),
+                AuditedWithoutIdType.DESC,
+                AuditedField.builder(AuditedWithoutIdType.DESC)
+                        .withName("desc")
+                        .withTrigger(ON_CREATE_OR_UPDATE)
+                        .build());
+
+        final var expectedAuditedExternalFields = Set.of(
+                AuditedField.builder(AuditedWithAncestorMandatoryType.NAME)
+                        .withName("ancestor_name")
+                        .withTrigger(ALWAYS)
+                        .build(),
+                AuditedField.builder(AuditedWithAncestorMandatoryType.DESC)
+                        .withName("ancestor_desc")
+                        .withTrigger(ALWAYS)
+                        .build());
+
+        when(auditedEntityTypeNameResolver.resolve(AuditedWithoutIdType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
+        doReturn(expectedAuditedExternalFields.stream()).when(externalMandatoryFieldsExtractor).extract(AuditedWithoutIdType.INSTANCE);
+
+        expectedAuditedInternalFieldMap.forEach((field, expectedAuditedField) ->
+                when(auditedFieldResolver.resolve(field, AUDITED)).thenReturn(Optional.of(expectedAuditedField)));
+
+        final var expectedAuditedEntityType =
+                AuditedEntityType.builder(AuditedWithoutIdType.INSTANCE)
+                        .withName(ENTITY_TYPE_NAME)
+                        .withExternalFields(expectedAuditedExternalFields)
+                        .withInternalFields(ON_CREATE_OR_UPDATE,
+                                Set.of(
+                                        expectedAuditedInternalFieldMap.get(AuditedWithoutIdType.NAME),
+                                        expectedAuditedInternalFieldMap.get(AuditedWithoutIdType.DESC)))
+                        .build();
+
+        assertThat(auditedEntityTypeResolver.resolve(AuditedWithoutIdType.INSTANCE),
+                isPresentAndIs(expectedAuditedEntityType));
     }
 
     @Test
@@ -189,26 +257,15 @@ public class AuditedEntityTypeResolverImplTest {
 
     @Test
     public void resolve_WhenNotAudited_AndHasNoId_ShouldReturnEmpty() {
+        when(auditedEntityTypeNameResolver.resolve(TestEntityWithoutIdType.INSTANCE)).thenReturn(ENTITY_TYPE_NAME);
         assertThat(auditedEntityTypeResolver.resolve(TestEntityWithoutIdType.INSTANCE), isEmpty());
-    }
-
-    @Audited
-    public static class TestAuditedEntityWithoutIdType extends AbstractAutoIncIdType<TestAuditedEntityWithoutIdType> {
-
-        public static final TestAuditedEntityWithoutIdType INSTANCE = new TestAuditedEntityWithoutIdType();
-
-        public static final EntityField<TestAuditedEntityWithoutIdType, String> NAME = INSTANCE.field(MainAutoIncIdTable.INSTANCE.name);
-
-        private TestAuditedEntityWithoutIdType() {
-            super("TestAuditedEntityWithoutId");
-        }
     }
 
     public static class TestEntityWithoutIdType extends AbstractEntityType<TestEntityWithoutIdType> {
 
         public static final TestEntityWithoutIdType INSTANCE = new TestEntityWithoutIdType();
 
-        public static final EntityField<TestEntityWithoutIdType, String> NAME = INSTANCE.field(MainAutoIncIdTable.INSTANCE.name);
+        public static final EntityField<TestEntityWithoutIdType, String> NAME = INSTANCE.field(MainWithoutIdTable.INSTANCE.name);
 
         @Override
         public DataTable getPrimaryTable() {

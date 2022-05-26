@@ -9,10 +9,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.audit.AuditTrigger.*;
@@ -43,8 +40,8 @@ public class AuditedEntityType<E extends EntityType<E>> {
         this.internalFields = internalFields;
     }
 
-    public EntityField<E, ? extends Number> getIdField() {
-        return idField;
+    public Optional<EntityField<E, ? extends Number>> getIdField() {
+        return Optional.ofNullable(idField);
     }
 
     public String getName() {
@@ -78,8 +75,8 @@ public class AuditedEntityType<E extends EntityType<E>> {
         return !internalFields.isEmpty();
     }
 
-    public static <E extends EntityType<E>> Builder<E> builder(final EntityField<E, ? extends Number> idField) {
-        return new Builder<>(idField);
+    public static <E extends EntityType<E>> Builder<E> builder(final E entityType) {
+        return new Builder<>(entityType);
     }
 
     public static class Builder<E extends EntityType<E>> {
@@ -88,9 +85,10 @@ public class AuditedEntityType<E extends EntityType<E>> {
         private Set<? extends AuditedField<?, ?>> externalFields = emptySet();
         private final SetMultimap<AuditTrigger, AuditedField<E, ?>> internalFields = HashMultimap.create();
 
-        public Builder(final EntityField<E, ? extends Number> idField) {
-            this.idField = requireNonNull(idField, "idField is required");
-            this.name = idField.getEntityType().getName();
+        public Builder(final E entityType) {
+            requireNonNull(entityType, "entityType is required");
+            this.idField = entityType.getIdField().orElse(null);
+            this.name = entityType.getName();
             Stream.of(ALWAYS, ON_CREATE_OR_UPDATE, ON_UPDATE)
                   .forEach(trigger -> internalFields.putAll(trigger, emptySet()));
         }

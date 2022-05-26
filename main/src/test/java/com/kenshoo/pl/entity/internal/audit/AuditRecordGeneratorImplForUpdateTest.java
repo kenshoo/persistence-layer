@@ -70,7 +70,9 @@ public class AuditRecordGeneratorImplForUpdateTest {
         when(cmd.getChangeOperation()).thenReturn(UPDATE);
         when(changeContext.getEntity(cmd)).thenReturn(currentState);
         when(changeContext.getFinalEntity(cmd)).thenReturn(finalState);
-        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.empty());
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
+        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         auditRecordGenerator = new AuditRecordGeneratorImpl<>(mandatoryFieldValuesGenerator,
                                                               fieldChangesGenerator,
@@ -80,8 +82,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
     @Test
     public void generate_WithIdOnly_ShouldReturnEmpty() {
-        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
-        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
 
         final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
@@ -90,13 +91,13 @@ public class AuditRecordGeneratorImplForUpdateTest {
     }
 
     @Test
-    public void generate_WithMandatoryOnly_ShouldReturnEmpty() {
+    public void generate_WithIdAndMandatoryOnly_ShouldReturnEmpty() {
         final Collection<FieldValue> expectedMandatoryFieldValues =
             List.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                     new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
-        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
         final Optional<? extends AuditRecord> actualOptionalAuditRecord =
             auditRecordGenerator.generate(cmd, changeContext, emptyList());
@@ -105,7 +106,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
     }
 
     @Test
-    public void generate_WithFieldChangesOnly_ShouldReturnBasicDataAndFieldChanges() {
+    public void generate_WithIdAndFieldChangesOnly_ShouldReturnIdTypeAndOperatorAndFieldChanges() {
         final Collection<FieldAuditRecord> expectedFieldChanges =
             ImmutableList.of(FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                                              .oldValue(OLD_NAME)
@@ -116,7 +117,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
                                              .newValue(NEW_DESC)
                                              .build());
 
-        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
         final Optional<? extends AuditRecord> actualOptionalAuditRecord =
@@ -131,11 +132,12 @@ public class AuditRecordGeneratorImplForUpdateTest {
     }
 
     @Test
-    public void generate_WithChildRecordsOnly_ShouldReturnBasicDataAndChildRecords() {
+    public void generate_WithIdAndChildRecordsOnly_ShouldReturnIdTypeAndOperatorAndChildRecords() {
         final Collection<FieldValue> expectedMandatoryFieldValues =
             ImmutableList.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
                              new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
 
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(emptyList());
 
@@ -168,6 +170,7 @@ public class AuditRecordGeneratorImplForUpdateTest {
                                              .newValue(NEW_DESC)
                                              .build());
 
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
 
@@ -190,14 +193,14 @@ public class AuditRecordGeneratorImplForUpdateTest {
     }
 
     @Test
-    public void generate_WithFieldChanges_AndEntityChangeDescriptionInCmd_ShouldGenerateWithEntityChangeDescription() {
+    public void generate_WithIdAndFieldChanges_AndEntityChangeDescriptionInCmd_ShouldGenerateWithEntityChangeDescription() {
         final var expectedFieldChanges = List.of(
                 FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
                         .oldValue(OLD_NAME)
                         .newValue(NEW_NAME)
                         .build());
 
-        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(emptyList());
+        when(entityIdExtractor.extract(cmd, currentState)).thenReturn(Optional.of(STRING_ID));
         when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
         when(cmd.get(AuditProperties.ENTITY_CHANGE_DESCRIPTION)).thenReturn(Optional.of(ENTITY_CHANGE_DESCRIPTION));
 
@@ -206,6 +209,72 @@ public class AuditRecordGeneratorImplForUpdateTest {
 
         assertThat(actualOptionalAuditRecord,
                 isPresentAnd(hasEntityChangeDescription(ENTITY_CHANGE_DESCRIPTION)));
+    }
+
+    @Test
+    public void generate_WhenEmpty_ShouldReturnEmpty() {
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord, isEmpty());
+    }
+
+    @Test
+    public void generate_WithoutIdAndWithMandatoryOnly_ShouldReturnEmpty() {
+        final Collection<FieldValue> expectedMandatoryFieldValues =
+                List.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                        new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
+
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord, isEmpty());
+    }
+
+    @Test
+    public void generate_WithoutIdAndWithFieldChangesOnly_ShouldReturnTypeAndOperatorAndFieldChanges() {
+        final Collection<FieldAuditRecord> expectedFieldChanges =
+                ImmutableList.of(FieldAuditRecord.builder(AuditedAutoIncIdType.NAME)
+                                .oldValue(OLD_NAME)
+                                .newValue(NEW_NAME)
+                                .build(),
+                        FieldAuditRecord.builder(AuditedAutoIncIdType.DESC)
+                                .oldValue(OLD_DESC)
+                                .newValue(NEW_DESC)
+                                .build());
+
+        when(fieldChangesGenerator.generate(currentState, finalState)).thenReturn(expectedFieldChanges);
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, emptyList());
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(allOf(hasEntityType(ENTITY_TYPE_NAME),
+                        hasOperator(UPDATE),
+                        hasChangedFieldRecord(AuditedAutoIncIdType.NAME, OLD_NAME, NEW_NAME),
+                        hasChangedFieldRecord(AuditedAutoIncIdType.DESC, OLD_DESC, NEW_DESC))));
+    }
+
+    @Test
+    public void generate_WithoutIdAndWithChildRecordsOnly_ShouldReturnTypeAndOperatorAndChildRecords() {
+        final Collection<FieldValue> expectedMandatoryFieldValues =
+                ImmutableList.of(new FieldValue(NotAuditedAncestorType.NAME.toString(), ANCESTOR_NAME),
+                        new FieldValue(NotAuditedAncestorType.DESC.toString(), ANCESTOR_DESC));
+
+        when(mandatoryFieldValuesGenerator.generate(finalState)).thenReturn(expectedMandatoryFieldValues);
+
+        final List<AuditRecord> childRecords = ImmutableList.of(mockChildRecord(), mockChildRecord());
+
+        final Optional<? extends AuditRecord> actualOptionalAuditRecord =
+                auditRecordGenerator.generate(cmd, changeContext, childRecords);
+
+        assertThat(actualOptionalAuditRecord,
+                isPresentAnd(allOf(hasEntityType(ENTITY_TYPE_NAME),
+                        hasOperator(UPDATE),
+                        hasSameChildRecord(childRecords.get(0)),
+                        hasSameChildRecord(childRecords.get(1)))));
     }
 
     private AuditRecord mockChildRecord() {

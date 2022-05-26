@@ -64,7 +64,7 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
         final CurrentEntityState currentState = context.getEntity(entityChange);
         final FinalEntityState finalState = context.getFinalEntity(entityChange);
 
-        final String entityId = extractEntityId(entityChange, currentState);
+        final Optional<String> maybeEntityId = entityIdExtractor.extract(entityChange, currentState);
 
         final Collection<? extends FieldValue> mandatoryFieldValues = mandatoryFieldValuesGenerator.generate(finalState);
 
@@ -74,20 +74,13 @@ public class AuditRecordGeneratorImpl<E extends EntityType<E>> implements AuditR
 
         final var auditRecordBuilder = new AuditRecord.Builder()
             .withEntityType(entityTypeName)
-            .withEntityId(entityId)
             .withMandatoryFieldValues(mandatoryFieldValues)
             .withOperator(entityChange.getChangeOperation())
             .withFieldRecords(fieldRecords)
             .withChildRecords(childRecords);
+        maybeEntityId.ifPresent(auditRecordBuilder::withEntityId);
         maybeEntityChangeDescription.ifPresent(auditRecordBuilder::withEntityChangeDescription);
         return auditRecordBuilder.build();
-    }
-
-    private String extractEntityId(final EntityChange<E> entityChange,
-                                   final CurrentEntityState currentState) {
-        return entityIdExtractor.extract(entityChange, currentState)
-                                .orElseThrow(() -> new IllegalStateException("Could not extract the entity id for entity type '" + entityChange.getEntityType() + "' " +
-                                                                                 "from either the EntityChange or the CurrentEntityState, so the audit record cannot be generated."));
     }
 
     @VisibleForTesting

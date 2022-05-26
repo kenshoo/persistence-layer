@@ -8,6 +8,7 @@ import com.kenshoo.pl.entity.audit.AuditTrigger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.kenshoo.pl.entity.internal.audit.AuditIndicator.AUDITED;
@@ -39,18 +40,14 @@ public class AuditedEntityTypeResolverImpl implements AuditedEntityTypeResolver 
     @Override
     public <E extends EntityType<E>> Optional<AuditedEntityType<E>> resolve(final E entityType) {
         requireNonNull(entityType, "entityType is required");
-        return entityType.getIdField()
-                         .flatMap(idField -> resolve(entityType, idField));
-    }
 
-    private <E extends EntityType<E>> Optional<AuditedEntityType<E>> resolve(final E entityType, final EntityField<E, ? extends Number> idField) {
         final var entityAuditIndicator = entityType.getClass().isAnnotationPresent(Audited.class) ? AUDITED : NOT_AUDITED;
 
         final var externalFields = externalMandatoryFieldsExtractor.extract(entityType);
 
-        final var internalFields = resolveInternalFields(entityType, idField, entityAuditIndicator);
+        final var internalFields = resolveInternalFields(entityType, entityAuditIndicator);
 
-        final var auditedEntityType = AuditedEntityType.builder(idField)
+        final var auditedEntityType = AuditedEntityType.builder(entityType)
                                                        .withName(auditedEntityTypeNameResolver.resolve(entityType))
                                                        .withExternalFields(externalFields)
                                                        .withInternalFields(internalFields)
@@ -63,12 +60,17 @@ public class AuditedEntityTypeResolverImpl implements AuditedEntityTypeResolver 
     }
 
     private <E extends EntityType<E>> Map<AuditTrigger, List<AuditedField<E, ?>>> resolveInternalFields(final E entityType,
-                                                                                                        final EntityField<E, ? extends Number> idField,
                                                                                                         final AuditIndicator entityAuditIndicator) {
         return entityType.getFields()
-                         .filter(field -> !idField.equals(field))
+                         .filter(field -> nonIdField(entityType, field))
                          .map(field -> auditedFieldResolver.resolve(field, entityAuditIndicator))
                          .flatMap(Optional::stream)
                          .collect(groupingBy(AuditedField::getTrigger, toUnmodifiableList()));
+    }
+
+    private <E extends EntityType<E>> boolean nonIdField(final E entityType, final EntityField<E, ?> field) {
+        return entityType.getIdField()
+                .filter(idField -> Objects.equals(field, idField))
+                .isEmpty();
     }
 }

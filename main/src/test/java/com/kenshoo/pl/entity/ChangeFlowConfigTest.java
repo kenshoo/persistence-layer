@@ -178,7 +178,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void audit_required_fields_calculator_should_be_in_state_consumers_if_audited_fields_defined() {
 
-        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.INSTANCE)
                                                        .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
                                                                                      TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                        .build();
@@ -246,7 +246,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void audit_required_fields_calculator_should_be_in_state_consumers_if_reenabled_and_audited_fields_defined() {
 
-        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.INSTANCE)
                                                        .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
                                                                                      TestEntity.FIELD_1, TestEntity.FIELD_2)
                                                        .build();
@@ -269,7 +269,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void should_create_audit_record_generator_if_audited_fields_defined() {
 
-        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.INSTANCE)
                                                        .withName(AUDITED_ENTITY_TYPE_NAME)
                                                        .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
                                                                                      TestEntity.FIELD_1, TestEntity.FIELD_2)
@@ -320,7 +320,7 @@ public class ChangeFlowConfigTest {
     @Test
     public void should_create_audit_record_generator_if_reenabled_and_audited_fields_defined() {
 
-        final var auditedEntityType = AuditedEntityType.builder(TestEntity.ID)
+        final var auditedEntityType = AuditedEntityType.builder(TestEntity.INSTANCE)
                                                        .withName(AUDITED_ENTITY_TYPE_NAME)
                                                        .withUnderlyingInternalFields(ON_CREATE_OR_UPDATE,
                                                                                      TestEntity.FIELD_1, TestEntity.FIELD_2)
