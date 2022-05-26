@@ -20,7 +20,7 @@ class AuditRecordEntityIdMatcher extends TypeSafeMatcher<AuditRecord> {
         if (actualRecord == null) {
             return false;
         }
-        return actualRecord.safeGetEntityId().equals(ofNullable(expectedEntityId));
+        return actualRecord.getEntityId().equals(ofNullable(expectedEntityId));
     }
 
     @Override

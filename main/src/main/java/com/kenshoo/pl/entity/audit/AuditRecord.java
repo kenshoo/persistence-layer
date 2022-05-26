@@ -42,15 +42,7 @@ public class AuditRecord {
         return entityType;
     }
 
-    /**
-     * @deprecated replaced by {@link #safeGetEntityId()} since the entity id is no longer mandatory
-     */
-    @Deprecated
-    public String getEntityId() {
-        return entityId;
-    }
-
-    public Optional<String> safeGetEntityId() {
+    public Optional<String> getEntityId() {
         return Optional.ofNullable(entityId);
     }
 

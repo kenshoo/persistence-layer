@@ -42,7 +42,7 @@ public class AuditRecordTest {
                 .withEntityChangeDescription(ENTITY_CHANGE_DESCRIPTION)
                 .build();
 
-        assertThat(auditRecord.safeGetEntityId(), is(Optional.of(ENTITY_ID_1)));
+        assertThat(auditRecord.getEntityId(), is(Optional.of(ENTITY_ID_1)));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class AuditRecordTest {
                 .withOperator(CREATE)
                 .build();
 
-        assertThat(auditRecord.safeGetEntityId(), is(Optional.empty()));
+        assertThat(auditRecord.getEntityId(), is(Optional.empty()));
     }
 
     @Test
