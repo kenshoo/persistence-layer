@@ -28,9 +28,16 @@ public interface EntityChange<E extends EntityType<E>> extends FieldsValueMap<E>
     Stream<FieldChange<E, ?>> getChanges();
 
     /**
-     * @return <code>true</code> if the field is affected by this change. A shorthand for <code>getChangedFields().contains(field)</code>
+     * @return <code>true</code> if the field is affected by this change, without checking suppliers
+     * @deprecated use {@link #isFieldChangedIncludingSuppliers(EntityField)}
      */
     boolean isFieldChanged(EntityField<E, ?> field);
+
+    /**
+     * Same as {@link #isFieldChanged}, but also checks whether there is a supplier for the field if no value provided.
+     * @return <code>true</code> if the field is affected by this change, either directly or through a supplier. A shorthand for <code>getChangedFields().contains(field)</code>
+     */
+    boolean isFieldChangedIncludingSuppliers(EntityField<E, ?> field);
 
     /**
      * @return the identifier of the entity being changed. Works only for update or delete changes, not for create
