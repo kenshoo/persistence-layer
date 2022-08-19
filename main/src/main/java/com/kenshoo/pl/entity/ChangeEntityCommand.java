@@ -104,6 +104,11 @@ abstract public class ChangeEntityCommand<E extends EntityType<E>> implements Mu
     }
 
     @Override
+    public boolean isFieldChangedIncludingSuppliers(final EntityField<E, ?> field) {
+        return values.containsKey(field) || suppliers.containsKey(field);
+    }
+
+    @Override
     public <T> T get(EntityField<E, T> field) {
         //noinspection unchecked,SuspiciousMethodCalls
         T value = (T) values.get(field);
