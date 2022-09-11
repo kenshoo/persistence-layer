@@ -33,12 +33,12 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Chang
 
     @Override
     public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
-        return Stream.empty();
+        return validator.fetchFields();
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
-        if (entityChange.isFieldChanged(validator.validatedField())) {
+        if (entityChange.isFieldChanged(validator.validatedField()) && validator.validateWhen().test(currentState)) {
             return validator.validate(entityChange.get(validator.validatedField()));
         } else {
             return null;
