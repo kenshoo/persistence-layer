@@ -15,6 +15,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -44,6 +45,12 @@ public class FieldValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
+    @Mock
+    private EntityField<TestEntity,String> field1;
+
+    @Mock
+    private EntityField<TestEntity,String> field2;
+
     private FieldValidationAdapter<TestEntity, String> adapter;
 
     @Before
@@ -60,8 +67,11 @@ public class FieldValidationAdapterTest {
 
     @Test
     public void testFetchFieldsInUpdate() {
+        when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());
-        assertEquals("Do not fetch field", fields.size(), 0);
+        assertEquals("Do not fetch field", fields.size(), 2);
+        assertTrue("Fetch field1", fields.contains(field1));
+        assertTrue("Fetch field2", fields.contains(field2));
     }
 
     @Test
@@ -78,6 +88,7 @@ public class FieldValidationAdapterTest {
     @Test
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState);
         verify(validator).validate(STRING_VALUE);
@@ -89,4 +100,14 @@ public class FieldValidationAdapterTest {
         adapter.validate(entityChange, currentState);
         verify(validator, never()).validate(STRING_VALUE);
     }
+
+    @Test
+    public void testSkipValidateValue() {
+        when(entityChange.isFieldChanged(field)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> false);
+        when(entityChange.get(field)).thenReturn(STRING_VALUE);
+        adapter.validate(entityChange, currentState);
+        verify(validator, never()).validate(STRING_VALUE);
+    }
+
 }

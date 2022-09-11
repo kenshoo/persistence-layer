@@ -111,6 +111,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerFieldValidatorTest() {
         when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
+        when(fieldValidator.validateWhen()).thenReturn(when-> true);
         validator.register(fieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(fieldValidator).validate(FIELD_1_VALUE);

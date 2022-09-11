@@ -1,8 +1,12 @@
 package com.kenshoo.pl.entity.spi;
 
+import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.ValidationError;
+
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * The simplest form of a validator - validates a single field value without using any external information.
@@ -25,4 +29,18 @@ public interface FieldValidator<E extends EntityType<E>, T> extends ChangeValida
      * @return validation error or <code>null</code> if none
      */
     ValidationError validate(T fieldValue);
+
+    /**
+     * @return a list of fields to fetch. May contain fields of parent entities only
+     */
+    default Stream<EntityField<?, ?>> fetchFields() {
+        return Stream.of();
+    }
+
+    /**
+     * @return Predicate when should validate fields. It is used together with fetchFields(), so only parent fields can be referenced here.
+     */
+    default Predicate<CurrentEntityState> validateWhen() {
+        return e -> true;
+    }
 }

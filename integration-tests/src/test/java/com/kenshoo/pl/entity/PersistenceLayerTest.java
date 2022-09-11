@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.EntityForTest.URL;
@@ -571,6 +572,36 @@ public class PersistenceLayerTest {
 
         Collection<ValidationError> validationErrors = createResult.getErrors(command);
         assertThat(validationErrors.iterator().next().getErrorCode(), is(FIELD2_ERROR));
+    }
+
+    @Test
+    public void validField2InvalidValueForParentUpdate() {
+        ArrayList<UpdateTestCommand> commands = new ArrayList<>();
+        commands.add(createChangeCommand(ID_1, TestEnum.Zeta, FIELD2_INVALID_VALUE));
+        commands.add(createChangeCommand(ID_2, TestEnum.Zeta, FIELD2_INVALID_VALUE));
+
+        EntityChangeCompositeValidator<EntityForTest> changesCompositeValidator = new EntityChangeCompositeValidator<>();
+        changesCompositeValidator.register(new TestField2WithParentConditionValidator(PARENT_ID_1));
+        ChangeFlowConfig<EntityForTest> flowConfig = changeFlowConfig().withValidator(changesCompositeValidator).build();
+
+        UpdateResult<EntityForTest, EntityForTest.Key> updateResult = persistenceLayer.update(commands, flowConfig);
+
+        Collection<ValidationError> validationErrors = updateResult.getErrors(commands.get(0));
+        assertThat(validationErrors.iterator().next().getErrorCode(), is(FIELD2_ERROR));
+    }
+
+    @Test
+    public void validField2ValidValueForParentUpdate() {
+        ArrayList<UpdateTestCommand> commands = new ArrayList<>();
+        commands.add(createChangeCommand(ID_1, TestEnum.Zeta, FIELD2_INVALID_VALUE));
+
+        EntityChangeCompositeValidator<EntityForTest> changesCompositeValidator = new EntityChangeCompositeValidator<>();
+        changesCompositeValidator.register(new TestField2WithParentConditionValidator(PARENT_ID_2));
+        ChangeFlowConfig<EntityForTest> flowConfig = changeFlowConfig().withValidator(changesCompositeValidator).build();
+
+        UpdateResult<EntityForTest, EntityForTest.Key> updateResult = persistenceLayer.update(commands, flowConfig);
+
+        assertThat(updateResult.hasErrors(), is(false));
     }
 
     @Test
@@ -1231,6 +1262,25 @@ public class PersistenceLayerTest {
                 return new ValidationError(FIELD2_ERROR, EntityForTest.FIELD2);
             }
             return null;
+        }
+    }
+
+    private static class TestField2WithParentConditionValidator extends TestField2Validator {
+
+        private final int parentId;
+
+        private TestField2WithParentConditionValidator(int parentId) {
+            this.parentId = parentId;
+        }
+
+        @Override
+        public Stream<EntityField<?, ?>> fetchFields() {
+            return Stream.of(EntityForTestParent.ID);
+        }
+
+        @Override
+        public Predicate<CurrentEntityState> validateWhen() {
+            return e -> e.get(EntityForTestParent.ID).equals(parentId);
         }
     }
 
