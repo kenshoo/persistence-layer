@@ -3,17 +3,16 @@ package com.kenshoo.jooq;
 import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
+import org.jooq.Table;
 import org.jooq.*;
 import org.jooq.impl.AbstractKeys;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends TableImpl<Record> implements DataTable {
 
@@ -30,6 +29,10 @@ public abstract class AbstractDataTable<T extends AbstractDataTable<T>> extends 
 
     protected AbstractDataTable(T aliased, String alias) {
         super(alias, null, aliased);
+    }
+
+    protected AbstractDataTable(T aliased, Schema schema, String alias) {
+        super(alias, schema, aliased);
     }
 
     protected AbstractDataTable(String tableName, Schema schema) {
