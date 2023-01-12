@@ -50,6 +50,18 @@ public @interface Audited {
     AuditTrigger trigger() default ON_CREATE_OR_UPDATE;
 
     /**
+     * By default, virtual fields will not be audited (even if the entity or field are annotated with a plain '@Audited').<br>
+     * This to avoid redundant auditing of the same data, in case the underlying field(s) are also audited.<br>
+     * This behavior can be overriden, forcing the auditing of a virtual field - by setting this attribute to {@code true}.<br>
+     * This attribute is valid for <b>field-level annotations only</b>, and will be ignored if appearing on entities
+     * (so that it's not applied by accident too broadly).<br>
+     *
+     * @return {@code true} if the annotated field should be audited even if it's virtual<br>
+     *         {@code false} otherwise
+     */
+    boolean allowVirtual() default false;
+
+    /**
      * <b>NOTE</b>: This attribute is valid for entity-level annotations only, and will be ignored if appearing on fields.
      * @return extensions to the basic audit data that will be generated for the annotated entity type.<br>
      * This attribute is valid for <b>entity-level annotations only</b>, and will be ignored if appearing on fields.
