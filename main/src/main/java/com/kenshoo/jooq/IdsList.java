@@ -28,7 +28,7 @@ public interface IdsList<T> extends AutoCloseable, Iterable<T> {
     @Override
     void close();
 
-    <R extends Record, S extends SelectConnectByStep<R>, FT> S imposeOnQuery(S query, Field<FT> idField);
+    <R extends Record, S extends SelectConnectByStep<R>> S imposeOnQuery(S query, Field<T> idField);
 
-    <R extends Record, S extends UpdateWhereStep<R>, FT> UpdateConditionStep<R> imposeOnUpdate(S update, Field<FT> idField);
+    <R extends Record, S extends UpdateWhereStep<R>> UpdateConditionStep<R> imposeOnUpdate(S update, Field<T> idField);
 }

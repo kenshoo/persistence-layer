@@ -59,20 +59,18 @@ abstract class IdsListImpl<T> implements IdsList<T> {
     }
 
     @Override
-    public <R extends Record, S extends SelectConnectByStep<R>, FT> S imposeOnQuery(S query, Field<FT> idField) {
+    public <R extends Record, S extends SelectConnectByStep<R>> S imposeOnQuery(S query, Field<T> idField) {
         //noinspection unchecked
         return (S) _imposeOnQuery(query, idField);
     }
 
-    private <FT> Object _imposeOnQuery(Object object, Field<FT> idField) {
+    private  Object _imposeOnQuery(Object object, Field<T> idField) {
         if (shouldUseTempTable()) {
             Preconditions.checkArgument(object instanceof SelectJoinStep, "Expected " + SelectJoinStep.class.getName() + " but got " + object.getClass().getName());
             populateTempTable();
             //noinspection ConstantConditions,unchecked
             SelectJoinStep<Record> query = (SelectJoinStep<Record>) object;
-            // The idField parameter supports a different type from <T> for the case when we join INT temp ids with BIGINT idField
-            // The cast below in this case is actually a no-op in jOOQ (SQL is not changed) but it makes the compiler happy
-            return query.join(idsTempTable).on(idsTempTable.id.cast(idField.getDataType()).eq(idField));
+            return query.join(idsTempTable).on(idsTempTable.id.eq(idField));
         } else {
             Preconditions.checkArgument(object instanceof SelectWhereStep, "Expected " + SelectWhereStep.class.getName() + " but got " + object.getClass().getName());
             //noinspection unchecked,ConstantConditions
@@ -82,7 +80,7 @@ abstract class IdsListImpl<T> implements IdsList<T> {
     }
 
     @Override
-    public <R extends Record, S extends UpdateWhereStep<R>, FT> UpdateConditionStep<R> imposeOnUpdate(S update, Field<FT> idField) {
+    public <R extends Record, S extends UpdateWhereStep<R>> UpdateConditionStep<R> imposeOnUpdate(S update, Field<T> idField) {
         return update.where(idField.in(ids));
     }
 

@@ -102,6 +102,20 @@ public class IdsListTest {
     }
 
     @Test
+    public void testStringJoinWithStringDataType() {
+        TestTable table = TestTable.TABLE;
+        try (StringIdsList idsList = new StringIdsList(dslContext, IdsTempTable.STRING_SIZE_50_TABLE)) {
+            for (int i = 0; i < 1000; i++) {
+                idsList.add(Integer.toString(i));
+            }
+            SelectJoinStep<Record1<Integer>> step = dslContext.select(table.field).from(table);
+            step = idsList.imposeOnQuery(step, table.id_in_target);
+            List<Integer> values = step.fetch(table.field);
+            assertThat(values.size(), is(1000));
+        }
+    }
+
+    @Test
     public void testIn() {
         TestTable table = TestTable.TABLE;
         try (IntIdsList idsList = new IntIdsList(dslContext)) {
