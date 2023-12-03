@@ -5,6 +5,7 @@ import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.CurrentEntityState;
 import org.jooq.Record;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -21,16 +22,27 @@ public class RecordReader {
 
     public static CurrentEntityState createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
         CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        Iterator<Object> valuesIterator = record.intoList().iterator();
+        Object[] values = convertToValueObjects(record);
+        Iterator<Object> valuesIterator = Arrays.asList(values).iterator();
         fields.forEach(field -> populateEntity(field, valuesIterator, currentState));
         return currentState;
     }
 
+
     public static <E extends EntityType<E>> FieldsValueMap<E> createFieldsValueMap(Record record, List<? extends EntityField<E, ?>> fields) {
         FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
-        Iterator<Object> valuesIterator = record.intoList().iterator();
+        Object[] values = convertToValueObjects(record);
+        Iterator<Object> valuesIterator = Arrays.asList(values).iterator();
         seq(fields).forEach(field -> populateMap(field, valuesIterator, fieldsValueMap));
         return fieldsValueMap;
+    }
+
+    private static Object[] convertToValueObjects(Record record) {
+        Object[] values = new Object[record.size()];
+        for (int i = 0; i < record.size(); i++) {
+            values[i] = record.get(i);
+        }
+        return values;
     }
 
     private static <E extends EntityType<E>, T> void populateMap(EntityField<E, T> field, String aliasName, Record record, FieldsValueMapImpl<E> fieldsValueMap) {
