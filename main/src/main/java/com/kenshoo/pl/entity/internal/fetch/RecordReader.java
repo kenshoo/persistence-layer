@@ -8,6 +8,8 @@ import org.jooq.Record;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.jooq.lambda.Seq.seq;
 
@@ -21,16 +23,22 @@ public class RecordReader {
 
     public static CurrentEntityState createEntity(Record record, Collection<? extends EntityField<?, ?>> fields) {
         CurrentEntityMutableState currentState = new CurrentEntityMutableState();
-        Iterator<Object> valuesIterator = record.intoList().iterator();
+        Iterator<Object> valuesIterator = convertToValueObjects(record).iterator();
         fields.forEach(field -> populateEntity(field, valuesIterator, currentState));
         return currentState;
     }
 
     public static <E extends EntityType<E>> FieldsValueMap<E> createFieldsValueMap(Record record, List<? extends EntityField<E, ?>> fields) {
         FieldsValueMapImpl<E> fieldsValueMap = new FieldsValueMapImpl<>();
-        Iterator<Object> valuesIterator = record.intoList().iterator();
+        Iterator<Object> valuesIterator = convertToValueObjects(record).iterator();
         seq(fields).forEach(field -> populateMap(field, valuesIterator, fieldsValueMap));
         return fieldsValueMap;
+    }
+
+    private static List<Object> convertToValueObjects(Record record) {
+        return IntStream.range(0, record.size())
+                .mapToObj(record::get)
+                .collect(Collectors.toList());
     }
 
     private static <E extends EntityType<E>, T> void populateMap(EntityField<E, T> field, String aliasName, Record record, FieldsValueMapImpl<E> fieldsValueMap) {
