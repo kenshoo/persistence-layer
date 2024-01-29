@@ -134,6 +134,17 @@ public class PLContextSelectTest {
     }
 
     @Test
+    public void selectNothingIsNotNull() {
+        final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.FIELD1)
+                .from(TestParentEntityType.INSTANCE)
+                .where(TestParentEntityType.FIELD2.isNotNull())
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+    }
+
+    @Test
     public void selectFromChildAndParent() {
         final List<CurrentEntityState> entities = plContext.select(TestEntityType.ID, TestEntityType.FIELD1, TestParentEntityType.FIELD1)
                                                .from(TestEntityType.INSTANCE)

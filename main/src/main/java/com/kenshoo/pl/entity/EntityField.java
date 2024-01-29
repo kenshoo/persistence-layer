@@ -45,7 +45,7 @@ public interface EntityField<E extends EntityType<E>, T> {
         final TableField<Record, T> tableField = (TableField<Record, T>)getDbAdapter().getFirstTableField();
         @SuppressWarnings("unchecked")
         final TableField<Record, T> otherTableField = (TableField<Record, T>)otherField.getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.eq(otherTableField), entity -> entity.safeGet(this).equalsValue(entity.safeGet(otherField).get()), this, otherField);
+        return new PLCondition(tableField.eq(otherTableField), entity -> entity.safeGet(this).equals(entity.safeGet(otherField)), this, otherField);
     }
 
     default PLCondition in(T ...values) {

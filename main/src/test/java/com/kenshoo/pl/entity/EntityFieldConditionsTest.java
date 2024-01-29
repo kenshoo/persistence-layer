@@ -54,8 +54,22 @@ public class EntityFieldConditionsTest {
     }
 
     @Test
+    public void testTwoFieldEqualInPostFetchConditionWhenBothIsNUll() {
+        final var entity = createEntityWith(TestEntityType.NAME1, null, TestEntityType.NAME2, null);
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(true));
+    }
+
+    @Test
     public void testTwoFieldNotEqualInPostFetchCondition() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, "anotherName");
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
+    public void testTwoFieldNotEqualInPostFetchConditionWhenOneIsNull() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, null);
 
         assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
     }
