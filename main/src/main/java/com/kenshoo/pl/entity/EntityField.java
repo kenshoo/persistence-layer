@@ -36,6 +36,18 @@ public interface EntityField<E extends EntityType<E>, T> {
         return new PLCondition(tableField.eq(tableValue), entity -> entity.safeGet(this).equalsValue(value), this);
     }
 
+    default PLCondition eq(EntityField<?, T> otherField) {
+        if (isVirtual()) {
+            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
+        }
+
+        @SuppressWarnings("unchecked")
+        final TableField<Record, T> tableField = (TableField<Record, T>)getDbAdapter().getFirstTableField();
+        @SuppressWarnings("unchecked")
+        final TableField<Record, T> otherTableField = (TableField<Record, T>)otherField.getDbAdapter().getFirstTableField();
+        return new PLCondition(tableField.eq(otherTableField), entity -> entity.safeGet(this).equalsValue(entity.safeGet(otherField).get()), this, otherField);
+    }
+
     default PLCondition in(T ...values) {
         if (isVirtual()) {
             throw new UnsupportedOperationException("The in operation is unsupported for virtual fields");
@@ -56,5 +68,14 @@ public interface EntityField<E extends EntityType<E>, T> {
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
         return new PLCondition(tableField.isNull(), entity -> entity.safeGet(this).isNull(), this);
+    }
+
+    default PLCondition isNotNull() {
+        if (isVirtual()) {
+            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
+        }
+        @SuppressWarnings("unchecked")
+        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
+        return new PLCondition(tableField.isNotNull(), entity -> entity.safeGet(this).isNotNull(), this);
     }
 }
