@@ -53,9 +53,9 @@ public class PLContextSelectTest {
             tablesCreated = true;
         }
         dslContext.insertInto(parent_table)
-                  .columns(parent_table.id, parent_table.field1)
-                  .values(1, "ParentAlpha")
-                  .values(2, "ParentBravo")
+                  .columns(parent_table.id, parent_table.field1, parent_table.field2)
+                  .values(1, "ParentAlpha", null)
+                  .values(2, "ParentBravo", "ParentBravo")
                   .execute();
 
         dslContext.insertInto(parent_sec_table)
@@ -97,13 +97,50 @@ public class PLContextSelectTest {
     }
 
     @Test
+    public void selectSingleParentWhenField2EqField1() {
+        final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.ID, TestParentEntityType.FIELD1, TestParentEntityType.FIELD2)
+                .from(TestParentEntityType.INSTANCE)
+                .where(TestParentEntityType.FIELD1.eq(TestParentEntityType.FIELD2))
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+        assertThat(entities.get(0),
+                hasFieldValues(fieldValue(TestParentEntityType.ID, 2),
+                        fieldValue(TestParentEntityType.FIELD1, "ParentBravo"),
+                        fieldValue(TestParentEntityType.FIELD2, "ParentBravo")));
+    }
+
+    @Test
     public void selectIsNull() {
         final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.FIELD1)
                 .from(TestParentEntityType.INSTANCE)
                 .where(TestParentEntityType.FIELD2.isNull())
                 .fetch();
         assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
+
+    }
+
+    @Test
+    public void selectIsNotNull() {
+        final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.FIELD1)
+                .from(TestParentEntityType.INSTANCE)
+                .where(TestParentEntityType.FIELD1.isNotNull())
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
                 entities.size(), is(2));
+
+    }
+
+    @Test
+    public void selectNothingIsNotNull() {
+        final List<CurrentEntityState> entities = plContext.select(TestParentEntityType.FIELD1)
+                .from(TestParentEntityType.INSTANCE)
+                .where(TestParentEntityType.FIELD2.isNotNull())
+                .fetch();
+        assertThat("Incorrect number of entities fetched: ",
+                entities.size(), is(1));
 
     }
 

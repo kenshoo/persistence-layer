@@ -40,6 +40,41 @@ public class EntityFieldConditionsTest {
     }
 
     @Test
+    public void eqBetweenTwoRegularFieldShouldBuildConditionWithField() {
+        final PLCondition plCondition = TestEntityType.NAME1.eq(TestEntityType.NAME2);
+
+        assertContainsFields(plCondition, TestEntityType.NAME1, TestEntityType.NAME2);
+    }
+
+    @Test
+    public void testTwoFieldEqualInPostFetchCondition() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, "myName");
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(true));
+    }
+
+    @Test
+    public void testTwoFieldEqualInPostFetchConditionWhenBothIsNUll() {
+        final var entity = createEntityWith(TestEntityType.NAME1, null, TestEntityType.NAME2, null);
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(true));
+    }
+
+    @Test
+    public void testTwoFieldNotEqualInPostFetchCondition() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, "anotherName");
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
+    public void testTwoFieldNotEqualInPostFetchConditionWhenOneIsNull() {
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, null);
+
+        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
+    }
+
+    @Test
     public void testFieldInValuesInPostFetchConditionWhenFieldValueIsNull() {
         final var entity = createEntityWith(TestEntityType.NAME1, null);
 
@@ -55,9 +90,25 @@ public class EntityFieldConditionsTest {
         assertThat(TestEntityType.NAME1.isNull().getPostFetchCondition().test(entity), is(false));
     }
 
+    @Test
+    public void testFieldIsNotNullInPostFetchCondition() {
+        final var entityWithNullValue = createEntityWith(TestEntityType.NAME1, null);
+        final var entity = createEntityWith(TestEntityType.NAME1, "myName");
+
+        assertThat(TestEntityType.NAME1.isNotNull().getPostFetchCondition().test(entityWithNullValue), is(false));
+        assertThat(TestEntityType.NAME1.isNotNull().getPostFetchCondition().test(entity), is(true));
+    }
+
     private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value) {
         return new FinalEntityState(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
             set(field, value);
+        }});
+    }
+
+    private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value, EntityField<TestEntityType, String> field2, String value2) {
+        return new FinalEntityState(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
+            set(field, value);
+            set(field2, value2);
         }});
     }
 
