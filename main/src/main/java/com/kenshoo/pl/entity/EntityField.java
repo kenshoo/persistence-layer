@@ -6,6 +6,7 @@ import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public interface EntityField<E extends EntityType<E>, T> {
@@ -15,6 +16,8 @@ public interface EntityField<E extends EntityType<E>, T> {
     ValueConverter<T, String> getStringValueConverter();
 
     boolean valuesEqual(T v1, T v2);
+
+    int compareValues(T v1, T v2);
 
     default Class<T> getValueClass() {
         return getStringValueConverter().getValueClass();
@@ -77,5 +80,21 @@ public interface EntityField<E extends EntityType<E>, T> {
         @SuppressWarnings("unchecked")
         final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
         return new PLCondition(tableField.isNotNull(), entity -> entity.safeGet(this).isNotNull(), this);
+    }
+
+    default PLCondition greaterThan(T value) {
+        if (isVirtual()) {
+            throw new UnsupportedOperationException("The greaterThan operation is unsupported for virtual fields");
+        }
+
+        final Object tableValue = getDbAdapter().getFirstDbValue(value);
+        @SuppressWarnings("unchecked") final var tableField = (TableField<Record, Object>) getDbAdapter().getFirstTableField();
+        return new PLCondition(tableField.greaterThan(tableValue), entityFieldGreaterThan(value), this);
+    }
+
+    private Predicate<Entity> entityFieldGreaterThan(T value) {
+        return entity -> entity.safeGet(this)
+                .filter(entityValue -> compareValues(entityValue, value) > 0)
+                .isPresent();
     }
 }

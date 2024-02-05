@@ -2,7 +2,9 @@ package com.kenshoo.pl.entity.internal;
 
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.pl.entity.EntityField;
+import com.kenshoo.pl.entity.EntityFieldDbAdapter;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.ValueConverter;
 import com.kenshoo.pl.entity.converters.IdentityValueConverter;
 import org.jooq.Record;
 import org.jooq.TableField;
@@ -54,7 +56,11 @@ class SecondaryTableRelationExtractor {
     private static <T, E extends EntityType<E>> EntityField<E, ?> createTemporaryEntityField(E entityType, TableField<Record, T> secondaryField, TableField<?, ?> primaryTableField) {
         var primaryField = entityType.findField(primaryTableField).get();
         var converter = IdentityValueConverter.getInstance(secondaryField.getType());
-        return new EntityFieldImpl(entityType, new SimpleEntityFieldDbAdapter<>(secondaryField, converter), primaryField.getStringValueConverter(), Objects::equals);
+        return EntityFieldImpl.builder(entityType)
+                .withDbAdapter((EntityFieldDbAdapter<Object>) new SimpleEntityFieldDbAdapter<>(secondaryField, converter))
+                .withStringValueConverter((ValueConverter<Object, String>) primaryField.getStringValueConverter())
+                .withValueEqualityFunction(Objects::equals)
+                .build();
     }
 
     static <E extends EntityType<E>> Stream<? extends EntityField<E, ?>> relationUsingTableFieldsOfPrimary(DataTable secondaryTable, E entityType) {
