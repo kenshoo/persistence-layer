@@ -1,61 +1,48 @@
 package com.kenshoo.pl.entity.internal;
 
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldDbAdapter;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.ValueConverter;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.equalityfunctions.EntityValueEqualityFunction;
 
-public class EntityFieldImpl<E extends EntityType<E>, T> implements EntityField<E, T> {
+import java.util.Comparator;
 
-    private final EntityType<E> entityType;
+public class EntityFieldImpl<E extends EntityType<E>, T>
+        extends AbstractEntityField<E, T, EntityFieldImpl<E, T>, EntityFieldImpl.Builder<E, T>> {
 
-    private final EntityFieldDbAdapter<T> dbAdapter;
-
-    private final EntityValueEqualityFunction<T> valueEqualityFunction;
-
-    private final ValueConverter<T, String> stringValueConverter;
-
-    public EntityFieldImpl(EntityType<E> entityType, EntityFieldDbAdapter<T> dbAdapter, ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
-        this.entityType = entityType;
-        this.dbAdapter = dbAdapter;
-        this.stringValueConverter = stringValueConverter;
-        this.valueEqualityFunction = valueEqualityFunction;
+    protected EntityFieldImpl(final EntityType<E> entityType,
+                              final EntityFieldDbAdapter<T> dbAdapter,
+                              final ValueConverter<T, String> stringValueConverter,
+                              final EntityValueEqualityFunction<T> valueEqualityFunction,
+                              final Comparator<T> valueComparator) {
+        super(entityType, dbAdapter, stringValueConverter, valueEqualityFunction, valueComparator);
     }
 
     @Override
-    public EntityFieldDbAdapter<T> getDbAdapter() {
-        return dbAdapter;
+    protected Builder<E, T> newBuilder(final EntityType<E> entityType) {
+        return new Builder<>(entityType);
     }
 
-    @Override
-    public ValueConverter<T, String> getStringValueConverter() {
-        return stringValueConverter;
+    public static <E extends EntityType<E>, T> Builder<E, T> builder(final EntityType<E> entityType) {
+        return new Builder<>(entityType);
     }
 
-    @Override
-    public boolean valuesEqual(T v1, T v2) {
-        return valueEqualityFunction.apply(v1, v2);
-    }
+    public static class Builder<E extends EntityType<E>, T>
+            extends AbstractEntityField.Builder<E, T, EntityFieldImpl<E, T>, Builder<E, T>> {
 
-    @Override
-    public EntityType<E> getEntityType() {
-        return entityType;
-    }
+        public Builder(final EntityType<E> entityType) {
+            super(entityType);
+        }
 
-    @Override
-    public String toString() {
-        return entityType.toFieldName(this);
-    }
+        protected Builder<E, T> self() {
+            return this;
+        }
 
-    @Override
-    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
-    public boolean equals(Object o) {
-        return (this == o);
-    }
-
-    @Override
-    public int hashCode() {
-        return System.identityHashCode(this);
+        public EntityFieldImpl<E, T> build() {
+            return new EntityFieldImpl<>(
+                    entityType,
+                    dbAdapter,
+                    stringValueConverter,
+                    valueEqualityFunction,
+                    valueComparator);
+        }
     }
 }
