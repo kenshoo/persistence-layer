@@ -27,14 +27,21 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     private final String errorCode;
     private final EntitiesFetcher fetcher;
     private final UniqueKey<E> uniqueKey;
-    private final PLCondition condition;
+    private final PLCondition fetchCondition;
+    private final PLPostFetchCondition postFetchCondition;
     private final SupportedChangeOperation operation;
 
-    private UniquenessValidator(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey, SupportedChangeOperation operation, PLCondition condition, String errorCode) {
+    private UniquenessValidator(final EntitiesFetcher fetcher,
+                                final UniqueKey<E> uniqueKey,
+                                final SupportedChangeOperation operation,
+                                final PLCondition fetchCondition,
+                                final PLPostFetchCondition postFetchCondition,
+                                final String errorCode) {
         this.errorCode = errorCode;
         this.fetcher = requireNonNull(fetcher, "entity fetcher must be provided");
         this.uniqueKey = requireNonNull(uniqueKey, "unique key must be provided");
-        this.condition = requireNonNull(condition, "condition must be provided");
+        this.fetchCondition = requireNonNull(fetchCondition, "fetchCondition must be provided");
+        this.postFetchCondition = requireNonNull(postFetchCondition, "postFetchCondition must be provided");
         this.operation = requireNonNull(operation, "operation must be provided");
     }
 
@@ -54,7 +61,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         UniqueKey<E> pk = uniqueKey.getEntityType().getPrimaryKey();
         EntityField<E, ?>[] uniqueKeyAndPK = ArrayUtils.addAll(uniqueKey.getFields(), pk.getFields());
 
-        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), condition, uniqueKeyAndPK)
+        Map<Identifier<E>, CurrentEntityState> duplicates = fetcher.fetch(uniqueKey.getEntityType(), commandsByIds.keySet(), fetchCondition, uniqueKeyAndPK)
                 .stream()
                 .collect(toMap(e -> createKeyValue(e, uniqueKey), identity() , (a,b)-> {return a;}));
 
@@ -68,7 +75,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
     private Map<Identifier<E>, EntityChange<E>> markDuplicatesInCollectionWithErrors(Collection<? extends EntityChange<E>> commands, ChangeContext ctx) {
         return commands
                 .stream()
-                .filter(command -> condition.getPostFetchCondition().test(ctx.getFinalEntity(command)))
+                .filter(command -> postFetchCondition.test(ctx.getFinalEntity(command)))
                 .collect(toMap(cmd -> createKeyValue(cmd, ctx, uniqueKey), identity(), fail2ndConflictingCommand(ctx)));
     }
 
@@ -93,7 +100,7 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
 
     @Override
     public Stream<? extends EntityField<?, ?>> requiredFields(Collection<? extends EntityField<E, ?>> fieldsToUpdate, ChangeOperation op) {
-        return Seq.concat(condition.getFields().stream(), Stream.of(uniqueKey.getFields()), Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields()));
+        return Seq.concat(postFetchCondition.getFields().stream(), Stream.of(uniqueKey.getFields()), Stream.of(uniqueKey.getEntityType().getPrimaryKey().getFields()));
     }
 
     public static class Builder<E extends EntityType<E>> {
@@ -101,7 +108,8 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         private String errorCode = "DUPLICATE_ENTITY";
         private final EntitiesFetcher fetcher;
         private final UniqueKey<E> uniqueKey;
-        private PLCondition condition = PLCondition.trueCondition();
+        private PLCondition fetchCondition = PLCondition.trueCondition();
+        private PLPostFetchCondition postFetchCondition = PLPostFetchCondition.trueCondition();
         private SupportedChangeOperation operation = CREATE;
 
         public Builder(EntitiesFetcher fetcher, UniqueKey<E> uniqueKey) {
@@ -114,8 +122,13 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
             return this;
         }
 
-        public Builder<E> setCondition(PLCondition condition) {
-            this.condition = condition;
+        public Builder<E> setFetchCondition(PLCondition fetchCondition) {
+            this.fetchCondition = fetchCondition;
+            return this;
+        }
+
+        public Builder<E> setPostFetchCondition(PLPostFetchCondition postFetchCondition) {
+            this.postFetchCondition = postFetchCondition;
             return this;
         }
 
@@ -125,7 +138,13 @@ public class UniquenessValidator<E extends EntityType<E>> implements ChangesVali
         }
 
         public UniquenessValidator<E> build() {
-            return new UniquenessValidator<>(fetcher, uniqueKey, operation, condition, errorCode);
+            return new UniquenessValidator<>(
+                    fetcher,
+                    uniqueKey,
+                    operation,
+                    fetchCondition,
+                    postFetchCondition,
+                    errorCode);
         }
     }
 

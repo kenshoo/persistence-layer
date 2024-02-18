@@ -180,7 +180,8 @@ public class UniquenessValidatorTest {
     public void whenConditionChecksFieldsOfOtherRelatedEntities_dontFailBulkCommandsIfItIsUnmatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ChildEntity.PARENT_ID, ChildEntity.ORDINAL)))
-                .setCondition(ParentEntity.NAME.eq("moshe"))
+                .setFetchCondition(ParentEntity.NAME.eq("moshe"))
+                .setPostFetchCondition(ParentEntity.NAME.postFetchEq("moshe"))
                 .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "aaa"));
@@ -204,7 +205,8 @@ public class UniquenessValidatorTest {
     public void whenConditionChecksFieldsOfOtherRelatedEntities_failBulkCommandsIfItIsMatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ChildEntity.PARENT_ID, ChildEntity.ORDINAL)))
-                .setCondition(ParentEntity.NAME.eq("moshe"))
+                .setFetchCondition(ParentEntity.NAME.eq("moshe"))
+                .setPostFetchCondition(ParentEntity.NAME.postFetchEq("moshe"))
                 .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99).with(ParentEntity.NAME, "moshe"));
@@ -228,7 +230,8 @@ public class UniquenessValidatorTest {
     public void testDontFailCommandWhenSameUniqueKeyInBulkButConditionIsUnmatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setFetchCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setPostFetchCondition(PLPostFetchCondition.not(ParentEntity.ID_IN_TARGET.postFetchIsNull()))
                 .build();
 
         final var entity1 = new CreateParent()
@@ -250,7 +253,8 @@ public class UniquenessValidatorTest {
     public void testFailCommandWhenSameUniqueKeyInBulkAndConditionIsMatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setFetchCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setPostFetchCondition(PLPostFetchCondition.not(ParentEntity.ID_IN_TARGET.postFetchIsNull()))
                 .build();
 
         final var entity1 = new CreateParent()
@@ -272,7 +276,8 @@ public class UniquenessValidatorTest {
     public void testDontFailWhenAllCommandsUnmatchedCondition() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setFetchCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setPostFetchCondition(PLPostFetchCondition.not(ParentEntity.ID_IN_TARGET.postFetchIsNull()))
                 .build();
 
         final var entity1 = new CreateParent()
@@ -296,7 +301,8 @@ public class UniquenessValidatorTest {
 
         UniquenessValidator<ParentEntity> validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, uniqueness)
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setFetchCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setPostFetchCondition(PLPostFetchCondition.not(ParentEntity.ID_IN_TARGET.postFetchIsNull()))
                 .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99)
@@ -318,7 +324,8 @@ public class UniquenessValidatorTest {
     public void testFailCommandWhenSameUniqueKeyInDBAndConditionIsMatched() {
         final var validator = new UniquenessValidator
                 .Builder<>(entitiesFetcher, new UniqueKey<>(List.of(ParentEntity.NAME)))
-                .setCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setFetchCondition(PLCondition.not(ParentEntity.ID_IN_TARGET.isNull()))
+                .setPostFetchCondition(PLPostFetchCondition.not(ParentEntity.ID_IN_TARGET.postFetchIsNull()))
                 .build();
 
         create(new CreateParent().with(ParentEntity.ID, 99)
