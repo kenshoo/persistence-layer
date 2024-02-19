@@ -100,13 +100,13 @@ public class EntityFieldConditionsTest {
     }
 
     private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value) {
-        return new FinalEntityState(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
+        return FinalEntityState.merge(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
             set(field, value);
         }});
     }
 
     private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value, EntityField<TestEntityType, String> field2, String value2) {
-        return new FinalEntityState(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
+        return FinalEntityState.merge(CurrentEntityState.EMPTY, new CreateEntityCommand<>(TestEntityType.INSTANCE) {{
             set(field, value);
             set(field2, value2);
         }});

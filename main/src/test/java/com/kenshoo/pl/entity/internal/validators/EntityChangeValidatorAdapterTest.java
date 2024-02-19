@@ -36,6 +36,9 @@ public class EntityChangeValidatorAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
+    @Mock
+    private FinalEntityState finalState;
+
     private EntityChangeValidatorAdapter<TestEntity> adapter;
 
     @Before
@@ -66,7 +69,7 @@ public class EntityChangeValidatorAdapterTest {
 
     @Test
     public void testValidateValue() {
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(entityChange, currentState);
     }
 

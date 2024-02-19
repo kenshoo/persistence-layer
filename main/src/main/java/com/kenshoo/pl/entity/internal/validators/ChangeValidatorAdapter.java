@@ -27,8 +27,9 @@ public interface ChangeValidatorAdapter<E extends EntityType<E>> {
      *
      * @param entityChange entity change
      * @param currentState existing entity
+     * @param finalState final entity
      *
      * @return a validation error if any, <code>null</code> if none
      */
-    ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState);
+    ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState);
 }

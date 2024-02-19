@@ -1,12 +1,6 @@
 package com.kenshoo.pl.entity.spi.helpers;
 
-import com.kenshoo.pl.entity.ChangeContext;
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityFieldPrototype;
-import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.internal.EntityTypeReflectionUtil;
 import com.kenshoo.pl.entity.internal.validators.*;
 import com.kenshoo.pl.entity.spi.*;
@@ -84,9 +78,10 @@ public class EntityChangeCompositeValidator<E extends EntityType<E>> implements 
     public void validate(Collection<? extends EntityChange<E>> entityChanges, ChangeOperation changeOperation, ChangeContext changeContext) {
         entityChanges.forEach(entityChange -> {
             CurrentEntityState currentState = changeContext.getEntity(entityChange);
+            FinalEntityState finalState = FinalEntityState.merge(currentState, entityChange);
             Collection<? extends EntityField<E, ?>> fieldsToUpdate = entityChange.getChangedFields().collect(Collectors.toList());
             findValidatorsTriggeredByFields(fieldsToUpdate, changeOperation)
-                    .map(validator -> validator.validate(entityChange, currentState))
+                    .map(validator -> validator.validate(entityChange, currentState, finalState))
                     .filter(Objects::nonNull)
                     .forEach(validationError -> changeContext.addValidationError(entityChange, validationError));
         });

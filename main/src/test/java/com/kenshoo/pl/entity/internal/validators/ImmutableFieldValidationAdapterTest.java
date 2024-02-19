@@ -1,12 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ImmutableFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +43,9 @@ public class ImmutableFieldValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
+    @Mock
+    private FinalEntityState finalState;
+
     private ImmutableFieldValidationAdapter<TestEntity, String> adapter;
 
     @Before
@@ -88,7 +85,7 @@ public class ImmutableFieldValidationAdapterTest {
     @Test
     public void testValidateValueChange() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        ValidationError validationError = adapter.validate(entityChange, currentState);
+        ValidationError validationError = adapter.validate(entityChange, currentState, finalState);
         assertNotNull("No validation error", validationError);
         assertEquals("Error code", validationError.getErrorCode(), ERROR_CODE);
     }
@@ -97,6 +94,6 @@ public class ImmutableFieldValidationAdapterTest {
     public void testValidateValueChangeWhenPredicateFalse() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(validator.immutableWhen()).thenReturn(currentState -> false);
-        assertNull(adapter.validate(entityChange, currentState));
+        assertNull(adapter.validate(entityChange, currentState, finalState));
     }
 }

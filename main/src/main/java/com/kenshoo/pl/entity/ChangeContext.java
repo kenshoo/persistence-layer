@@ -11,7 +11,7 @@ public interface ChangeContext {
     CurrentEntityState getEntity(EntityChange entityChange);
 
     default FinalEntityState getFinalEntity(EntityChange<? extends EntityType<?>> change) {
-        return new FinalEntityState(getEntity(change), change);
+        return FinalEntityState.merge(getEntity(change), change);
     }
 
     void addEntity(EntityChange change, CurrentEntityState currentState);

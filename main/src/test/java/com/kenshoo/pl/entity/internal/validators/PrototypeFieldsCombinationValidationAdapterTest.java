@@ -13,8 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,11 +36,14 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Mock
     private CurrentEntityState currentState;
 
+    @Mock
+    private FinalEntityState finalState;
+
     private PrototypeFieldsCombinationValidationAdapter<TestEntity> adapter;
 
     @Before
     public void setUp(){
-        adapter = new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.<EntityFieldPrototype<?>, EntityField<TestEntity, ?>>of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2));
+        adapter = new PrototypeFieldsCombinationValidationAdapter<>(validator, ImmutableMap.of(TestDataFieldPrototype.FIELD_1, TestEntity.FIELD_1, TestDataFieldPrototype.FIELD_2, TestEntity.FIELD_2));
 
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.UPDATE);
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
@@ -73,17 +75,17 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Test
     public void testValidateForCreate() {
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.CREATE);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(TestDataFieldPrototype.FIELD_1), STRING_VALUE1);
-            assertEquals("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2), null);
+            assertNull("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2));
             return true;
         }));
     }
 
     @Test
     public void testValidateForUpdate() {
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(TestDataFieldPrototype.FIELD_1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2), STRING_VALUE2);
@@ -93,7 +95,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidField() {
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState,finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             fieldCombination.get(invalidField);
             return true;

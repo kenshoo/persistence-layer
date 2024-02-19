@@ -1,11 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.ChangeEntityCommand;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.FieldValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +39,9 @@ public class FieldValidationAdapterTest {
 
     @Mock
     private CurrentEntityState currentState;
+
+    @Mock
+    private FinalEntityState finalState;
 
     @Mock
     private EntityField<TestEntity,String> field1;
@@ -90,14 +88,14 @@ public class FieldValidationAdapterTest {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(validator.validateWhen()).thenReturn(value -> true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(STRING_VALUE);
     }
 
     @Test
     public void testNoValueToValidate() {
         when(entityChange.isFieldChanged(field)).thenReturn(false);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator, never()).validate(STRING_VALUE);
     }
 
@@ -106,7 +104,7 @@ public class FieldValidationAdapterTest {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(validator.validateWhen()).thenReturn(value -> false);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator, never()).validate(STRING_VALUE);
     }
 

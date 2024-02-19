@@ -30,7 +30,7 @@ public class EntityChangeValidatorAdapter<E extends EntityType<E>> implements Ch
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState) {
         return validator.validate(entityChange, currentState);
     }
 }

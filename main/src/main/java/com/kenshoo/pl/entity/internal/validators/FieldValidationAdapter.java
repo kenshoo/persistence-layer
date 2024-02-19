@@ -1,11 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.FieldValidator;
 
 import java.util.stream.Stream;
@@ -37,7 +32,7 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Chang
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState) {
         if (entityChange.isFieldChanged(validator.validatedField()) && validator.validateWhen().test(currentState)) {
             return validator.validate(entityChange.get(validator.validatedField()));
         } else {
