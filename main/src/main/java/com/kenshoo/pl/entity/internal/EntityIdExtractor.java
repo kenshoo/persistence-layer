@@ -26,7 +26,7 @@ public class EntityIdExtractor {
                                                                   final EntityField<E, T> idField) {
 
         return firstPresent(() -> extractFromIdentifier(entityChange, idField),
-                            () -> new FinalEntityState(currentState, entityChange).safeGet(idField))
+                            () -> FinalEntityState.merge(currentState, entityChange).safeGet(idField))
             .mapToOptional(String::valueOf);
     }
 

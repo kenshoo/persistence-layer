@@ -1,11 +1,8 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 /**
@@ -38,9 +35,9 @@ public interface FieldValidator<E extends EntityType<E>, T> extends ChangeValida
     }
 
     /**
-     * @return Predicate when should validate fields. It is used together with fetchFields(), so only parent fields can be referenced here.
+     * @return Predicate when should validate fields. It is used together with fetchFields()
      */
-    default Predicate<CurrentEntityState> validateWhen() {
-        return e -> true;
+    default BiPredicate<CurrentEntityState, EntityChange<E>> validateWhen() {
+        return (currentEntityState, entityChange) -> true;
     }
 }

@@ -7,7 +7,11 @@ public class FinalEntityState implements Entity {
     private final CurrentEntityState currentState;
     private final EntityChange<? extends EntityType<?>> change;
 
-    public FinalEntityState(CurrentEntityState currentState, EntityChange<? extends EntityType<?>> change) {
+    public static FinalEntityState merge(CurrentEntityState currentEntityState, EntityChange<? extends EntityType<?>> entityChange) {
+        return new FinalEntityState(currentEntityState, entityChange);
+    }
+
+    private FinalEntityState(CurrentEntityState currentState, EntityChange<? extends EntityType<?>> change) {
         this.currentState = currentState;
         this.change = change;
     }

@@ -1,10 +1,11 @@
 package com.kenshoo.pl.entity.spi;
 
 import com.kenshoo.pl.entity.CurrentEntityState;
+import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 /**
@@ -26,10 +27,10 @@ public interface RequiredFieldValidator<E extends EntityType<E>, T> extends Chan
     String getErrorCode();
 
     /**
-     * @return Predicate when should validate field.
+     * @return Predicate when should validate field. It is used together with fetchFields()
      */
-    default Predicate<CurrentEntityState> requireWhen() {
-        return e -> true;
+    default BiPredicate<CurrentEntityState, EntityChange<E>> requireWhen() {
+        return (currentState, entityChange) -> true;
     }
 
     /**

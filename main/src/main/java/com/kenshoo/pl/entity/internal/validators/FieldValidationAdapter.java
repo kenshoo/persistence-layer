@@ -38,7 +38,7 @@ public class FieldValidationAdapter<E extends EntityType<E>, T> implements Chang
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
-        if (entityChange.isFieldChanged(validator.validatedField()) && validator.validateWhen().test(currentState)) {
+        if (entityChange.isFieldChanged(validator.validatedField()) && validator.validateWhen().test(currentState, entityChange)) {
             return validator.validate(entityChange.get(validator.validatedField()));
         } else {
             return null;

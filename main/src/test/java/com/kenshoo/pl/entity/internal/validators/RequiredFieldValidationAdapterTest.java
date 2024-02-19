@@ -40,7 +40,7 @@ public class RequiredFieldValidationAdapterTest {
     @Before
     public void init() {
         when(validator.requiredField()).thenReturn(TestEntity.FIELD_1);
-        when(validator.requireWhen()).thenReturn(currentState -> true);
+        when(validator.requireWhen()).thenReturn((currentState, entityChange) -> true);
         underTest = new RequiredFieldValidationAdapter(validator);
     }
 
@@ -94,7 +94,7 @@ public class RequiredFieldValidationAdapterTest {
         CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
         entityChange.set(TestEntity.FIELD_1, (String)null);
 
-        when(validator.requireWhen()).thenReturn(currentState -> false);
+        when(validator.requireWhen()).thenReturn((currentState, change) -> false);
 
         assertNull(underTest.validate(entityChange, currentState));
     }

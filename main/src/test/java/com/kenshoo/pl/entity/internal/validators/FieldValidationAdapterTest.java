@@ -88,7 +88,7 @@ public class FieldValidationAdapterTest {
     @Test
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        when(validator.validateWhen()).thenReturn(value -> true);
+        when(validator.validateWhen()).thenReturn((current, command) -> true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState);
         verify(validator).validate(STRING_VALUE);
@@ -104,7 +104,7 @@ public class FieldValidationAdapterTest {
     @Test
     public void testSkipValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
-        when(validator.validateWhen()).thenReturn(value -> false);
+        when(validator.validateWhen()).thenReturn((current, command) -> false);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState);
         verify(validator, never()).validate(STRING_VALUE);

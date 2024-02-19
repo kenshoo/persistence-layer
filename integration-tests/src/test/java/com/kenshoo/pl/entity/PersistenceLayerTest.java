@@ -26,7 +26,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import static com.kenshoo.pl.entity.EntityForTest.URL;
@@ -1279,8 +1279,8 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public Predicate<CurrentEntityState> validateWhen() {
-            return e -> e.get(EntityForTestParent.ID).equals(parentId);
+        public BiPredicate<CurrentEntityState, EntityChange<EntityForTest>> validateWhen() {
+            return (currentEntityState, entityChange) -> currentEntityState.get(EntityForTestParent.ID).equals(parentId);
         }
     }
 

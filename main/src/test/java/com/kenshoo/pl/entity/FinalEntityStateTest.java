@@ -15,7 +15,7 @@ public class FinalEntityStateTest {
 
     @Test
     public void whenFieldIsInBothCurrentStateAndChangeThenReturnValueFromChange() {
-        FinalEntityState finalState = new FinalEntityState(
+        FinalEntityState finalState = FinalEntityState.merge(
                 currentState(of(FIELD_1, "from current state")),
                 entityChange(of(FIELD_1, "from change"))
         );
@@ -26,7 +26,7 @@ public class FinalEntityStateTest {
 
     @Test
     public void whenFieldIsOnlyInCurrentStateThenReturnValueFromCurrentState() {
-        FinalEntityState finalState = new FinalEntityState(
+        FinalEntityState finalState = FinalEntityState.merge(
                 currentState(of(FIELD_1, "from current state")),
                 NO_CHANGES
         );
@@ -37,7 +37,7 @@ public class FinalEntityStateTest {
 
     @Test
     public void whenFieldIsOnlyInChangeThenReturnValueFromChange() {
-        FinalEntityState finalState = new FinalEntityState(
+        FinalEntityState finalState = FinalEntityState.merge(
                 CurrentEntityState.EMPTY,
                 entityChange(of(FIELD_1, "current_field_1"))
         );
@@ -48,19 +48,19 @@ public class FinalEntityStateTest {
 
     @Test
     public void containsReturnsFalseForNonExistingField() {
-        FinalEntityState finalState = new FinalEntityState(CurrentEntityState.EMPTY, NO_CHANGES);
+        FinalEntityState finalState = FinalEntityState.merge(CurrentEntityState.EMPTY, NO_CHANGES);
         assertFalse(finalState.containsField(FIELD_1));
     }
 
     @Test
     public void gettingFieldThatDoesNotExistsThenReturnNull() {
-        FinalEntityState finalState = new FinalEntityState(CurrentEntityState.EMPTY, NO_CHANGES);
+        FinalEntityState finalState = FinalEntityState.merge(CurrentEntityState.EMPTY, NO_CHANGES);
         assertNull(finalState.get(FIELD_1));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void throwUnsupportedExceptionWhenTryingToGetMany() {
-        FinalEntityState finalState = new FinalEntityState(CurrentEntityState.EMPTY, NO_CHANGES);
+        FinalEntityState finalState = FinalEntityState.merge(CurrentEntityState.EMPTY, NO_CHANGES);
         assertNull(finalState.getMany(TestChildEntity.INSTANCE));
     }
 

@@ -111,7 +111,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerFieldValidatorTest() {
         when(fieldValidator.validatedField()).thenReturn(TestEntity.FIELD_1);
-        when(fieldValidator.validateWhen()).thenReturn(when-> true);
+        when(fieldValidator.validateWhen()).thenReturn((current, entityChange)-> true);
         validator.register(fieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(fieldValidator).validate(FIELD_1_VALUE);
@@ -155,7 +155,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerRequiredFieldValidatorTest() {
         when(requiredFieldValidator.requiredField()).thenReturn(TestEntity.FIELD_1);
-        when(requiredFieldValidator.requireWhen()).thenReturn(when-> true);
+        when(requiredFieldValidator.requireWhen()).thenReturn((currentState, entityChange) -> true);
         when(entityChange.safeGet(TestEntity.FIELD_1)).thenReturn(Triptional.nullInstance());
         validator.register(requiredFieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
