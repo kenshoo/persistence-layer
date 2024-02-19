@@ -1279,7 +1279,7 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public Predicate<CurrentEntityState> validateWhen() {
+        public Predicate<FinalEntityState> validateWhen() {
             return e -> e.get(EntityForTestParent.ID).equals(parentId);
         }
     }
