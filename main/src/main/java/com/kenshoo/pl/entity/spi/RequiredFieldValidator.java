@@ -1,8 +1,8 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
+import com.kenshoo.pl.entity.FinalEntityState;
 
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -26,9 +26,10 @@ public interface RequiredFieldValidator<E extends EntityType<E>, T> extends Chan
     String getErrorCode();
 
     /**
-     * @return Predicate when should validate field.
+     * @return Predicate when should validate fields. It is used together with fetchFields().
+     * The predicate is evaluated on the final state of the entity See {@link FinalEntityState}.
      */
-    default Predicate<CurrentEntityState> requireWhen() {
+    default Predicate<FinalEntityState> requireWhen() {
         return e -> true;
     }
 
