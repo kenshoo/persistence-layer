@@ -14,8 +14,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FieldComplexValidationAdapterTest {
@@ -71,7 +70,16 @@ public class FieldComplexValidationAdapterTest {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(field)).thenReturn(true);
         when(entityChange.get(field)).thenReturn(STRING_VALUE);
+        when(validator.validateWhen()).thenReturn(finalState -> true);
         adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(STRING_VALUE, currentState);
+    }
+
+    @Test
+    public void testSkipValidateValueWhenValidateWhenReturnFalse() {
+        when(entityChange.isFieldChanged(field)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(finalState -> false);
+        adapter.validate(entityChange, currentState, finalState);
+        verify(validator, never()).validate(STRING_VALUE, currentState);
     }
 }
