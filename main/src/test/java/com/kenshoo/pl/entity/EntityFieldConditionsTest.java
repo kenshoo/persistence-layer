@@ -27,58 +27,58 @@ public class EntityFieldConditionsTest {
     public void testFieldEqualInPostFetchCondition() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName");
 
-        assertThat(TestEntityType.NAME1.eq("myName").getPostFetchCondition().test(entity), is(true));
-        assertThat(TestEntityType.NAME1.eq("abcd").getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchEq("myName").test(entity), is(true));
+        assertThat(TestEntityType.NAME1.postFetchEq("abcd").test(entity), is(false));
     }
 
     @Test
     public void testFieldInValuesInPostFetchCondition() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName");
 
-        assertThat(TestEntityType.NAME1.in("abcd", "myName").getPostFetchCondition().test(entity), is(true));
-        assertThat(TestEntityType.NAME1.in("abcd", "aaaa").getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchIn("abcd", "myName").test(entity), is(true));
+        assertThat(TestEntityType.NAME1.postFetchIn("abcd", "aaaa").test(entity), is(false));
     }
 
     @Test
     public void eqBetweenTwoRegularFieldShouldBuildConditionWithField() {
-        final PLCondition plCondition = TestEntityType.NAME1.eq(TestEntityType.NAME2);
+        final PLPostFetchCondition plPostFetchCondition = TestEntityType.NAME1.postFetchEq(TestEntityType.NAME2);
 
-        assertContainsFields(plCondition, TestEntityType.NAME1, TestEntityType.NAME2);
+        assertContainsFields(plPostFetchCondition, TestEntityType.NAME1, TestEntityType.NAME2);
     }
 
     @Test
     public void testTwoFieldEqualInPostFetchCondition() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, "myName");
 
-        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(true));
+        assertThat(TestEntityType.NAME1.postFetchEq(TestEntityType.NAME2).test(entity), is(true));
     }
 
     @Test
     public void testTwoFieldEqualInPostFetchConditionWhenBothIsNUll() {
         final var entity = createEntityWith(TestEntityType.NAME1, null, TestEntityType.NAME2, null);
 
-        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(true));
+        assertThat(TestEntityType.NAME1.postFetchEq(TestEntityType.NAME2).test(entity), is(true));
     }
 
     @Test
     public void testTwoFieldNotEqualInPostFetchCondition() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, "anotherName");
 
-        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchEq(TestEntityType.NAME2).test(entity), is(false));
     }
 
     @Test
     public void testTwoFieldNotEqualInPostFetchConditionWhenOneIsNull() {
         final var entity = createEntityWith(TestEntityType.NAME1, "myName", TestEntityType.NAME2, null);
 
-        assertThat(TestEntityType.NAME1.eq(TestEntityType.NAME2).getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchEq(TestEntityType.NAME2).test(entity), is(false));
     }
 
     @Test
     public void testFieldInValuesInPostFetchConditionWhenFieldValueIsNull() {
         final var entity = createEntityWith(TestEntityType.NAME1, null);
 
-        assertThat(TestEntityType.NAME1.in("abcd").getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchIn("abcd").test(entity), is(false));
     }
 
     @Test
@@ -86,8 +86,8 @@ public class EntityFieldConditionsTest {
         final var entityWithNullValue = createEntityWith(TestEntityType.NAME1, null);
         final var entity = createEntityWith(TestEntityType.NAME1, "myName");
 
-        assertThat(TestEntityType.NAME1.isNull().getPostFetchCondition().test(entityWithNullValue), is(true));
-        assertThat(TestEntityType.NAME1.isNull().getPostFetchCondition().test(entity), is(false));
+        assertThat(TestEntityType.NAME1.postFetchIsNull().test(entityWithNullValue), is(true));
+        assertThat(TestEntityType.NAME1.postFetchIsNull().test(entity), is(false));
     }
 
     @Test
@@ -95,8 +95,8 @@ public class EntityFieldConditionsTest {
         final var entityWithNullValue = createEntityWith(TestEntityType.NAME1, null);
         final var entity = createEntityWith(TestEntityType.NAME1, "myName");
 
-        assertThat(TestEntityType.NAME1.isNotNull().getPostFetchCondition().test(entityWithNullValue), is(false));
-        assertThat(TestEntityType.NAME1.isNotNull().getPostFetchCondition().test(entity), is(true));
+        assertThat(TestEntityType.NAME1.postFetchIsNotNull().test(entityWithNullValue), is(false));
+        assertThat(TestEntityType.NAME1.postFetchIsNotNull().test(entity), is(true));
     }
 
     private FinalEntityState createEntityWith(EntityField<TestEntityType, String> field, String value) {
@@ -117,10 +117,10 @@ public class EntityFieldConditionsTest {
         TestEntityType.FULL_NAME.eq("abc");
     }
 
-    private void assertContainsFields(final PLCondition plCondition,
+    private void assertContainsFields(final PLBaseCondition<?> plBaseCondition,
                                       final EntityField<?, ?>... fields) {
         assertThat("Incorrect fields in PL condition: ",
-                   plCondition.getFields(), equalTo(ImmutableSet.copyOf(fields)));
+                   plBaseCondition.getFields(), equalTo(ImmutableSet.copyOf(fields)));
     }
 
     private static class TestTable extends AbstractDataTable<TestTable> {
