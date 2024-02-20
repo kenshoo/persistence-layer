@@ -1,11 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PrototypeFieldComplexValidator;
 
 import java.util.Objects;
@@ -39,7 +34,7 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState,  FinalEntityState finalState) {
         if (entityChange.isFieldChanged(validatedField)) {
             return prototypeFieldValidator.validate(entityChange.get(validatedField), currentState);
         } else {

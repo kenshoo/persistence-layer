@@ -1,12 +1,7 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.google.common.collect.ImmutableMap;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.ImmutableFieldValidator;
 
 import java.util.stream.Stream;
@@ -43,7 +38,7 @@ public class ImmutableFieldValidationAdapter<E extends EntityType<E>, T> impleme
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState) {
         if (entityChange.isFieldChanged(validator.immutableField()) && validator.immutableWhen().test(currentState)) {
             return new ValidationError(validator.getErrorCode(), validator.immutableField(), ImmutableMap.of("field", validator.immutableField().toString()));
         }

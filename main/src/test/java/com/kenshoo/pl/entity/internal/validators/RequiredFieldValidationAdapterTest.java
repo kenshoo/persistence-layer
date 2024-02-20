@@ -30,6 +30,9 @@ public class RequiredFieldValidationAdapterTest {
     private CurrentEntityState currentState;
 
     @Mock
+    private FinalEntityState finalState;
+
+    @Mock
     private EntityField<TestEntity, String> fetchField;
 
     @Mock
@@ -51,7 +54,7 @@ public class RequiredFieldValidationAdapterTest {
 
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
 
-        ValidationError result = underTest.validate(entityChange, currentState);
+        ValidationError result = underTest.validate(entityChange, currentState, finalState);
 
         assertEquals(ERROR_CODE, result.getErrorCode());
         assertEquals(TestEntity.FIELD_1, result.getField());
@@ -62,7 +65,7 @@ public class RequiredFieldValidationAdapterTest {
         CreateEntityCommand<TestEntity> entityChange = new CreateEntityCommand<>(TestEntity.INSTANCE);
         entityChange.set(TestEntity.FIELD_1, VALUE);
 
-        ValidationError result = underTest.validate(entityChange, currentState);
+        ValidationError result = underTest.validate(entityChange, currentState, finalState);
 
         assertNull(result);
     }
@@ -96,7 +99,7 @@ public class RequiredFieldValidationAdapterTest {
 
         when(validator.requireWhen()).thenReturn(currentState -> false);
 
-        assertNull(underTest.validate(entityChange, currentState));
+        assertNull(underTest.validate(entityChange, currentState, finalState));
     }
 
     @Test
@@ -115,7 +118,7 @@ public class RequiredFieldValidationAdapterTest {
 
         when(validator.getErrorCode()).thenReturn(ERROR_CODE);
 
-        ValidationError result = underTest.validate(entityChange, currentState);
+        ValidationError result = underTest.validate(entityChange, currentState, finalState);
 
         assertEquals(ERROR_CODE, result.getErrorCode());
         assertEquals(TestEntity.FIELD_1, result.getField());

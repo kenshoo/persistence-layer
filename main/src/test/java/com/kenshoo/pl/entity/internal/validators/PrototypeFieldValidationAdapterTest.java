@@ -1,10 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.SupportedChangeOperation;
-import com.kenshoo.pl.entity.TestEntity;
+import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PrototypeFieldValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +31,9 @@ public class PrototypeFieldValidationAdapterTest  {
 
     @Mock
     private CurrentEntityState currentState;
+
+    @Mock
+    private FinalEntityState finalState;
 
     @InjectMocks
     PrototypeFieldValidationAdapter<TestEntity, String> adapter;
@@ -71,7 +70,7 @@ public class PrototypeFieldValidationAdapterTest  {
     public void testValidateValue() {
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(STRING_VALUE);
     }
 }

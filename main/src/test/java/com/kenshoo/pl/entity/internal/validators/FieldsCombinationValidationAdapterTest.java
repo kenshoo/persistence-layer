@@ -50,6 +50,9 @@ public class FieldsCombinationValidationAdapterTest {
     private CurrentEntityState currentState;
 
     @Mock
+    private FinalEntityState finalState;
+
+    @Mock
     private FieldsCombinationValidator.Substitution<TestEntity, String> fieldSubstitution;
 
     @InjectMocks
@@ -89,7 +92,7 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void testValidateForCreate() {
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.CREATE);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), null);
@@ -99,7 +102,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test
     public void testValidateForUpdate() {
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(field2), STRING_VALUE2);
@@ -109,7 +112,7 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidField() {
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             fieldCombination.get(invalidField);
             return true;
@@ -124,7 +127,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
 
 
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), "override");
             return true;
@@ -139,7 +142,7 @@ public class FieldsCombinationValidationAdapterTest {
         when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
 
 
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
             return true;
@@ -160,14 +163,14 @@ public class FieldsCombinationValidationAdapterTest {
     @Test
     public void skipValidationForUpdate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator, never()).validate(any());
     }
 
     @Test
     public void skipValidationForCreate() {
         when(validator.validateWhen()).thenReturn(p -> false);
-        adapter.validate(entityChange, currentState);
+        adapter.validate(entityChange, currentState, finalState);
         verify(validator, never()).validate(any());
     }
 }

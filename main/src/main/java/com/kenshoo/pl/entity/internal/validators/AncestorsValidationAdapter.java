@@ -30,7 +30,7 @@ public class AncestorsValidationAdapter<E extends EntityType<E>> implements Chan
     }
 
     @Override
-    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState) {
+    public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState,  FinalEntityState finalState) {
         return validator.validate(currentState);
     }
 }
