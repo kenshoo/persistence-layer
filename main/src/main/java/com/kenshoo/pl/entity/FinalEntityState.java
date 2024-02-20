@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * The final state of an entity in the database.
- * This is the state of the entity after all changes are applied on the current state and contains the final values of the entity's fields.
+ * This will be the state of the entity after all changes have been applied on the current state and contains the final values of the entity's fields.
  *
  */
 

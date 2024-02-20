@@ -35,8 +35,10 @@ public interface FieldValidator<E extends EntityType<E>, T> extends ChangeValida
     }
 
     /**
-     * @return Predicate when should validate fields. It is used together with fetchFields().
      * The predicate is evaluated on the final state of the entity See {@link FinalEntityState}.
+     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #fetchFields()},
+     * which means that all the fields appearing in the predicate must also be included in the fields to fetch or be required
+     * for create operation
      */
     default Predicate<FinalEntityState> validateWhen() {
         return e -> true;

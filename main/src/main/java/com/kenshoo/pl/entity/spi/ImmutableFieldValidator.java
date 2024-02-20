@@ -33,8 +33,9 @@ public interface ImmutableFieldValidator<E extends EntityType<E>, T> extends Cha
     }
 
     /**
-     * @return Predicate when should validate field. It is used together with fetchFields().
      * The predicate is evaluated on the current state of the entity See {@link CurrentEntityState}.
+     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #fetchFields()},
+     * which means that all the fields appearing in the predicate must also be included in the fields to fetch.
      */
     default Predicate<CurrentEntityState> immutableWhen() {
         return e -> true;
