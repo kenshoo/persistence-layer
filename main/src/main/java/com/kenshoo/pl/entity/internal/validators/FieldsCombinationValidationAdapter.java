@@ -1,13 +1,8 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.OverrideFieldsCombination;
-import com.kenshoo.pl.entity.internal.ResultingFieldsCombination;
+import com.kenshoo.pl.entity.internal.FieldsCombination;
 import com.kenshoo.pl.entity.spi.FieldsCombinationValidator;
-
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FieldsCombinationValidationAdapter<E extends EntityType<E>> implements ChangeValidatorAdapter<E> {
@@ -37,24 +32,11 @@ public class FieldsCombinationValidationAdapter<E extends EntityType<E>> impleme
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState) {
-        if(validator.validateWhen().test(currentState)) {
-            ResultingFieldsCombination<E> resultingFieldsCombination = new ResultingFieldsCombination<>(entityChange, currentState, validator.validatedFields(), entityChange.getChangeOperation());
-            if (hasSubstitutions()) {
-                return validator.validate(new OverrideFieldsCombination<>(currentState, resultingFieldsCombination, mapFieldToOverrideFunction()));
-            } else {
-                return validator.validate(resultingFieldsCombination);
-            }
+        if(validator.validateWhen().test(finalState)) {
+            FieldsCombination<E> fieldsCombination = new FieldsCombination<>(entityChange, currentState, validator.validatedFields(), entityChange.getChangeOperation());
+                return validator.validate(fieldsCombination);
         } else {
             return null;
         }
-    }
-
-    private boolean hasSubstitutions() {
-        return validator.substitutions().findAny().isPresent();
-    }
-
-    private Map<EntityField<E, ?>, FieldsCombinationValidator.Substitution<E, ?>> mapFieldToOverrideFunction() {
-        return validator.substitutions().
-                collect(Collectors.toMap(FieldsCombinationValidator.Substitution::overrideField, Function.identity()));
     }
 }

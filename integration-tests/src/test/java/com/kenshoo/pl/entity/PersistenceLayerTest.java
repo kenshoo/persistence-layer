@@ -5,10 +5,7 @@ import com.kenshoo.jooq.DataTableUtils;
 import com.kenshoo.jooq.TempTableResource;
 import com.kenshoo.jooq.TestJooqConfig;
 import com.kenshoo.pl.data.*;
-import com.kenshoo.pl.entity.internal.ChangesContainer;
-import com.kenshoo.pl.entity.internal.EntitiesFetcher;
-import com.kenshoo.pl.entity.internal.EntityDbUtil;
-import com.kenshoo.pl.entity.internal.Errors;
+import com.kenshoo.pl.entity.internal.*;
 import com.kenshoo.pl.entity.spi.*;
 import com.kenshoo.pl.entity.spi.helpers.CommandsFieldMatcher;
 import com.kenshoo.pl.entity.spi.helpers.EntitiesTempTableCreator;
@@ -1312,7 +1309,7 @@ public class PersistenceLayerTest {
         }
 
         @Override
-        public ValidationError validate(FieldsValueMap<EntityForTest> fieldsValueMap) {
+        public ValidationError validate(FieldsCombination<EntityForTest> fieldsValueMap) {
             TestEnum value1 = fieldsValueMap.get(EntityForTest.FIELD1);
             Integer value2 = fieldsValueMap.get(EntityForTest.FIELD2);
             if (value1 == FIELD1_INVALID_VALUE) {
