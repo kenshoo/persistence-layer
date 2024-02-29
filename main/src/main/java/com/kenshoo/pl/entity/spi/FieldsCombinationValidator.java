@@ -1,12 +1,8 @@
 package com.kenshoo.pl.entity.spi;
 
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.FieldsValueMap;
-import com.kenshoo.pl.entity.ValidationError;
+import com.kenshoo.pl.entity.*;
+import com.kenshoo.pl.entity.internal.FieldsCombination;
 
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -25,12 +21,12 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
     /**
      * Implements the validation and return an error if there is.
      *
-     * @param fieldsValueMap the map containing the fields specified by {@link #validatedFields()}. If a field is
+     * @param fieldsCombination the map containing the fields specified by {@link #validatedFields()}. If a field is
      *                       being modified by the command, its new value is going to be in the map, otherwise the
      *                       existing value would be passed.
      * @return validation error if there is or <code>null</code> if OK
      */
-    ValidationError validate(FieldsValueMap<E> fieldsValueMap);
+    ValidationError validate(FieldsCombination<E> fieldsCombination);
 
     /**
      * @return a list of fields to fetch. May contain fields of parent entities only
@@ -40,33 +36,12 @@ public interface FieldsCombinationValidator<E extends EntityType<E>> extends Cha
     }
 
     /**
-     * @return Predicate when should validate fields. It is used together with fetchFields(), so only parent fields can be referenced here.
+     * The predicate is evaluated on the final state of the entity See {@link FinalEntityState}.
+     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #fetchFields()},
+     * which means that all the fields appearing in the predicate must also be included in the fields to fetch, validated fields or be required
+     * for create operation
      */
-    default Predicate<CurrentEntityState> validateWhen() {
+    default Predicate<FinalEntityState> validateWhen() {
         return e -> true;
-    }
-
-    /**
-     * @return a field's substitutions.
-     */
-    default Stream<Substitution<E, ?>> substitutions() {
-        return Stream.of();
-    }
-
-    interface Substitution<E extends EntityType<E>, T> {
-
-        /**
-         * @return the field to substitute
-         */
-        EntityField<E, T> overrideField();
-
-        /**
-         * @return the condition when field should be substituted
-         */
-        Predicate<T> overrideWhen();
-        /**
-         * @return the field substitution function
-         */
-        Function<CurrentEntityState, T> overrideHow();
     }
 }

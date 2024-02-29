@@ -1,7 +1,7 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.ResultingFieldsCombination;
+import com.kenshoo.pl.entity.internal.FieldsCombination;
 import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
 
 import java.util.Map;
@@ -36,8 +36,8 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState,  FinalEntityState finalState) {
-        FieldsValueMap<E> fieldsValueMap = new ResultingFieldsCombination<>(entityChange, currentState, fieldsMapping.values().stream(), entityChange.getChangeOperation());
-        PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsValueMap);
+        FieldsCombination<E> fieldsCombination = new FieldsCombination<>(entityChange, currentState, fieldsMapping.values().stream(), entityChange.getChangeOperation());
+        PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsCombination);
         return prototypeFieldsCombinationValidator.validate(prototypeFieldsCombination);
     }
 }

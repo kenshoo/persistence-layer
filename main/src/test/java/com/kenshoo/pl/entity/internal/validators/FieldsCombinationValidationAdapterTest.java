@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -51,9 +50,6 @@ public class FieldsCombinationValidationAdapterTest {
 
     @Mock
     private FinalEntityState finalState;
-
-    @Mock
-    private FieldsCombinationValidator.Substitution<TestEntity, String> fieldSubstitution;
 
     @InjectMocks
     private FieldsCombinationValidationAdapter<TestEntity> adapter;
@@ -117,47 +113,6 @@ public class FieldsCombinationValidationAdapterTest {
             fieldCombination.get(invalidField);
             return true;
         }));
-    }
-
-    @Test
-    public void testValidateOverrideForUpdate() {
-        when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
-        when(fieldSubstitution.overrideField()).thenReturn(field1);
-        when(fieldSubstitution.overrideWhen()).thenReturn(value -> true);
-        when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
-
-
-        adapter.validate(entityChange, currentState, finalState);
-        verify(validator).validate(argThat(fieldCombination -> {
-            assertEquals("Field1", fieldCombination.get(field1), "override");
-            return true;
-        }));
-    }
-
-    @Test
-    public void testValidateAndNotOverrideForUpdate() {
-        when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
-        when(fieldSubstitution.overrideField()).thenReturn(field1);
-        when(fieldSubstitution.overrideWhen()).thenReturn(value -> false);
-        when(fieldSubstitution.overrideHow()).thenReturn(currentState -> "override");
-
-
-        adapter.validate(entityChange, currentState, finalState);
-        verify(validator).validate(argThat(fieldCombination -> {
-            assertEquals("Field1", fieldCombination.get(field1), STRING_VALUE1);
-            return true;
-        }));
-    }
-
-    @Test
-    public void testFetchFieldsOverrideForUpdate() {
-        when(validator.substitutions()).thenReturn(Stream.of(fieldSubstitution)).thenReturn(Stream.of(fieldSubstitution));
-        when(validator.fetchFields()).thenReturn(Stream.of(field3));
-
-        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
-        assertTrue("Fetch field1", fields.contains(field1));
-        assertTrue("Fetch field2", fields.contains(field2));
-        assertTrue("Fetch field3", fields.contains(field3));
     }
 
     @Test
