@@ -30,12 +30,12 @@ public class PrototypeFieldValidationAdapter<E extends EntityType<E>, T> impleme
 
     @Override
     public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
-        return Stream.empty();
+        return prototypeFieldValidator.fetchFields();
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState, FinalEntityState finalState) {
-        if (entityChange.isFieldChanged(validatedField)) {
+        if (entityChange.isFieldChanged(validatedField) && prototypeFieldValidator.validateWhen().test(currentState)) {
             ValidationError error = prototypeFieldValidator.validate(entityChange.get(validatedField));
             return error != null ? new ValidationError(error.getErrorCode(), validatedField, error.getParameters()) : null;
         } else {

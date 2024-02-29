@@ -11,12 +11,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PrototypeFieldsCombinationValidationAdapterTest {
@@ -39,6 +39,12 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Mock
     private FinalEntityState finalState;
 
+    @Mock
+    private EntityField<TestEntity,String> field1;
+
+    @Mock
+    private EntityField<TestEntity,String> field2;
+
     private PrototypeFieldsCombinationValidationAdapter<TestEntity> adapter;
 
     @Before
@@ -59,21 +65,26 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     }
 
     @Test
-    public void testFetchFieldsInUpdate() {
+    public void testFetchFieldsWithoutParentFields() {
+        when(validator.fetchFields()).thenReturn(Stream.of());
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
 
     @Test
-    public void testFetchFieldsInCreate() {
+    public void testFetchFieldsWithParentFields() {
+        when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
+        assertTrue("Fetch field2", fields.contains(field1));
+        assertTrue("Fetch field2", fields.contains(field2));
     }
 
     @Test
     public void testValidateForCreate() {
+        when(validator.validateWhen()).thenReturn(value -> true);
         when(entityChange.getChangeOperation()).thenReturn(ChangeOperation.CREATE);
         adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
@@ -85,8 +96,19 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test
     public void testValidateForUpdate() {
+        when(validator.validateWhen()).thenReturn(value -> true);
         adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(argThat(fieldCombination -> {
+            assertEquals("Field1", fieldCombination.get(TestDataFieldPrototype.FIELD_1), STRING_VALUE1);
+            assertEquals("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2), STRING_VALUE2);
+            return true;
+        }));
+    }
+    @Test
+    public void testSkipValidateValue() {
+        when(validator.validateWhen()).thenReturn(value -> false);
+        adapter.validate(entityChange, currentState, finalState);
+        verify(validator,  never()).validate(argThat(fieldCombination -> {
             assertEquals("Field1", fieldCombination.get(TestDataFieldPrototype.FIELD_1), STRING_VALUE1);
             assertEquals("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2), STRING_VALUE2);
             return true;
@@ -95,6 +117,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidField() {
+        when(validator.validateWhen()).thenReturn(value -> true);
         adapter.validate(entityChange, currentState,finalState);
         verify(validator).validate(argThat(fieldCombination -> {
             fieldCombination.get(invalidField);
