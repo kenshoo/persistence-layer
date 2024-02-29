@@ -86,7 +86,8 @@ public class EntityChangeCompositeValidatorTest {
 
     @Test
     public void registerPrototypeCombinationValidatorTest() {
-        when(prototypeFieldsCombinationValidator.getPrototypes()).thenReturn(Lists.<EntityFieldPrototype<?>> newArrayList(TestDataFieldPrototype.FIELD_1));
+        when(prototypeFieldsCombinationValidator.getPrototypes()).thenReturn(Lists.newArrayList(TestDataFieldPrototype.FIELD_1));
+        when(prototypeFieldsCombinationValidator.validateWhen()).thenReturn(when-> true);
         validator.register(TestEntity.INSTANCE, prototypeFieldsCombinationValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(prototypeFieldsCombinationValidator).validate(any(PrototypeFieldsCombination.class));
@@ -95,6 +96,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerPrototypeValidatorTest() {
         when(prototypePrototypeFieldValidator.getPrototype()).thenReturn(TestDataFieldPrototype.FIELD_1);
+        when(prototypePrototypeFieldValidator.validateWhen()).thenReturn(when-> true);
         validator.register(TestEntity.INSTANCE, prototypePrototypeFieldValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(prototypePrototypeFieldValidator).validate(FIELD_1_VALUE);
@@ -103,6 +105,7 @@ public class EntityChangeCompositeValidatorTest {
     @Test
     public void registerComplexPrototypeValidatorTest() {
         when(prototypeFieldComplexValidator.getPrototype()).thenReturn(TestDataFieldPrototype.FIELD_1);
+        when(prototypeFieldComplexValidator.validateWhen()).thenReturn(when-> true);
         validator.register(TestEntity.INSTANCE, prototypeFieldComplexValidator);
         validator.validate(entityChanges, ChangeOperation.CREATE, changeContext);
         verify(prototypeFieldComplexValidator).validate(FIELD_1_VALUE, currentState);

@@ -9,15 +9,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PrototypeFieldValidationAdapterTest  {
@@ -35,6 +34,12 @@ public class PrototypeFieldValidationAdapterTest  {
     @Mock
     private FinalEntityState finalState;
 
+    @Mock
+    private EntityField<TestEntity,String> field1;
+
+    @Mock
+    private EntityField<TestEntity,String> field2;
+
     @InjectMocks
     PrototypeFieldValidationAdapter<TestEntity, String> adapter;
 
@@ -50,16 +55,14 @@ public class PrototypeFieldValidationAdapterTest  {
     }
 
     @Test
-    public void testFetchFieldsInUpdate() {
-        Stream<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch();
-        assertFalse("Do not fetch field", fields.findFirst().isPresent());
+    public void testFetchFields() {
+        when(validator.ancestorsFields()).thenReturn(Stream.of(field1, field2));
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
+        assertEquals("Incorrect number of fields to fetch", fields.size(), 2);
+        assertTrue("Fetch field1", fields.contains(field1));
+        assertTrue("Fetch field2", fields.contains(field2));
     }
 
-    @Test
-    public void testFetchFieldsInCreate() {
-        Stream<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch();
-        assertFalse("Do not fetch field", fields.findFirst().isPresent());
-    }
 
     @Test
     public void testTriggeredByFields() {
@@ -69,8 +72,18 @@ public class PrototypeFieldValidationAdapterTest  {
     @Test
     public void testValidateValue() {
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(STRING_VALUE);
+    }
+
+    @Test
+    public void testSkipValidateValue() {
+        when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> false);
+        when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
+        adapter.validate(entityChange, currentState, finalState);
+        verify(validator, never()).validate(any());
     }
 }

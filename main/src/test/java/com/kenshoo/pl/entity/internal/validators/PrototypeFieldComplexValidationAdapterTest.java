@@ -15,9 +15,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PrototypeFieldComplexValidationAdapterTest {
@@ -26,9 +24,6 @@ public class PrototypeFieldComplexValidationAdapterTest {
 
     @Mock
     private EntityField<?, ?> fetchField;
-
-    @Mock
-    private ChangeEntityCommand<TestEntity> command;
 
     @Mock
     private EntityChange<TestEntity> entityChange;
@@ -49,7 +44,7 @@ public class PrototypeFieldComplexValidationAdapterTest {
     public void setUp() {
         adapter = spy(new PrototypeFieldComplexValidationAdapter<>(TestEntity.FIELD_1, validator));
         Stream<EntityField<?, ?>> entityFields = Stream.of(fetchField);
-        when(validator.fetchFields()).thenReturn(entityFields);
+        when(validator.ancestorsFields()).thenReturn(entityFields);
 
     }
 
@@ -74,8 +69,18 @@ public class PrototypeFieldComplexValidationAdapterTest {
     @Test
     public void testValidateValue() {
         when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> true);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState, finalState);
         verify(validator).validate(STRING_VALUE, currentState);
+    }
+
+    @Test
+    public void testSkipValidateValue() {
+        when(entityChange.isFieldChanged(TestEntity.FIELD_1)).thenReturn(true);
+        when(validator.validateWhen()).thenReturn(value -> false);
+        when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
+        adapter.validate(entityChange, currentState, finalState);
+        verify(validator, never()).validate(any(), any());
     }
 }

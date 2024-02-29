@@ -2,8 +2,6 @@ package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.*;
 import com.kenshoo.pl.entity.spi.PrototypeFieldComplexValidator;
-
-import java.util.Objects;
 import java.util.stream.Stream;
 
 public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> implements ChangeValidatorAdapter<E> {
@@ -30,12 +28,12 @@ public class PrototypeFieldComplexValidationAdapter<E extends EntityType<E>, T> 
 
     @Override
     public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
-        return prototypeFieldValidator.fetchFields();
+        return prototypeFieldValidator.ancestorsFields();
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState,  FinalEntityState finalState) {
-        if (entityChange.isFieldChanged(validatedField)) {
+        if (entityChange.isFieldChanged(validatedField) && prototypeFieldValidator.validateWhen().test(currentState)) {
             return prototypeFieldValidator.validate(entityChange.get(validatedField), currentState);
         } else {
             return null;

@@ -31,13 +31,17 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
 
     @Override
     public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
-        return fieldsMapping.values().stream();
+        return Stream.concat(fieldsMapping.values().stream(), prototypeFieldsCombinationValidator.ancestorsFields());
     }
 
     @Override
     public ValidationError validate(EntityChange<E> entityChange, CurrentEntityState currentState,  FinalEntityState finalState) {
-        FieldsCombination<E> fieldsCombination = new FieldsCombination<>(entityChange, currentState, fieldsMapping.values().stream(), entityChange.getChangeOperation());
-        PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsCombination);
-        return prototypeFieldsCombinationValidator.validate(prototypeFieldsCombination);
+        if(prototypeFieldsCombinationValidator.validateWhen().test(currentState)) {
+            FieldsCombination<E> fieldsCombination = new FieldsCombination<>(entityChange, currentState, fieldsMapping.values().stream(), entityChange.getChangeOperation());
+            PrototypeFieldsCombination<E> prototypeFieldsCombination = new PrototypeFieldsCombination<>(fieldsMapping, fieldsCombination);
+            return prototypeFieldsCombinationValidator.validate(prototypeFieldsCombination);
+        } else {
+            return null;
+        }
     }
 }
