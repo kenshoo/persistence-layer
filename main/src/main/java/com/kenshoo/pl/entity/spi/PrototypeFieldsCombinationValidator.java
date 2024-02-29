@@ -27,14 +27,14 @@ public interface PrototypeFieldsCombinationValidator extends ChangeValidator {
     ValidationError validate(PrototypeFieldsCombination<?> fieldsCombination);
 
     /**
-     * @return a list of fields to fetch. Can contain only parent entities fields.
+     * @return ancestor entities fields to fetch.
      */
-    default Stream<EntityField<?, ?>> fetchFields() { return Stream.of(); }
+    default Stream<EntityField<?, ?>> ancestorsFields() { return Stream.of(); }
 
     /**
      * The predicate is evaluated on the final state of the entity See {@link FinalEntityState}.
-     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #fetchFields()},
-     * which means that all the parent fields appearing in the predicate must also be included in the fields to fetch.
+     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #ancestorsFields()},
+     * which means that all the ancestors fields appearing in the predicate must also be included in the response of {@link #ancestorsFields()}.
      */
     default Predicate<CurrentEntityState> validateWhen() {
         return e -> true;

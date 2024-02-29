@@ -31,7 +31,7 @@ public class PrototypeFieldsCombinationValidationAdapter<E extends EntityType<E>
 
     @Override
     public Stream<? extends EntityField<?, ?>> fieldsToFetch() {
-        return Stream.concat(fieldsMapping.values().stream(), prototypeFieldsCombinationValidator.fetchFields());
+        return Stream.concat(fieldsMapping.values().stream(), prototypeFieldsCombinationValidator.ancestorsFields());
     }
 
     @Override

@@ -44,7 +44,7 @@ public class PrototypeFieldComplexValidationAdapterTest {
     public void setUp() {
         adapter = spy(new PrototypeFieldComplexValidationAdapter<>(TestEntity.FIELD_1, validator));
         Stream<EntityField<?, ?>> entityFields = Stream.of(fetchField);
-        when(validator.fetchFields()).thenReturn(entityFields);
+        when(validator.ancestorsFields()).thenReturn(entityFields);
 
     }
 

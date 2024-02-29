@@ -66,7 +66,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsWithoutParentFields() {
-        when(validator.fetchFields()).thenReturn(Stream.of());
+        when(validator.ancestorsFields()).thenReturn(Stream.of());
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
@@ -74,7 +74,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
 
     @Test
     public void testFetchFieldsWithParentFields() {
-        when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
+        when(validator.ancestorsFields()).thenReturn(Stream.of(field1, field2));
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));

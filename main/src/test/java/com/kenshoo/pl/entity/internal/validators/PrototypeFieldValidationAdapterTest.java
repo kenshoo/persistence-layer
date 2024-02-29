@@ -56,7 +56,7 @@ public class PrototypeFieldValidationAdapterTest  {
 
     @Test
     public void testFetchFields() {
-        when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
+        when(validator.ancestorsFields()).thenReturn(Stream.of(field1, field2));
         Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
         assertEquals("Incorrect number of fields to fetch", fields.size(), 2);
         assertTrue("Fetch field1", fields.contains(field1));

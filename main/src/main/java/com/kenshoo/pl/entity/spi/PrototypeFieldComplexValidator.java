@@ -18,7 +18,7 @@ public interface PrototypeFieldComplexValidator<T> extends ChangeValidator {
 
     /**
      * Validates the new value for the field. The implementation can query the <code>entity</code> only for
-     * the fields it has declared in {@link #fetchFields()}.
+     * the fields it has declared in {@link #ancestorsFields()}.
      *
      * @param fieldValue new value of the field
      * @param currentState existing entity
@@ -28,14 +28,14 @@ public interface PrototypeFieldComplexValidator<T> extends ChangeValidator {
     ValidationError validate(T fieldValue, CurrentEntityState currentState);
 
     /**
-     * @return a list of fields to fetch. Can contain only parent entities fields.
+     * @return ancestor entities fields to fetch.
      */
-    default Stream<EntityField<?, ?>> fetchFields() { return Stream.of(); }
+    default Stream<EntityField<?, ?>> ancestorsFields() { return Stream.of(); }
 
     /**
      * The predicate is evaluated on the final state of the entity See {@link FinalEntityState}.
-     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #fetchFields()},
-     * which means that all the parent fields appearing in the predicate must also be included in the fields to fetch.
+     * @return a predicate indicating when the field should be validated. It will be evaluated together with {@link #ancestorsFields()},
+     * which means that all the ancestor fields appearing in the predicate must also be included in the response of {@link #ancestorsFields()}.
      */
     default Predicate<CurrentEntityState> validateWhen() {
         return e -> true;
