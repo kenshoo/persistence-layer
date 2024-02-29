@@ -11,9 +11,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
@@ -57,8 +57,8 @@ public class PrototypeFieldValidationAdapterTest  {
     @Test
     public void testFetchFields() {
         when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
-        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toList());;
-        assertEquals("Do not fetch field", fields.size(), 2);
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
+        assertEquals("Incorrect number of fields to fetch", fields.size(), 2);
         assertTrue("Fetch field1", fields.contains(field1));
         assertTrue("Fetch field2", fields.contains(field2));
     }
@@ -84,6 +84,6 @@ public class PrototypeFieldValidationAdapterTest  {
         when(validator.validateWhen()).thenReturn(value -> false);
         when(entityChange.get(TestEntity.FIELD_1)).thenReturn(STRING_VALUE);
         adapter.validate(entityChange, currentState, finalState);
-        verify(validator, never()).validate(STRING_VALUE);
+        verify(validator, never()).validate(any());
     }
 }

@@ -11,9 +11,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
@@ -67,7 +67,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Test
     public void testFetchFieldsWithoutParentFields() {
         when(validator.fetchFields()).thenReturn(Stream.of());
-        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
     }
@@ -75,7 +75,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     @Test
     public void testFetchFieldsWithParentFields() {
         when(validator.fetchFields()).thenReturn(Stream.of(field1, field2));
-        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(toSet());
+        Collection<? extends EntityField<?, ?>> fields = adapter.fieldsToFetch().collect(Collectors.toUnmodifiableList());
         assertTrue("Fetch field1", fields.contains(TestEntity.FIELD_1));
         assertTrue("Fetch field2", fields.contains(TestEntity.FIELD_2));
         assertTrue("Fetch field2", fields.contains(field1));
@@ -108,11 +108,7 @@ public class PrototypeFieldsCombinationValidationAdapterTest {
     public void testSkipValidateValue() {
         when(validator.validateWhen()).thenReturn(value -> false);
         adapter.validate(entityChange, currentState, finalState);
-        verify(validator,  never()).validate(argThat(fieldCombination -> {
-            assertEquals("Field1", fieldCombination.get(TestDataFieldPrototype.FIELD_1), STRING_VALUE1);
-            assertEquals("Field2", fieldCombination.get(TestDataFieldPrototype.FIELD_2), STRING_VALUE2);
-            return true;
-        }));
+        verify(validator,  never()).validate(any());
     }
 
     @Test(expected = IllegalArgumentException.class)
