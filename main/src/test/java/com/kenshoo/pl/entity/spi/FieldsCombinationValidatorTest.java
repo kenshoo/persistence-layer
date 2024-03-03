@@ -3,7 +3,7 @@ package com.kenshoo.pl.entity.spi;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.TestEntity;
 import com.kenshoo.pl.entity.ValidationError;
-import com.kenshoo.pl.entity.internal.FieldsCombination;
+import com.kenshoo.pl.entity.FieldsCombination;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;

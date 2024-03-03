@@ -1,7 +1,6 @@
 package com.kenshoo.pl.entity.internal.validators;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.FieldsCombination;
 import com.kenshoo.pl.entity.spi.PrototypeFieldsCombinationValidator;
 
 import java.util.Map;

@@ -1,8 +1,6 @@
 package com.kenshoo.pl.entity.spi;
 
 import com.kenshoo.pl.entity.*;
-import com.kenshoo.pl.entity.internal.FieldsCombination;
-
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 

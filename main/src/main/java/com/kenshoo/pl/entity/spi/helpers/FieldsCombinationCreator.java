@@ -6,7 +6,7 @@ import com.kenshoo.pl.entity.EntityChange;
 import com.kenshoo.pl.entity.EntityField;
 import com.kenshoo.pl.entity.EntityType;
 import com.kenshoo.pl.entity.FieldsValueMap;
-import com.kenshoo.pl.entity.internal.FieldsCombination;
+import com.kenshoo.pl.entity.FieldsCombination;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
