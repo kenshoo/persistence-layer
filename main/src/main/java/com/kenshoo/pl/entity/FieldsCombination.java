@@ -1,11 +1,4 @@
-package com.kenshoo.pl.entity.internal;
-
-import com.kenshoo.pl.entity.ChangeOperation;
-import com.kenshoo.pl.entity.CurrentEntityState;
-import com.kenshoo.pl.entity.EntityChange;
-import com.kenshoo.pl.entity.EntityField;
-import com.kenshoo.pl.entity.EntityType;
-import com.kenshoo.pl.entity.FieldsValueMap;
+package com.kenshoo.pl.entity;
 
 import java.util.Collection;
 import java.util.stream.Stream;
