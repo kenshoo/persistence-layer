@@ -8,7 +8,7 @@ Do you need high performance for bulk operations?
 
 Do you have a flow of business rules to run upon persistence?
 
-If so, then PL may be the library you need.
+If so, then PL may be the library you needed.
 
 PL is a Java mutation layer for business entities where you can define a flow to be executed upon every mutation.
 The flow can contain enrichments and validations.
