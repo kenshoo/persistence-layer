@@ -127,7 +127,8 @@ public class MaxCountValidatorTest {
 
         var validator = new MaxCountValidator.Builder<>(entitiesFetcher, ParentEntity.INSTANCE, GROUP_BY_NAME)
                 .setMaxAllowed(MAX_ALLOWED)
-                .setCondition(ParentEntity.ID.in(100, 200))
+                .setFetchCondition(ParentEntity.ID.in(100, 200))
+                .setPostFetchCondition(ParentEntity.ID.postFetchIn(100, 200))
                 .build();
 
         var commands = asList(
@@ -163,7 +164,8 @@ public class MaxCountValidatorTest {
 
         var validator = new MaxCountValidator.Builder<>(entitiesFetcher, ChildEntity.INSTANCE, GROUP_BY_FIELD_1)
                 .setMaxAllowed(MAX_ALLOWED)
-                .setCondition(ParentEntity.NAME.eq("parent matching condition"))
+                .setFetchCondition(ParentEntity.NAME.eq("parent matching condition"))
+                .setPostFetchCondition(ParentEntity.NAME.postFetchEq("parent matching condition"))
                 .build();
 
         var commands = asList(
