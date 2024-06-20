@@ -38,55 +38,87 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
         this.name = name;
     }
 
-    protected <T> EntityField<E, T> field(TableField<Record, T> tableField) {
+    protected <T> MutableEntityField<E, T> field(final TableField<Record, T> tableField) {
         return field(tableField, IdentityValueConverter.getInstance(tableField.getType()));
     }
 
-    protected <T, DBT> EntityField<E, T> field(TableField<Record, DBT> tableField, ValueConverter<T, DBT> valueConverter) {
+    protected <T, DBT> MutableEntityField<E, T> field(final TableField<Record, DBT> tableField, final ValueConverter<T, DBT> valueConverter) {
         return field(tableField, valueConverter, Objects::equals);
     }
 
-    protected <T, DBT> EntityField<E, T> field(TableField<Record, DBT> tableField, ValueConverter<T, DBT> valueConverter, ValueConverter<T, String> stringValueConverter) {
+    protected <T, DBT> MutableEntityField<E, T> field(final TableField<Record, DBT> tableField,
+                                                      final ValueConverter<T, DBT> valueConverter,
+                                                      final ValueConverter<T, String> stringValueConverter) {
         return field(tableField, valueConverter, stringValueConverter, Objects::equals);
     }
 
-    protected <T> EntityField<E, T> field(TableField<Record, T> tableField, EntityValueEqualityFunction<T> valueEqualityFunction) {
-        return field(tableField, IdentityValueConverter.getInstance(tableField.getType()), createStringValueConverter(tableField.getType()), valueEqualityFunction);
+    protected <T> MutableEntityField<E, T> field(final TableField<Record, T> tableField,
+                                                 final EntityValueEqualityFunction<T> valueEqualityFunction) {
+        return field(tableField,
+                IdentityValueConverter.getInstance(tableField.getType()),
+                createStringValueConverter(tableField.getType()),
+                valueEqualityFunction);
     }
 
-    protected <T, DBT> EntityField<E, T> field(TableField<Record, DBT> tableField, ValueConverter<T, DBT> valueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
+    protected <T, DBT> MutableEntityField<E, T> field(final TableField<Record, DBT> tableField,
+                                                      final ValueConverter<T, DBT> valueConverter,
+                                                      final EntityValueEqualityFunction<T> valueEqualityFunction) {
         return field(tableField, valueConverter, createStringValueConverter(valueConverter.getValueClass()), valueEqualityFunction);
     }
 
-    protected <T, DBT> EntityField<E, T> field(TableField<Record, DBT> tableField, ValueConverter<T, DBT> valueConverter,
-                                               ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
-        return addField(new EntityFieldImpl<>(this, new SimpleEntityFieldDbAdapter<>(tableField, valueConverter), stringValueConverter, valueEqualityFunction));
+    protected <T, DBT> MutableEntityField<E, T> field(final TableField<Record, DBT> tableField,
+                                                      final ValueConverter<T, DBT> valueConverter,
+                                                      final ValueConverter<T, String> stringValueConverter,
+                                                      final EntityValueEqualityFunction<T> valueEqualityFunction) {
+        return addField(
+                EntityFieldImpl.<E, T>builder(this)
+                        .withDbAdapter(new SimpleEntityFieldDbAdapter<>(tableField, valueConverter))
+                        .withStringValueConverter(stringValueConverter)
+                        .withValueEqualityFunction(valueEqualityFunction)
+                        .build()
+        );
     }
 
-    protected <T> EntityField<E, T> field(EntityFieldDbAdapter<T> dbAdapter, ValueConverter<T, String> stringValueConverter) {
-        return addField(new EntityFieldImpl<>(this, dbAdapter, stringValueConverter, Objects::equals));
+    protected <T> MutableEntityField<E, T> field(EntityFieldDbAdapter<T> dbAdapter, ValueConverter<T, String> stringValueConverter) {
+        return addField(
+                EntityFieldImpl.<E, T>builder(this)
+                        .withDbAdapter(dbAdapter)
+                        .withStringValueConverter(stringValueConverter)
+                        .withValueEqualityFunction(Objects::equals)
+                        .build()
+        );
     }
 
-    protected <T, T1> EntityField<E, T> virtualField(EntityField<E, T1> field1, Function<T1, T> translator,
-                                                     ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
+    protected <T, T1> MutableEntityField<E, T> virtualField(final EntityField<E, T1> field1,
+                                                            final Function<T1, T> translator,
+                                                            final ValueConverter<T, String> stringValueConverter,
+                                                            final EntityValueEqualityFunction<T> valueEqualityFunction) {
         return virtualField(new VirtualEntityFieldDbAdapter<>(field1.getDbAdapter(), translator), stringValueConverter, valueEqualityFunction);
     }
 
-    protected <T> EntityField<E, T> virtualField(DataTable table,
-                                                 ValueConverter<T, String> stringValueConverter,
-                                                 EntityValueEqualityFunction<T> valueEqualityFunction) {
+    protected <T> MutableEntityField<E, T> virtualField(final DataTable table,
+                                                        final ValueConverter<T, String> stringValueConverter,
+                                                        final EntityValueEqualityFunction<T> valueEqualityFunction) {
         return virtualField(new EmptyVirtualEntityFieldDbAdapter<>(table), stringValueConverter, valueEqualityFunction);
     }
 
-    protected <T, T1, T2> EntityField<E, T> virtualField(EntityField<E, T1> field1, EntityField<E, T2> field2, BiFunction<T1, T2, T> combiner,
-                                                         ValueConverter<T, String> stringValueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
+    protected <T, T1, T2> MutableEntityField<E, T> virtualField(final EntityField<E, T1> field1,
+                                                                final EntityField<E, T2> field2,
+                                                                final BiFunction<T1, T2, T> combiner,
+                                                                final ValueConverter<T, String> stringValueConverter,
+                                                                final EntityValueEqualityFunction<T> valueEqualityFunction) {
         return virtualField(new VirtualEntityFieldDbAdapter2<>(field1.getDbAdapter(), field2.getDbAdapter(), combiner), stringValueConverter, valueEqualityFunction);
     }
 
-    private <T> EntityField<E, T> virtualField(EntityFieldDbAdapter<T> entityFieldDbAdapter,
-                                               ValueConverter<T, String> stringValueConverter,
-                                               EntityValueEqualityFunction<T> valueEqualityFunction) {
-        return addField(new VirtualEntityFieldImpl<>(this, entityFieldDbAdapter, stringValueConverter, valueEqualityFunction));
+    private <T> MutableEntityField<E, T> virtualField(final EntityFieldDbAdapter<T> entityFieldDbAdapter,
+                                                      final ValueConverter<T, String> stringValueConverter,
+                                                      final EntityValueEqualityFunction<T> valueEqualityFunction) {
+        return addField(
+                VirtualEntityFieldImpl.<E, T>builder(this)
+                        .withDbAdapter(entityFieldDbAdapter)
+                        .withStringValueConverter(stringValueConverter)
+                        .withValueEqualityFunction(valueEqualityFunction)
+                        .build());
     }
 
     private static <T> ValueConverter<T, String> createStringValueConverter(Class<T> valueClass) {
@@ -113,8 +145,12 @@ public abstract class AbstractEntityType<E extends EntityType<E>> implements Ent
     }
 
     protected <T, DBT> PrototypedEntityField<E, T> prototypedField(EntityFieldPrototype<T> entityFieldPrototype, TableField<Record, DBT> tableField, ValueConverter<T, DBT> valueConverter, EntityValueEqualityFunction<T> valueEqualityFunction) {
-        PrototypedEntityFieldImpl<E, T> field = new PrototypedEntityFieldImpl<>(this, entityFieldPrototype, new SimpleEntityFieldDbAdapter<>(tableField, valueConverter),
-                createStringValueConverter(valueConverter.getValueClass()), valueEqualityFunction);
+        final var field = PrototypedEntityFieldImpl.<E, T>builder(this)
+                .withDbAdapter(new SimpleEntityFieldDbAdapter<>(tableField, valueConverter))
+                .withStringValueConverter(createStringValueConverter(valueConverter.getValueClass()))
+                .withValueEqualityFunction(valueEqualityFunction)
+                .withEntityFieldPrototype(entityFieldPrototype)
+                .build();
         prototypedFields.add(field);
         return addField(field);
     }
