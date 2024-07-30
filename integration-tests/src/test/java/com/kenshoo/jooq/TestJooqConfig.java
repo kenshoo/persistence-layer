@@ -1,6 +1,8 @@
 package com.kenshoo.jooq;
 
-import com.mysql.jdbc.ConnectionImpl;
+import com.mysql.cj.conf.HostInfo;
+import com.mysql.cj.conf.PropertyKey;
+import com.mysql.cj.jdbc.ConnectionImpl;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -8,6 +10,7 @@ import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.ThreadLocalTransactionProvider;
 import org.jooq.lambda.Unchecked;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.lang.Integer.parseInt;
@@ -41,9 +44,15 @@ public class TestJooqConfig {
         }
     }
 
-    private static ConnectionImpl connection(Properties props)  {
+    private static ConnectionImpl connection(Properties props) {
         try {
-            return new ConnectionImpl(props.getProperty("server"), parseInt(props.getProperty("port")), props, props.getProperty("database"), null);
+            String host = props.getProperty("server");
+            int port = parseInt(props.getProperty("port"));
+            String user = props.getProperty("user");
+            String password = props.getProperty("password");
+            Map<String, String> properties = Map.of(PropertyKey.DBNAME.getKeyName(), props.getProperty("database"));
+            HostInfo hostInfo = new HostInfo(null, host, port, user, password, properties);
+            return new ConnectionImpl(hostInfo);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

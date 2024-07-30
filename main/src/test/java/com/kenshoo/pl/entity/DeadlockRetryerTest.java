@@ -2,7 +2,7 @@ package com.kenshoo.pl.entity;
 
 import com.kenshoo.pl.entity.mysql.MySqlDeadlockDetector;
 import com.kenshoo.pl.entity.spi.ThrowingAction;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException;
+import com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException;
 import org.junit.Before;
 import org.junit.Test;
 

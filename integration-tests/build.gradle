@@ -7,6 +7,8 @@ dependencies {
     testCompile libraries.junit
     testCompile libraries.mockito
     testCompile libraries.hamcrest
+    testCompile libraries.mysqlConnector
+
 
 }
 

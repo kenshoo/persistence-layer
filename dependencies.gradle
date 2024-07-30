@@ -18,7 +18,7 @@ project.ext.libraries = [
         jool: 'org.jooq:jool:0.9.11',
         guava: 'com.google.guava:guava:16.0.1',
         apacheCommons3: 'org.apache.commons:commons-lang3:3.4',
-        mysqlConnector: 'mysql:mysql-connector-java:5.1.35',
+        mysqlConnector: 'mysql:mysql-connector-java:8.0.22',
 
         guavaRetrying        : 'com.github.rholder:guava-retrying:2.0.0',
 

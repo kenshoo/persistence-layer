@@ -12,7 +12,6 @@ dependencies {
     compile libraries.guava
 
     compile libraries.apacheCommons3
-    compile libraries.mysqlConnector
     compile libraries.guavaRetrying
 
     testCompile libraries.junit
@@ -20,6 +19,7 @@ dependencies {
     testCompile libraries.shazamcrest
     testCompile libraries.hamcrest
     testCompile libraries.hamcrestOptional
+    testCompile libraries.mysqlConnector
 }
 
 jar {
