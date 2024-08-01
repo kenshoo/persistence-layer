@@ -132,7 +132,7 @@ public class ParentWithTwoSecondariesTest {
 
         static final ChildTable INSTANCE = new ChildTable("child");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, Integer> parent_id = createFKField("parent_id", ParentTable.INSTANCE.id);
 
         ChildTable(String name) {
@@ -153,7 +153,7 @@ public class ParentWithTwoSecondariesTest {
 
         static final ParentTable INSTANCE = new ParentTable("parent");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, String> field_1 = createField("field_1", SQLDataType.VARCHAR(20));
 
         ParentTable(String name) {

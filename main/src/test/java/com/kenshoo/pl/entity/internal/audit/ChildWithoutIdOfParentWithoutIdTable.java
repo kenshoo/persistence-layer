@@ -9,8 +9,8 @@ public class ChildWithoutIdOfParentWithoutIdTable extends AbstractDataTable<Chil
 
     public static final ChildWithoutIdOfParentWithoutIdTable INSTANCE = new ChildWithoutIdOfParentWithoutIdTable();
 
-    public final TableField<Record, String> parent_name = createPKAndFKField("parent_name", SQLDataType.VARCHAR(50), MainWithoutIdTable.INSTANCE.name);
-    public final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> parent_name = createPKAndFKField("parent_name", SQLDataType.VARCHAR(50).nullable(false), MainWithoutIdTable.INSTANCE.name);
+    public final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(50).nullable(false));
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
 
     private ChildWithoutIdOfParentWithoutIdTable() {
