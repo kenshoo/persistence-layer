@@ -142,7 +142,7 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         static final Table0 INSTANCE = new Table0("entity0");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, Integer> entity12_id = createFKField("entity12_id", Table12.INSTANCE.id);
         final TableField<Record, Integer> entity11_id = createFKField("entity11_id", Table11.INSTANCE.id);
 
@@ -164,7 +164,7 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         static final Table11 INSTANCE = new Table11("entity11");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
 
         Table11(String name) {
             super(name);
@@ -184,7 +184,7 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         static final Table12 INSTANCE = new Table12("entity12");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, Integer> entity2_id = createFKField("entity2_id", Table2.INSTANCE.id);
 
         Table12(String name) {
@@ -205,8 +205,8 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         static final Table2 INSTANCE = new Table2("entity2");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
-        final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(20));
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
+        final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(20).nullable(false));
         final TableField<Record, Integer> entity3_id = createFKField("entity3_id", Table3.INSTANCE.id);
         final TableField<Record, Integer> entity11_id = createFKField("entity11_id", Table11.INSTANCE.id);
 
@@ -228,7 +228,7 @@ public class FourLevelsWith3rdLevelBackReferencing2ndLevelNoSecondaryTest {
 
         static final Table3 INSTANCE = new Table3("entity3");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(20));
 
         Table3(String name) {

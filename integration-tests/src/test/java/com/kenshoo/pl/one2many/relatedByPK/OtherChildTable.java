@@ -11,7 +11,7 @@ public class OtherChildTable extends AbstractDataTable<OtherChildTable> {
 
     public final TableField<Record, Integer> parent_id = createFKField("parent_id", ParentTable.INSTANCE.id);
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(64));
-    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
 
     public OtherChildTable(String name) {
         super(name);
