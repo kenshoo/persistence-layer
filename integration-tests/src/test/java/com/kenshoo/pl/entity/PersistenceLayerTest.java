@@ -26,7 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static com.kenshoo.pl.entity.EntityForTest.ID;
 import static com.kenshoo.pl.entity.EntityForTest.URL;
+import static com.kenshoo.pl.entity.IdentifierType.uniqueKey;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromOldValue;
 import static com.kenshoo.pl.entity.spi.FieldValueSupplier.fromValues;
 import static java.util.Arrays.asList;
@@ -1026,7 +1028,7 @@ public class PersistenceLayerTest {
         command2.set(EntityForTest.FIELD1, TestEnum.Delta);
         command2.set(EntityForTest.PARENT_ID, PARENT_ID_2);
 
-        InsertOnDuplicateUpdateResult<EntityForTest, EntityForTest.Key> insertOnDuplicateUpdateResult = persistenceLayer.upsert(ImmutableList.of(command1, command2), changeFlowConfig().build());
+        InsertOnDuplicateUpdateResult<EntityForTest, Identifier<EntityForTest>> insertOnDuplicateUpdateResult = persistenceLayer.upsert(ImmutableList.of(command1, command2), changeFlowConfig().build());
 
         assertThat(insertOnDuplicateUpdateResult.getStats().getAffectedRowsOf(mainTable.getName()).getInserted(), is(2));
         assertThat(insertOnDuplicateUpdateResult.getStats().getAffectedRowsOf(mainTable.getName()).getUpdated(), is(0));
@@ -1042,6 +1044,27 @@ public class PersistenceLayerTest {
         assertThat(result.get(newId + 1).value2(), is(TestEnum.Delta.name()));
         assertThat(result.get(newId + 1).value3(), is(PARENT_ID_2));
 
+    }
+
+    @Test
+    public void dummyInsertOnDuplicateUpdate() {
+        int newId = 51;
+        InsertOnDuplicateUpdateTestCommand command1 = new InsertOnDuplicateUpdateTestCommand(TestEnum.Alpha, newId);
+        command1.set(EntityForTest.FIELD1, TestEnum.Charlie);
+        command1.set(EntityForTest.PARENT_ID, PARENT_ID_1);
+        InsertOnDuplicateUpdateTestCommand command2 = new InsertOnDuplicateUpdateTestCommand(TestEnum.Alpha, newId+1);
+        command2.set(EntityForTest.FIELD1, TestEnum.Delta);
+        command2.set(EntityForTest.PARENT_ID, PARENT_ID_2);
+
+        InsertOnDuplicateUpdateResult<EntityForTest, Identifier<EntityForTest>> insertOnDuplicateUpdateResult = persistenceLayer.upsert(ImmutableList.of(command1, command2), changeFlowConfig().withoutOutputGenerators().build());
+
+        assertThat(insertOnDuplicateUpdateResult.getStats().getAffectedRowsOf(mainTable.getName()).getInserted(), is(0));
+        assertThat(insertOnDuplicateUpdateResult.getStats().getAffectedRowsOf(mainTable.getName()).getUpdated(), is(0));
+
+        boolean result = insertOnDuplicateUpdateResult.getChangeResults().stream()
+                .allMatch(changeResult -> changeResult.getCommand().get(ID) == null);
+
+        assertTrue(result);
     }
 
     @Test
@@ -1239,7 +1262,11 @@ public class PersistenceLayerTest {
         }
     }
 
-    private static class InsertOnDuplicateUpdateTestCommand extends InsertOnDuplicateUpdateCommand<EntityForTest, EntityForTest.Key> {
+    private static class InsertOnDuplicateUpdateTestCommand extends InsertOnDuplicateUpdateCommand<EntityForTest, Identifier<EntityForTest>> {
+        public InsertOnDuplicateUpdateTestCommand(TestEnum a, Integer b) {
+            super(EntityForTest.INSTANCE, uniqueKey(EntityForTest.FIELD1, EntityForTest.FIELD2).createIdentifier(a, b));
+        }
+
         public InsertOnDuplicateUpdateTestCommand(int id) {
             super(EntityForTest.INSTANCE, new EntityForTest.Key(id));
         }

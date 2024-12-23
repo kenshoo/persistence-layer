@@ -283,7 +283,7 @@ public class PersistenceLayer<ROOT extends EntityType<ROOT>> {
     private void populateIdentityField(final ChangeEntityCommand<ROOT> cmd, final ChangeContext changeContext, final EntityField<ROOT, Object> idField) {
         final CurrentEntityState currentState = Optional.ofNullable(changeContext.getEntity(cmd))
                                       .orElseThrow(() -> new IllegalStateException("Could not find entity of command in the change context"));
-        cmd.set(idField,  currentState.get(idField));
+        cmd.set(idField,  currentState.safeGet(idField).asOptional().orElse(null));
     }
 
     private DSLContext dslContext() {
