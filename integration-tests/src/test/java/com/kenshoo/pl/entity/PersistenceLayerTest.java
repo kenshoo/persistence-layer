@@ -1062,7 +1062,7 @@ public class PersistenceLayerTest {
         assertThat(insertOnDuplicateUpdateResult.getStats().getAffectedRowsOf(mainTable.getName()).getUpdated(), is(0));
 
         boolean result = insertOnDuplicateUpdateResult.getChangeResults().stream()
-                .allMatch(changeResult -> changeResult.getCommand().get(ID) == null);
+                .allMatch(changeResult -> changeResult.getCommand().safeGet(ID).isAbsent());
 
         assertTrue(result);
     }
