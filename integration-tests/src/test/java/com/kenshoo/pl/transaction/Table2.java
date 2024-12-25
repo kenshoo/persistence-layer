@@ -9,7 +9,7 @@ public class Table2 extends AbstractDataTable<Table2> {
 
     public static final Table2 INSTANCE = new Table2("Table2");
 
-    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(40));
 
     public Table2(String name) {

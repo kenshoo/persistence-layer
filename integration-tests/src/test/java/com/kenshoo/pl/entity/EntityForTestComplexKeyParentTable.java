@@ -9,8 +9,8 @@ public class EntityForTestComplexKeyParentTable extends AbstractDataTable<Entity
 
     public static final EntityForTestComplexKeyParentTable INSTANCE = new EntityForTestComplexKeyParentTable("EntityForTestComplexKeyParent");
 
-    final TableField<Record, Integer> id1 = createPKField("id1", SQLDataType.INTEGER);
-    final TableField<Record, Integer> id2 = createPKField("id2", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id1 = createPKField("id1", SQLDataType.INTEGER.identity(true));
+    final TableField<Record, Integer> id2 = createPKField("id2", SQLDataType.INTEGER.identity(true));
     final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
 
     public EntityForTestComplexKeyParentTable(String name) {

@@ -9,7 +9,7 @@ public class ChildManualIdTable extends AbstractDataTable<ChildManualIdTable> {
 
     public static final ChildManualIdTable INSTANCE = new ChildManualIdTable();
 
-    public final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT);
+    public final TableField<Record, Long> id = createPKField("id", SQLDataType.BIGINT.identity(true));
     public final TableField<Record, Long> parent_id = createFKField("parent_id", MainManualIdTable.INSTANCE.id);
     public final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));

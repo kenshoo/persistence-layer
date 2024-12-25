@@ -9,7 +9,7 @@ public class MainTable extends AbstractDataTable<MainTable> {
 
     public static final MainTable INSTANCE = new MainTable("main");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, Integer> id_in_target = createField("id_in_target", SQLDataType.INTEGER);
     final TableField<Record, String> name = createField("name", SQLDataType.VARCHAR.length(50));
     final TableField<Record, String> type = createField("type", SQLDataType.VARCHAR.length(10));

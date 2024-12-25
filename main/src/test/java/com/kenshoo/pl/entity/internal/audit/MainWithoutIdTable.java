@@ -10,7 +10,7 @@ public class MainWithoutIdTable extends AbstractDataTable<MainWithoutIdTable> {
 
     public static final MainWithoutIdTable INSTANCE = new MainWithoutIdTable();
 
-    public final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(50));
+    public final TableField<Record, String> name = createPKField("name", SQLDataType.VARCHAR(50).nullable(false));
     public final TableField<Record, String> desc = createField("desc", SQLDataType.VARCHAR(50));
     public final TableField<Record, String> desc2 = createField("desc2", SQLDataType.VARCHAR(50));
 

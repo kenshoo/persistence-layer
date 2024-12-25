@@ -9,7 +9,7 @@ public class GrandParentTable extends AbstractDataTable<GrandParentTable> {
 
     public static final GrandParentTable INSTANCE = new GrandParentTable("GrandParentTable");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
 
     public GrandParentTable(String name) {
         super(name);

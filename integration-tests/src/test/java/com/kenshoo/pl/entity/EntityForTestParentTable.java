@@ -9,7 +9,7 @@ public class EntityForTestParentTable extends AbstractDataTable<EntityForTestPar
 
     public static final EntityForTestParentTable INSTANCE = new EntityForTestParentTable("EntityForTestParent");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
     final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
 
     public EntityForTestParentTable(String name) {

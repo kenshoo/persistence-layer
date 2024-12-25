@@ -12,7 +12,7 @@ public class ChildTable extends AbstractDataTable<ChildTable> {
     public final TableField<Record, Integer> parent_id = createFKField("parent_id", ParentTable.INSTANCE.id);
     public final TableField<Record, Integer> ordinal = createField("ordinal", SQLDataType.INTEGER);
     public final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR(64));
-    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+    public final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
 
     public ChildTable(String name) {
         super(name);

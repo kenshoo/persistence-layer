@@ -9,8 +9,8 @@ public class ChildForTestTable extends AbstractDataTable<ChildForTestTable> {
 
     public static final ChildForTestTable INSTANCE = new ChildForTestTable("ChildForTest");
 
-    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
-    final TableField<Record, String> field = createPKField("field", SQLDataType.VARCHAR(50));
+    final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
+    final TableField<Record, String> field = createPKField("field", SQLDataType.VARCHAR(50).nullable(false));
     final TableField<Record, Integer> parent_id = createFKField("parent_id", EntityForTestTable.INSTANCE.id);
 
     public ChildForTestTable(String name) {
