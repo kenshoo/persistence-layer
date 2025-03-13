@@ -1,8 +1,6 @@
 package com.kenshoo.pl.data;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import com.google.common.base.*;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -29,6 +27,9 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     private final DataTable realTable;
 
+    private final Supplier<UniqueKey<Record>> primaryKeySupplier = Suppliers.memoize(new PrimaryKeySupplier());
+    private final Supplier<List<ForeignKey<Record, ?>>> foreignKeysSupplier = Suppliers.memoize(new ForeignKeysSupplier());
+
     public ImpersonatorTable(DataTable realTable) {
         super(TEMP_TABLE_PREFIX + realTable.getName());
         this.realTable = realTable;
@@ -53,19 +54,12 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     @Override
     public UniqueKey<Record> getPrimaryKey() {
-        return createPK();
+        return primaryKeySupplier.get();
     }
 
     @Override
     public List<ForeignKey<Record, ?>> getReferences() {
-        // Transform is going to return nulls for foreign keys composed of fields not present in impersonator table,
-        // filtering them out
-        return Lists.newArrayList(Collections2.filter(Lists.transform(realTable.getReferences(), new Function<ForeignKey<Record, ?>, ForeignKey<Record, ?>>() {
-            @Override
-            public ForeignKey<Record, ?> apply(ForeignKey<Record, ?> foreignKey) {
-                return createFK(foreignKey);
-            }
-        }), Predicates.notNull()));
+        return foreignKeysSupplier.get();
     }
 
     public <T> TableField<Record, T> getField(final TableField<Record, T> realTableField) {
@@ -76,6 +70,28 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
                 return field.getName().equals(realTableField.getName());
             }
         }).orNull();
+    }
+
+    private class PrimaryKeySupplier implements Supplier<UniqueKey<Record>> {
+        @Override
+        public UniqueKey<Record> get() {
+            return createPK();
+        }
+    }
+
+    private class ForeignKeysSupplier implements Supplier<List<ForeignKey<Record, ?>>> {
+
+        @Override
+        public List<ForeignKey<Record, ?>> get() {
+            // Transform is going to return nulls for foreign keys composed of fields not present in impersonator table,
+            // filtering them out
+            return Lists.newArrayList(Collections2.filter(Lists.transform(realTable.getReferences(), new Function<ForeignKey<Record, ?>, ForeignKey<Record, ?>>() {
+                @Override
+                public ForeignKey<Record, ?> apply(ForeignKey<Record, ?> foreignKey) {
+                    return createFK(foreignKey);
+                }
+            }), Predicates.notNull()));
+        }
     }
 
     private UniqueKey<Record> createPK() {
