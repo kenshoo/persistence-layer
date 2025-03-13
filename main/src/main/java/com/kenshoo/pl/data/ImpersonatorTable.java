@@ -1,11 +1,8 @@
 package com.kenshoo.pl.data;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import com.google.common.base.*;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import org.apache.commons.lang3.ArrayUtils;
@@ -14,19 +11,25 @@ import org.jooq.ForeignKey;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
-import org.jooq.impl.AbstractKeys;
 import org.jooq.impl.TableImpl;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Objects;
+
+import static org.jooq.impl.Internal.createForeignKey;
+import static org.jooq.impl.Internal.createUniqueKey;
 
 public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     public static final String TEMP_TABLE_PREFIX = "tmp_";
 
-    private final Keys keys = new Keys();
     private final DataTable realTable;
+
+    private final Supplier<UniqueKey<Record>> primaryKeySupplier = Suppliers.memoize(new PrimaryKeySupplier());
+    private final Supplier<List<ForeignKey<Record, ?>>> foreignKeysSupplier = Suppliers.memoize(new ForeignKeysSupplier());
 
     public ImpersonatorTable(DataTable realTable) {
         super(TEMP_TABLE_PREFIX + realTable.getName());
@@ -52,19 +55,12 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     @Override
     public UniqueKey<Record> getPrimaryKey() {
-        return keys.createPK();
+        return primaryKeySupplier.get();
     }
 
     @Override
     public List<ForeignKey<Record, ?>> getReferences() {
-        // Transform is going to return nulls for foreign keys composed of fields not present in impersonator table,
-        // filtering them out
-        return Lists.newArrayList(Collections2.filter(Lists.transform(realTable.getReferences(), new Function<ForeignKey<Record, ?>, ForeignKey<Record, ?>>() {
-            @Override
-            public ForeignKey<Record, ?> apply(ForeignKey<Record, ?> foreignKey) {
-                return keys.createFK(foreignKey);
-            }
-        }), Predicates.notNull()));
+        return foreignKeysSupplier.get();
     }
 
     public <T> TableField<Record, T> getField(final TableField<Record, T> realTableField) {
@@ -77,39 +73,51 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
         }).orNull();
     }
 
-    private class Keys extends AbstractKeys {
-        public UniqueKey<Record> createPK() {
-            UniqueKey<Record> primaryKey = realTable.getPrimaryKey();
-            if (primaryKey == null) {
-                return null;
-            }
-            TableField<Record, ?>[] transformedFields = transformFields(primaryKey.getFieldsArray());
-            if (ArrayUtils.contains(transformedFields, null)) {
-                // We don't have some of the fields of realTable PK
-                return null;
-            }
-            //noinspection unchecked
-            return createUniqueKey(ImpersonatorTable.this, transformedFields);
-        }
-
-        public ForeignKey<Record, ?> createFK(ForeignKey<Record, ?> foreignKey) {
-            TableField<Record, ?>[] fields = transformFields(foreignKey.getFieldsArray());
-            if (ArrayUtils.contains(fields, null)) {
-                return null;
-            }
-            //noinspection unchecked
-            return createForeignKey(foreignKey.getKey(), foreignKey.getTable(), fields);
-        }
-
-        private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
-            //noinspection unchecked
-            TableField<Record, ?>[] fields = new TableField[originalFields.length];
-            for (int i = 0; i < originalFields.length; i++) {
-                TableField<Record, ?> recordTableField = originalFields[i];
-                fields[i] = getField(recordTableField);
-            }
-            return fields;
+    private class PrimaryKeySupplier implements Supplier<UniqueKey<Record>> {
+        @Override
+        public UniqueKey<Record> get() {
+            return createPK();
         }
     }
 
+    private class ForeignKeysSupplier implements Supplier<List<ForeignKey<Record, ?>>> {
+
+        @Override
+        public List<ForeignKey<Record, ?>> get() {
+            return realTable.getReferences().stream()
+                    .map(ImpersonatorTable.this::createFK)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+    }
+
+    private UniqueKey<Record> createPK() {
+        UniqueKey<Record> primaryKey = realTable.getPrimaryKey();
+        if (primaryKey == null) {
+            return null;
+        }
+        TableField<Record, ?>[] transformedFields = transformFields(primaryKey.getFieldsArray());
+        if (ArrayUtils.contains(transformedFields, null)) {
+            // We don't have some of the fields of realTable PK
+            return null;
+        }
+        //noinspection unchecked
+        return createUniqueKey(ImpersonatorTable.this, transformedFields);
+    }
+
+    private ForeignKey<Record, ?> createFK(ForeignKey<Record, ?> foreignKey) {
+        TableField<Record, ?>[] fields = transformFields(foreignKey.getFieldsArray());
+        if (ArrayUtils.contains(fields, null)) {
+            return null;
+        }
+        //noinspection unchecked
+        return createForeignKey(foreignKey.getKey(), foreignKey.getTable(), fields);
+    }
+
+    private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
+        //noinspection unchecked
+        return Arrays.stream(originalFields)
+                .map(this::getField)
+                .toArray(TableField[]::new);
+    }
 }
