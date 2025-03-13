@@ -14,18 +14,19 @@ import org.jooq.ForeignKey;
 import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
-import org.jooq.impl.AbstractKeys;
 import org.jooq.impl.TableImpl;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static org.jooq.impl.Internal.createForeignKey;
+import static org.jooq.impl.Internal.createUniqueKey;
+
 public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     public static final String TEMP_TABLE_PREFIX = "tmp_";
 
-    private final Keys keys = new Keys();
     private final DataTable realTable;
 
     public ImpersonatorTable(DataTable realTable) {
@@ -52,7 +53,7 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     @Override
     public UniqueKey<Record> getPrimaryKey() {
-        return keys.createPK();
+        return createPK();
     }
 
     @Override
@@ -62,7 +63,7 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
         return Lists.newArrayList(Collections2.filter(Lists.transform(realTable.getReferences(), new Function<ForeignKey<Record, ?>, ForeignKey<Record, ?>>() {
             @Override
             public ForeignKey<Record, ?> apply(ForeignKey<Record, ?> foreignKey) {
-                return keys.createFK(foreignKey);
+                return createFK(foreignKey);
             }
         }), Predicates.notNull()));
     }
@@ -77,39 +78,36 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
         }).orNull();
     }
 
-    private class Keys extends AbstractKeys {
-        public UniqueKey<Record> createPK() {
-            UniqueKey<Record> primaryKey = realTable.getPrimaryKey();
-            if (primaryKey == null) {
-                return null;
-            }
-            TableField<Record, ?>[] transformedFields = transformFields(primaryKey.getFieldsArray());
-            if (ArrayUtils.contains(transformedFields, null)) {
-                // We don't have some of the fields of realTable PK
-                return null;
-            }
-            //noinspection unchecked
-            return createUniqueKey(ImpersonatorTable.this, transformedFields);
+    private UniqueKey<Record> createPK() {
+        UniqueKey<Record> primaryKey = realTable.getPrimaryKey();
+        if (primaryKey == null) {
+            return null;
         }
-
-        public ForeignKey<Record, ?> createFK(ForeignKey<Record, ?> foreignKey) {
-            TableField<Record, ?>[] fields = transformFields(foreignKey.getFieldsArray());
-            if (ArrayUtils.contains(fields, null)) {
-                return null;
-            }
-            //noinspection unchecked
-            return createForeignKey(foreignKey.getKey(), foreignKey.getTable(), fields);
+        TableField<Record, ?>[] transformedFields = transformFields(primaryKey.getFieldsArray());
+        if (ArrayUtils.contains(transformedFields, null)) {
+            // We don't have some of the fields of realTable PK
+            return null;
         }
-
-        private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
-            //noinspection unchecked
-            TableField<Record, ?>[] fields = new TableField[originalFields.length];
-            for (int i = 0; i < originalFields.length; i++) {
-                TableField<Record, ?> recordTableField = originalFields[i];
-                fields[i] = getField(recordTableField);
-            }
-            return fields;
-        }
+        //noinspection unchecked
+        return createUniqueKey(ImpersonatorTable.this, transformedFields);
     }
 
+    private ForeignKey<Record, ?> createFK(ForeignKey<Record, ?> foreignKey) {
+        TableField<Record, ?>[] fields = transformFields(foreignKey.getFieldsArray());
+        if (ArrayUtils.contains(fields, null)) {
+            return null;
+        }
+        //noinspection unchecked
+        return createForeignKey(foreignKey.getKey(), foreignKey.getTable(), fields);
+    }
+
+    private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
+        //noinspection unchecked
+        TableField<Record, ?>[] fields = new TableField[originalFields.length];
+        for (int i = 0; i < originalFields.length; i++) {
+            TableField<Record, ?> recordTableField = originalFields[i];
+            fields[i] = getField(recordTableField);
+        }
+        return fields;
+    }
 }
