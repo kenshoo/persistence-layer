@@ -3,7 +3,6 @@ package com.kenshoo.pl.data;
 import com.google.common.base.*;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import org.apache.commons.lang3.ArrayUtils;
@@ -17,6 +16,8 @@ import org.jooq.impl.TableImpl;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Objects;
 
 import static org.jooq.impl.Internal.createForeignKey;
 import static org.jooq.impl.Internal.createUniqueKey;
@@ -83,14 +84,10 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
         @Override
         public List<ForeignKey<Record, ?>> get() {
-            // Transform is going to return nulls for foreign keys composed of fields not present in impersonator table,
-            // filtering them out
-            return Lists.newArrayList(Collections2.filter(Lists.transform(realTable.getReferences(), new Function<ForeignKey<Record, ?>, ForeignKey<Record, ?>>() {
-                @Override
-                public ForeignKey<Record, ?> apply(ForeignKey<Record, ?> foreignKey) {
-                    return createFK(foreignKey);
-                }
-            }), Predicates.notNull()));
+            return realTable.getReferences().stream()
+                    .map(ImpersonatorTable.this::createFK)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toUnmodifiableList());
         }
     }
 
@@ -119,11 +116,8 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
 
     private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
         //noinspection unchecked
-        TableField<Record, ?>[] fields = new TableField[originalFields.length];
-        for (int i = 0; i < originalFields.length; i++) {
-            TableField<Record, ?> recordTableField = originalFields[i];
-            fields[i] = getField(recordTableField);
-        }
-        return fields;
+        return Arrays.stream(originalFields)
+                .map(this::getField)
+                .toArray(TableField[]::new);
     }
 }
