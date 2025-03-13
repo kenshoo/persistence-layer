@@ -6,11 +6,7 @@ import com.google.common.collect.Iterables;
 import com.kenshoo.jooq.DataTable;
 import com.kenshoo.jooq.FieldAndValue;
 import org.apache.commons.lang3.ArrayUtils;
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Record;
-import org.jooq.TableField;
-import org.jooq.UniqueKey;
+import org.jooq.*;
 import org.jooq.impl.TableImpl;
 
 import java.util.Arrays;
@@ -110,8 +106,13 @@ public class ImpersonatorTable extends TableImpl<Record> implements DataTable {
         if (ArrayUtils.contains(fields, null)) {
             return null;
         }
-        //noinspection unchecked
-        return createForeignKey(foreignKey.getKey(), foreignKey.getTable(), fields);
+        UniqueKey<Record> uniqueKey = cloneUniqueKey(foreignKey.getKey());
+        return createForeignKey(uniqueKey, uniqueKey.getTable(), fields);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static UniqueKey<Record> cloneUniqueKey(UniqueKey<?> uniqueKey) {
+        return createUniqueKey((Table<Record>) uniqueKey.getTable(), (TableField<Record, ?>[]) uniqueKey.getFieldsArray());
     }
 
     private TableField<Record, ?>[] transformFields(TableField<Record, ?>[] originalFields) {
