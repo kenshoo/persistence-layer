@@ -1,12 +1,16 @@
 package com.kenshoo.pl.entity;
 
+import org.jooq.Condition;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.TableField;
-import org.jooq.lambda.Seq;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public interface EntityField<E extends EntityType<E>, T> {
 
@@ -27,55 +31,75 @@ public interface EntityField<E extends EntityType<E>, T> {
     EntityType<E> getEntityType();
 
     default PLCondition eq(T value) {
-        if (isVirtual()) {
-            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
-        }
-        final Object tableValue = getDbAdapter().getFirstDbValue(value);
-        @SuppressWarnings("unchecked")
-        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.eq(tableValue), entity -> entity.safeGet(this).equalsValue(value), this);
+        return compareTo(value, Field::eq);
     }
 
-    default PLCondition eq(EntityField<?, T> otherField) {
-        if (isVirtual()) {
-            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
-        }
-
-        @SuppressWarnings("unchecked")
-        final TableField<Record, T> tableField = (TableField<Record, T>)getDbAdapter().getFirstTableField();
-        @SuppressWarnings("unchecked")
-        final TableField<Record, T> otherTableField = (TableField<Record, T>)otherField.getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.eq(otherTableField), entity -> entity.safeGet(this).equals(entity.safeGet(otherField)), this, otherField);
+    default PLPostFetchCondition postFetchEq(T otherValue) {
+        return postFetchCompareWith(thisTriptional -> valuesEqual(thisTriptional, otherValue));
     }
 
+    default PLPostFetchCondition postFetchEq(EntityField<?, T> otherField) {
+        final Predicate<Entity> predicate =
+                entity -> entity.safeGet(this).matches(thisValue -> valuesEqual(entity.safeGet(otherField), thisValue));
+        return new PLPostFetchCondition(predicate, this, otherField);
+    }
+
+    @SuppressWarnings("unchecked")
     default PLCondition in(T ...values) {
-        if (isVirtual()) {
-            throw new UnsupportedOperationException("The in operation is unsupported for virtual fields");
-        }
+        return compareTo(Arrays.stream(values), Field::in);
+    }
 
-        final Object[] tableValues = Arrays.stream(values).map(value -> getDbAdapter().getFirstDbValue(value)).toArray(Object[]::new);
-        @SuppressWarnings("unchecked")
-        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        final var setOfValues = Seq.of(values).collect(Collectors.toUnmodifiableSet());
-        return new PLCondition(tableField.in(tableValues),
-                entity -> entity.safeGet(this).filter(Objects::nonNull).matches(setOfValues::contains), this);
+    @SuppressWarnings("unchecked")
+    default PLPostFetchCondition postFetchIn(T ...values) {
+        final var setOfValues = Set.of(values);
+        return postFetchCompareWith(thisTriptional -> thisTriptional.filter(Objects::nonNull).matches(setOfValues::contains));
     }
 
     default PLCondition isNull() {
-        if (isVirtual()) {
-            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
-        }
-        @SuppressWarnings("unchecked")
-        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.isNull(), entity -> entity.safeGet(this).isNull(), this);
+        final var tableField = extractFirstTableField();
+        return new PLCondition(tableField.isNull(), this);
+    }
+
+    default PLPostFetchCondition postFetchIsNull() {
+        return postFetchCompareWith(Triptional::isNull);
     }
 
     default PLCondition isNotNull() {
+        final var tableField = extractFirstTableField();
+        return new PLCondition(tableField.isNotNull(), this);
+    }
+
+    default PLPostFetchCondition postFetchIsNotNull() {
+        return postFetchCompareWith(Triptional::isNotNull);
+    }
+
+    private PLCondition compareTo(final T value,
+                                  final BiFunction<TableField<Record, Object>, Object, Condition> conditionGenerator) {
+        final var tableField = extractFirstTableField();
+        final Object tableValue = getDbAdapter().getFirstDbValue(value);
+        return new PLCondition(conditionGenerator.apply(tableField, tableValue), this);
+    }
+
+    private PLCondition compareTo(final Stream<T> values,
+                                  final BiFunction<TableField<Record, Object>, Object[], Condition> conditionGenerator) {
+        final var tableField = extractFirstTableField();
+        final Object[] tableValues = values.map(value -> getDbAdapter().getFirstDbValue(value)).toArray(Object[]::new);
+        return new PLCondition(conditionGenerator.apply(tableField, tableValues), this);
+    }
+
+    private PLPostFetchCondition postFetchCompareWith(final Predicate<Triptional<T>> predicate) {
+        return new PLPostFetchCondition(entity -> predicate.test(entity.safeGet(this)), this);
+    }
+
+    private TableField<Record, Object> extractFirstTableField() {
         if (isVirtual()) {
-            throw new UnsupportedOperationException("The equals operation is unsupported for virtual fields");
+            throw new UnsupportedOperationException("PLConditions cannot be built for virtual fields");
         }
-        @SuppressWarnings("unchecked")
-        final TableField<Record, Object> tableField = (TableField<Record, Object>)getDbAdapter().getFirstTableField();
-        return new PLCondition(tableField.isNotNull(), entity -> entity.safeGet(this).isNotNull(), this);
+        //noinspection unchecked
+        return (TableField<Record, Object>)getDbAdapter().getFirstTableField();
+    }
+
+    private boolean valuesEqual(final Triptional<T> thisTriptional, final T otherValue) {
+        return thisTriptional.matches(thisValue -> valuesEqual(thisValue, otherValue));
     }
 }
