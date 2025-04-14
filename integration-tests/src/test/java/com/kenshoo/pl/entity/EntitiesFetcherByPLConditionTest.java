@@ -506,8 +506,8 @@ public class EntitiesFetcherByPLConditionTest {
     private static class TestTable extends AbstractDataTable<TestTable> {
         private static final TestTable INSTANCE = new TestTable("test");
 
-        private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER);
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER.identity(true));
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, String> enum_field = createField("enum_field", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, Integer> parent_id = createFKField("parent_id", TestParentTable.INSTANCE.id);
@@ -529,7 +529,7 @@ public class EntitiesFetcherByPLConditionTest {
     private static class TestParentTable extends AbstractDataTable<TestParentTable> {
         private static final TestParentTable INSTANCE = new TestParentTable("testParent");
 
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, String> field2 = createField("field2", SQLDataType.VARCHAR.length(50));
 
@@ -550,7 +550,7 @@ public class EntitiesFetcherByPLConditionTest {
     private static class TestParentSecondaryTable extends AbstractDataTable<TestParentSecondaryTable> {
         private static final TestParentSecondaryTable INSTANCE = new TestParentSecondaryTable("testParentSecondary");
 
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, String> field2 = createField("field2", SQLDataType.VARCHAR.length(50));
         private final TableField<Record, Integer> parent_id = createFKField("parent_id", TestParentTable.INSTANCE.id);

@@ -180,9 +180,9 @@ public class EntitiesFetcherByPLConditionWithVirtualPartitionTest {
     private static class TestTable extends AbstractDataTable<TestTable> {
         private static final TestTable INSTANCE = new TestTable("test");
 
-        private final TableField<Record, Integer> id1 = createPKField("id1", SQLDataType.INTEGER);
-        private final TableField<Record, Integer> id2 = createPKField("id2", SQLDataType.INTEGER);
-        private final TableField<Record, Integer> id3 = createPKField("id3", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> id1 = createPKField("id1", SQLDataType.INTEGER.identity(true));
+        private final TableField<Record, Integer> id2 = createPKField("id2", SQLDataType.INTEGER.identity(true));
+        private final TableField<Record, Integer> id3 = createPKField("id3", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
 
         public TestTable(String name) {

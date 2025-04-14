@@ -74,8 +74,8 @@ public class VirtualPartitionTest {
 
     private static class TestTable extends AbstractDataTable<TestTable> {
 
-        private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER);
-        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        private final TableField<Record, Integer> type = createPKField("type", SQLDataType.INTEGER.identity(true));
+        private final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         private final TableField<Record, String> field1 = createField("field1", SQLDataType.VARCHAR.length(50));
 
         public TestTable(String name) {

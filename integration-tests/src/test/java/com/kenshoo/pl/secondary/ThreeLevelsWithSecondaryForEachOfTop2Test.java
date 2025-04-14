@@ -144,7 +144,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         static final Table0 INSTANCE = new Table0("entity0");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, Integer> entity1_id = createFKField("entity1_id", Table1.INSTANCE.id);
 
         Table0(String name) {
@@ -165,7 +165,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         static final Table1 INSTANCE = new Table1("entity1");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, Integer> entity2_id = createFKField("entity2_id", Table2.INSTANCE.id);
 
         Table1(String name) {
@@ -207,7 +207,7 @@ public class ThreeLevelsWithSecondaryForEachOfTop2Test {
 
         static final Table2 INSTANCE = new Table2("entity2");
 
-        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER);
+        final TableField<Record, Integer> id = createPKField("id", SQLDataType.INTEGER.identity(true));
         final TableField<Record, String> field_1 = createField("field_1", SQLDataType.VARCHAR(20));
 
         Table2(String name) {

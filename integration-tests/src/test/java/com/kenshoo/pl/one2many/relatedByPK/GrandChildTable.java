@@ -14,7 +14,7 @@ public class GrandChildTable extends AbstractDataTable<GrandChildTable> {
     }
 
     public final TableField<Record, Integer> child_id = createPKAndFKField("child_id", SQLDataType.INTEGER, ChildTable.INSTANCE.id);
-    public final TableField<Record, String>  color = createPKField("color", SQLDataType.VARCHAR.length(10));
+    public final TableField<Record, String>  color = createPKField("color", SQLDataType.VARCHAR.length(10).identity(true));
 
     @Override
     public GrandChildTable as(String alias) {
