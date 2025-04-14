@@ -5,6 +5,8 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import org.jooq.impl.SQLDataType;
 
+import java.math.BigDecimal;
+
 /**
  * Created by dimag on 13/01/2016.
  */
@@ -20,6 +22,7 @@ public class TestEntityTable extends AbstractDataTable<TestEntityTable> {
     public final TableField<Record, String> field_1 = createField("field_1", SQLDataType.VARCHAR.length(10));
     public final TableField<Record, String> field_2 = createField("field_2", SQLDataType.VARCHAR.length(10));
     public final TableField<Record, Integer> field_3 = createField("field_3", SQLDataType.INTEGER);
+    public final TableField<Record, BigDecimal> field_4 = createField("field_4", SQLDataType.NUMERIC);
 
     @Override
     public TestEntityTable as(String alias) {
